@@ -1,0 +1,1 @@
+<Keypad bind:value={pin}/>
