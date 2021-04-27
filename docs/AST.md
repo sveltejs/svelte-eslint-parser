@@ -1,8 +1,10 @@
 # AST for Svelte
 
+We haven't created it yet.
+
 See details: [../src/ast.ts](../src/ast.ts)
 
-### Program
+<!-- ### Program
 
 ```js
 extend interface Program {
@@ -10,4 +12,4 @@ extend interface Program {
 }
 ```
 
-[ESLint - The AST specification]: https://eslint.org/docs/developer-guide/working-with-custom-parsers#the-ast-specification
+[ESLint - The AST specification]: https://eslint.org/docs/developer-guide/working-with-custom-parsers#the-ast-specification -->

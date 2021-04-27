@@ -2,14 +2,25 @@
 
 [Svelte] parser for [ESLint]
 
-***Works In Progress***  
-***This parser is still in an EXPERIMENTAL STATE***
+::: ***WORKS IN PROGRESS*** :::
+
+::: ***This Parser is still in an EXPERIMENTAL STATE*** :::
+
+[![NPM license](https://img.shields.io/npm/l/svelte-eslint-parser.svg)](https://www.npmjs.com/package/svelte-eslint-parser)
+[![NPM version](https://img.shields.io/npm/v/svelte-eslint-parser.svg)](https://www.npmjs.com/package/svelte-eslint-parser)
+[![NPM downloads](https://img.shields.io/badge/dynamic/json.svg?label=downloads&colorB=green&suffix=/day&query=$.downloads&uri=https://api.npmjs.org//downloads/point/last-day/svelte-eslint-parser&maxAge=3600)](http://www.npmtrends.com/svelte-eslint-parser)
+[![NPM downloads](https://img.shields.io/npm/dw/svelte-eslint-parser.svg)](http://www.npmtrends.com/svelte-eslint-parser)
+[![NPM downloads](https://img.shields.io/npm/dm/svelte-eslint-parser.svg)](http://www.npmtrends.com/svelte-eslint-parser)
+[![NPM downloads](https://img.shields.io/npm/dy/svelte-eslint-parser.svg)](http://www.npmtrends.com/svelte-eslint-parser)
+[![NPM downloads](https://img.shields.io/npm/dt/svelte-eslint-parser.svg)](http://www.npmtrends.com/svelte-eslint-parser)
+[![Build Status](https://github.com/ota-meshi/svelte-eslint-parser/workflows/CI/badge.svg?branch=master)](https://github.com/ota-meshi/svelte-eslint-parser/actions?query=workflow%3ACI)
+[![Coverage Status](https://coveralls.io/repos/github/ota-meshi/svelte-eslint-parser/badge.svg?branch=master)](https://coveralls.io/github/ota-meshi/svelte-eslint-parser?branch=master)
 
 ## ❓ Why?
 
-[Svelte] has the official ESLint plugin [eslint-plugin-svelte3]. [eslint-plugin-svelte3] works well enough to check scripts. However, it does not handle the AST of the template, which makes it very difficult for third parties to create their own [ESLint] rules for [Svelte].
+[Svelte] has the official ESLint plugin the [eslint-plugin-svelte3]. The [eslint-plugin-svelte3] works well enough to check scripts. However, it does not handle the AST of the template, which makes it very difficult for third parties to create their own the [ESLint] rules for the [Svelte].
 
-The `svelte-eslint-parser` aims to make it easy to create your own rules for [Svelte] by allowing the template AST to be used in the rules.
+The `svelte-eslint-parser` aims to make it easy to create your own rules for the [Svelte] by allowing the template AST to be used in the rules.
 
 ## 💿 Installation
 
@@ -94,6 +105,11 @@ Example **.vscode/settings.json**:
     ]
 }
 ```
+
+## Usage for Custom Rules / Plugins
+
+- [AST.md](./docs/AST.md) is AST specification.
+- You can see the AST on the [Online DEMO](https://ota-meshi.github.io/svelte-eslint-parser/).
 
 ## :beers: Contributing
 
