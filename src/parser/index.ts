@@ -8,7 +8,7 @@ import { parseScript } from "./script"
 import type * as SvAST from "./svelte-ast-types"
 import { sort } from "./sort"
 import { parseTemplate } from "./template"
-import { analyzeStoreScope } from "./analyze-scope"
+import { analyzePropsScope, analyzeStoreScope } from "./analyze-scope"
 import { ParseError } from "../errors"
 
 export interface ESLintProgram extends Program {
@@ -109,6 +109,18 @@ export function parseForESLint(
                 body.body.push(statement)
                 statements.shift()
                 statement = statements[0]
+            }
+            if (
+                body.attributes.every(
+                    (attr) =>
+                        attr.type === "SvelteAttribute" &&
+                        attr.key.name === "context" &&
+                        attr.value.length === 1 &&
+                        attr.value[0].type === "SvelteText" &&
+                        attr.value[0].value === "module",
+                )
+            ) {
+                analyzePropsScope(body, resultScript.scopeManager!)
             }
         }
     }

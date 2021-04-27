@@ -11,6 +11,9 @@ const RULES = [
     "no-unused-vars",
     "no-unused-expressions",
     "space-infix-ops",
+    "no-setter-return",
+    "no-import-assign",
+    "prefer-const",
 ]
 
 /**
@@ -46,6 +49,8 @@ for (const {
     getRuleOutputFileName,
 } of listupFixtures()) {
     try {
+        // eslint-disable-next-line no-console -- ignore
+        console.log(inputFileName)
         const ast = parse(input, inputFileName).ast
         const astJson = JSON.stringify(ast, replacer, 2)
         fs.writeFileSync(outputFileName, astJson, "utf8")
