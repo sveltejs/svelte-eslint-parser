@@ -386,4 +386,5 @@ export interface SvelteReactiveStatement extends BaseNode {
     type: "SvelteReactiveStatement"
     label: ESTree.Identifier & { name: "$" }
     body: ESTree.Statement
+    parent: ESTree.Node
 }

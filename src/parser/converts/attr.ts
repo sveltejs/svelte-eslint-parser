@@ -181,12 +181,24 @@ function convertBindingDirective(
         parent,
         ...ctx.getConvertLocation(node),
     }
-    processDirective(
-        node,
-        directive,
-        ctx,
-        buildProcessExpressionForExpression(directive, ctx),
-    )
+    processDirective(node, directive, ctx, (expression) => {
+        const es = convertESNode(expression, directive, ctx)
+        analyzeExpressionScope(es, ctx)
+
+        const reference = ctx.templateScopeManager.currentScope.references.find(
+            (ref) => ref.identifier === es,
+        )
+        if (reference) {
+            // The bind directive does read and write.
+            reference.isWrite = () => true
+            reference.isWriteOnly = () => false
+            reference.isReadWrite = () => true
+            reference.isReadOnly = () => false
+            reference.isRead = () => true
+        }
+
+        return es
+    })
     return directive
 }
 

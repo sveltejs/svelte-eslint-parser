@@ -1,9 +1,9 @@
 import type ESTree from "estree"
-import type { Reference, Scope, ScopeManager } from "eslint-scope"
-import { Variable } from "eslint-scope"
+import type { Scope, ScopeManager } from "eslint-scope"
+import { Variable, Reference } from "eslint-scope"
 import eslintScope from "eslint-scope"
 import { getFallbackKeys } from "../traverse"
-import type { SvelteReactiveStatement } from "../ast"
+import type { SvelteReactiveStatement, SvelteScriptElement } from "../ast"
 /**
  * Analyze scope
  */
@@ -59,11 +59,6 @@ export function analyzeReactiveScope(scopeManager: ScopeManager): void {
         }
     }
 
-    /** Get parent node */
-    function getParent(node: ESTree.Node): ESTree.Node | null {
-        return (node as any).parent
-    }
-
     /** Transform ref to ComputedVariable */
     function transformComputedVariable(
         node: ESTree.AssignmentExpression,
@@ -87,13 +82,14 @@ export function analyzeReactiveScope(scopeManager: ScopeManager): void {
             referenceScope.set.set(name, variable)
         }
         variable.identifiers.push(reference.identifier)
-        variable.references.push(reference)
         reference.resolved = variable
         removeReferenceFromThrough(reference, referenceScope)
     }
 }
 
-/** Analyze store scope */
+/**
+ * Analyze store scope. e.g. $count
+ */
 export function analyzeStoreScope(scopeManager: ScopeManager): void {
     for (const reference of [...scopeManager.globalScope.through]) {
         if (reference.identifier.name.startsWith("$")) {
@@ -121,6 +117,78 @@ export function analyzeStoreScope(scopeManager: ScopeManager): void {
     }
 }
 
+/** Transform props exports */
+export function analyzePropsScope(
+    body: SvelteScriptElement,
+    scopeManager: ScopeManager,
+): void {
+    const moduleScope = scopeManager.scopes.find(
+        (scope) => scope.type === "module",
+    )
+    if (!moduleScope) {
+        return
+    }
+
+    for (const node of body.body) {
+        if (node.type !== "ExportNamedDeclaration") {
+            continue
+        }
+        if (node.declaration) {
+            if (node.declaration.type === "VariableDeclaration") {
+                for (const decl of node.declaration.declarations) {
+                    if (decl.id.type === "Identifier") {
+                        addPropsReference(decl.id, moduleScope)
+                    }
+                }
+            }
+        } else {
+            for (const spec of node.specifiers) {
+                addPropsReference(spec.local, moduleScope)
+            }
+        }
+    }
+
+    /** Add virtual props reference */
+    function addPropsReference(node: ESTree.Identifier, scope: Scope) {
+        for (const variable of scope.variables) {
+            if (variable.name !== node.name) {
+                continue
+            }
+
+            if (
+                variable.references.some(
+                    (ref) => (ref as any).sveltePropReference,
+                )
+            ) {
+                continue
+            }
+
+            // Add the virtual reference for writing.
+            const reference = new Reference()
+            ;(reference as any).sveltePropReference = true
+            reference.from = scope
+            reference.identifier = {
+                ...node,
+                // @ts-expect-error -- ignore
+                parent: body,
+                loc: {
+                    start: { ...node.loc!.start },
+                    end: { ...node.loc!.end },
+                },
+                range: [...node.range!],
+            }
+            reference.isWrite = () => true
+            reference.isWriteOnly = () => false
+            reference.isRead = () => true
+            reference.isReadOnly = () => false
+            reference.isReadWrite = () => true
+
+            variable.references.push(reference)
+            reference.resolved = variable
+        }
+    }
+}
+
 /** Remove reference from through */
 function removeReferenceFromThrough(reference: Reference, baseScope: Scope) {
     const variable = reference.resolved!
@@ -144,4 +212,9 @@ function removeReferenceFromThrough(reference: Reference, baseScope: Scope) {
         })
         scope = scope.upper
     }
+}
+
+/** Get parent node */
+function getParent(node: ESTree.Node): ESTree.Node | null {
+    return (node as any).parent
 }
