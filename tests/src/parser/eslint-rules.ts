@@ -23,6 +23,8 @@ const RULES = [
     "no-unused-vars",
     "no-unused-expressions",
     "space-infix-ops",
+    "no-setter-return",
+    "no-import-assign",
 ]
 
 describe("svelte-eslint-parser with ESLint rules", () => {

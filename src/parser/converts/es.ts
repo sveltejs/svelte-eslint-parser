@@ -575,7 +575,7 @@ function mergeScope(targetScope: Scope, ctx: Context) {
     const templateScopeManager = ctx.templateScopeManager
 
     for (const scope of targetScope.childScopes) {
-        templateScopeManager.scopeManager.scopes.push(scope)
+        templateScopeManager.registerScope(scope)
         templateScopeManager.currentScope.childScopes.push(scope)
         scope.upper = templateScopeManager.currentScope
     }

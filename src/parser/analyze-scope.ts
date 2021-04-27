@@ -104,6 +104,14 @@ export function analyzeStoreScope(scopeManager: ScopeManager): void {
             if (moduleScope) {
                 const variable = moduleScope?.set.get(realName)
                 if (variable) {
+                    // It does not write directly to the original variable.
+                    // Therefore, this variable is always a reference.
+                    reference.isWrite = () => false
+                    reference.isWriteOnly = () => false
+                    reference.isReadWrite = () => false
+                    reference.isReadOnly = () => true
+                    reference.isRead = () => true
+
                     variable.references.push(reference)
                     reference.resolved = variable
                     removeReferenceFromThrough(reference, moduleScope)

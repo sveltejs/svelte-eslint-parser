@@ -16,7 +16,8 @@
         "cover": "nyc --reporter=lcov npm run test",
         "debug": "mocha --require ts-node/register/transpile-only \"tests/src/**/*.ts\" --reporter dot",
         "preversion": "npm run lint && npm test",
-        "update-fixtures": "ts-node --transpile-only ./tools/update-fixtures.ts"
+        "update-fixtures": "ts-node --transpile-only ./tools/update-fixtures.ts",
+        "eslint-playground": "eslint tests/fixtures --ext .svelte --config .eslintrc-for-playground.js --format codeframe"
     },
     "repository": {
         "type": "git",
