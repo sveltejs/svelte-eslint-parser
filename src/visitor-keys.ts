@@ -2,7 +2,14 @@ import type { SourceCode } from "eslint"
 import { unionWith } from "eslint-visitor-keys"
 import type { SvelteNode } from "./ast"
 
-const svelteKeys: { [key in SvelteNode["type"]]: string[] } = {
+type SvelteKeysType<T extends SvelteNode = SvelteNode> = {
+    [key in SvelteNode["type"]]: T extends { type: key }
+        ? KeyofObject<T>[]
+        : never
+}
+type KeyofObject<T> = { [key in keyof T]: key }[keyof T]
+
+const svelteKeys: SvelteKeysType = {
     Program: ["body"],
     SvelteScriptElement: ["attributes", "body"],
     SvelteStyleElement: ["attributes", "children"],
