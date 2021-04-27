@@ -1,0 +1,1 @@
+<div bind:property={variable}/>

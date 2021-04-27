@@ -1,0 +1,16 @@
+<video
+	src={clip}
+	bind:duration
+	bind:buffered
+	bind:played
+	bind:seekable
+	bind:seeking
+	bind:ended
+	bind:currentTime
+	bind:playbackRate
+	bind:paused
+	bind:volume
+	bind:muted
+	bind:videoWidth
+	bind:videoHeight
+></video>

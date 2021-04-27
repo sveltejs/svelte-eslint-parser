@@ -1,0 +1,1 @@
+<MyComp bind:property={variable}/>
