@@ -20,7 +20,7 @@ npm install --save-dev eslint svelte-eslint-parser
 ## 📖 Usage
 
 1. Write `overrides.parser` option into your `.eslintrc.*` file.
-2. Use glob patterns or `--ext .vue` CLI option.
+2. Use glob patterns or `--ext .svelte` CLI option.
 
 ```json
 {
