@@ -13,14 +13,20 @@
 [![NPM downloads](https://img.shields.io/npm/dm/svelte-eslint-parser.svg)](http://www.npmtrends.com/svelte-eslint-parser)
 [![NPM downloads](https://img.shields.io/npm/dy/svelte-eslint-parser.svg)](http://www.npmtrends.com/svelte-eslint-parser)
 [![NPM downloads](https://img.shields.io/npm/dt/svelte-eslint-parser.svg)](http://www.npmtrends.com/svelte-eslint-parser)
-[![Build Status](https://github.com/ota-meshi/svelte-eslint-parser/workflows/CI/badge.svg?branch=master)](https://github.com/ota-meshi/svelte-eslint-parser/actions?query=workflow%3ACI)
-[![Coverage Status](https://coveralls.io/repos/github/ota-meshi/svelte-eslint-parser/badge.svg?branch=master)](https://coveralls.io/github/ota-meshi/svelte-eslint-parser?branch=master)
+[![Build Status](https://github.com/ota-meshi/svelte-eslint-parser/workflows/CI/badge.svg?branch=main)](https://github.com/ota-meshi/svelte-eslint-parser/actions?query=workflow%3ACI)
+[![Coverage Status](https://coveralls.io/repos/github/ota-meshi/svelte-eslint-parser/badge.svg?branch=main)](https://coveralls.io/github/ota-meshi/svelte-eslint-parser?branch=main)
 
 ## ❓ Why?
 
 [Svelte] has the official ESLint plugin the [eslint-plugin-svelte3]. The [eslint-plugin-svelte3] works well enough to check scripts. However, it does not handle the AST of the template, which makes it very difficult for third parties to create their own the [ESLint] rules for the [Svelte].
 
-The `svelte-eslint-parser` aims to make it easy to create your own rules for the [Svelte] by allowing the template AST to be used in the rules.
+The [`svelte-eslint-parser`] aims to make it easy to create your own rules for the [Svelte] by allowing the template AST to be used in the rules.
+
+## ❗ Attention
+
+The [`svelte-eslint-parser`] can not be used with the [eslint-plugin-svelte3].
+
+[`svelte-eslint-parser`]: https://www.npmjs.com/package/svelte-eslint-parser
 
 ## 💿 Installation
 
