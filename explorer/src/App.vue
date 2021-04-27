@@ -1,6 +1,10 @@
 <template>
     <header class="header">
         <label class="title">svelte-eslint-parser</label>
+        <RouterLink class="menu" :to="{ name: 'ast' }">AST</RouterLink>
+        <RouterLink class="menu" :to="{ name: 'playground' }"
+            >Playgroud</RouterLink
+        >
         <SnsBar />
         <a
             href="https://github.com/ota-meshi/svelte-eslint-parser"
@@ -9,18 +13,16 @@
         >
     </header>
     <main class="main">
-        <AstExplorer />
+        <RouterView />
     </main>
 </template>
 
 <script>
-import AstExplorer from "./components/AstExplorer.vue"
 import SnsBar from "./components/SnsBar.vue"
 
 export default {
     name: "App",
     components: {
-        AstExplorer,
         SnsBar,
     },
 }
@@ -33,9 +35,20 @@ export default {
 }
 .title {
     font-size: 120%;
-    flex-grow: 1;
     display: flex;
     align-items: center;
+    padding-right: 16px;
+}
+.menu {
+    padding: 4px 16px;
+    border-radius: 4px 4px 0 0;
+    border-color: #ddd #ddd transparent #ddd;
+    border-style: solid;
+    border-width: 1px;
+}
+.router-link-exact-active {
+    margin-bottom: -2px;
+    border-bottom: 2px solid #46bd87;
 }
 .github-link {
     display: flex;

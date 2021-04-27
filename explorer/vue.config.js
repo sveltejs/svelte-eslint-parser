@@ -1,5 +1,9 @@
 module.exports = {
     publicPath: "/svelte-eslint-parser/",
+    pages: {
+        index: "src/main.js",
+        playground: "src/main.js",
+    },
     configureWebpack(_config, _isServer) {
         return {
             resolve: {
