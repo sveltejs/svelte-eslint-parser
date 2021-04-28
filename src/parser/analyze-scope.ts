@@ -60,11 +60,6 @@ export function analyzeReactiveScope(scopeManager: ScopeManager): void {
         }
     }
 
-    /** Get parent node */
-    function getParent(node: ESTree.Node): Nullable<ESTree.Node> {
-        return (node as any).parent
-    }
-
     /** Transform ref to ComputedVariable */
     function transformComputedVariable(
         node: ESTree.AssignmentExpression,
@@ -221,6 +216,6 @@ function removeReferenceFromThrough(reference: Reference, baseScope: Scope) {
 }
 
 /** Get parent node */
-function getParent(node: ESTree.Node): ESTree.Node | null {
+function getParent(node: ESTree.Node): Nullable<ESTree.Node> {
     return (node as any).parent
 }
