@@ -3,6 +3,7 @@ module.exports = {
     pages: {
         index: "src/main.js",
         playground: "src/main.js",
+        scope: "src/main.js",
     },
     configureWebpack(_config, _isServer) {
         return {

@@ -5,6 +5,7 @@
         <RouterLink class="menu" :to="{ name: 'playground' }"
             >Playgroud</RouterLink
         >
+        <RouterLink class="menu" :to="{ name: 'scope' }">Scope</RouterLink>
         <SnsBar style="margin-left: auto" />
         <a
             href="https://github.com/ota-meshi/svelte-eslint-parser"

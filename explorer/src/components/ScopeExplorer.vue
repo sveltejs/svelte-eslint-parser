@@ -11,7 +11,7 @@
             />
             <MonacoEditor
                 ref="jsonEditor"
-                :model-value="astJson.json"
+                :model-value="scopeJson.json"
                 language="json"
                 read-only
                 @focus-editor-text="handleFocus('json')"
@@ -46,7 +46,7 @@ export default {
 <input type="number" bind:value={b}>
 
 <p>{a} + {b} = {a + b}</p>`,
-            astJson: {},
+            scopeJson: {},
             modeEditor: "",
             time: "",
         }
@@ -63,37 +63,45 @@ export default {
     },
     methods: {
         refresh() {
-            let ast
+            let scopeManager
             const start = Date.now()
             try {
-                ast = svelteEslintParser.parseForESLint(this.svelteValue).ast
+                scopeManager = svelteEslintParser.parseForESLint(
+                    this.svelteValue,
+                ).scopeManager
             } catch (e) {
-                ast = {
-                    message: e.message,
-                    ...e,
+                this.scopeJson = {
+                    json: JSON.stringify({
+                        message: e.message,
+                        ...e,
+                    }),
+                    locations: [],
                 }
+                const time = Date.now() - start
+                this.time = `${time}ms`
+                return
             }
             const time = Date.now() - start
             this.time = `${time}ms`
-            const json = createAstJson(this.options, ast)
-            this.astJson = json
+            const json = createScopeJson(this.options, scopeManager)
+            this.scopeJson = json
         },
         handleFocus(editor) {
             this.modeEditor = editor
         },
         handleCursor(evt, editor) {
-            if (this.modeEditor !== editor || !this.astJson) {
+            if (this.modeEditor !== editor || !this.scopeJson) {
                 return
             }
 
             const position = evt.position
             if (editor === "source") {
-                const locData = findLoc(this.astJson, "sourceLoc")
+                const locData = findLoc(this.scopeJson, "sourceLoc")
                 if (locData) {
                     this.$refs.jsonEditor.setCursorPosition(locData.jsonLoc)
                 }
             } else if (editor === "json") {
-                const locData = findLoc(this.astJson, "jsonLoc")
+                const locData = findLoc(this.scopeJson, "jsonLoc")
                 if (locData) {
                     this.$refs.sourceEditor.setCursorPosition(
                         locData.sourceLoc,
@@ -103,8 +111,8 @@ export default {
             }
 
             // eslint-disable-next-line require-jsdoc -- demo
-            function findLoc(astJson, locName) {
-                let locData = astJson.locations.find((l) =>
+            function findLoc(scopeJson, locName) {
+                let locData = scopeJson.locations.find((l) =>
                     locInPoint(l[locName], position),
                 )
                 let nextLocData
@@ -154,7 +162,7 @@ export default {
     },
 }
 
-class AstJsonContext {
+class ScopeJsonContext {
     constructor() {
         this.json = ""
         this.jsonPosition = { line: 1, column: 1 }
@@ -222,12 +230,123 @@ class AstJsonContext {
 }
 
 /**
- * Build AST JSON
+ * Build Scope JSON
  */
-function createAstJson(options, value) {
-    const ctx = new AstJsonContext()
-    processJsonValue(options, ctx, value)
+function createScopeJson(options, scopeManager) {
+    const ctx = new ScopeJsonContext()
+    processScope(options, ctx, scopeManager.globalScope)
     return ctx
+}
+
+/**
+ * @param {object} options
+ * @param {ScopeJsonContext} ctx
+ * @param {import('eslint-scope').Scope} scope
+ */
+function processScope(options, ctx, scope) {
+    ctx.appendIndent().appendText("{\n").indent()
+    ctx.appendIndent().appendText(`"type": "${scope.type}",\n`)
+    ctx.appendIndent().appendText(`"variables": [\n`).indent()
+    for (const variable of scope.variables) {
+        processVariable(options, ctx, variable)
+        if (scope.variables[scope.variables.length - 1] !== variable) {
+            ctx.appendText(",")
+        }
+        ctx.appendText("\n")
+    }
+    ctx.outdent().appendIndent().appendText(`],\n`)
+    ctx.appendIndent().appendText(`"references": [\n`).indent()
+    for (const reference of scope.references) {
+        processReference(options, ctx, reference)
+        if (scope.references[scope.references.length - 1] !== reference) {
+            ctx.appendText(",")
+        }
+        ctx.appendText("\n")
+    }
+    ctx.outdent().appendIndent().appendText(`],\n`)
+    ctx.appendIndent().appendText(`"childScopes": [\n`).indent()
+    for (const childScope of scope.childScopes) {
+        processScope(options, ctx, childScope)
+        if (scope.childScopes[scope.childScopes.length - 1] !== childScope) {
+            ctx.appendText(",")
+        }
+        ctx.appendText("\n")
+    }
+    ctx.outdent().appendIndent().appendText(`],\n`)
+    ctx.appendIndent().appendText(`"through": [\n`).indent()
+    for (const through of scope.through) {
+        processReference(options, ctx, through)
+        if (scope.through[scope.through.length - 1] !== through) {
+            ctx.appendText(",")
+        }
+        ctx.appendText("\n")
+    }
+    ctx.outdent().appendIndent().appendText(`]\n`)
+    ctx.outdent().appendIndent().appendText("}")
+}
+
+/**
+ * @param {object} options
+ * @param {ScopeJsonContext} ctx
+ * @param {import('eslint-scope').Variable} variable
+ */
+function processVariable(options, ctx, variable) {
+    ctx.appendIndent().appendText("{\n").indent()
+    ctx.appendIndent().appendText(`"name": "${variable.name}",\n`)
+    ctx.appendIndent().appendText(`"identifiers": [\n`).indent()
+    for (const identifier of variable.identifiers) {
+        ctx.appendIndent()
+        processJsonValue(options, ctx, identifier)
+        if (
+            variable.identifiers[variable.identifiers.length - 1] !== identifier
+        ) {
+            ctx.appendText(",")
+        }
+        ctx.appendText("\n")
+    }
+    ctx.outdent().appendIndent().appendText(`],\n`)
+    ctx.appendIndent().appendText(`"defs": [\n`).indent()
+    for (const def of variable.defs) {
+        ctx.appendIndent()
+        processJsonValue(options, ctx, def)
+        if (variable.defs[variable.defs.length - 1] !== def) {
+            ctx.appendText(",")
+        }
+        ctx.appendText("\n")
+    }
+    ctx.outdent().appendIndent().appendText(`],\n`)
+    ctx.appendIndent().appendText(`"references": [\n`).indent()
+    for (const reference of variable.references) {
+        processReference(options, ctx, reference)
+        if (variable.references[variable.references.length - 1] !== reference) {
+            ctx.appendText(",")
+        }
+        ctx.appendText("\n")
+    }
+    ctx.outdent().appendIndent().appendText(`]\n`)
+    ctx.outdent().appendIndent().appendText("}")
+}
+
+/**
+ * @param {object} options
+ * @param {ScopeJsonContext} ctx
+ * @param {import('eslint-scope').Reference} reference
+ */
+function processReference(options, ctx, reference) {
+    ctx.appendIndent().appendText("{\n").indent()
+    ctx.appendIndent().appendText(`"identifier": `)
+    processJsonValue(options, ctx, reference.identifier)
+    ctx.appendText(",\n")
+    ctx.appendIndent().appendText(`"from": `)
+    processJsonValue(options, ctx, reference.from.type)
+    ctx.appendText(",\n")
+    ctx.appendIndent().appendText(`"resolved": `)
+    processJsonValue(options, ctx, reference.resolved?.defs[0].name ?? null)
+    ctx.appendText(",\n")
+    ctx.appendIndent().appendText(`"init": `)
+    processJsonValue(options, ctx, reference.init ?? null)
+    ctx.appendText("\n")
+    ctx.outdent().appendIndent().appendText("}")
 }
 </script>
 
