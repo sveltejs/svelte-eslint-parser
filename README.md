@@ -1,6 +1,7 @@
 # svelte-eslint-parser
 
-[Svelte] parser for [ESLint]
+[Svelte] parser for [ESLint].  
+You can check it on [Online DEMO](https://ota-meshi.github.io/svelte-eslint-parser/playground).
 
 ::: ***WORKS IN PROGRESS*** :::
 
@@ -114,8 +115,8 @@ Example **.vscode/settings.json**:
 
 ## Usage for Custom Rules / Plugins
 
-- [AST.md](./docs/AST.md) is AST specification.
-- You can see the AST on the [Online DEMO](https://ota-meshi.github.io/svelte-eslint-parser/).
+- [AST.md](./docs/AST.md) is AST specification. You can check it on the [Online DEMO](https://ota-meshi.github.io/svelte-eslint-parser/).
+- The parser will generate its own ScopeManager. You can check it on the [Online DEMO](https://ota-meshi.github.io/svelte-eslint-parser/scope).
 
 ## :beers: Contributing
 
