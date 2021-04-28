@@ -26,7 +26,7 @@ export function parseScript(
         enterNode(node, parent) {
             ;(node as any).parent = parent
 
-            if (node.type === "LabeledStatement") {
+            if (node.type === "LabeledStatement" && node.label.name === "$") {
                 if (parent?.type === "Program") {
                     // Transform node type
                     node.type = "SvelteReactiveStatement" as any
