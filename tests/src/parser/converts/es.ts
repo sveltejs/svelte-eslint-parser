@@ -146,6 +146,9 @@ describe("tokens test", () => {
             "const a = -b.c",
             "c instanceof a",
             "a++;++a;a--;--a",
+            `o = {
+                c,
+            }`,
         ]
         for (const code of tests.reverse()) {
             it(code, () => {
