@@ -116,7 +116,7 @@ Example **.vscode/settings.json**:
 ## Usage for Custom Rules / Plugins
 
 - [AST.md](./docs/AST.md) is AST specification. You can check it on the [Online DEMO](https://ota-meshi.github.io/svelte-eslint-parser/).
-- The parser will generate its own ScopeManager. You can check it on the [Online DEMO](https://ota-meshi.github.io/svelte-eslint-parser/scope).
+- The parser will generate its own [ScopeManager](https://eslint.org/docs/developer-guide/scope-manager-interface). You can check it on the [Online DEMO](https://ota-meshi.github.io/svelte-eslint-parser/scope).
 
 ## :beers: Contributing
 
