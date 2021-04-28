@@ -4,6 +4,7 @@ import type { Scope } from "eslint-scope"
 import type ESTree from "estree"
 import type { Context } from "../../context"
 import { getKeys } from "../../traverse"
+import type { Nullable } from "../../utils/type-util"
 import { analyzeScope } from "../analyze-scope"
 
 /** Add operator token */
@@ -214,7 +215,7 @@ const EXTRACT_TOKENS0 = {
     FunctionExpression(
         node: ESTree.FunctionExpression,
         ctx: Context,
-        parent: ESTree.Node | null,
+        parent: Nullable<ESTree.Node>,
     ) {
         if (
             parent &&
@@ -232,7 +233,7 @@ const EXTRACT_TOKENS0 = {
     Identifier(
         node: ESTree.Identifier,
         ctx: Context,
-        parent: ESTree.Node | null,
+        parent: Nullable<ESTree.Node>,
     ) {
         if (parent?.type === "MetaProperty" && parent.meta === node) {
             ctx.addToken("Keyword", getWithLoc(node))
@@ -390,7 +391,7 @@ const EXTRACT_TOKENS0 = {
     TemplateElement(
         node: ESTree.TemplateElement,
         ctx: Context,
-        parent: ESTree.Node | null,
+        parent: Nullable<ESTree.Node>,
     ) {
         const literal: ESTree.TemplateLiteral = parent as never
 
@@ -459,7 +460,7 @@ const EXTRACT_TOKENS: {
     [key in ESTree.Node["type"]]: (
         node: any,
         ctx: Context,
-        parent: ESTree.Node | null,
+        parent: Nullable<ESTree.Node>,
     ) => void
 } = EXTRACT_TOKENS0
 
@@ -475,27 +476,27 @@ export function convertESNode<N extends ESTree.Node>(
     ctx: Context,
 ): N
 export function convertESNode<N extends ESTree.Node>(
-    node: N | null | undefined,
+    node: Nullable<N> | undefined,
     parent: any,
     ctx: Context,
-): N | null
+): Nullable<N>
 
 /** Convert for ES */
 export function convertESNode<N extends ESTree.Node>(
-    node: N | null | undefined,
+    node: Nullable<N> | undefined,
     parent: any,
     ctx: Context,
-): N | null {
+): Nullable<N> {
     return convertESNode0(node, parent, ctx)
 }
 
 /** Convert for ES */
 function convertESNode0<N extends ESTree.Node>(
-    node: N | null | undefined,
+    node: Nullable<N> | undefined,
     parent: any,
     ctx: Context,
     extracted = new Set<ESTree.Node>(),
-): N | null {
+): Nullable<N> {
     if (!node) {
         return null
     }
@@ -616,8 +617,8 @@ export function getWithLoc<N extends ESTree.Node>(
     node: N,
 ): N & { start: number; end: number }
 export function getWithLoc<N extends ESTree.Node>(
-    node: N | null | undefined,
-): (N & { start: number; end: number }) | null | undefined
+    node: Nullable<N> | undefined,
+): (N & { start: number; end: number }) | Nullable<undefined>
 /** Get node with location */
 export function getWithLoc(node: any): { start: number; end: number } {
     return node

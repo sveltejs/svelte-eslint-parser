@@ -3,6 +3,7 @@ import lodash from "lodash"
 import type ESTree from "estree"
 import type { ScopeManager } from "eslint-scope"
 import { TemplateScopeManager } from "./template-scope-manager"
+import type { Nullable } from "../utils/type-util"
 
 export class Context {
     public readonly code: string
@@ -25,7 +26,7 @@ export class Context {
 
     private readonly locsMap = new Map<number, Position>()
 
-    private _templateScopeManager: TemplateScopeManager | null = null
+    private _templateScopeManager: Nullable<TemplateScopeManager> = null
 
     public constructor(code: string, parserOptions: any) {
         this.code = code
@@ -87,9 +88,11 @@ export class Context {
      * @param node The node.
      */
     public getConvertLocation(
-        node: { start: number; end: number } | ESTree.Node,
+        node:
+            | { start: number; end: number }
+            | (ESTree.Node & { start: number; end: number }),
     ): Locations {
-        const { start, end } = node as any
+        const { start, end } = node
 
         return {
             range: [start, end],

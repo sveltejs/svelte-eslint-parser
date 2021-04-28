@@ -4,6 +4,7 @@ import { Variable, Reference } from "eslint-scope"
 import eslintScope from "eslint-scope"
 import { getFallbackKeys } from "../traverse"
 import type { SvelteReactiveStatement, SvelteScriptElement } from "../ast"
+import type { Nullable } from "../utils/type-util"
 /**
  * Analyze scope
  */
@@ -57,6 +58,11 @@ export function analyzeReactiveScope(scopeManager: ScopeManager): void {
                 }
             }
         }
+    }
+
+    /** Get parent node */
+    function getParent(node: ESTree.Node): Nullable<ESTree.Node> {
+        return (node as any).parent
     }
 
     /** Transform ref to ComputedVariable */
@@ -193,7 +199,7 @@ export function analyzePropsScope(
 function removeReferenceFromThrough(reference: Reference, baseScope: Scope) {
     const variable = reference.resolved!
     const name = reference.identifier.name
-    let scope: Scope | null = baseScope
+    let scope: Nullable<Scope> = baseScope
     while (scope) {
         scope.through = scope.through.filter((ref) => {
             if (reference === ref) {

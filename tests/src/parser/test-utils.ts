@@ -2,6 +2,7 @@ import path from "path"
 import fs from "fs"
 import type { Linter } from "eslint"
 import { LinesAndColumns } from "../../../src/context"
+import type { Nullable } from "../../../src/utils/type-util"
 
 const AST_FIXTURE_ROOT = path.resolve(__dirname, "../../fixtures/parser/ast")
 
@@ -56,7 +57,7 @@ export function getMessageData(
     code: string,
     message: Linter.LintMessage,
 ): {
-    ruleId: string | null
+    ruleId: Nullable<string>
     code: string
     message?: string
     line: number

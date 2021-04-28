@@ -1,4 +1,5 @@
 import type ESTree from "estree"
+import type { Nullable } from "./utils/type-util"
 export type Range = [number, number]
 
 export interface SourceLocation {
@@ -213,7 +214,7 @@ export interface SvelteIfBlock extends BaseNode {
     elseif: boolean
     expression: ESTree.Expression
     children: Child[]
-    else: SvelteElseBlock | null
+    else: Nullable<SvelteElseBlock>
     parent:
         | SvelteProgram
         | SvelteElement
@@ -234,10 +235,10 @@ export interface SvelteEachBlock extends BaseNode {
     type: "SvelteEachBlock"
     expression: ESTree.Expression
     context: ESTree.Pattern
-    index: ESTree.Identifier | null
-    key: ESTree.Expression | null
+    index: Nullable<ESTree.Identifier>
+    key: Nullable<ESTree.Expression>
     children: Child[]
-    else: SvelteElseBlock | null
+    else: Nullable<SvelteElseBlock>
     parent:
         | SvelteProgram
         | SvelteElement
@@ -252,9 +253,9 @@ export interface SvelteEachBlock extends BaseNode {
 export interface SvelteAwaitBlock extends BaseNode {
     type: "SvelteAwaitBlock"
     expression: ESTree.Expression
-    pending: SvelteAwaitPendingBlock | null
-    then: SvelteAwaitThenBlock | null
-    catch: SvelteAwaitCatchBlock | null
+    pending: Nullable<SvelteAwaitPendingBlock>
+    then: Nullable<SvelteAwaitThenBlock>
+    catch: Nullable<SvelteAwaitCatchBlock>
     parent:
         | SvelteProgram
         | SvelteElement

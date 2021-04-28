@@ -18,6 +18,7 @@ import {
 } from "./es"
 import { convertChildren } from "./element"
 import { indexOf, lastIndexOf } from "./common"
+import type { Nullable } from "../../utils/type-util"
 
 /** Convert for IfBlock */
 export function convertIfBlock(
@@ -69,7 +70,7 @@ export function convertIfBlock(
     }
     ifBlock.else = elseBlock
 
-    let elseIfBlock: SvelteIfBlock | null = null
+    let elseIfBlock: Nullable<SvelteIfBlock> = null
     if (node.else.children.length === 1) {
         const c = node.else.children[0]
         if (c.type === "IfBlock" && c.elseif) {

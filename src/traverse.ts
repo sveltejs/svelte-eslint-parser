@@ -2,6 +2,7 @@ import type { VisitorKeys } from "eslint-visitor-keys"
 import { KEYS } from "./visitor-keys"
 import type ESTree from "estree"
 import type { SvelteNode } from "./ast"
+import type { Nullable } from "./utils/type-util"
 
 /**
  * Check that the given key should be traversed or not.
@@ -82,7 +83,7 @@ function isNode(x: any): x is SvelteNode {
  */
 function traverse<N extends SvelteNode | ESTree.Node>(
     node: N,
-    parent: N | null,
+    parent: Nullable<N>,
     visitor: Visitor<N>,
 ): void {
     visitor.enterNode(node, parent)
@@ -103,8 +104,8 @@ function traverse<N extends SvelteNode | ESTree.Node>(
 
 export interface Visitor<N> {
     visitorKeys?: VisitorKeys
-    enterNode(node: N, parent: N | null): void
-    leaveNode(node: N, parent: N | null): void
+    enterNode(node: N, parent: Nullable<N>): void
+    leaveNode(node: N, parent: Nullable<N>): void
 }
 
 export function traverseNodes(

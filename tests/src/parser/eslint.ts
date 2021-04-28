@@ -1,6 +1,7 @@
 import { Linter } from "eslint"
 import assert from "assert"
 import * as parser from "../../../src/index"
+import type { Nullable } from "../../../src/utils/type-util"
 
 function createLinter() {
     const linter = new Linter()
@@ -45,7 +46,7 @@ describe("eslint custom parser", () => {
     describe("should work with eslint core rule.", () => {
         const tests: {
             code: string
-            output: string | null
+            output: Nullable<string>
             messages: {
                 ruleId: string
                 line: number

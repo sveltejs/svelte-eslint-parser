@@ -1,6 +1,7 @@
 import Module from "module"
 import path from "path"
 import type { ESLintExtendedProgram, ESLintProgram } from "."
+import type { Nullable } from "../utils/type-util"
 
 /**
  * The interface of a result of ESLint custom parser.
@@ -31,7 +32,7 @@ const createRequire: (filename: string) => (modName: string) => any =
         return mod.exports
     })
 
-let espreeCache: ESLintCustomParser | null = null
+let espreeCache: Nullable<ESLintCustomParser> = null
 
 /** Checks if given path is linter path */
 function isLinterPath(p: string): boolean {
