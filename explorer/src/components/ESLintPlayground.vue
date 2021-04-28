@@ -1,40 +1,44 @@
 <template>
-    <div class="main-content">
-        <RulesSettings
-            ref="settings"
-            v-model:rules="rules"
-            class="rules-settings"
-        />
-        <div class="editor-content">
-            <ESLintEditor
-                v-model="code"
-                :rules="rules"
-                class="eslint-playground"
-                @update-messages="onUpdateMessages"
+    <div class="playground-root">
+        <div class="playground-tools"></div>
+        <div class="playground-content">
+            <RulesSettings
+                ref="settings"
+                v-model:rules="rules"
+                class="rules-settings"
             />
-            <div class="messages">
-                <ol>
-                    <li
-                        v-for="(msg, i) in messages"
-                        :key="
-                            msg.line +
-                            ':' +
-                            msg.column +
-                            ':' +
-                            msg.ruleId +
-                            '@' +
-                            i
-                        "
-                        class="message"
-                    >
-                        [{{ msg.line }}:{{ msg.column }}]: {{ msg.message }} (<a
-                            :href="getURL(msg.ruleId)"
-                            target="_blank"
+            <div class="editor-content">
+                <ESLintEditor
+                    v-model="code"
+                    :rules="rules"
+                    class="eslint-playground"
+                    @update-messages="onUpdateMessages"
+                />
+                <div class="messages">
+                    <ol>
+                        <li
+                            v-for="(msg, i) in messages"
+                            :key="
+                                msg.line +
+                                ':' +
+                                msg.column +
+                                ':' +
+                                msg.ruleId +
+                                '@' +
+                                i
+                            "
+                            class="message"
                         >
-                            {{ msg.ruleId }} </a
-                        >)
-                    </li>
-                </ol>
+                            [{{ msg.line }}:{{ msg.column }}]:
+                            {{ msg.message }} (<a
+                                :href="getURL(msg.ruleId)"
+                                target="_blank"
+                            >
+                                {{ msg.ruleId }} </a
+                            >)
+                        </li>
+                    </ol>
+                </div>
             </div>
         </div>
     </div>
@@ -144,8 +148,13 @@ function equalsRules(a, b) {
 }
 </script>
 <style scoped>
-.main-content {
-    margin-top: 16px;
+.playground-root {
+    height: 100%;
+}
+.playground-tools {
+    height: 24px;
+}
+.playground-content {
     display: flex;
     flex-wrap: wrap;
     height: calc(100% - 16px);
@@ -154,14 +163,14 @@ function equalsRules(a, b) {
     color: #f8c555;
 }
 
-.main-content > .rules-settings {
+.playground-content > .rules-settings {
     height: 100%;
     overflow: auto;
     width: 25%;
     box-sizing: border-box;
 }
 
-.main-content > .editor-content {
+.playground-content > .editor-content {
     height: 100%;
     flex: 1;
     display: flex;
@@ -170,14 +179,14 @@ function equalsRules(a, b) {
     min-width: 1px;
 }
 
-.main-content > .editor-content > .eslint-playground {
+.playground-content > .editor-content > .eslint-playground {
     height: 100%;
     width: 100%;
     box-sizing: border-box;
     padding: 3px;
 }
 
-.main-content > .editor-content > .messages {
+.playground-content > .editor-content > .messages {
     height: 30%;
     width: 100%;
     overflow: auto;

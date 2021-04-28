@@ -50,5 +50,5 @@ for (const [ruleId, rule] of linter.getRules()) {
 }
 /** get url */
 export function getURL(ruleId) {
-    return linter.getRules().get(ruleId).meta.docs.url
+    return linter.getRules().get(ruleId)?.meta.docs.url
 }

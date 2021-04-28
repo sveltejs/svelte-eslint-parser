@@ -96,7 +96,7 @@ async function messageToMarker(message) {
     const endLineNumber = ensurePositiveInt(message.endLine, startLineNumber)
     const endColumn = ensurePositiveInt(message.endColumn, startColumn + 1)
     const code = docUrl
-        ? { value: message.ruleId, link: docUrl }
+        ? { value: message.ruleId, link: docUrl, target: docUrl }
         : message.ruleId || "FATAL"
     return {
         code,

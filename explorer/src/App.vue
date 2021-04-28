@@ -48,7 +48,7 @@ export default {
 }
 .router-link-exact-active {
     margin-bottom: -2px;
-    border-bottom: 2px solid #46bd87;
+    border-bottom: 2px solid #ff3e00;
 }
 .github-link {
     display: flex;
@@ -56,6 +56,11 @@ export default {
 }
 .main {
     position: relative;
-    height: calc(100vh - 32px - 16px);
+    height: calc(100vh - 64px);
+}
+
+a,
+* ::v-global(a) {
+    color: #40b3ff;
 }
 </style>

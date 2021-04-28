@@ -196,7 +196,11 @@ export default {
             const monaco = await monacoEditorLoad
             const model = editor.getModel()
             const id = editor.getId()
-            monaco.editor.setModelMarkers(model, id, markers)
+            monaco.editor.setModelMarkers(
+                model,
+                id,
+                JSON.parse(JSON.stringify(markers)),
+            )
         },
     },
 }
