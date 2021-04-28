@@ -56,7 +56,7 @@ const DEFAULT_CODE =
     let b = 2;
     // let c = 2;
 <` +
-    `script>
+    `/script>
 
 <input type="number" bind:value={a}>
 <input type="number" bind:value={b}>
