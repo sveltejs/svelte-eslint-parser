@@ -21,13 +21,13 @@ You can check it on [Online DEMO](https://ota-meshi.github.io/svelte-eslint-pars
 
 [Svelte] has the official ESLint plugin the [eslint-plugin-svelte3]. The [eslint-plugin-svelte3] works well enough to check scripts. However, it does not handle the AST of the template, which makes it very difficult for third parties to create their own the [ESLint] rules for the [Svelte].
 
-The [`svelte-eslint-parser`] aims to make it easy to create your own rules for the [Svelte] by allowing the template AST to be used in the rules.
+The [svelte-eslint-parser] aims to make it easy to create your own rules for the [Svelte] by allowing the template AST to be used in the rules.
 
 ## ❗ Attention
 
-The [`svelte-eslint-parser`] can not be used with the [eslint-plugin-svelte3].
+The [svelte-eslint-parser] can not be used with the [eslint-plugin-svelte3].
 
-[`svelte-eslint-parser`]: https://www.npmjs.com/package/svelte-eslint-parser
+[svelte-eslint-parser]: https://www.npmjs.com/package/svelte-eslint-parser
 
 ## 💿 Installation
 
