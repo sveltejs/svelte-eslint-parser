@@ -494,23 +494,29 @@ function convertESNode0<N extends ESTree.Node>(
     node: N | null | undefined,
     parent: any,
     ctx: Context,
-    extracted = new Set<ESTree.Node>(),
+    extracted = new Set<ESTree.Node | string>(),
 ): N | null {
     if (!node) {
         return null
     }
     if (!extracted.has(node)) {
-        EXTRACT_TOKENS[node.type]?.(node, ctx, parent)
-        for (const comment of [
-            ...(node.leadingComments || []),
-            ...((node as any).innerComments || []),
-            ...(node.trailingComments || []),
-        ]) {
-            ctx.addComment({
-                type: comment.type,
-                value: comment.value,
-                ...ctx.getConvertLocation(getWithLoc(comment)),
-            })
+        const key = `${node.type}@[${getWithLoc(node).start},${
+            getWithLoc(node).end
+        }]`
+        if (!extracted.has(key)) {
+            EXTRACT_TOKENS[node.type]?.(node, ctx, parent)
+            for (const comment of [
+                ...(node.leadingComments || []),
+                ...((node as any).innerComments || []),
+                ...(node.trailingComments || []),
+            ]) {
+                ctx.addComment({
+                    type: comment.type,
+                    value: comment.value,
+                    ...ctx.getConvertLocation(getWithLoc(comment)),
+                })
+            }
+            extracted.add(key)
         }
         extracted.add(node)
     }
