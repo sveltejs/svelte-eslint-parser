@@ -37,6 +37,7 @@ const svelteKeys: SvelteKeysType = {
     SvelteDirective: ["expression"],
     SvelteReactiveStatement: ["label", "body"],
     SvelteText: [],
+    SvelteHTMLComment: [],
 }
 
 export const KEYS: SourceCode.VisitorKeys = unionWith(

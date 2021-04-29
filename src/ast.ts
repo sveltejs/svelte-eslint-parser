@@ -31,6 +31,7 @@ export interface Token extends BaseNode {
         | "HTMLText"
         | "HTMLIdentifier"
         | "MustacheKeyword"
+        | "HTMLComment"
     value: string
 }
 
@@ -66,6 +67,7 @@ export type SvelteNode =
     | SvelteAttribute
     | SvelteSpreadAttribute
     | SvelteDirective
+    | SvelteHTMLComment
     | SvelteReactiveStatement
 
 export interface SvelteProgram extends BaseNode {
@@ -93,7 +95,7 @@ export interface SvelteStyleElement extends BaseSvelteElement {
     children: [SvelteText]
     parent: SvelteProgram
 }
-export interface SvelteHtmlElement extends BaseSvelteElement {
+export interface SvelteHTMLElement extends BaseSvelteElement {
     type: "SvelteElement"
     kind: "html"
     name: SvelteName
@@ -150,7 +152,7 @@ export interface SvelteSpecialElement extends BaseSvelteElement {
         | SvelteKeyBlock
 }
 export type SvelteElement =
-    | SvelteHtmlElement
+    | SvelteHTMLElement
     | SvelteComponentElement
     | SvelteSpecialElement
 
@@ -169,6 +171,7 @@ type Child =
     | SvelteEachBlock
     | SvelteAwaitBlock
     | SvelteKeyBlock
+    | SvelteHTMLComment
 
 export interface SvelteText extends BaseNode {
     type: "SvelteText"
@@ -287,6 +290,20 @@ export interface SvelteKeyBlock extends BaseNode {
     type: "SvelteKeyBlock"
     expression: ESTree.Expression
     children: Child[]
+    parent:
+        | SvelteProgram
+        | SvelteElement
+        | SvelteIfBlock
+        | SvelteElseBlock
+        | SvelteEachBlock
+        | SvelteAwaitPendingBlock
+        | SvelteAwaitThenBlock
+        | SvelteAwaitCatchBlock
+        | SvelteKeyBlock
+}
+export interface SvelteHTMLComment extends BaseNode {
+    type: "SvelteHTMLComment"
+    value: string
     parent:
         | SvelteProgram
         | SvelteElement
