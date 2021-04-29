@@ -2,7 +2,7 @@ import type {
     SvelteActionDirective,
     SvelteAnimationDirective,
     SvelteAttribute,
-    SvelteAttributeShorthand,
+    SvelteShorthandAttribute,
     SvelteBindingDirective,
     SvelteClassDirective,
     SvelteDirective,
@@ -33,7 +33,12 @@ export function* convertAttributes(
     attributes: SvAST.AttributeOrDirective[],
     parent: SvelteElement | SvelteScriptElement | SvelteStyleElement,
     ctx: Context,
-): IterableIterator<SvelteAttribute | SvelteSpreadAttribute | SvelteDirective> {
+): IterableIterator<
+    | SvelteAttribute
+    | SvelteShorthandAttribute
+    | SvelteSpreadAttribute
+    | SvelteDirective
+> {
     for (const attr of attributes) {
         if (attr.type === "Attribute") {
             yield convertAttribute(attr, parent, ctx)
@@ -87,10 +92,9 @@ function convertAttribute(
     node: SvAST.Attribute,
     parent: SvelteAttribute["parent"],
     ctx: Context,
-): SvelteAttribute {
+): SvelteAttribute | SvelteShorthandAttribute {
     const attribute: SvelteAttribute = {
         type: "SvelteAttribute",
-        shorthand: false,
         boolean: false,
         key: null as any,
         value: [],
@@ -100,8 +104,9 @@ function convertAttribute(
     const keyStart = ctx.code.indexOf(node.name, node.start)
     const keyRange = { start: keyStart, end: keyStart + node.name.length }
     attribute.key = {
-        type: "Identifier",
+        type: "SvelteName",
         name: node.name,
+        parent: attribute,
         ...ctx.getConvertLocation(keyRange),
     }
     ctx.addToken("HTMLIdentifier", keyRange)
@@ -112,12 +117,20 @@ function convertAttribute(
     }
     for (const v of node.value) {
         if (v.type === "AttributeShorthand") {
-            const sAttr: SvelteAttributeShorthand = {
-                ...attribute,
-                shorthand: true,
-                value: [attribute.key],
+            const key: ESTree.Identifier = {
+                ...attribute.key,
+                type: "Identifier",
             }
-            analyzeExpressionScope(attribute.key, ctx)
+            const sAttr: SvelteShorthandAttribute = {
+                type: "SvelteShorthandAttribute",
+                key,
+                value: key,
+                parent,
+                loc: attribute.loc,
+                range: attribute.range,
+            }
+            ;(key as any).parent = sAttr
+            analyzeExpressionScope(sAttr.key, ctx)
             return sAttr
         }
         if (v.type === "Text") {

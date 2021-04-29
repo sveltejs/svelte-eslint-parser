@@ -24,10 +24,9 @@
       "attributes": [
         {
           "type": "SvelteAttribute",
-          "shorthand": false,
           "boolean": false,
           "key": {
-            "type": "Identifier",
+            "type": "SvelteName",
             "name": "context",
             "range": [
               8,
@@ -2647,10 +2646,9 @@
             },
             {
               "type": "SvelteAttribute",
-              "shorthand": false,
               "boolean": true,
               "key": {
-                "type": "Identifier",
+                "type": "SvelteName",
                 "name": "controls",
                 "range": [
                   881,
@@ -2684,9 +2682,7 @@
               }
             },
             {
-              "type": "SvelteAttribute",
-              "shorthand": true,
-              "boolean": false,
+              "type": "SvelteShorthandAttribute",
               "key": {
                 "type": "Identifier",
                 "name": "src",
@@ -2705,30 +2701,24 @@
                   }
                 }
               },
-              "value": [
-                {
-                  "type": "Identifier",
-                  "name": "src",
-                  "range": [
-                    893,
-                    896
-                  ],
-                  "loc": {
-                    "start": {
-                      "line": 50,
-                      "column": 3
-                    },
-                    "end": {
-                      "line": 50,
-                      "column": 6
-                    }
+              "value": {
+                "type": "Identifier",
+                "name": "src",
+                "range": [
+                  893,
+                  896
+                ],
+                "loc": {
+                  "start": {
+                    "line": 50,
+                    "column": 3
+                  },
+                  "end": {
+                    "line": 50,
+                    "column": 6
                   }
                 }
-              ],
-              "range": [
-                892,
-                897
-              ],
+              },
               "loc": {
                 "start": {
                   "line": 50,
@@ -2738,7 +2728,11 @@
                   "line": 50,
                   "column": 7
                 }
-              }
+              },
+              "range": [
+                892,
+                897
+              ]
             }
           ],
           "children": [],

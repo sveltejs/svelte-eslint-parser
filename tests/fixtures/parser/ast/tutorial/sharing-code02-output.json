@@ -24,10 +24,9 @@
       "attributes": [
         {
           "type": "SvelteAttribute",
-          "shorthand": false,
           "boolean": false,
           "key": {
-            "type": "Identifier",
+            "type": "SvelteName",
             "name": "context",
             "range": [
               8,
@@ -1730,10 +1729,9 @@
             },
             {
               "type": "SvelteAttribute",
-              "shorthand": false,
               "boolean": true,
               "key": {
-                "type": "Identifier",
+                "type": "SvelteName",
                 "name": "controls",
                 "range": [
                   645,
@@ -1767,9 +1765,7 @@
               }
             },
             {
-              "type": "SvelteAttribute",
-              "shorthand": true,
-              "boolean": false,
+              "type": "SvelteShorthandAttribute",
               "key": {
                 "type": "Identifier",
                 "name": "src",
@@ -1788,30 +1784,24 @@
                   }
                 }
               },
-              "value": [
-                {
-                  "type": "Identifier",
-                  "name": "src",
-                  "range": [
-                    657,
-                    660
-                  ],
-                  "loc": {
-                    "start": {
-                      "line": 36,
-                      "column": 3
-                    },
-                    "end": {
-                      "line": 36,
-                      "column": 6
-                    }
+              "value": {
+                "type": "Identifier",
+                "name": "src",
+                "range": [
+                  657,
+                  660
+                ],
+                "loc": {
+                  "start": {
+                    "line": 36,
+                    "column": 3
+                  },
+                  "end": {
+                    "line": 36,
+                    "column": 6
                   }
                 }
-              ],
-              "range": [
-                656,
-                661
-              ],
+              },
               "loc": {
                 "start": {
                   "line": 36,
@@ -1821,7 +1811,11 @@
                   "line": 36,
                   "column": 7
                 }
-              }
+              },
+              "range": [
+                656,
+                661
+              ]
             }
           ],
           "children": [],
