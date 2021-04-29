@@ -4,6 +4,7 @@ import type { Context } from "../context"
 import { convertSvelteRoot } from "./converts/index"
 import { sort } from "./sort"
 import type { SvelteProgram } from "../ast"
+import { ParseError } from ".."
 
 /**
  * Parse for template
@@ -16,14 +17,23 @@ export function parseTemplate(
     ast: SvelteProgram
     svelteAst: SvAST.Ast
 } {
-    const svelteAst = parse(code, {
-        filename: parserOptions.filePath,
-    }) as SvAST.Ast
-    const ast = convertSvelteRoot(svelteAst, ctx)
-    sort(ast.body)
+    try {
+        const svelteAst = parse(code, {
+            filename: parserOptions.filePath,
+        }) as SvAST.Ast
+        const ast = convertSvelteRoot(svelteAst, ctx)
+        sort(ast.body)
 
-    return {
-        ast,
-        svelteAst,
+        return {
+            ast,
+            svelteAst,
+        }
+    } catch (e: any) {
+        if (typeof e.pos === "number") {
+            const err = new ParseError(e.message, e.pos, ctx)
+            ;(err as any).svelteCompilerError = e
+            throw err
+        }
+        throw e
     }
 }
