@@ -85,9 +85,7 @@ function checkTokens(ast: SvelteProgram, input: string) {
     )
 
     function getText(token: Token | Comment) {
-        return token.type === "Block" && (token as any).html
-            ? `<!--${token.value}-->`
-            : token.type === "Block"
+        return token.type === "Block"
             ? `/*${token.value}*/`
             : token.type === "Line"
             ? `//${token.value}`

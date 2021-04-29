@@ -1,5 +1,4 @@
 import type {
-    Comment,
     SvelteAwaitBlock,
     SvelteAwaitCatchBlock,
     SvelteAwaitPendingBlock,
@@ -9,7 +8,8 @@ import type {
     SvelteEachBlock,
     SvelteElement,
     SvelteElseBlock,
-    SvelteHtmlElement,
+    SvelteHTMLComment,
+    SvelteHTMLElement,
     SvelteIfBlock,
     SvelteKeyBlock,
     SvelteMustacheTag,
@@ -66,16 +66,11 @@ export function* convertChildren(
     | SvelteEachBlock
     | SvelteAwaitBlock
     | SvelteKeyBlock
+    | SvelteHTMLComment
 > {
     for (const child of fragment.children) {
         if (child.type === "Comment") {
-            const comment: Comment = {
-                type: "Block",
-                value: child.data,
-                ...ctx.getConvertLocation(child),
-            }
-            ;(comment as any).html = true
-            ctx.addComment(comment)
+            yield convertComment(child, parent, ctx)
             continue
         }
         if (child.type === "Text") {
@@ -83,7 +78,7 @@ export function* convertChildren(
             continue
         }
         if (child.type === "Element") {
-            yield convertHtmlElement(child, parent, ctx)
+            yield convertHTMLElement(child, parent, ctx)
             continue
         }
         if (child.type === "InlineComponent") {
@@ -155,13 +150,31 @@ export function* convertChildren(
     }
 }
 
-/** Convert for HtmlElement */
-function convertHtmlElement(
-    node: SvAST.Element | SvAST.Slot,
-    parent: SvelteHtmlElement["parent"],
+/** Convert for HTML Comment */
+function convertComment(
+    node: SvAST.Comment,
+    parent: SvelteHTMLComment["parent"],
     ctx: Context,
-): SvelteHtmlElement {
-    const element: SvelteHtmlElement = {
+): SvelteHTMLComment {
+    const comment: SvelteHTMLComment = {
+        type: "SvelteHTMLComment",
+        value: node.data,
+        parent,
+        ...ctx.getConvertLocation(node),
+    }
+
+    ctx.addToken("HTMLComment", node)
+
+    return comment
+}
+
+/** Convert for HTMLElement */
+function convertHTMLElement(
+    node: SvAST.Element | SvAST.Slot,
+    parent: SvelteHTMLElement["parent"],
+    ctx: Context,
+): SvelteHTMLElement {
+    const element: SvelteHTMLElement = {
         type: "SvelteElement",
         kind: "html",
         name: null as any,
@@ -300,11 +313,11 @@ function convertComponentElement(
 /** Convert for Slot */
 function convertSlotElement(
     node: SvAST.Slot,
-    parent: SvelteHtmlElement["parent"],
+    parent: SvelteHTMLElement["parent"],
     ctx: Context,
-): SvelteHtmlElement {
-    // Slot translates to SvelteHtmlElement.
-    return convertHtmlElement(node, parent, ctx)
+): SvelteHTMLElement {
+    // Slot translates to SvelteHTMLElement.
+    return convertHTMLElement(node, parent, ctx)
 }
 
 /** Convert for window element. e.g. <svelte:window> */

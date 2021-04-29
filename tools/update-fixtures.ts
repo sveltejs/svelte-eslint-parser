@@ -14,6 +14,7 @@ const RULES = [
     "no-setter-return",
     "no-import-assign",
     "prefer-const",
+    "spaced-comment",
 ]
 
 /**
