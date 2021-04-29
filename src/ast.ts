@@ -65,11 +65,13 @@ export type SvelteNode =
     | SvelteAwaitCatchBlock
     | SvelteKeyBlock
     | SvelteAttribute
+    | SvelteShorthandAttribute
     | SvelteSpreadAttribute
     | SvelteDirective
     | SvelteHTMLComment
     | SvelteReactiveStatement
 
+/** Node of Svelte program root */
 export interface SvelteProgram extends BaseNode {
     type: "Program"
     body: (SvelteScriptElement | SvelteStyleElement | Child)[]
@@ -79,27 +81,50 @@ export interface SvelteProgram extends BaseNode {
     parent: null
 }
 
+/** Node of elements like HTML element. */
+export type SvelteElement =
+    | SvelteHTMLElement
+    | SvelteComponentElement
+    | SvelteSpecialElement
 type BaseSvelteElement = BaseNode
 
+/** Node of `<script>` element. */
 export interface SvelteScriptElement extends BaseSvelteElement {
     type: "SvelteScriptElement"
     name: SvelteName
-    attributes: (SvelteAttribute | SvelteSpreadAttribute | SvelteDirective)[]
+    attributes: (
+        | SvelteAttribute
+        | SvelteShorthandAttribute
+        | SvelteSpreadAttribute
+        | SvelteDirective
+    )[]
     body: ESTree.Program["body"]
     parent: SvelteProgram
 }
+/** Node of `<style>` element. */
 export interface SvelteStyleElement extends BaseSvelteElement {
     type: "SvelteStyleElement"
     name: SvelteName
-    attributes: (SvelteAttribute | SvelteSpreadAttribute | SvelteDirective)[]
+    attributes: (
+        | SvelteAttribute
+        | SvelteShorthandAttribute
+        | SvelteSpreadAttribute
+        | SvelteDirective
+    )[]
     children: [SvelteText]
     parent: SvelteProgram
 }
+/** Node of HTML element. */
 export interface SvelteHTMLElement extends BaseSvelteElement {
     type: "SvelteElement"
     kind: "html"
     name: SvelteName
-    attributes: (SvelteAttribute | SvelteSpreadAttribute | SvelteDirective)[]
+    attributes: (
+        | SvelteAttribute
+        | SvelteShorthandAttribute
+        | SvelteSpreadAttribute
+        | SvelteDirective
+    )[]
     children: Child[]
     parent:
         | SvelteProgram
@@ -112,11 +137,17 @@ export interface SvelteHTMLElement extends BaseSvelteElement {
         | SvelteAwaitCatchBlock
         | SvelteKeyBlock
 }
+/** Node of Svelte component element. */
 export interface SvelteComponentElement extends BaseSvelteElement {
     type: "SvelteElement"
     kind: "component"
     name: ESTree.Identifier
-    attributes: (SvelteAttribute | SvelteSpreadAttribute | SvelteDirective)[]
+    attributes: (
+        | SvelteAttribute
+        | SvelteShorthandAttribute
+        | SvelteSpreadAttribute
+        | SvelteDirective
+    )[]
     children: Child[]
     parent:
         | SvelteProgram
@@ -129,12 +160,14 @@ export interface SvelteComponentElement extends BaseSvelteElement {
         | SvelteAwaitCatchBlock
         | SvelteKeyBlock
 }
+/** Node of Svelte special component element. e.g. `<svelte:window>` */
 export interface SvelteSpecialElement extends BaseSvelteElement {
     type: "SvelteElement"
     kind: "special"
     name: SvelteName
     attributes: (
         | SvelteAttribute
+        | SvelteShorthandAttribute
         | SvelteSpreadAttribute
         | SvelteDirective
         | SvelteSpecialDirective
@@ -151,15 +184,16 @@ export interface SvelteSpecialElement extends BaseSvelteElement {
         | SvelteAwaitCatchBlock
         | SvelteKeyBlock
 }
-export type SvelteElement =
-    | SvelteHTMLElement
-    | SvelteComponentElement
-    | SvelteSpecialElement
 
+/** Node of names. It is used for element names other than components and normal attribute names. */
 export interface SvelteName extends BaseNode {
     type: "SvelteName"
     name: string
-    parent: SvelteElement | SvelteScriptElement | SvelteStyleElement
+    parent:
+        | SvelteElement
+        | SvelteScriptElement
+        | SvelteStyleElement
+        | SvelteAttribute
 }
 
 type Child =
@@ -173,6 +207,7 @@ type Child =
     | SvelteKeyBlock
     | SvelteHTMLComment
 
+/** Node of text line HTML text. */
 export interface SvelteText extends BaseNode {
     type: "SvelteText"
     value: string
@@ -202,15 +237,18 @@ interface BaseSvelteMustacheTag extends BaseNode {
         | SvelteKeyBlock
         | SvelteAttribute
 }
+/** Node of mustache tag. e.g. `{...}`, `{@html ...}` */
 export interface SvelteMustacheTag extends BaseSvelteMustacheTag {
     type: "SvelteMustacheTag"
     kind: "text" | "raw"
     expression: ESTree.Expression
 }
+/** Node of debug mustache tag. e.g. `{@debug}` */
 export interface SvelteDebugTag extends BaseSvelteMustacheTag {
     type: "SvelteDebugTag"
     identifiers: ESTree.Identifier[]
 }
+/** Node of if block. e.g. `{#if}` */
 export interface SvelteIfBlock extends BaseNode {
     type: "SvelteIfBlock"
     elseif: boolean
@@ -228,11 +266,13 @@ export interface SvelteIfBlock extends BaseNode {
         | SvelteAwaitCatchBlock
         | SvelteKeyBlock
 }
+/** Node of else block. e.g. `{:else}` */
 export interface SvelteElseBlock extends BaseNode {
     type: "SvelteElseBlock"
     children: Child[]
     parent: SvelteIfBlock | SvelteEachBlock
 }
+/** Node of each block. e.g. `{#each}` */
 export interface SvelteEachBlock extends BaseNode {
     type: "SvelteEachBlock"
     expression: ESTree.Expression
@@ -252,6 +292,7 @@ export interface SvelteEachBlock extends BaseNode {
         | SvelteAwaitCatchBlock
         | SvelteKeyBlock
 }
+/** Node of await block. e.g. `{#await}` */
 export interface SvelteAwaitBlock extends BaseNode {
     type: "SvelteAwaitBlock"
     expression: ESTree.Expression
@@ -269,23 +310,27 @@ export interface SvelteAwaitBlock extends BaseNode {
         | SvelteAwaitCatchBlock
         | SvelteKeyBlock
 }
+/** Node of await pending block. e.g. `{#await expr} ... {:then}` */
 export interface SvelteAwaitPendingBlock extends BaseNode {
     type: "SvelteAwaitPendingBlock"
     children: Child[]
     parent: SvelteAwaitBlock
 }
+/** Node of await then block. e.g. `{:then}` */
 export interface SvelteAwaitThenBlock extends BaseNode {
     type: "SvelteAwaitThenBlock"
     value: ESTree.Pattern
     children: Child[]
     parent: SvelteAwaitBlock
 }
+/** Node of await catch block. e.g. `{:catch}` */
 export interface SvelteAwaitCatchBlock extends BaseNode {
     type: "SvelteAwaitCatchBlock"
     error: ESTree.Pattern
     children: Child[]
     parent: SvelteAwaitBlock
 }
+/** Node of key block. e.g. `{#key}` */
 export interface SvelteKeyBlock extends BaseNode {
     type: "SvelteKeyBlock"
     expression: ESTree.Expression
@@ -301,6 +346,7 @@ export interface SvelteKeyBlock extends BaseNode {
         | SvelteAwaitCatchBlock
         | SvelteKeyBlock
 }
+/** Node of HTML comment. */
 export interface SvelteHTMLComment extends BaseNode {
     type: "SvelteHTMLComment"
     value: string
@@ -315,32 +361,38 @@ export interface SvelteHTMLComment extends BaseNode {
         | SvelteAwaitCatchBlock
         | SvelteKeyBlock
 }
-
-export interface SvelteAttributeNonShorthand extends BaseNode {
+/** Node of HTML comment. */
+export interface SvelteAttribute extends BaseNode {
     type: "SvelteAttribute"
-    key: ESTree.Identifier
-    shorthand: false
+    key: SvelteName
     boolean: boolean
     value: (SvelteText | (SvelteMustacheTag & { kind: "text" }))[]
     parent: SvelteElement | SvelteScriptElement | SvelteStyleElement
 }
-export interface SvelteAttributeShorthand extends BaseNode {
-    type: "SvelteAttribute"
+/** Node of shorthand attribute. e.g. `<img {src}>` */
+export interface SvelteShorthandAttribute extends BaseNode {
+    type: "SvelteShorthandAttribute"
     key: ESTree.Identifier
-    shorthand: true
-    boolean: boolean
-    value: [ESTree.Identifier]
+    value: ESTree.Identifier
     parent: SvelteElement | SvelteScriptElement | SvelteStyleElement
 }
-export type SvelteAttribute =
-    | SvelteAttributeNonShorthand
-    | SvelteAttributeShorthand
+/** Node of spread attribute. e.g. `<Info {...pkg}/>` */
 export interface SvelteSpreadAttribute extends BaseNode {
     type: "SvelteSpreadAttribute"
     expression: ESTree.Expression
     parent: SvelteElement | SvelteScriptElement | SvelteStyleElement
 }
 
+/** Node of directive. e.g. `<input bind:value />` */
+export type SvelteDirective =
+    | SvelteActionDirective
+    | SvelteAnimationDirective
+    | SvelteBindingDirective
+    | SvelteClassDirective
+    | SvelteEventHandlerDirective
+    | SvelteLetDirective
+    | SvelteRefDirective
+    | SvelteTransitionDirective
 interface BaseSvelteDirective extends BaseNode {
     type: "SvelteDirective"
     name: ESTree.Identifier
@@ -389,16 +441,7 @@ export interface SvelteSpecialDirective extends BaseNode {
     parent: SvelteSpecialElement
 }
 
-export type SvelteDirective =
-    | SvelteActionDirective
-    | SvelteAnimationDirective
-    | SvelteBindingDirective
-    | SvelteClassDirective
-    | SvelteEventHandlerDirective
-    | SvelteLetDirective
-    | SvelteRefDirective
-    | SvelteTransitionDirective
-
+/** Node of `$` statement. */
 export interface SvelteReactiveStatement extends BaseNode {
     type: "SvelteReactiveStatement"
     label: ESTree.Identifier & { name: "$" }

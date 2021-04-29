@@ -1808,9 +1808,7 @@
           },
           "attributes": [
             {
-              "type": "SvelteAttribute",
-              "shorthand": true,
-              "boolean": false,
+              "type": "SvelteShorthandAttribute",
               "key": {
                 "type": "Identifier",
                 "name": "todo",
@@ -1829,30 +1827,24 @@
                   }
                 }
               },
-              "value": [
-                {
-                  "type": "Identifier",
-                  "name": "todo",
-                  "range": [
-                    528,
-                    532
-                  ],
-                  "loc": {
-                    "start": {
-                      "line": 29,
-                      "column": 8
-                    },
-                    "end": {
-                      "line": 29,
-                      "column": 12
-                    }
+              "value": {
+                "type": "Identifier",
+                "name": "todo",
+                "range": [
+                  528,
+                  532
+                ],
+                "loc": {
+                  "start": {
+                    "line": 29,
+                    "column": 8
+                  },
+                  "end": {
+                    "line": 29,
+                    "column": 12
                   }
                 }
-              ],
-              "range": [
-                527,
-                533
-              ],
+              },
               "loc": {
                 "start": {
                   "line": 29,
@@ -1862,7 +1854,11 @@
                   "line": 29,
                   "column": 13
                 }
-              }
+              },
+              "range": [
+                527,
+                533
+              ]
             },
             {
               "type": "SvelteDirective",

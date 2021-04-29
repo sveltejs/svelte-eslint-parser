@@ -33,6 +33,7 @@ const svelteKeys: SvelteKeysType = {
     SvelteAwaitCatchBlock: ["error", "children"],
     SvelteKeyBlock: ["expression", "children"],
     SvelteAttribute: ["key", "value"],
+    SvelteShorthandAttribute: ["key", "value"],
     SvelteSpreadAttribute: ["expression"],
     SvelteDirective: ["expression"],
     SvelteReactiveStatement: ["label", "body"],

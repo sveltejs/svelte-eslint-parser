@@ -147,10 +147,9 @@
               "attributes": [
                 {
                   "type": "SvelteAttribute",
-                  "shorthand": false,
                   "boolean": false,
                   "key": {
-                    "type": "Identifier",
+                    "type": "SvelteName",
                     "name": "class",
                     "range": [
                       60,
@@ -246,10 +245,9 @@
                   "attributes": [
                     {
                       "type": "SvelteAttribute",
-                      "shorthand": false,
                       "boolean": false,
                       "key": {
-                        "type": "Identifier",
+                        "type": "SvelteName",
                         "name": "prop",
                         "range": [
                           84,
@@ -500,9 +498,7 @@
       },
       "attributes": [
         {
-          "type": "SvelteAttribute",
-          "shorthand": true,
-          "boolean": false,
+          "type": "SvelteShorthandAttribute",
           "key": {
             "type": "Identifier",
             "name": "items",
@@ -521,30 +517,24 @@
               }
             }
           },
-          "value": [
-            {
-              "type": "Identifier",
-              "name": "items",
-              "range": [
-                160,
-                165
-              ],
-              "loc": {
-                "start": {
-                  "line": 11,
-                  "column": 12
-                },
-                "end": {
-                  "line": 11,
-                  "column": 17
-                }
+          "value": {
+            "type": "Identifier",
+            "name": "items",
+            "range": [
+              160,
+              165
+            ],
+            "loc": {
+              "start": {
+                "line": 11,
+                "column": 12
+              },
+              "end": {
+                "line": 11,
+                "column": 17
               }
             }
-          ],
-          "range": [
-            159,
-            166
-          ],
+          },
           "loc": {
             "start": {
               "line": 11,
@@ -554,7 +544,11 @@
               "line": 11,
               "column": 18
             }
-          }
+          },
+          "range": [
+            159,
+            166
+          ]
         },
         {
           "type": "SvelteDirective",

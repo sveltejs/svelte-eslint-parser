@@ -61,10 +61,9 @@
       "attributes": [
         {
           "type": "SvelteAttribute",
-          "shorthand": false,
           "boolean": false,
           "key": {
-            "type": "Identifier",
+            "type": "SvelteName",
             "name": "disabled",
             "range": [
               38,
@@ -213,9 +212,7 @@
       },
       "attributes": [
         {
-          "type": "SvelteAttribute",
-          "shorthand": true,
-          "boolean": false,
+          "type": "SvelteShorthandAttribute",
           "key": {
             "type": "Identifier",
             "name": "disabled",
@@ -234,30 +231,24 @@
               }
             }
           },
-          "value": [
-            {
-              "type": "Identifier",
-              "name": "disabled",
-              "range": [
-                80,
-                88
-              ],
-              "loc": {
-                "start": {
-                  "line": 3,
-                  "column": 9
-                },
-                "end": {
-                  "line": 3,
-                  "column": 17
-                }
+          "value": {
+            "type": "Identifier",
+            "name": "disabled",
+            "range": [
+              80,
+              88
+            ],
+            "loc": {
+              "start": {
+                "line": 3,
+                "column": 9
+              },
+              "end": {
+                "line": 3,
+                "column": 17
               }
             }
-          ],
-          "range": [
-            79,
-            89
-          ],
+          },
           "loc": {
             "start": {
               "line": 3,
@@ -267,7 +258,11 @@
               "line": 3,
               "column": 18
             }
-          }
+          },
+          "range": [
+            79,
+            89
+          ]
         }
       ],
       "children": [
