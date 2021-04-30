@@ -161,7 +161,7 @@ function convertSpreadAttribute(
 ): SvelteSpreadAttribute {
     const attribute: SvelteSpreadAttribute = {
         type: "SvelteSpreadAttribute",
-        expression: null as any,
+        argument: null as any,
         parent,
         ...ctx.getConvertLocation(node),
     }
@@ -174,7 +174,7 @@ function convertSpreadAttribute(
 
     const es = convertESNode(node.expression, attribute, ctx)!
     analyzeExpressionScope(es, ctx)
-    attribute.expression = es
+    attribute.argument = es
 
     return attribute
 }

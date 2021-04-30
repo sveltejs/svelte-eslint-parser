@@ -34,7 +34,7 @@ const svelteKeys: SvelteKeysType = {
     SvelteKeyBlock: ["expression", "children"],
     SvelteAttribute: ["key", "value"],
     SvelteShorthandAttribute: ["key", "value"],
-    SvelteSpreadAttribute: ["expression"],
+    SvelteSpreadAttribute: ["argument"],
     SvelteDirective: ["expression"],
     SvelteReactiveStatement: ["label", "body"],
     SvelteText: [],

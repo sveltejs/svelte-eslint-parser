@@ -12,6 +12,7 @@ import type {
     SvelteHTMLElement,
     SvelteIfBlock,
     SvelteKeyBlock,
+    SvelteMemberExpressionName,
     SvelteMustacheTag,
     SvelteName,
     SvelteProgram,
@@ -188,6 +189,7 @@ function convertHTMLElement(
 
     extractElementTokens(element, ctx, {
         buildNameNode: (openTokenRange) => {
+            ctx.addToken("HTMLIdentifier", openTokenRange)
             const name: SvelteName = {
                 type: "SvelteName",
                 name: node.name,
@@ -263,6 +265,7 @@ function convertSpecialElement(
 
     extractElementTokens(element, ctx, {
         buildNameNode: (openTokenRange) => {
+            ctx.addToken("HTMLIdentifier", openTokenRange)
             const name: SvelteName = {
                 type: "SvelteName",
                 name: node.name,
@@ -296,17 +299,51 @@ function convertComponentElement(
 
     extractElementTokens(element, ctx, {
         buildNameNode: (openTokenRange) => {
-            const name: ESTree.Identifier = {
+            const chains = node.name.split(".")
+            const id = chains.shift()!
+            const idRange = {
+                start: openTokenRange.start,
+                end: openTokenRange.start + id.length,
+            }
+            ctx.addToken("Identifier", idRange)
+            const identifier: ESTree.Identifier = {
                 type: "Identifier",
-                name: node.name,
+                name: id,
                 // @ts-expect-error -- ignore
                 parent: element,
-                ...ctx.getConvertLocation(openTokenRange),
+                ...ctx.getConvertLocation(idRange),
             }
-            return name
+            let object: SvelteComponentElement["name"] = identifier
+
+            let start = idRange.end + 1
+            for (const name of chains) {
+                const range = { start, end: start + name.length }
+                ctx.addToken("HTMLIdentifier", range)
+                const men: SvelteMemberExpressionName = {
+                    type: "SvelteMemberExpressionName",
+                    object,
+                    property: {
+                        type: "SvelteName",
+                        name,
+                        parent: null as any,
+                        ...ctx.getConvertLocation(range),
+                    },
+                    parent: element,
+                    ...ctx.getConvertLocation({
+                        start: openTokenRange.start,
+                        end: range.end,
+                    }),
+                }
+                men.property.parent = men
+                ;(object as any).parent = men
+                object = men
+                start = range.end + 1
+            }
+
+            analyzeExpressionScope(identifier, ctx)
+            return object
         },
     })
-    analyzeExpressionScope(element.name, ctx)
     return element
 }
 
@@ -388,7 +425,7 @@ export function extractElementTokens<
         start: element.range[0] + 1,
         end: startTagNameEnd,
     }
-    const openToken = ctx.addToken("HTMLIdentifier", openTokenRange)
+
     element.name = options.buildNameNode(openTokenRange)
 
     if (ctx.code[element.range[1] - 1] !== ">") {
@@ -402,7 +439,7 @@ export function extractElementTokens<
 
     const attrEnd = element.attributes.length
         ? element.attributes[element.attributes.length - 1].range[1]
-        : openToken.range[1]
+        : openTokenRange.end
 
     const endTagOpen = ctx.code.lastIndexOf("<", element.range[1] - 1)
     if (endTagOpen <= attrEnd) {
