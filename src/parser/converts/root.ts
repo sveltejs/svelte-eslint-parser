@@ -46,6 +46,7 @@ export function convertSvelteRoot(
         extractAttributes(script, ctx)
         extractElementTokens(script, ctx, {
             buildNameNode: (openTokenRange) => {
+                ctx.addToken("HTMLIdentifier", openTokenRange)
                 const name: SvelteName = {
                     type: "SvelteName",
                     name: "script",
@@ -70,6 +71,7 @@ export function convertSvelteRoot(
         extractAttributes(script, ctx)
         extractElementTokens(script, ctx, {
             buildNameNode: (openTokenRange) => {
+                ctx.addToken("HTMLIdentifier", openTokenRange)
                 const name: SvelteName = {
                     type: "SvelteName",
                     name: "script",
@@ -94,6 +96,7 @@ export function convertSvelteRoot(
         extractAttributes(style, ctx)
         extractElementTokens(style, ctx, {
             buildNameNode: (openTokenRange) => {
+                ctx.addToken("HTMLIdentifier", openTokenRange)
                 const name: SvelteName = {
                     type: "SvelteName",
                     name: "script",

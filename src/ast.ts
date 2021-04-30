@@ -141,7 +141,7 @@ export interface SvelteHTMLElement extends BaseSvelteElement {
 export interface SvelteComponentElement extends BaseSvelteElement {
     type: "SvelteElement"
     kind: "component"
-    name: ESTree.Identifier
+    name: ESTree.Identifier | SvelteMemberExpressionName
     attributes: (
         | SvelteAttribute
         | SvelteShorthandAttribute
@@ -194,6 +194,15 @@ export interface SvelteName extends BaseNode {
         | SvelteScriptElement
         | SvelteStyleElement
         | SvelteAttribute
+        | SvelteMemberExpressionName
+}
+
+/** Nodes that may be used in component names. The component names separated by dots. */
+export interface SvelteMemberExpressionName extends BaseNode {
+    type: "SvelteMemberExpressionName"
+    object: SvelteMemberExpressionName | ESTree.Identifier
+    property: SvelteName
+    parent: SvelteComponentElement
 }
 
 type Child =
@@ -237,7 +246,7 @@ interface BaseSvelteMustacheTag extends BaseNode {
         | SvelteKeyBlock
         | SvelteAttribute
 }
-/** Node of mustache tag. e.g. `{...}`, `{@html ...}` */
+/** Node of mustache tag. e.g. `{...}`, `{@html ...}`. Like JSXExpressionContainer */
 export interface SvelteMustacheTag extends BaseSvelteMustacheTag {
     type: "SvelteMustacheTag"
     kind: "text" | "raw"
@@ -376,10 +385,10 @@ export interface SvelteShorthandAttribute extends BaseNode {
     value: ESTree.Identifier
     parent: SvelteElement | SvelteScriptElement | SvelteStyleElement
 }
-/** Node of spread attribute. e.g. `<Info {...pkg}/>` */
+/** Node of spread attribute. e.g. `<Info {...pkg}/>`. Like JSXSpreadAttribute */
 export interface SvelteSpreadAttribute extends BaseNode {
     type: "SvelteSpreadAttribute"
-    expression: ESTree.Expression
+    argument: ESTree.Expression
     parent: SvelteElement | SvelteScriptElement | SvelteStyleElement
 }
 

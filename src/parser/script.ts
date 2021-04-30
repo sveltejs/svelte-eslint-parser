@@ -24,6 +24,12 @@ export function parseScript(
     traverseNodes(result.ast, {
         visitorKeys: result.visitorKeys,
         enterNode(node, parent) {
+            if (
+                node.type === "Identifier" &&
+                node.range![0] === 61 &&
+                node.name === "speed"
+            )
+                debugger
             ;(node as any).parent = parent
 
             if (node.type === "LabeledStatement" && node.label.name === "$") {
