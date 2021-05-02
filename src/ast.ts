@@ -370,7 +370,7 @@ export interface SvelteHTMLComment extends BaseNode {
         | SvelteAwaitCatchBlock
         | SvelteKeyBlock
 }
-/** Node of HTML comment. */
+/** Node of HTML attribute. */
 export interface SvelteAttribute extends BaseNode {
     type: "SvelteAttribute"
     key: SvelteName
