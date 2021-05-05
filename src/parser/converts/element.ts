@@ -175,19 +175,36 @@ function convertHTMLElement(
     parent: SvelteHTMLElement["parent"],
     ctx: Context,
 ): SvelteHTMLElement {
+    const locs = ctx.getConvertLocation(node)
     const element: SvelteHTMLElement = {
         type: "SvelteElement",
         kind: "html",
         name: null as any,
-        attributes: [],
+        startTag: {
+            type: "SvelteStartTag",
+            attributes: [],
+            selfClosing: false,
+            parent: null as any,
+            range: [locs.range[0], null as any],
+            loc: {
+                start: {
+                    line: locs.loc.start.line,
+                    column: locs.loc.start.column,
+                },
+                end: null as any,
+            },
+        },
         children: [],
+        endTag: null,
         parent,
-        ...ctx.getConvertLocation(node),
+        ...locs,
     }
-    element.attributes.push(...convertAttributes(node.attributes, element, ctx))
+    element.startTag.attributes.push(
+        ...convertAttributes(node.attributes, element.startTag, ctx),
+    )
     element.children.push(...convertChildren(node, element, ctx))
 
-    extractElementTokens(element, ctx, {
+    extractElementTags(element, ctx, {
         buildNameNode: (openTokenRange) => {
             ctx.addToken("HTMLIdentifier", openTokenRange)
             const name: SvelteName = {
@@ -215,16 +232,33 @@ function convertSpecialElement(
     parent: SvelteSpecialElement["parent"],
     ctx: Context,
 ): SvelteSpecialElement {
+    const locs = ctx.getConvertLocation(node)
     const element: SvelteSpecialElement = {
         type: "SvelteElement",
         kind: "special",
         name: null as any,
-        attributes: [],
+        startTag: {
+            type: "SvelteStartTag",
+            attributes: [],
+            selfClosing: false,
+            parent: null as any,
+            range: [locs.range[0], null as any],
+            loc: {
+                start: {
+                    line: locs.loc.start.line,
+                    column: locs.loc.start.column,
+                },
+                end: null as any,
+            },
+        },
         children: [],
+        endTag: null,
         parent,
-        ...ctx.getConvertLocation(node),
+        ...locs,
     }
-    element.attributes.push(...convertAttributes(node.attributes, element, ctx))
+    element.startTag.attributes.push(
+        ...convertAttributes(node.attributes, element.startTag, ctx),
+    )
     element.children.push(...convertChildren(node, element, ctx))
 
     if (
@@ -250,7 +284,7 @@ function convertSpecialElement(
             type: "SvelteSpecialDirective",
             kind: "this",
             expression: null as any,
-            parent: element,
+            parent: element.startTag,
             ...ctx.getConvertLocation({ start: startIndex, end: endIndex }),
         }
         ctx.addToken("HTMLIdentifier", {
@@ -260,10 +294,10 @@ function convertSpecialElement(
         const es = convertESNode(node.expression, thisAttr, ctx)
         analyzeExpressionScope(es, ctx)
         thisAttr.expression = es
-        element.attributes.push(thisAttr)
+        element.startTag.attributes.push(thisAttr)
     }
 
-    extractElementTokens(element, ctx, {
+    extractElementTags(element, ctx, {
         buildNameNode: (openTokenRange) => {
             ctx.addToken("HTMLIdentifier", openTokenRange)
             const name: SvelteName = {
@@ -285,19 +319,36 @@ function convertComponentElement(
     parent: SvelteComponentElement["parent"],
     ctx: Context,
 ): SvelteComponentElement {
+    const locs = ctx.getConvertLocation(node)
     const element: SvelteComponentElement = {
         type: "SvelteElement",
         kind: "component",
         name: null as any,
-        attributes: [],
+        startTag: {
+            type: "SvelteStartTag",
+            attributes: [],
+            selfClosing: false,
+            parent: null as any,
+            range: [locs.range[0], null as any],
+            loc: {
+                start: {
+                    line: locs.loc.start.line,
+                    column: locs.loc.start.column,
+                },
+                end: null as any,
+            },
+        },
         children: [],
+        endTag: null,
         parent,
-        ...ctx.getConvertLocation(node),
+        ...locs,
     }
-    element.attributes.push(...convertAttributes(node.attributes, element, ctx))
+    element.startTag.attributes.push(
+        ...convertAttributes(node.attributes, element.startTag, ctx),
+    )
     element.children.push(...convertChildren(node, element, ctx))
 
-    extractElementTokens(element, ctx, {
+    extractElementTags(element, ctx, {
         buildNameNode: (openTokenRange) => {
             const chains = node.name.split(".")
             const id = chains.shift()!
@@ -402,8 +453,8 @@ function convertSlotTemplateElement(
     return convertSpecialElement(node, parent, ctx)
 }
 
-/** Extract element block tokens */
-export function extractElementTokens<
+/** Extract element tag and tokens */
+export function extractElementTags<
     E extends SvelteScriptElement | SvelteElement | SvelteStyleElement
 >(
     element: E,
@@ -428,21 +479,27 @@ export function extractElementTokens<
 
     element.name = options.buildNameNode(openTokenRange)
 
+    const startTagEnd =
+        ctx.code.indexOf(
+            ">",
+            element.startTag.attributes[element.startTag.attributes.length - 1]
+                ?.range[1] ?? openTokenRange.end,
+        ) + 1
+    element.startTag.range[1] = startTagEnd
+    element.startTag.loc.end = ctx.getLocFromIndex(startTagEnd)
+
     if (ctx.code[element.range[1] - 1] !== ">") {
         // Have not end tag
         return
     }
     if (ctx.code[element.range[1] - 2] === "/") {
         // self close
+        element.startTag.selfClosing = true
         return
     }
 
-    const attrEnd = element.attributes.length
-        ? element.attributes[element.attributes.length - 1].range[1]
-        : openTokenRange.end
-
     const endTagOpen = ctx.code.lastIndexOf("<", element.range[1] - 1)
-    if (endTagOpen <= attrEnd) {
+    if (endTagOpen <= startTagEnd - 1) {
         // void element
         return
     }
@@ -452,6 +509,12 @@ export function extractElementTokens<
         (c) => c === ">" || !c.trim(),
         endTagNameStart,
     )
+    const endTagClose = ctx.code.indexOf(">", endTagNameEnd)
+    element.endTag = {
+        type: "SvelteEndTag",
+        parent: element,
+        ...ctx.getConvertLocation({ start: endTagOpen, end: endTagClose + 1 }),
+    }
     ctx.addToken("HTMLIdentifier", {
         start: endTagNameStart,
         end: endTagNameEnd,

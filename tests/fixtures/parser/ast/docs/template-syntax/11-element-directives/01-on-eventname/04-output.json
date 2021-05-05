@@ -22,67 +22,85 @@
           }
         }
       },
-      "attributes": [
-        {
-          "type": "SvelteDirective",
-          "kind": "EventHandler",
-          "name": {
-            "type": "Identifier",
-            "name": "submit",
+      "startTag": {
+        "type": "SvelteStartTag",
+        "attributes": [
+          {
+            "type": "SvelteDirective",
+            "kind": "EventHandler",
+            "name": {
+              "type": "Identifier",
+              "name": "submit",
+              "range": [
+                9,
+                15
+              ],
+              "loc": {
+                "start": {
+                  "line": 1,
+                  "column": 9
+                },
+                "end": {
+                  "line": 1,
+                  "column": 15
+                }
+              }
+            },
+            "modifiers": [
+              "preventDefault"
+            ],
+            "expression": {
+              "type": "Identifier",
+              "start": 32,
+              "end": 44,
+              "loc": {
+                "start": {
+                  "line": 1,
+                  "column": 32
+                },
+                "end": {
+                  "line": 1,
+                  "column": 44
+                }
+              },
+              "name": "handleSubmit",
+              "range": [
+                32,
+                44
+              ]
+            },
             "range": [
-              9,
-              15
+              6,
+              45
             ],
             "loc": {
               "start": {
                 "line": 1,
-                "column": 9
+                "column": 6
               },
               "end": {
                 "line": 1,
-                "column": 15
+                "column": 45
               }
-            }
-          },
-          "modifiers": [
-            "preventDefault"
-          ],
-          "expression": {
-            "type": "Identifier",
-            "start": 32,
-            "end": 44,
-            "loc": {
-              "start": {
-                "line": 1,
-                "column": 32
-              },
-              "end": {
-                "line": 1,
-                "column": 44
-              }
-            },
-            "name": "handleSubmit",
-            "range": [
-              32,
-              44
-            ]
-          },
-          "range": [
-            6,
-            45
-          ],
-          "loc": {
-            "start": {
-              "line": 1,
-              "column": 6
-            },
-            "end": {
-              "line": 1,
-              "column": 45
             }
           }
+        ],
+        "selfClosing": false,
+        "range": [
+          0,
+          46
+        ],
+        "loc": {
+          "start": {
+            "line": 1,
+            "column": 0
+          },
+          "end": {
+            "line": 1,
+            "column": 46
+          }
         }
-      ],
+      },
       "children": [
         {
           "type": "SvelteText",
@@ -139,6 +157,23 @@
           }
         }
       ],
+      "endTag": {
+        "type": "SvelteEndTag",
+        "range": [
+          128,
+          135
+        ],
+        "loc": {
+          "start": {
+            "line": 4,
+            "column": 0
+          },
+          "end": {
+            "line": 4,
+            "column": 7
+          }
+        }
+      },
       "range": [
         0,
         135

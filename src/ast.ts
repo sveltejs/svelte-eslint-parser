@@ -52,8 +52,11 @@ export type SvelteNode =
     | SvelteScriptElement
     | SvelteStyleElement
     | SvelteElement
+    | SvelteStartTag
+    | SvelteEndTag
     | SvelteName
     | SvelteText
+    | SvelteLiteral
     | SvelteMustacheTag
     | SvelteDebugTag
     | SvelteIfBlock
@@ -92,26 +95,18 @@ type BaseSvelteElement = BaseNode
 export interface SvelteScriptElement extends BaseSvelteElement {
     type: "SvelteScriptElement"
     name: SvelteName
-    attributes: (
-        | SvelteAttribute
-        | SvelteShorthandAttribute
-        | SvelteSpreadAttribute
-        | SvelteDirective
-    )[]
+    startTag: SvelteStartTag
     body: ESTree.Program["body"]
+    endTag: SvelteEndTag | null
     parent: SvelteProgram
 }
 /** Node of `<style>` element. */
 export interface SvelteStyleElement extends BaseSvelteElement {
     type: "SvelteStyleElement"
     name: SvelteName
-    attributes: (
-        | SvelteAttribute
-        | SvelteShorthandAttribute
-        | SvelteSpreadAttribute
-        | SvelteDirective
-    )[]
+    startTag: SvelteStartTag
     children: [SvelteText]
+    endTag: SvelteEndTag | null
     parent: SvelteProgram
 }
 /** Node of HTML element. */
@@ -119,13 +114,9 @@ export interface SvelteHTMLElement extends BaseSvelteElement {
     type: "SvelteElement"
     kind: "html"
     name: SvelteName
-    attributes: (
-        | SvelteAttribute
-        | SvelteShorthandAttribute
-        | SvelteSpreadAttribute
-        | SvelteDirective
-    )[]
+    startTag: SvelteStartTag
     children: Child[]
+    endTag: SvelteEndTag | null
     parent:
         | SvelteProgram
         | SvelteElement
@@ -142,13 +133,9 @@ export interface SvelteComponentElement extends BaseSvelteElement {
     type: "SvelteElement"
     kind: "component"
     name: ESTree.Identifier | SvelteMemberExpressionName
-    attributes: (
-        | SvelteAttribute
-        | SvelteShorthandAttribute
-        | SvelteSpreadAttribute
-        | SvelteDirective
-    )[]
+    startTag: SvelteStartTag
     children: Child[]
+    endTag: SvelteEndTag | null
     parent:
         | SvelteProgram
         | SvelteElement
@@ -165,14 +152,9 @@ export interface SvelteSpecialElement extends BaseSvelteElement {
     type: "SvelteElement"
     kind: "special"
     name: SvelteName
-    attributes: (
-        | SvelteAttribute
-        | SvelteShorthandAttribute
-        | SvelteSpreadAttribute
-        | SvelteDirective
-        | SvelteSpecialDirective
-    )[]
+    startTag: SvelteStartTag
     children: Child[]
+    endTag: SvelteEndTag | null
     parent:
         | SvelteProgram
         | SvelteElement
@@ -183,6 +165,24 @@ export interface SvelteSpecialElement extends BaseSvelteElement {
         | SvelteAwaitThenBlock
         | SvelteAwaitCatchBlock
         | SvelteKeyBlock
+}
+/** Node of start tag. */
+export interface SvelteStartTag extends BaseNode {
+    type: "SvelteStartTag"
+    attributes: (
+        | SvelteAttribute
+        | SvelteShorthandAttribute
+        | SvelteSpreadAttribute
+        | SvelteDirective
+        | SvelteSpecialDirective
+    )[]
+    selfClosing: boolean
+    parent: SvelteElement | SvelteScriptElement | SvelteStyleElement
+}
+/** Node of end tag. */
+export interface SvelteEndTag extends BaseNode {
+    type: "SvelteEndTag"
+    parent: SvelteElement | SvelteScriptElement | SvelteStyleElement
 }
 
 /** Node of names. It is used for element names other than components and normal attribute names. */
@@ -216,13 +216,14 @@ type Child =
     | SvelteKeyBlock
     | SvelteHTMLComment
 
-/** Node of text line HTML text. */
+/** Node of text. like HTML text. */
 export interface SvelteText extends BaseNode {
     type: "SvelteText"
     value: string
     parent:
         | SvelteProgram
         | SvelteElement
+        | SvelteStyleElement
         | SvelteIfBlock
         | SvelteElseBlock
         | SvelteEachBlock
@@ -230,7 +231,12 @@ export interface SvelteText extends BaseNode {
         | SvelteAwaitThenBlock
         | SvelteAwaitCatchBlock
         | SvelteKeyBlock
-        | SvelteAttribute
+}
+/** Node of literal. */
+export interface SvelteLiteral extends BaseNode {
+    type: "SvelteLiteral"
+    value: string
+    parent: SvelteAttribute
 }
 
 interface BaseSvelteMustacheTag extends BaseNode {
@@ -375,21 +381,21 @@ export interface SvelteAttribute extends BaseNode {
     type: "SvelteAttribute"
     key: SvelteName
     boolean: boolean
-    value: (SvelteText | (SvelteMustacheTag & { kind: "text" }))[]
-    parent: SvelteElement | SvelteScriptElement | SvelteStyleElement
+    value: (SvelteLiteral | (SvelteMustacheTag & { kind: "text" }))[]
+    parent: SvelteStartTag
 }
 /** Node of shorthand attribute. e.g. `<img {src}>` */
 export interface SvelteShorthandAttribute extends BaseNode {
     type: "SvelteShorthandAttribute"
     key: ESTree.Identifier
     value: ESTree.Identifier
-    parent: SvelteElement | SvelteScriptElement | SvelteStyleElement
+    parent: SvelteStartTag
 }
 /** Node of spread attribute. e.g. `<Info {...pkg}/>`. Like JSXSpreadAttribute */
 export interface SvelteSpreadAttribute extends BaseNode {
     type: "SvelteSpreadAttribute"
     argument: ESTree.Expression
-    parent: SvelteElement | SvelteScriptElement | SvelteStyleElement
+    parent: SvelteStartTag
 }
 
 /** Node of directive. e.g. `<input bind:value />` */
@@ -406,7 +412,7 @@ interface BaseSvelteDirective extends BaseNode {
     type: "SvelteDirective"
     name: ESTree.Identifier
     modifiers: string[]
-    parent: SvelteElement | SvelteScriptElement | SvelteStyleElement
+    parent: SvelteStartTag
 }
 
 export interface SvelteActionDirective extends BaseSvelteDirective {
@@ -447,7 +453,7 @@ export interface SvelteSpecialDirective extends BaseNode {
     type: "SvelteSpecialDirective"
     kind: "this"
     expression: ESTree.Expression
-    parent: SvelteSpecialElement
+    parent: SvelteStartTag /* & { parent: SvelteSpecialElement } */
 }
 
 /** Node of `$` statement. */

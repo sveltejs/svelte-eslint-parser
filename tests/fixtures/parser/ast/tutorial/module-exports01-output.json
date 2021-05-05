@@ -21,7 +21,25 @@
           }
         }
       },
-      "attributes": [],
+      "startTag": {
+        "type": "SvelteStartTag",
+        "attributes": [],
+        "selfClosing": false,
+        "range": [
+          0,
+          8
+        ],
+        "loc": {
+          "start": {
+            "line": 1,
+            "column": 0
+          },
+          "end": {
+            "line": 1,
+            "column": 8
+          }
+        }
+      },
       "body": [
         {
           "type": "ImportDeclaration",
@@ -164,6 +182,23 @@
           }
         }
       ],
+      "endTag": {
+        "type": "SvelteEndTag",
+        "range": [
+          71,
+          80
+        ],
+        "loc": {
+          "start": {
+            "line": 3,
+            "column": 0
+          },
+          "end": {
+            "line": 3,
+            "column": 9
+          }
+        }
+      },
       "range": [
         0,
         80
@@ -218,65 +253,83 @@
           }
         }
       },
-      "attributes": [
-        {
-          "type": "SvelteDirective",
-          "kind": "EventHandler",
-          "name": {
-            "type": "Identifier",
-            "name": "click",
+      "startTag": {
+        "type": "SvelteStartTag",
+        "attributes": [
+          {
+            "type": "SvelteDirective",
+            "kind": "EventHandler",
+            "name": {
+              "type": "Identifier",
+              "name": "click",
+              "range": [
+                93,
+                98
+              ],
+              "loc": {
+                "start": {
+                  "line": 5,
+                  "column": 11
+                },
+                "end": {
+                  "line": 5,
+                  "column": 16
+                }
+              }
+            },
+            "modifiers": [],
+            "expression": {
+              "type": "Identifier",
+              "start": 100,
+              "end": 107,
+              "loc": {
+                "start": {
+                  "line": 5,
+                  "column": 18
+                },
+                "end": {
+                  "line": 5,
+                  "column": 25
+                }
+              },
+              "name": "stopAll",
+              "range": [
+                100,
+                107
+              ]
+            },
             "range": [
-              93,
-              98
+              90,
+              108
             ],
             "loc": {
               "start": {
                 "line": 5,
-                "column": 11
+                "column": 8
               },
               "end": {
                 "line": 5,
-                "column": 16
+                "column": 26
               }
-            }
-          },
-          "modifiers": [],
-          "expression": {
-            "type": "Identifier",
-            "start": 100,
-            "end": 107,
-            "loc": {
-              "start": {
-                "line": 5,
-                "column": 18
-              },
-              "end": {
-                "line": 5,
-                "column": 25
-              }
-            },
-            "name": "stopAll",
-            "range": [
-              100,
-              107
-            ]
-          },
-          "range": [
-            90,
-            108
-          ],
-          "loc": {
-            "start": {
-              "line": 5,
-              "column": 8
-            },
-            "end": {
-              "line": 5,
-              "column": 26
             }
           }
+        ],
+        "selfClosing": false,
+        "range": [
+          82,
+          109
+        ],
+        "loc": {
+          "start": {
+            "line": 5,
+            "column": 0
+          },
+          "end": {
+            "line": 5,
+            "column": 27
+          }
         }
-      ],
+      },
       "children": [
         {
           "type": "SvelteText",
@@ -297,6 +350,23 @@
           }
         }
       ],
+      "endTag": {
+        "type": "SvelteEndTag",
+        "range": [
+          126,
+          135
+        ],
+        "loc": {
+          "start": {
+            "line": 7,
+            "column": 0
+          },
+          "end": {
+            "line": 7,
+            "column": 9
+          }
+        }
+      },
       "range": [
         82,
         135
@@ -387,16 +457,53 @@
           }
         }
       },
-      "attributes": [
-        {
-          "type": "SvelteAttribute",
-          "boolean": false,
-          "key": {
-            "type": "SvelteName",
-            "name": "src",
+      "startTag": {
+        "type": "SvelteStartTag",
+        "attributes": [
+          {
+            "type": "SvelteAttribute",
+            "boolean": false,
+            "key": {
+              "type": "SvelteName",
+              "name": "src",
+              "range": [
+                215,
+                218
+              ],
+              "loc": {
+                "start": {
+                  "line": 11,
+                  "column": 1
+                },
+                "end": {
+                  "line": 11,
+                  "column": 4
+                }
+              }
+            },
+            "value": [
+              {
+                "type": "SvelteLiteral",
+                "value": "https://sveltejs.github.io/assets/music/strauss.mp3",
+                "range": [
+                  220,
+                  271
+                ],
+                "loc": {
+                  "start": {
+                    "line": 11,
+                    "column": 6
+                  },
+                  "end": {
+                    "line": 11,
+                    "column": 57
+                  }
+                }
+              }
+            ],
             "range": [
               215,
-              218
+              272
             ],
             "loc": {
               "start": {
@@ -405,54 +512,54 @@
               },
               "end": {
                 "line": 11,
-                "column": 4
+                "column": 58
               }
             }
           },
-          "value": [
-            {
-              "type": "SvelteText",
-              "value": "https://sveltejs.github.io/assets/music/strauss.mp3",
+          {
+            "type": "SvelteAttribute",
+            "boolean": false,
+            "key": {
+              "type": "SvelteName",
+              "name": "title",
               "range": [
-                220,
-                271
+                274,
+                279
               ],
               "loc": {
                 "start": {
-                  "line": 11,
-                  "column": 6
+                  "line": 12,
+                  "column": 1
                 },
                 "end": {
-                  "line": 11,
-                  "column": 57
+                  "line": 12,
+                  "column": 6
                 }
               }
-            }
-          ],
-          "range": [
-            215,
-            272
-          ],
-          "loc": {
-            "start": {
-              "line": 11,
-              "column": 1
             },
-            "end": {
-              "line": 11,
-              "column": 58
-            }
-          }
-        },
-        {
-          "type": "SvelteAttribute",
-          "boolean": false,
-          "key": {
-            "type": "SvelteName",
-            "name": "title",
+            "value": [
+              {
+                "type": "SvelteLiteral",
+                "value": "The Blue Danube Waltz",
+                "range": [
+                  281,
+                  302
+                ],
+                "loc": {
+                  "start": {
+                    "line": 12,
+                    "column": 8
+                  },
+                  "end": {
+                    "line": 12,
+                    "column": 29
+                  }
+                }
+              }
+            ],
             "range": [
               274,
-              279
+              303
             ],
             "loc": {
               "start": {
@@ -461,54 +568,54 @@
               },
               "end": {
                 "line": 12,
-                "column": 6
+                "column": 30
               }
             }
           },
-          "value": [
-            {
-              "type": "SvelteText",
-              "value": "The Blue Danube Waltz",
+          {
+            "type": "SvelteAttribute",
+            "boolean": false,
+            "key": {
+              "type": "SvelteName",
+              "name": "composer",
               "range": [
-                281,
-                302
+                305,
+                313
               ],
               "loc": {
                 "start": {
-                  "line": 12,
-                  "column": 8
+                  "line": 13,
+                  "column": 1
                 },
                 "end": {
-                  "line": 12,
-                  "column": 29
+                  "line": 13,
+                  "column": 9
                 }
               }
-            }
-          ],
-          "range": [
-            274,
-            303
-          ],
-          "loc": {
-            "start": {
-              "line": 12,
-              "column": 1
             },
-            "end": {
-              "line": 12,
-              "column": 30
-            }
-          }
-        },
-        {
-          "type": "SvelteAttribute",
-          "boolean": false,
-          "key": {
-            "type": "SvelteName",
-            "name": "composer",
+            "value": [
+              {
+                "type": "SvelteLiteral",
+                "value": "Johann Strauss",
+                "range": [
+                  315,
+                  329
+                ],
+                "loc": {
+                  "start": {
+                    "line": 13,
+                    "column": 11
+                  },
+                  "end": {
+                    "line": 13,
+                    "column": 25
+                  }
+                }
+              }
+            ],
             "range": [
               305,
-              313
+              330
             ],
             "loc": {
               "start": {
@@ -517,54 +624,54 @@
               },
               "end": {
                 "line": 13,
-                "column": 9
+                "column": 26
               }
             }
           },
-          "value": [
-            {
-              "type": "SvelteText",
-              "value": "Johann Strauss",
+          {
+            "type": "SvelteAttribute",
+            "boolean": false,
+            "key": {
+              "type": "SvelteName",
+              "name": "performer",
               "range": [
-                315,
-                329
+                332,
+                341
               ],
               "loc": {
                 "start": {
-                  "line": 13,
-                  "column": 11
+                  "line": 14,
+                  "column": 1
                 },
                 "end": {
-                  "line": 13,
-                  "column": 25
+                  "line": 14,
+                  "column": 10
                 }
               }
-            }
-          ],
-          "range": [
-            305,
-            330
-          ],
-          "loc": {
-            "start": {
-              "line": 13,
-              "column": 1
             },
-            "end": {
-              "line": 13,
-              "column": 26
-            }
-          }
-        },
-        {
-          "type": "SvelteAttribute",
-          "boolean": false,
-          "key": {
-            "type": "SvelteName",
-            "name": "performer",
+            "value": [
+              {
+                "type": "SvelteLiteral",
+                "value": "European Archive",
+                "range": [
+                  343,
+                  359
+                ],
+                "loc": {
+                  "start": {
+                    "line": 14,
+                    "column": 12
+                  },
+                  "end": {
+                    "line": 14,
+                    "column": 28
+                  }
+                }
+              }
+            ],
             "range": [
               332,
-              341
+              360
             ],
             "loc": {
               "start": {
@@ -573,47 +680,29 @@
               },
               "end": {
                 "line": 14,
-                "column": 10
+                "column": 29
               }
-            }
-          },
-          "value": [
-            {
-              "type": "SvelteText",
-              "value": "European Archive",
-              "range": [
-                343,
-                359
-              ],
-              "loc": {
-                "start": {
-                  "line": 14,
-                  "column": 12
-                },
-                "end": {
-                  "line": 14,
-                  "column": 28
-                }
-              }
-            }
-          ],
-          "range": [
-            332,
-            360
-          ],
-          "loc": {
-            "start": {
-              "line": 14,
-              "column": 1
-            },
-            "end": {
-              "line": 14,
-              "column": 29
             }
           }
+        ],
+        "selfClosing": true,
+        "range": [
+          201,
+          363
+        ],
+        "loc": {
+          "start": {
+            "line": 10,
+            "column": 0
+          },
+          "end": {
+            "line": 15,
+            "column": 2
+          }
         }
-      ],
+      },
       "children": [],
+      "endTag": null,
       "range": [
         201,
         363
@@ -704,16 +793,53 @@
           }
         }
       },
-      "attributes": [
-        {
-          "type": "SvelteAttribute",
-          "boolean": false,
-          "key": {
-            "type": "SvelteName",
-            "name": "src",
+      "startTag": {
+        "type": "SvelteStartTag",
+        "attributes": [
+          {
+            "type": "SvelteAttribute",
+            "boolean": false,
+            "key": {
+              "type": "SvelteName",
+              "name": "src",
+              "range": [
+                439,
+                442
+              ],
+              "loc": {
+                "start": {
+                  "line": 19,
+                  "column": 1
+                },
+                "end": {
+                  "line": 19,
+                  "column": 4
+                }
+              }
+            },
+            "value": [
+              {
+                "type": "SvelteLiteral",
+                "value": "https://sveltejs.github.io/assets/music/holst.mp3",
+                "range": [
+                  444,
+                  493
+                ],
+                "loc": {
+                  "start": {
+                    "line": 19,
+                    "column": 6
+                  },
+                  "end": {
+                    "line": 19,
+                    "column": 55
+                  }
+                }
+              }
+            ],
             "range": [
               439,
-              442
+              494
             ],
             "loc": {
               "start": {
@@ -722,54 +848,54 @@
               },
               "end": {
                 "line": 19,
-                "column": 4
+                "column": 56
               }
             }
           },
-          "value": [
-            {
-              "type": "SvelteText",
-              "value": "https://sveltejs.github.io/assets/music/holst.mp3",
+          {
+            "type": "SvelteAttribute",
+            "boolean": false,
+            "key": {
+              "type": "SvelteName",
+              "name": "title",
               "range": [
-                444,
-                493
+                496,
+                501
               ],
               "loc": {
                 "start": {
-                  "line": 19,
-                  "column": 6
+                  "line": 20,
+                  "column": 1
                 },
                 "end": {
-                  "line": 19,
-                  "column": 55
+                  "line": 20,
+                  "column": 6
                 }
               }
-            }
-          ],
-          "range": [
-            439,
-            494
-          ],
-          "loc": {
-            "start": {
-              "line": 19,
-              "column": 1
             },
-            "end": {
-              "line": 19,
-              "column": 56
-            }
-          }
-        },
-        {
-          "type": "SvelteAttribute",
-          "boolean": false,
-          "key": {
-            "type": "SvelteName",
-            "name": "title",
+            "value": [
+              {
+                "type": "SvelteLiteral",
+                "value": "Mars, the Bringer of War",
+                "range": [
+                  503,
+                  527
+                ],
+                "loc": {
+                  "start": {
+                    "line": 20,
+                    "column": 8
+                  },
+                  "end": {
+                    "line": 20,
+                    "column": 32
+                  }
+                }
+              }
+            ],
             "range": [
               496,
-              501
+              528
             ],
             "loc": {
               "start": {
@@ -778,54 +904,54 @@
               },
               "end": {
                 "line": 20,
-                "column": 6
+                "column": 33
               }
             }
           },
-          "value": [
-            {
-              "type": "SvelteText",
-              "value": "Mars, the Bringer of War",
+          {
+            "type": "SvelteAttribute",
+            "boolean": false,
+            "key": {
+              "type": "SvelteName",
+              "name": "composer",
               "range": [
-                503,
-                527
+                530,
+                538
               ],
               "loc": {
                 "start": {
-                  "line": 20,
-                  "column": 8
+                  "line": 21,
+                  "column": 1
                 },
                 "end": {
-                  "line": 20,
-                  "column": 32
+                  "line": 21,
+                  "column": 9
                 }
               }
-            }
-          ],
-          "range": [
-            496,
-            528
-          ],
-          "loc": {
-            "start": {
-              "line": 20,
-              "column": 1
             },
-            "end": {
-              "line": 20,
-              "column": 33
-            }
-          }
-        },
-        {
-          "type": "SvelteAttribute",
-          "boolean": false,
-          "key": {
-            "type": "SvelteName",
-            "name": "composer",
+            "value": [
+              {
+                "type": "SvelteLiteral",
+                "value": "Gustav Holst",
+                "range": [
+                  540,
+                  552
+                ],
+                "loc": {
+                  "start": {
+                    "line": 21,
+                    "column": 11
+                  },
+                  "end": {
+                    "line": 21,
+                    "column": 23
+                  }
+                }
+              }
+            ],
             "range": [
               530,
-              538
+              553
             ],
             "loc": {
               "start": {
@@ -834,54 +960,54 @@
               },
               "end": {
                 "line": 21,
-                "column": 9
+                "column": 24
               }
             }
           },
-          "value": [
-            {
-              "type": "SvelteText",
-              "value": "Gustav Holst",
+          {
+            "type": "SvelteAttribute",
+            "boolean": false,
+            "key": {
+              "type": "SvelteName",
+              "name": "performer",
               "range": [
-                540,
-                552
+                555,
+                564
               ],
               "loc": {
                 "start": {
-                  "line": 21,
-                  "column": 11
+                  "line": 22,
+                  "column": 1
                 },
                 "end": {
-                  "line": 21,
-                  "column": 23
+                  "line": 22,
+                  "column": 10
                 }
               }
-            }
-          ],
-          "range": [
-            530,
-            553
-          ],
-          "loc": {
-            "start": {
-              "line": 21,
-              "column": 1
             },
-            "end": {
-              "line": 21,
-              "column": 24
-            }
-          }
-        },
-        {
-          "type": "SvelteAttribute",
-          "boolean": false,
-          "key": {
-            "type": "SvelteName",
-            "name": "performer",
+            "value": [
+              {
+                "type": "SvelteLiteral",
+                "value": "USAF Heritage of America Band",
+                "range": [
+                  566,
+                  595
+                ],
+                "loc": {
+                  "start": {
+                    "line": 22,
+                    "column": 12
+                  },
+                  "end": {
+                    "line": 22,
+                    "column": 41
+                  }
+                }
+              }
+            ],
             "range": [
               555,
-              564
+              596
             ],
             "loc": {
               "start": {
@@ -890,47 +1016,29 @@
               },
               "end": {
                 "line": 22,
-                "column": 10
+                "column": 42
               }
-            }
-          },
-          "value": [
-            {
-              "type": "SvelteText",
-              "value": "USAF Heritage of America Band",
-              "range": [
-                566,
-                595
-              ],
-              "loc": {
-                "start": {
-                  "line": 22,
-                  "column": 12
-                },
-                "end": {
-                  "line": 22,
-                  "column": 41
-                }
-              }
-            }
-          ],
-          "range": [
-            555,
-            596
-          ],
-          "loc": {
-            "start": {
-              "line": 22,
-              "column": 1
-            },
-            "end": {
-              "line": 22,
-              "column": 42
             }
           }
+        ],
+        "selfClosing": true,
+        "range": [
+          425,
+          599
+        ],
+        "loc": {
+          "start": {
+            "line": 18,
+            "column": 0
+          },
+          "end": {
+            "line": 23,
+            "column": 2
+          }
         }
-      ],
+      },
       "children": [],
+      "endTag": null,
       "range": [
         425,
         599
@@ -1021,16 +1129,53 @@
           }
         }
       },
-      "attributes": [
-        {
-          "type": "SvelteAttribute",
-          "boolean": false,
-          "key": {
-            "type": "SvelteName",
-            "name": "src",
+      "startTag": {
+        "type": "SvelteStartTag",
+        "attributes": [
+          {
+            "type": "SvelteAttribute",
+            "boolean": false,
+            "key": {
+              "type": "SvelteName",
+              "name": "src",
+              "range": [
+                670,
+                673
+              ],
+              "loc": {
+                "start": {
+                  "line": 27,
+                  "column": 1
+                },
+                "end": {
+                  "line": 27,
+                  "column": 4
+                }
+              }
+            },
+            "value": [
+              {
+                "type": "SvelteLiteral",
+                "value": "https://sveltejs.github.io/assets/music/satie.mp3",
+                "range": [
+                  675,
+                  724
+                ],
+                "loc": {
+                  "start": {
+                    "line": 27,
+                    "column": 6
+                  },
+                  "end": {
+                    "line": 27,
+                    "column": 55
+                  }
+                }
+              }
+            ],
             "range": [
               670,
-              673
+              725
             ],
             "loc": {
               "start": {
@@ -1039,54 +1184,54 @@
               },
               "end": {
                 "line": 27,
-                "column": 4
+                "column": 56
               }
             }
           },
-          "value": [
-            {
-              "type": "SvelteText",
-              "value": "https://sveltejs.github.io/assets/music/satie.mp3",
+          {
+            "type": "SvelteAttribute",
+            "boolean": false,
+            "key": {
+              "type": "SvelteName",
+              "name": "title",
               "range": [
-                675,
-                724
+                727,
+                732
               ],
               "loc": {
                 "start": {
-                  "line": 27,
-                  "column": 6
+                  "line": 28,
+                  "column": 1
                 },
                 "end": {
-                  "line": 27,
-                  "column": 55
+                  "line": 28,
+                  "column": 6
                 }
               }
-            }
-          ],
-          "range": [
-            670,
-            725
-          ],
-          "loc": {
-            "start": {
-              "line": 27,
-              "column": 1
             },
-            "end": {
-              "line": 27,
-              "column": 56
-            }
-          }
-        },
-        {
-          "type": "SvelteAttribute",
-          "boolean": false,
-          "key": {
-            "type": "SvelteName",
-            "name": "title",
+            "value": [
+              {
+                "type": "SvelteLiteral",
+                "value": "Gymnopédie no. 1",
+                "range": [
+                  734,
+                  750
+                ],
+                "loc": {
+                  "start": {
+                    "line": 28,
+                    "column": 8
+                  },
+                  "end": {
+                    "line": 28,
+                    "column": 24
+                  }
+                }
+              }
+            ],
             "range": [
               727,
-              732
+              751
             ],
             "loc": {
               "start": {
@@ -1095,54 +1240,54 @@
               },
               "end": {
                 "line": 28,
-                "column": 6
+                "column": 25
               }
             }
           },
-          "value": [
-            {
-              "type": "SvelteText",
-              "value": "Gymnopédie no. 1",
+          {
+            "type": "SvelteAttribute",
+            "boolean": false,
+            "key": {
+              "type": "SvelteName",
+              "name": "composer",
               "range": [
-                734,
-                750
+                753,
+                761
               ],
               "loc": {
                 "start": {
-                  "line": 28,
-                  "column": 8
+                  "line": 29,
+                  "column": 1
                 },
                 "end": {
-                  "line": 28,
-                  "column": 24
+                  "line": 29,
+                  "column": 9
                 }
               }
-            }
-          ],
-          "range": [
-            727,
-            751
-          ],
-          "loc": {
-            "start": {
-              "line": 28,
-              "column": 1
             },
-            "end": {
-              "line": 28,
-              "column": 25
-            }
-          }
-        },
-        {
-          "type": "SvelteAttribute",
-          "boolean": false,
-          "key": {
-            "type": "SvelteName",
-            "name": "composer",
+            "value": [
+              {
+                "type": "SvelteLiteral",
+                "value": "Erik Satie",
+                "range": [
+                  763,
+                  773
+                ],
+                "loc": {
+                  "start": {
+                    "line": 29,
+                    "column": 11
+                  },
+                  "end": {
+                    "line": 29,
+                    "column": 21
+                  }
+                }
+              }
+            ],
             "range": [
               753,
-              761
+              774
             ],
             "loc": {
               "start": {
@@ -1151,54 +1296,54 @@
               },
               "end": {
                 "line": 29,
-                "column": 9
+                "column": 22
               }
             }
           },
-          "value": [
-            {
-              "type": "SvelteText",
-              "value": "Erik Satie",
+          {
+            "type": "SvelteAttribute",
+            "boolean": false,
+            "key": {
+              "type": "SvelteName",
+              "name": "performer",
               "range": [
-                763,
-                773
+                776,
+                785
               ],
               "loc": {
                 "start": {
-                  "line": 29,
-                  "column": 11
+                  "line": 30,
+                  "column": 1
                 },
                 "end": {
-                  "line": 29,
-                  "column": 21
+                  "line": 30,
+                  "column": 10
                 }
               }
-            }
-          ],
-          "range": [
-            753,
-            774
-          ],
-          "loc": {
-            "start": {
-              "line": 29,
-              "column": 1
             },
-            "end": {
-              "line": 29,
-              "column": 22
-            }
-          }
-        },
-        {
-          "type": "SvelteAttribute",
-          "boolean": false,
-          "key": {
-            "type": "SvelteName",
-            "name": "performer",
+            "value": [
+              {
+                "type": "SvelteLiteral",
+                "value": "Prodigal Procrastinator",
+                "range": [
+                  787,
+                  810
+                ],
+                "loc": {
+                  "start": {
+                    "line": 30,
+                    "column": 12
+                  },
+                  "end": {
+                    "line": 30,
+                    "column": 35
+                  }
+                }
+              }
+            ],
             "range": [
               776,
-              785
+              811
             ],
             "loc": {
               "start": {
@@ -1207,47 +1352,29 @@
               },
               "end": {
                 "line": 30,
-                "column": 10
+                "column": 36
               }
-            }
-          },
-          "value": [
-            {
-              "type": "SvelteText",
-              "value": "Prodigal Procrastinator",
-              "range": [
-                787,
-                810
-              ],
-              "loc": {
-                "start": {
-                  "line": 30,
-                  "column": 12
-                },
-                "end": {
-                  "line": 30,
-                  "column": 35
-                }
-              }
-            }
-          ],
-          "range": [
-            776,
-            811
-          ],
-          "loc": {
-            "start": {
-              "line": 30,
-              "column": 1
-            },
-            "end": {
-              "line": 30,
-              "column": 36
             }
           }
+        ],
+        "selfClosing": true,
+        "range": [
+          656,
+          814
+        ],
+        "loc": {
+          "start": {
+            "line": 26,
+            "column": 0
+          },
+          "end": {
+            "line": 31,
+            "column": 2
+          }
         }
-      ],
+      },
       "children": [],
+      "endTag": null,
       "range": [
         656,
         814
@@ -1338,16 +1465,53 @@
           }
         }
       },
-      "attributes": [
-        {
-          "type": "SvelteAttribute",
-          "boolean": false,
-          "key": {
-            "type": "SvelteName",
-            "name": "src",
+      "startTag": {
+        "type": "SvelteStartTag",
+        "attributes": [
+          {
+            "type": "SvelteAttribute",
+            "boolean": false,
+            "key": {
+              "type": "SvelteName",
+              "name": "src",
+              "range": [
+                902,
+                905
+              ],
+              "loc": {
+                "start": {
+                  "line": 35,
+                  "column": 1
+                },
+                "end": {
+                  "line": 35,
+                  "column": 4
+                }
+              }
+            },
+            "value": [
+              {
+                "type": "SvelteLiteral",
+                "value": "https://sveltejs.github.io/assets/music/beethoven.mp3",
+                "range": [
+                  907,
+                  960
+                ],
+                "loc": {
+                  "start": {
+                    "line": 35,
+                    "column": 6
+                  },
+                  "end": {
+                    "line": 35,
+                    "column": 59
+                  }
+                }
+              }
+            ],
             "range": [
               902,
-              905
+              961
             ],
             "loc": {
               "start": {
@@ -1356,54 +1520,54 @@
               },
               "end": {
                 "line": 35,
-                "column": 4
+                "column": 60
               }
             }
           },
-          "value": [
-            {
-              "type": "SvelteText",
-              "value": "https://sveltejs.github.io/assets/music/beethoven.mp3",
+          {
+            "type": "SvelteAttribute",
+            "boolean": false,
+            "key": {
+              "type": "SvelteName",
+              "name": "title",
               "range": [
-                907,
-                960
+                963,
+                968
               ],
               "loc": {
                 "start": {
-                  "line": 35,
-                  "column": 6
+                  "line": 36,
+                  "column": 1
                 },
                 "end": {
-                  "line": 35,
-                  "column": 59
+                  "line": 36,
+                  "column": 6
                 }
               }
-            }
-          ],
-          "range": [
-            902,
-            961
-          ],
-          "loc": {
-            "start": {
-              "line": 35,
-              "column": 1
             },
-            "end": {
-              "line": 35,
-              "column": 60
-            }
-          }
-        },
-        {
-          "type": "SvelteAttribute",
-          "boolean": false,
-          "key": {
-            "type": "SvelteName",
-            "name": "title",
+            "value": [
+              {
+                "type": "SvelteLiteral",
+                "value": "Symphony no. 5 in Cm, Op. 67 - I. Allegro con brio",
+                "range": [
+                  970,
+                  1020
+                ],
+                "loc": {
+                  "start": {
+                    "line": 36,
+                    "column": 8
+                  },
+                  "end": {
+                    "line": 36,
+                    "column": 58
+                  }
+                }
+              }
+            ],
             "range": [
               963,
-              968
+              1021
             ],
             "loc": {
               "start": {
@@ -1412,54 +1576,54 @@
               },
               "end": {
                 "line": 36,
-                "column": 6
+                "column": 59
               }
             }
           },
-          "value": [
-            {
-              "type": "SvelteText",
-              "value": "Symphony no. 5 in Cm, Op. 67 - I. Allegro con brio",
+          {
+            "type": "SvelteAttribute",
+            "boolean": false,
+            "key": {
+              "type": "SvelteName",
+              "name": "composer",
               "range": [
-                970,
-                1020
+                1023,
+                1031
               ],
               "loc": {
                 "start": {
-                  "line": 36,
-                  "column": 8
+                  "line": 37,
+                  "column": 1
                 },
                 "end": {
-                  "line": 36,
-                  "column": 58
+                  "line": 37,
+                  "column": 9
                 }
               }
-            }
-          ],
-          "range": [
-            963,
-            1021
-          ],
-          "loc": {
-            "start": {
-              "line": 36,
-              "column": 1
             },
-            "end": {
-              "line": 36,
-              "column": 59
-            }
-          }
-        },
-        {
-          "type": "SvelteAttribute",
-          "boolean": false,
-          "key": {
-            "type": "SvelteName",
-            "name": "composer",
+            "value": [
+              {
+                "type": "SvelteLiteral",
+                "value": "Ludwig van Beethoven",
+                "range": [
+                  1033,
+                  1053
+                ],
+                "loc": {
+                  "start": {
+                    "line": 37,
+                    "column": 11
+                  },
+                  "end": {
+                    "line": 37,
+                    "column": 31
+                  }
+                }
+              }
+            ],
             "range": [
               1023,
-              1031
+              1054
             ],
             "loc": {
               "start": {
@@ -1468,54 +1632,54 @@
               },
               "end": {
                 "line": 37,
-                "column": 9
+                "column": 32
               }
             }
           },
-          "value": [
-            {
-              "type": "SvelteText",
-              "value": "Ludwig van Beethoven",
+          {
+            "type": "SvelteAttribute",
+            "boolean": false,
+            "key": {
+              "type": "SvelteName",
+              "name": "performer",
               "range": [
-                1033,
-                1053
+                1056,
+                1065
               ],
               "loc": {
                 "start": {
-                  "line": 37,
-                  "column": 11
+                  "line": 38,
+                  "column": 1
                 },
                 "end": {
-                  "line": 37,
-                  "column": 31
+                  "line": 38,
+                  "column": 10
                 }
               }
-            }
-          ],
-          "range": [
-            1023,
-            1054
-          ],
-          "loc": {
-            "start": {
-              "line": 37,
-              "column": 1
             },
-            "end": {
-              "line": 37,
-              "column": 32
-            }
-          }
-        },
-        {
-          "type": "SvelteAttribute",
-          "boolean": false,
-          "key": {
-            "type": "SvelteName",
-            "name": "performer",
+            "value": [
+              {
+                "type": "SvelteLiteral",
+                "value": "European Archive",
+                "range": [
+                  1067,
+                  1083
+                ],
+                "loc": {
+                  "start": {
+                    "line": 38,
+                    "column": 12
+                  },
+                  "end": {
+                    "line": 38,
+                    "column": 28
+                  }
+                }
+              }
+            ],
             "range": [
               1056,
-              1065
+              1084
             ],
             "loc": {
               "start": {
@@ -1524,47 +1688,29 @@
               },
               "end": {
                 "line": 38,
-                "column": 10
+                "column": 29
               }
-            }
-          },
-          "value": [
-            {
-              "type": "SvelteText",
-              "value": "European Archive",
-              "range": [
-                1067,
-                1083
-              ],
-              "loc": {
-                "start": {
-                  "line": 38,
-                  "column": 12
-                },
-                "end": {
-                  "line": 38,
-                  "column": 28
-                }
-              }
-            }
-          ],
-          "range": [
-            1056,
-            1084
-          ],
-          "loc": {
-            "start": {
-              "line": 38,
-              "column": 1
-            },
-            "end": {
-              "line": 38,
-              "column": 29
             }
           }
+        ],
+        "selfClosing": true,
+        "range": [
+          888,
+          1087
+        ],
+        "loc": {
+          "start": {
+            "line": 34,
+            "column": 0
+          },
+          "end": {
+            "line": 39,
+            "column": 2
+          }
         }
-      ],
+      },
       "children": [],
+      "endTag": null,
       "range": [
         888,
         1087
@@ -1655,16 +1801,53 @@
           }
         }
       },
-      "attributes": [
-        {
-          "type": "SvelteAttribute",
-          "boolean": false,
-          "key": {
-            "type": "SvelteName",
-            "name": "src",
+      "startTag": {
+        "type": "SvelteStartTag",
+        "attributes": [
+          {
+            "type": "SvelteAttribute",
+            "boolean": false,
+            "key": {
+              "type": "SvelteName",
+              "name": "src",
+              "range": [
+                1170,
+                1173
+              ],
+              "loc": {
+                "start": {
+                  "line": 43,
+                  "column": 1
+                },
+                "end": {
+                  "line": 43,
+                  "column": 4
+                }
+              }
+            },
+            "value": [
+              {
+                "type": "SvelteLiteral",
+                "value": "https://sveltejs.github.io/assets/music/mozart.mp3",
+                "range": [
+                  1175,
+                  1225
+                ],
+                "loc": {
+                  "start": {
+                    "line": 43,
+                    "column": 6
+                  },
+                  "end": {
+                    "line": 43,
+                    "column": 56
+                  }
+                }
+              }
+            ],
             "range": [
               1170,
-              1173
+              1226
             ],
             "loc": {
               "start": {
@@ -1673,54 +1856,54 @@
               },
               "end": {
                 "line": 43,
-                "column": 4
+                "column": 57
               }
             }
           },
-          "value": [
-            {
-              "type": "SvelteText",
-              "value": "https://sveltejs.github.io/assets/music/mozart.mp3",
+          {
+            "type": "SvelteAttribute",
+            "boolean": false,
+            "key": {
+              "type": "SvelteName",
+              "name": "title",
               "range": [
-                1175,
-                1225
+                1228,
+                1233
               ],
               "loc": {
                 "start": {
-                  "line": 43,
-                  "column": 6
+                  "line": 44,
+                  "column": 1
                 },
                 "end": {
-                  "line": 43,
-                  "column": 56
+                  "line": 44,
+                  "column": 6
                 }
               }
-            }
-          ],
-          "range": [
-            1170,
-            1226
-          ],
-          "loc": {
-            "start": {
-              "line": 43,
-              "column": 1
             },
-            "end": {
-              "line": 43,
-              "column": 57
-            }
-          }
-        },
-        {
-          "type": "SvelteAttribute",
-          "boolean": false,
-          "key": {
-            "type": "SvelteName",
-            "name": "title",
+            "value": [
+              {
+                "type": "SvelteLiteral",
+                "value": "Requiem in D minor, K. 626 - III. Sequence - Lacrymosa",
+                "range": [
+                  1235,
+                  1289
+                ],
+                "loc": {
+                  "start": {
+                    "line": 44,
+                    "column": 8
+                  },
+                  "end": {
+                    "line": 44,
+                    "column": 62
+                  }
+                }
+              }
+            ],
             "range": [
               1228,
-              1233
+              1290
             ],
             "loc": {
               "start": {
@@ -1729,54 +1912,54 @@
               },
               "end": {
                 "line": 44,
-                "column": 6
+                "column": 63
               }
             }
           },
-          "value": [
-            {
-              "type": "SvelteText",
-              "value": "Requiem in D minor, K. 626 - III. Sequence - Lacrymosa",
+          {
+            "type": "SvelteAttribute",
+            "boolean": false,
+            "key": {
+              "type": "SvelteName",
+              "name": "composer",
               "range": [
-                1235,
-                1289
+                1292,
+                1300
               ],
               "loc": {
                 "start": {
-                  "line": 44,
-                  "column": 8
+                  "line": 45,
+                  "column": 1
                 },
                 "end": {
-                  "line": 44,
-                  "column": 62
+                  "line": 45,
+                  "column": 9
                 }
               }
-            }
-          ],
-          "range": [
-            1228,
-            1290
-          ],
-          "loc": {
-            "start": {
-              "line": 44,
-              "column": 1
             },
-            "end": {
-              "line": 44,
-              "column": 63
-            }
-          }
-        },
-        {
-          "type": "SvelteAttribute",
-          "boolean": false,
-          "key": {
-            "type": "SvelteName",
-            "name": "composer",
+            "value": [
+              {
+                "type": "SvelteLiteral",
+                "value": "Wolfgang Amadeus Mozart",
+                "range": [
+                  1302,
+                  1325
+                ],
+                "loc": {
+                  "start": {
+                    "line": 45,
+                    "column": 11
+                  },
+                  "end": {
+                    "line": 45,
+                    "column": 34
+                  }
+                }
+              }
+            ],
             "range": [
               1292,
-              1300
+              1326
             ],
             "loc": {
               "start": {
@@ -1785,54 +1968,54 @@
               },
               "end": {
                 "line": 45,
-                "column": 9
+                "column": 35
               }
             }
           },
-          "value": [
-            {
-              "type": "SvelteText",
-              "value": "Wolfgang Amadeus Mozart",
+          {
+            "type": "SvelteAttribute",
+            "boolean": false,
+            "key": {
+              "type": "SvelteName",
+              "name": "performer",
               "range": [
-                1302,
-                1325
+                1328,
+                1337
               ],
               "loc": {
                 "start": {
-                  "line": 45,
-                  "column": 11
+                  "line": 46,
+                  "column": 1
                 },
                 "end": {
-                  "line": 45,
-                  "column": 34
+                  "line": 46,
+                  "column": 10
                 }
               }
-            }
-          ],
-          "range": [
-            1292,
-            1326
-          ],
-          "loc": {
-            "start": {
-              "line": 45,
-              "column": 1
             },
-            "end": {
-              "line": 45,
-              "column": 35
-            }
-          }
-        },
-        {
-          "type": "SvelteAttribute",
-          "boolean": false,
-          "key": {
-            "type": "SvelteName",
-            "name": "performer",
+            "value": [
+              {
+                "type": "SvelteLiteral",
+                "value": "Markus Staab",
+                "range": [
+                  1339,
+                  1351
+                ],
+                "loc": {
+                  "start": {
+                    "line": 46,
+                    "column": 12
+                  },
+                  "end": {
+                    "line": 46,
+                    "column": 24
+                  }
+                }
+              }
+            ],
             "range": [
               1328,
-              1337
+              1352
             ],
             "loc": {
               "start": {
@@ -1841,47 +2024,29 @@
               },
               "end": {
                 "line": 46,
-                "column": 10
+                "column": 25
               }
-            }
-          },
-          "value": [
-            {
-              "type": "SvelteText",
-              "value": "Markus Staab",
-              "range": [
-                1339,
-                1351
-              ],
-              "loc": {
-                "start": {
-                  "line": 46,
-                  "column": 12
-                },
-                "end": {
-                  "line": 46,
-                  "column": 24
-                }
-              }
-            }
-          ],
-          "range": [
-            1328,
-            1352
-          ],
-          "loc": {
-            "start": {
-              "line": 46,
-              "column": 1
-            },
-            "end": {
-              "line": 46,
-              "column": 25
             }
           }
+        ],
+        "selfClosing": true,
+        "range": [
+          1156,
+          1355
+        ],
+        "loc": {
+          "start": {
+            "line": 42,
+            "column": 0
+          },
+          "end": {
+            "line": 47,
+            "column": 2
+          }
         }
-      ],
+      },
       "children": [],
+      "endTag": null,
       "range": [
         1156,
         1355

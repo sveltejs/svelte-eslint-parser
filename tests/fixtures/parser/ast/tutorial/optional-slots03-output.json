@@ -21,7 +21,25 @@
           }
         }
       },
-      "attributes": [],
+      "startTag": {
+        "type": "SvelteStartTag",
+        "attributes": [],
+        "selfClosing": false,
+        "range": [
+          0,
+          8
+        ],
+        "loc": {
+          "start": {
+            "line": 1,
+            "column": 0
+          },
+          "end": {
+            "line": 1,
+            "column": 8
+          }
+        }
+      },
       "body": [
         {
           "type": "ExportNamedDeclaration",
@@ -313,6 +331,23 @@
           "source": null
         }
       ],
+      "endTag": {
+        "type": "SvelteEndTag",
+        "range": [
+          88,
+          97
+        ],
+        "loc": {
+          "start": {
+            "line": 5,
+            "column": 0
+          },
+          "end": {
+            "line": 5,
+            "column": 9
+          }
+        }
+      },
       "range": [
         0,
         97
@@ -350,7 +385,7 @@
       "type": "SvelteStyleElement",
       "name": {
         "type": "SvelteName",
-        "name": "script",
+        "name": "style",
         "range": [
           100,
           105
@@ -366,8 +401,62 @@
           }
         }
       },
-      "attributes": [],
-      "children": [],
+      "startTag": {
+        "type": "SvelteStartTag",
+        "attributes": [],
+        "selfClosing": false,
+        "range": [
+          99,
+          106
+        ],
+        "loc": {
+          "start": {
+            "line": 7,
+            "column": 0
+          },
+          "end": {
+            "line": 7,
+            "column": 7
+          }
+        }
+      },
+      "children": [
+        {
+          "type": "SvelteText",
+          "value": "\n\tarticle {\n\t\tborder: 1px #ccc solid;\n\t\tborder-radius: 4px;\n\t\tposition: relative;\n\t}\n\n\tarticle > div {\n\t\tpadding: 1.25rem;\n\t}\n\n\tarticle.has-discussion::after {\n\t\tcontent: '';\n\t\tbackground-color: #ff3e00;\n\t\tborder-radius: 10px;\n\t\tbox-shadow: 0 2px 4px rgba(0,0,0,0.2);\n\t\theight: 20px;\n\t\tposition: absolute;\n\t\tright: -10px;\n\t\ttop: -10px;\n\t\twidth: 20px;\n\t}\n\n\th2,\n\th3 {\n\t\tmargin: 0 0 0.5rem;\n\t}\n\n\th3 {\n\t\tfont-size: 0.875rem;\n\t\tfont-weight: 500;\n\t\tletter-spacing: 0.08em;\n\t\ttext-transform: uppercase;\n\t}\n\n\tp {\n\t\tcolor: #777;\n\t\tmargin: 0;\n\t}\n\n\t.discussion {\n\t\tbackground-color: #eee;\n\t\tborder-top: 1px #ccc solid;\n\t}\n",
+          "range": [
+            106,
+            717
+          ],
+          "loc": {
+            "start": {
+              "line": 7,
+              "column": 7
+            },
+            "end": {
+              "line": 51,
+              "column": 0
+            }
+          }
+        }
+      ],
+      "endTag": {
+        "type": "SvelteEndTag",
+        "range": [
+          717,
+          725
+        ],
+        "loc": {
+          "start": {
+            "line": 51,
+            "column": 0
+          },
+          "end": {
+            "line": 51,
+            "column": 8
+          }
+        }
+      },
       "range": [
         99,
         725
@@ -422,47 +511,35 @@
           }
         }
       },
-      "attributes": [
-        {
-          "type": "SvelteDirective",
-          "kind": "Class",
-          "name": {
-            "type": "Identifier",
-            "name": "has-discussion",
-            "range": [
-              742,
-              756
-            ],
-            "loc": {
-              "start": {
-                "line": 53,
-                "column": 15
-              },
-              "end": {
-                "line": 53,
-                "column": 29
-              }
-            }
-          },
-          "modifiers": [],
-          "expression": {
-            "type": "MemberExpression",
-            "start": 758,
-            "end": 774,
-            "loc": {
-              "start": {
-                "line": 53,
-                "column": 31
-              },
-              "end": {
-                "line": 53,
-                "column": 47
+      "startTag": {
+        "type": "SvelteStartTag",
+        "attributes": [
+          {
+            "type": "SvelteDirective",
+            "kind": "Class",
+            "name": {
+              "type": "Identifier",
+              "name": "has-discussion",
+              "range": [
+                742,
+                756
+              ],
+              "loc": {
+                "start": {
+                  "line": 53,
+                  "column": 15
+                },
+                "end": {
+                  "line": 53,
+                  "column": 29
+                }
               }
             },
-            "object": {
-              "type": "Identifier",
+            "modifiers": [],
+            "expression": {
+              "type": "MemberExpression",
               "start": 758,
-              "end": 765,
+              "end": 774,
               "loc": {
                 "start": {
                   "line": 53,
@@ -470,58 +547,88 @@
                 },
                 "end": {
                   "line": 53,
-                  "column": 38
-                }
-              },
-              "name": "$$slots",
-              "range": [
-                758,
-                765
-              ]
-            },
-            "property": {
-              "type": "Identifier",
-              "start": 766,
-              "end": 774,
-              "loc": {
-                "start": {
-                  "line": 53,
-                  "column": 39
-                },
-                "end": {
-                  "line": 53,
                   "column": 47
                 }
               },
-              "name": "comments",
+              "object": {
+                "type": "Identifier",
+                "start": 758,
+                "end": 765,
+                "loc": {
+                  "start": {
+                    "line": 53,
+                    "column": 31
+                  },
+                  "end": {
+                    "line": 53,
+                    "column": 38
+                  }
+                },
+                "name": "$$slots",
+                "range": [
+                  758,
+                  765
+                ]
+              },
+              "property": {
+                "type": "Identifier",
+                "start": 766,
+                "end": 774,
+                "loc": {
+                  "start": {
+                    "line": 53,
+                    "column": 39
+                  },
+                  "end": {
+                    "line": 53,
+                    "column": 47
+                  }
+                },
+                "name": "comments",
+                "range": [
+                  766,
+                  774
+                ]
+              },
+              "computed": false,
+              "optional": false,
               "range": [
-                766,
+                758,
                 774
               ]
             },
-            "computed": false,
-            "optional": false,
             "range": [
-              758,
-              774
-            ]
-          },
-          "range": [
-            736,
-            775
-          ],
-          "loc": {
-            "start": {
-              "line": 53,
-              "column": 9
-            },
-            "end": {
-              "line": 53,
-              "column": 48
+              736,
+              775
+            ],
+            "loc": {
+              "start": {
+                "line": 53,
+                "column": 9
+              },
+              "end": {
+                "line": 53,
+                "column": 48
+              }
             }
           }
+        ],
+        "selfClosing": false,
+        "range": [
+          727,
+          776
+        ],
+        "loc": {
+          "start": {
+            "line": 53,
+            "column": 0
+          },
+          "end": {
+            "line": 53,
+            "column": 49
+          }
         }
-      ],
+      },
       "children": [
         {
           "type": "SvelteText",
@@ -562,7 +669,25 @@
               }
             }
           },
-          "attributes": [],
+          "startTag": {
+            "type": "SvelteStartTag",
+            "attributes": [],
+            "selfClosing": false,
+            "range": [
+              778,
+              783
+            ],
+            "loc": {
+              "start": {
+                "line": 54,
+                "column": 1
+              },
+              "end": {
+                "line": 54,
+                "column": 6
+              }
+            }
+          },
           "children": [
             {
               "type": "SvelteText",
@@ -603,7 +728,25 @@
                   }
                 }
               },
-              "attributes": [],
+              "startTag": {
+                "type": "SvelteStartTag",
+                "attributes": [],
+                "selfClosing": false,
+                "range": [
+                  786,
+                  790
+                ],
+                "loc": {
+                  "start": {
+                    "line": 55,
+                    "column": 2
+                  },
+                  "end": {
+                    "line": 55,
+                    "column": 6
+                  }
+                }
+              },
               "children": [
                 {
                   "type": "SvelteMustacheTag",
@@ -644,6 +787,23 @@
                   }
                 }
               ],
+              "endTag": {
+                "type": "SvelteEndTag",
+                "range": [
+                  797,
+                  802
+                ],
+                "loc": {
+                  "start": {
+                    "line": 55,
+                    "column": 13
+                  },
+                  "end": {
+                    "line": 55,
+                    "column": 18
+                  }
+                }
+              },
               "range": [
                 786,
                 802
@@ -698,7 +858,25 @@
                   }
                 }
               },
-              "attributes": [],
+              "startTag": {
+                "type": "SvelteStartTag",
+                "attributes": [],
+                "selfClosing": false,
+                "range": [
+                  805,
+                  808
+                ],
+                "loc": {
+                  "start": {
+                    "line": 56,
+                    "column": 2
+                  },
+                  "end": {
+                    "line": 56,
+                    "column": 5
+                  }
+                }
+              },
               "children": [
                 {
                   "type": "SvelteMustacheTag",
@@ -813,6 +991,23 @@
                   }
                 }
               ],
+              "endTag": {
+                "type": "SvelteEndTag",
+                "range": [
+                  853,
+                  857
+                ],
+                "loc": {
+                  "start": {
+                    "line": 56,
+                    "column": 50
+                  },
+                  "end": {
+                    "line": 56,
+                    "column": 54
+                  }
+                }
+              },
               "range": [
                 805,
                 857
@@ -847,6 +1042,23 @@
               }
             }
           ],
+          "endTag": {
+            "type": "SvelteEndTag",
+            "range": [
+              859,
+              865
+            ],
+            "loc": {
+              "start": {
+                "line": 57,
+                "column": 1
+              },
+              "end": {
+                "line": 57,
+                "column": 7
+              }
+            }
+          },
           "range": [
             778,
             865
@@ -966,16 +1178,53 @@
                   }
                 }
               },
-              "attributes": [
-                {
-                  "type": "SvelteAttribute",
-                  "boolean": false,
-                  "key": {
-                    "type": "SvelteName",
-                    "name": "class",
+              "startTag": {
+                "type": "SvelteStartTag",
+                "attributes": [
+                  {
+                    "type": "SvelteAttribute",
+                    "boolean": false,
+                    "key": {
+                      "type": "SvelteName",
+                      "name": "class",
+                      "range": [
+                        897,
+                        902
+                      ],
+                      "loc": {
+                        "start": {
+                          "line": 59,
+                          "column": 7
+                        },
+                        "end": {
+                          "line": 59,
+                          "column": 12
+                        }
+                      }
+                    },
+                    "value": [
+                      {
+                        "type": "SvelteLiteral",
+                        "value": "discussion",
+                        "range": [
+                          904,
+                          914
+                        ],
+                        "loc": {
+                          "start": {
+                            "line": 59,
+                            "column": 14
+                          },
+                          "end": {
+                            "line": 59,
+                            "column": 24
+                          }
+                        }
+                      }
+                    ],
                     "range": [
                       897,
-                      902
+                      915
                     ],
                     "loc": {
                       "start": {
@@ -984,46 +1233,27 @@
                       },
                       "end": {
                         "line": 59,
-                        "column": 12
+                        "column": 25
                       }
-                    }
-                  },
-                  "value": [
-                    {
-                      "type": "SvelteText",
-                      "value": "discussion",
-                      "range": [
-                        904,
-                        914
-                      ],
-                      "loc": {
-                        "start": {
-                          "line": 59,
-                          "column": 14
-                        },
-                        "end": {
-                          "line": 59,
-                          "column": 24
-                        }
-                      }
-                    }
-                  ],
-                  "range": [
-                    897,
-                    915
-                  ],
-                  "loc": {
-                    "start": {
-                      "line": 59,
-                      "column": 7
-                    },
-                    "end": {
-                      "line": 59,
-                      "column": 25
                     }
                   }
+                ],
+                "selfClosing": false,
+                "range": [
+                  892,
+                  916
+                ],
+                "loc": {
+                  "start": {
+                    "line": 59,
+                    "column": 2
+                  },
+                  "end": {
+                    "line": 59,
+                    "column": 26
+                  }
                 }
-              ],
+              },
               "children": [
                 {
                   "type": "SvelteText",
@@ -1064,7 +1294,25 @@
                       }
                     }
                   },
-                  "attributes": [],
+                  "startTag": {
+                    "type": "SvelteStartTag",
+                    "attributes": [],
+                    "selfClosing": false,
+                    "range": [
+                      920,
+                      924
+                    ],
+                    "loc": {
+                      "start": {
+                        "line": 60,
+                        "column": 3
+                      },
+                      "end": {
+                        "line": 60,
+                        "column": 7
+                      }
+                    }
+                  },
                   "children": [
                     {
                       "type": "SvelteText",
@@ -1085,6 +1333,23 @@
                       }
                     }
                   ],
+                  "endTag": {
+                    "type": "SvelteEndTag",
+                    "range": [
+                      932,
+                      937
+                    ],
+                    "loc": {
+                      "start": {
+                        "line": 60,
+                        "column": 15
+                      },
+                      "end": {
+                        "line": 60,
+                        "column": 20
+                      }
+                    }
+                  },
                   "range": [
                     920,
                     937
@@ -1139,16 +1404,53 @@
                       }
                     }
                   },
-                  "attributes": [
-                    {
-                      "type": "SvelteAttribute",
-                      "boolean": false,
-                      "key": {
-                        "type": "SvelteName",
-                        "name": "name",
+                  "startTag": {
+                    "type": "SvelteStartTag",
+                    "attributes": [
+                      {
+                        "type": "SvelteAttribute",
+                        "boolean": false,
+                        "key": {
+                          "type": "SvelteName",
+                          "name": "name",
+                          "range": [
+                            947,
+                            951
+                          ],
+                          "loc": {
+                            "start": {
+                              "line": 61,
+                              "column": 9
+                            },
+                            "end": {
+                              "line": 61,
+                              "column": 13
+                            }
+                          }
+                        },
+                        "value": [
+                          {
+                            "type": "SvelteLiteral",
+                            "value": "comments",
+                            "range": [
+                              953,
+                              961
+                            ],
+                            "loc": {
+                              "start": {
+                                "line": 61,
+                                "column": 15
+                              },
+                              "end": {
+                                "line": 61,
+                                "column": 23
+                              }
+                            }
+                          }
+                        ],
                         "range": [
                           947,
-                          951
+                          962
                         ],
                         "loc": {
                           "start": {
@@ -1157,47 +1459,45 @@
                           },
                           "end": {
                             "line": 61,
-                            "column": 13
+                            "column": 24
                           }
-                        }
-                      },
-                      "value": [
-                        {
-                          "type": "SvelteText",
-                          "value": "comments",
-                          "range": [
-                            953,
-                            961
-                          ],
-                          "loc": {
-                            "start": {
-                              "line": 61,
-                              "column": 15
-                            },
-                            "end": {
-                              "line": 61,
-                              "column": 23
-                            }
-                          }
-                        }
-                      ],
-                      "range": [
-                        947,
-                        962
-                      ],
-                      "loc": {
-                        "start": {
-                          "line": 61,
-                          "column": 9
-                        },
-                        "end": {
-                          "line": 61,
-                          "column": 24
                         }
                       }
+                    ],
+                    "selfClosing": false,
+                    "range": [
+                      941,
+                      963
+                    ],
+                    "loc": {
+                      "start": {
+                        "line": 61,
+                        "column": 3
+                      },
+                      "end": {
+                        "line": 61,
+                        "column": 25
+                      }
                     }
-                  ],
+                  },
                   "children": [],
+                  "endTag": {
+                    "type": "SvelteEndTag",
+                    "range": [
+                      963,
+                      970
+                    ],
+                    "loc": {
+                      "start": {
+                        "line": 61,
+                        "column": 25
+                      },
+                      "end": {
+                        "line": 61,
+                        "column": 32
+                      }
+                    }
+                  },
                   "range": [
                     941,
                     970
@@ -1232,6 +1532,23 @@
                   }
                 }
               ],
+              "endTag": {
+                "type": "SvelteEndTag",
+                "range": [
+                  973,
+                  979
+                ],
+                "loc": {
+                  "start": {
+                    "line": 62,
+                    "column": 2
+                  },
+                  "end": {
+                    "line": 62,
+                    "column": 8
+                  }
+                }
+              },
               "range": [
                 892,
                 979
@@ -1283,6 +1600,23 @@
           }
         }
       ],
+      "endTag": {
+        "type": "SvelteEndTag",
+        "range": [
+          987,
+          997
+        ],
+        "loc": {
+          "start": {
+            "line": 64,
+            "column": 0
+          },
+          "end": {
+            "line": 64,
+            "column": 10
+          }
+        }
+      },
       "range": [
         727,
         997

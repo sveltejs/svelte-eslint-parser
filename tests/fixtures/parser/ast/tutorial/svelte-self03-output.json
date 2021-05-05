@@ -21,7 +21,25 @@
           }
         }
       },
-      "attributes": [],
+      "startTag": {
+        "type": "SvelteStartTag",
+        "attributes": [],
+        "selfClosing": false,
+        "range": [
+          0,
+          8
+        ],
+        "loc": {
+          "start": {
+            "line": 1,
+            "column": 0
+          },
+          "end": {
+            "line": 1,
+            "column": 8
+          }
+        }
+      },
       "body": [
         {
           "type": "ImportDeclaration",
@@ -538,6 +556,23 @@
           }
         }
       ],
+      "endTag": {
+        "type": "SvelteEndTag",
+        "range": [
+          161,
+          170
+        ],
+        "loc": {
+          "start": {
+            "line": 11,
+            "column": 0
+          },
+          "end": {
+            "line": 11,
+            "column": 9
+          }
+        }
+      },
       "range": [
         0,
         170
@@ -575,7 +610,7 @@
       "type": "SvelteStyleElement",
       "name": {
         "type": "SvelteName",
-        "name": "script",
+        "name": "style",
         "range": [
           173,
           178
@@ -591,8 +626,62 @@
           }
         }
       },
-      "attributes": [],
-      "children": [],
+      "startTag": {
+        "type": "SvelteStartTag",
+        "attributes": [],
+        "selfClosing": false,
+        "range": [
+          172,
+          179
+        ],
+        "loc": {
+          "start": {
+            "line": 13,
+            "column": 0
+          },
+          "end": {
+            "line": 13,
+            "column": 7
+          }
+        }
+      },
+      "children": [
+        {
+          "type": "SvelteText",
+          "value": "\n\tspan {\n\t\tpadding: 0 0 0 1.5em;\n\t\tbackground: url(tutorial/icons/folder.svg) 0 0.1em no-repeat;\n\t\tbackground-size: 1em 1em;\n\t\tfont-weight: bold;\n\t\tcursor: pointer;\n\t}\n\n\t.expanded {\n\t\tbackground-image: url(tutorial/icons/folder-open.svg);\n\t}\n\n\tul {\n\t\tpadding: 0.2em 0 0 0.5em;\n\t\tmargin: 0 0 0 0.5em;\n\t\tlist-style: none;\n\t\tborder-left: 1px solid #eee;\n\t}\n\n\tli {\n\t\tpadding: 0.2em 0;\n\t}\n",
+          "range": [
+            179,
+            563
+          ],
+          "loc": {
+            "start": {
+              "line": 13,
+              "column": 7
+            },
+            "end": {
+              "line": 36,
+              "column": 0
+            }
+          }
+        }
+      ],
+      "endTag": {
+        "type": "SvelteEndTag",
+        "range": [
+          563,
+          571
+        ],
+        "loc": {
+          "start": {
+            "line": 36,
+            "column": 0
+          },
+          "end": {
+            "line": 36,
+            "column": 8
+          }
+        }
+      },
       "range": [
         172,
         571
@@ -647,124 +736,142 @@
           }
         }
       },
-      "attributes": [
-        {
-          "type": "SvelteDirective",
-          "kind": "Class",
-          "name": {
-            "start": 585,
-            "end": 593,
-            "type": "Identifier",
-            "name": "expanded",
-            "range": [
-              585,
-              593
-            ],
-            "loc": {
-              "start": {
-                "line": 38,
-                "column": 12
-              },
-              "end": {
-                "line": 38,
-                "column": 20
+      "startTag": {
+        "type": "SvelteStartTag",
+        "attributes": [
+          {
+            "type": "SvelteDirective",
+            "kind": "Class",
+            "name": {
+              "start": 585,
+              "end": 593,
+              "type": "Identifier",
+              "name": "expanded",
+              "range": [
+                585,
+                593
+              ],
+              "loc": {
+                "start": {
+                  "line": 38,
+                  "column": 12
+                },
+                "end": {
+                  "line": 38,
+                  "column": 20
+                }
               }
-            }
-          },
-          "modifiers": [],
-          "expression": {
-            "start": 585,
-            "end": 593,
-            "type": "Identifier",
-            "name": "expanded",
-            "range": [
-              585,
-              593
-            ],
-            "loc": {
-              "start": {
-                "line": 38,
-                "column": 12
-              },
-              "end": {
-                "line": 38,
-                "column": 20
-              }
-            }
-          },
-          "range": [
-            579,
-            593
-          ],
-          "loc": {
-            "start": {
-              "line": 38,
-              "column": 6
             },
-            "end": {
-              "line": 38,
-              "column": 20
+            "modifiers": [],
+            "expression": {
+              "start": 585,
+              "end": 593,
+              "type": "Identifier",
+              "name": "expanded",
+              "range": [
+                585,
+                593
+              ],
+              "loc": {
+                "start": {
+                  "line": 38,
+                  "column": 12
+                },
+                "end": {
+                  "line": 38,
+                  "column": 20
+                }
+              }
+            },
+            "range": [
+              579,
+              593
+            ],
+            "loc": {
+              "start": {
+                "line": 38,
+                "column": 6
+              },
+              "end": {
+                "line": 38,
+                "column": 20
+              }
+            }
+          },
+          {
+            "type": "SvelteDirective",
+            "kind": "EventHandler",
+            "name": {
+              "type": "Identifier",
+              "name": "click",
+              "range": [
+                597,
+                602
+              ],
+              "loc": {
+                "start": {
+                  "line": 38,
+                  "column": 24
+                },
+                "end": {
+                  "line": 38,
+                  "column": 29
+                }
+              }
+            },
+            "modifiers": [],
+            "expression": {
+              "type": "Identifier",
+              "start": 604,
+              "end": 610,
+              "loc": {
+                "start": {
+                  "line": 38,
+                  "column": 31
+                },
+                "end": {
+                  "line": 38,
+                  "column": 37
+                }
+              },
+              "name": "toggle",
+              "range": [
+                604,
+                610
+              ]
+            },
+            "range": [
+              594,
+              611
+            ],
+            "loc": {
+              "start": {
+                "line": 38,
+                "column": 21
+              },
+              "end": {
+                "line": 38,
+                "column": 38
+              }
             }
           }
-        },
-        {
-          "type": "SvelteDirective",
-          "kind": "EventHandler",
-          "name": {
-            "type": "Identifier",
-            "name": "click",
-            "range": [
-              597,
-              602
-            ],
-            "loc": {
-              "start": {
-                "line": 38,
-                "column": 24
-              },
-              "end": {
-                "line": 38,
-                "column": 29
-              }
-            }
+        ],
+        "selfClosing": false,
+        "range": [
+          573,
+          612
+        ],
+        "loc": {
+          "start": {
+            "line": 38,
+            "column": 0
           },
-          "modifiers": [],
-          "expression": {
-            "type": "Identifier",
-            "start": 604,
-            "end": 610,
-            "loc": {
-              "start": {
-                "line": 38,
-                "column": 31
-              },
-              "end": {
-                "line": 38,
-                "column": 37
-              }
-            },
-            "name": "toggle",
-            "range": [
-              604,
-              610
-            ]
-          },
-          "range": [
-            594,
-            611
-          ],
-          "loc": {
-            "start": {
-              "line": 38,
-              "column": 21
-            },
-            "end": {
-              "line": 38,
-              "column": 38
-            }
+          "end": {
+            "line": 38,
+            "column": 39
           }
         }
-      ],
+      },
       "children": [
         {
           "type": "SvelteMustacheTag",
@@ -805,6 +912,23 @@
           }
         }
       ],
+      "endTag": {
+        "type": "SvelteEndTag",
+        "range": [
+          618,
+          625
+        ],
+        "loc": {
+          "start": {
+            "line": 38,
+            "column": 45
+          },
+          "end": {
+            "line": 38,
+            "column": 52
+          }
+        }
+      },
       "range": [
         573,
         625
@@ -883,7 +1007,25 @@
               }
             }
           },
-          "attributes": [],
+          "startTag": {
+            "type": "SvelteStartTag",
+            "attributes": [],
+            "selfClosing": false,
+            "range": [
+              643,
+              647
+            ],
+            "loc": {
+              "start": {
+                "line": 41,
+                "column": 1
+              },
+              "end": {
+                "line": 41,
+                "column": 5
+              }
+            }
+          },
           "children": [
             {
               "type": "SvelteText",
@@ -969,7 +1111,25 @@
                       }
                     }
                   },
-                  "attributes": [],
+                  "startTag": {
+                    "type": "SvelteStartTag",
+                    "attributes": [],
+                    "selfClosing": false,
+                    "range": [
+                      675,
+                      679
+                    ],
+                    "loc": {
+                      "start": {
+                        "line": 43,
+                        "column": 3
+                      },
+                      "end": {
+                        "line": 43,
+                        "column": 7
+                      }
+                    }
+                  },
                   "children": [
                     {
                       "type": "SvelteText",
@@ -1116,46 +1276,65 @@
                               }
                             }
                           },
-                          "attributes": [
-                            {
-                              "type": "SvelteSpreadAttribute",
-                              "argument": {
-                                "type": "Identifier",
-                                "start": 735,
-                                "end": 739,
+                          "startTag": {
+                            "type": "SvelteStartTag",
+                            "attributes": [
+                              {
+                                "type": "SvelteSpreadAttribute",
+                                "argument": {
+                                  "type": "Identifier",
+                                  "start": 735,
+                                  "end": 739,
+                                  "loc": {
+                                    "start": {
+                                      "line": 45,
+                                      "column": 22
+                                    },
+                                    "end": {
+                                      "line": 45,
+                                      "column": 26
+                                    }
+                                  },
+                                  "name": "file",
+                                  "range": [
+                                    735,
+                                    739
+                                  ]
+                                },
+                                "range": [
+                                  731,
+                                  740
+                                ],
                                 "loc": {
                                   "start": {
                                     "line": 45,
-                                    "column": 22
+                                    "column": 18
                                   },
                                   "end": {
                                     "line": 45,
-                                    "column": 26
+                                    "column": 27
                                   }
-                                },
-                                "name": "file",
-                                "range": [
-                                  735,
-                                  739
-                                ]
-                              },
-                              "range": [
-                                731,
-                                740
-                              ],
-                              "loc": {
-                                "start": {
-                                  "line": 45,
-                                  "column": 18
-                                },
-                                "end": {
-                                  "line": 45,
-                                  "column": 27
                                 }
                               }
+                            ],
+                            "selfClosing": true,
+                            "range": [
+                              718,
+                              742
+                            ],
+                            "loc": {
+                              "start": {
+                                "line": 45,
+                                "column": 5
+                              },
+                              "end": {
+                                "line": 45,
+                                "column": 29
+                              }
                             }
-                          ],
+                          },
                           "children": [],
+                          "endTag": null,
                           "range": [
                             718,
                             742
@@ -1196,46 +1375,65 @@
                                 }
                               }
                             },
-                            "attributes": [
-                              {
-                                "type": "SvelteSpreadAttribute",
-                                "argument": {
-                                  "type": "Identifier",
-                                  "start": 770,
-                                  "end": 774,
+                            "startTag": {
+                              "type": "SvelteStartTag",
+                              "attributes": [
+                                {
+                                  "type": "SvelteSpreadAttribute",
+                                  "argument": {
+                                    "type": "Identifier",
+                                    "start": 770,
+                                    "end": 774,
+                                    "loc": {
+                                      "start": {
+                                        "line": 47,
+                                        "column": 15
+                                      },
+                                      "end": {
+                                        "line": 47,
+                                        "column": 19
+                                      }
+                                    },
+                                    "name": "file",
+                                    "range": [
+                                      770,
+                                      774
+                                    ]
+                                  },
+                                  "range": [
+                                    766,
+                                    775
+                                  ],
                                   "loc": {
                                     "start": {
                                       "line": 47,
-                                      "column": 15
+                                      "column": 11
                                     },
                                     "end": {
                                       "line": 47,
-                                      "column": 19
+                                      "column": 20
                                     }
-                                  },
-                                  "name": "file",
-                                  "range": [
-                                    770,
-                                    774
-                                  ]
-                                },
-                                "range": [
-                                  766,
-                                  775
-                                ],
-                                "loc": {
-                                  "start": {
-                                    "line": 47,
-                                    "column": 11
-                                  },
-                                  "end": {
-                                    "line": 47,
-                                    "column": 20
                                   }
                                 }
+                              ],
+                              "selfClosing": true,
+                              "range": [
+                                760,
+                                777
+                              ],
+                              "loc": {
+                                "start": {
+                                  "line": 47,
+                                  "column": 5
+                                },
+                                "end": {
+                                  "line": 47,
+                                  "column": 22
+                                }
                               }
-                            ],
+                            },
                             "children": [],
+                            "endTag": null,
                             "range": [
                               760,
                               777
@@ -1301,6 +1499,23 @@
                       }
                     }
                   ],
+                  "endTag": {
+                    "type": "SvelteEndTag",
+                    "range": [
+                      791,
+                      796
+                    ],
+                    "loc": {
+                      "start": {
+                        "line": 49,
+                        "column": 3
+                      },
+                      "end": {
+                        "line": 49,
+                        "column": 8
+                      }
+                    }
+                  },
                   "range": [
                     675,
                     796
@@ -1352,6 +1567,23 @@
               }
             }
           ],
+          "endTag": {
+            "type": "SvelteEndTag",
+            "range": [
+              808,
+              813
+            ],
+            "loc": {
+              "start": {
+                "line": 51,
+                "column": 1
+              },
+              "end": {
+                "line": 51,
+                "column": 6
+              }
+            }
+          },
           "range": [
             643,
             813

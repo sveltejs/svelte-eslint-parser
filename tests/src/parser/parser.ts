@@ -93,7 +93,7 @@ function checkTokens(ast: SvelteProgram, input: string) {
     }
 }
 
-function checkLoc(ast: SvelteProgram, fileName: string, _code: string) {
+function checkLoc(ast: SvelteProgram, fileName: string, code: string) {
     for (const token of ast.tokens) {
         assert.ok(
             token.range[0] < token.range[1],
@@ -162,6 +162,17 @@ function checkLoc(ast: SvelteProgram, fileName: string, _code: string) {
                         `overlap loc.end.column on "${parent.type} line:${parent.loc.end.line} col:${parent.loc.end.column}" > "${node.type} line:${node.loc.end.line} col:${node.loc.end.column}" in ${fileName}`,
                     )
                 }
+            }
+            if (node.type === "SvelteStartTag") {
+                assert.strictEqual(code[node.range[0]], "<")
+                assert.strictEqual(code[node.range[1] - 1], ">")
+            }
+            if (node.type === "SvelteEndTag") {
+                assert.strictEqual(
+                    code.slice(node.range[0], node.range[0] + 2),
+                    "</",
+                )
+                assert.strictEqual(code[node.range[1] - 1], ">")
             }
         },
         leaveNode() {

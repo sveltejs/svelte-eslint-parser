@@ -21,7 +21,25 @@
           }
         }
       },
-      "attributes": [],
+      "startTag": {
+        "type": "SvelteStartTag",
+        "attributes": [],
+        "selfClosing": false,
+        "range": [
+          0,
+          8
+        ],
+        "loc": {
+          "start": {
+            "line": 1,
+            "column": 0
+          },
+          "end": {
+            "line": 1,
+            "column": 8
+          }
+        }
+      },
       "body": [
         {
           "type": "ImportDeclaration",
@@ -251,6 +269,23 @@
           }
         }
       ],
+      "endTag": {
+        "type": "SvelteEndTag",
+        "range": [
+          110,
+          119
+        ],
+        "loc": {
+          "start": {
+            "line": 7,
+            "column": 0
+          },
+          "end": {
+            "line": 7,
+            "column": 9
+          }
+        }
+      },
       "range": [
         0,
         119
@@ -305,66 +340,85 @@
           }
         }
       },
-      "attributes": [
-        {
-          "type": "SvelteDirective",
-          "kind": "EventHandler",
-          "name": {
-            "type": "Identifier",
-            "name": "click",
+      "startTag": {
+        "type": "SvelteStartTag",
+        "attributes": [
+          {
+            "type": "SvelteDirective",
+            "kind": "EventHandler",
+            "name": {
+              "type": "Identifier",
+              "name": "click",
+              "range": [
+                138,
+                143
+              ],
+              "loc": {
+                "start": {
+                  "line": 9,
+                  "column": 17
+                },
+                "end": {
+                  "line": 9,
+                  "column": 22
+                }
+              }
+            },
+            "modifiers": [],
+            "expression": {
+              "type": "Identifier",
+              "start": 145,
+              "end": 156,
+              "loc": {
+                "start": {
+                  "line": 9,
+                  "column": 24
+                },
+                "end": {
+                  "line": 9,
+                  "column": 35
+                }
+              },
+              "name": "handleClick",
+              "range": [
+                145,
+                156
+              ]
+            },
             "range": [
-              138,
-              143
+              135,
+              157
             ],
             "loc": {
               "start": {
                 "line": 9,
-                "column": 17
+                "column": 14
               },
               "end": {
                 "line": 9,
-                "column": 22
+                "column": 36
               }
-            }
-          },
-          "modifiers": [],
-          "expression": {
-            "type": "Identifier",
-            "start": 145,
-            "end": 156,
-            "loc": {
-              "start": {
-                "line": 9,
-                "column": 24
-              },
-              "end": {
-                "line": 9,
-                "column": 35
-              }
-            },
-            "name": "handleClick",
-            "range": [
-              145,
-              156
-            ]
-          },
-          "range": [
-            135,
-            157
-          ],
-          "loc": {
-            "start": {
-              "line": 9,
-              "column": 14
-            },
-            "end": {
-              "line": 9,
-              "column": 36
             }
           }
+        ],
+        "selfClosing": true,
+        "range": [
+          121,
+          159
+        ],
+        "loc": {
+          "start": {
+            "line": 9,
+            "column": 0
+          },
+          "end": {
+            "line": 9,
+            "column": 38
+          }
         }
-      ],
+      },
       "children": [],
+      "endTag": null,
       "range": [
         121,
         159

@@ -21,16 +21,53 @@
           }
         }
       },
-      "attributes": [
-        {
-          "type": "SvelteAttribute",
-          "boolean": false,
-          "key": {
-            "type": "SvelteName",
-            "name": "context",
+      "startTag": {
+        "type": "SvelteStartTag",
+        "attributes": [
+          {
+            "type": "SvelteAttribute",
+            "boolean": false,
+            "key": {
+              "type": "SvelteName",
+              "name": "context",
+              "range": [
+                8,
+                15
+              ],
+              "loc": {
+                "start": {
+                  "line": 1,
+                  "column": 8
+                },
+                "end": {
+                  "line": 1,
+                  "column": 15
+                }
+              }
+            },
+            "value": [
+              {
+                "type": "SvelteLiteral",
+                "value": "module",
+                "range": [
+                  17,
+                  23
+                ],
+                "loc": {
+                  "start": {
+                    "line": 1,
+                    "column": 17
+                  },
+                  "end": {
+                    "line": 1,
+                    "column": 23
+                  }
+                }
+              }
+            ],
             "range": [
               8,
-              15
+              24
             ],
             "loc": {
               "start": {
@@ -39,46 +76,27 @@
               },
               "end": {
                 "line": 1,
-                "column": 15
+                "column": 24
               }
-            }
-          },
-          "value": [
-            {
-              "type": "SvelteText",
-              "value": "module",
-              "range": [
-                17,
-                23
-              ],
-              "loc": {
-                "start": {
-                  "line": 1,
-                  "column": 17
-                },
-                "end": {
-                  "line": 1,
-                  "column": 23
-                }
-              }
-            }
-          ],
-          "range": [
-            8,
-            24
-          ],
-          "loc": {
-            "start": {
-              "line": 1,
-              "column": 8
-            },
-            "end": {
-              "line": 1,
-              "column": 24
             }
           }
+        ],
+        "selfClosing": false,
+        "range": [
+          0,
+          25
+        ],
+        "loc": {
+          "start": {
+            "line": 1,
+            "column": 0
+          },
+          "end": {
+            "line": 1,
+            "column": 25
+          }
         }
-      ],
+      },
       "body": [
         {
           "type": "VariableDeclaration",
@@ -536,6 +554,23 @@
           "source": null
         }
       ],
+      "endTag": {
+        "type": "SvelteEndTag",
+        "range": [
+          146,
+          155
+        ],
+        "loc": {
+          "start": {
+            "line": 9,
+            "column": 0
+          },
+          "end": {
+            "line": 9,
+            "column": 9
+          }
+        }
+      },
       "range": [
         0,
         155
@@ -589,7 +624,25 @@
           }
         }
       },
-      "attributes": [],
+      "startTag": {
+        "type": "SvelteStartTag",
+        "attributes": [],
+        "selfClosing": false,
+        "range": [
+          157,
+          165
+        ],
+        "loc": {
+          "start": {
+            "line": 11,
+            "column": 0
+          },
+          "end": {
+            "line": 11,
+            "column": 8
+          }
+        }
+      },
       "body": [
         {
           "type": "ImportDeclaration",
@@ -1956,6 +2009,23 @@
           }
         }
       ],
+      "endTag": {
+        "type": "SvelteEndTag",
+        "range": [
+          511,
+          520
+        ],
+        "loc": {
+          "start": {
+            "line": 32,
+            "column": 0
+          },
+          "end": {
+            "line": 32,
+            "column": 9
+          }
+        }
+      },
       "range": [
         157,
         520
@@ -1993,7 +2063,7 @@
       "type": "SvelteStyleElement",
       "name": {
         "type": "SvelteName",
-        "name": "script",
+        "name": "style",
         "range": [
           523,
           528
@@ -2009,8 +2079,62 @@
           }
         }
       },
-      "attributes": [],
-      "children": [],
+      "startTag": {
+        "type": "SvelteStartTag",
+        "attributes": [],
+        "selfClosing": false,
+        "range": [
+          522,
+          529
+        ],
+        "loc": {
+          "start": {
+            "line": 34,
+            "column": 0
+          },
+          "end": {
+            "line": 34,
+            "column": 7
+          }
+        }
+      },
+      "children": [
+        {
+          "type": "SvelteText",
+          "value": "\n\tarticle { margin: 0 0 1em 0; max-width: 800px }\n\th2, p { margin: 0 0 0.3em 0; }\n\taudio { width: 100%; margin: 0.5em 0 1em 0; }\n\t.playing { color: #ff3e00; }\n",
+          "range": [
+            529,
+            688
+          ],
+          "loc": {
+            "start": {
+              "line": 34,
+              "column": 7
+            },
+            "end": {
+              "line": 39,
+              "column": 0
+            }
+          }
+        }
+      ],
+      "endTag": {
+        "type": "SvelteEndTag",
+        "range": [
+          688,
+          696
+        ],
+        "loc": {
+          "start": {
+            "line": 39,
+            "column": 0
+          },
+          "end": {
+            "line": 39,
+            "column": 8
+          }
+        }
+      },
       "range": [
         522,
         696
@@ -2065,86 +2189,104 @@
           }
         }
       },
-      "attributes": [
-        {
-          "type": "SvelteDirective",
-          "kind": "Class",
-          "name": {
-            "type": "Identifier",
-            "name": "playing",
-            "range": [
-              713,
-              720
-            ],
-            "loc": {
-              "start": {
-                "line": 41,
-                "column": 15
-              },
-              "end": {
-                "line": 41,
-                "column": 22
-              }
-            }
-          },
-          "modifiers": [],
-          "expression": {
-            "type": "UnaryExpression",
-            "start": 722,
-            "end": 729,
-            "loc": {
-              "start": {
-                "line": 41,
-                "column": 24
-              },
-              "end": {
-                "line": 41,
-                "column": 31
+      "startTag": {
+        "type": "SvelteStartTag",
+        "attributes": [
+          {
+            "type": "SvelteDirective",
+            "kind": "Class",
+            "name": {
+              "type": "Identifier",
+              "name": "playing",
+              "range": [
+                713,
+                720
+              ],
+              "loc": {
+                "start": {
+                  "line": 41,
+                  "column": 15
+                },
+                "end": {
+                  "line": 41,
+                  "column": 22
+                }
               }
             },
-            "operator": "!",
-            "prefix": true,
-            "argument": {
-              "type": "Identifier",
-              "start": 723,
+            "modifiers": [],
+            "expression": {
+              "type": "UnaryExpression",
+              "start": 722,
               "end": 729,
               "loc": {
                 "start": {
                   "line": 41,
-                  "column": 25
+                  "column": 24
                 },
                 "end": {
                   "line": 41,
                   "column": 31
                 }
               },
-              "name": "paused",
+              "operator": "!",
+              "prefix": true,
+              "argument": {
+                "type": "Identifier",
+                "start": 723,
+                "end": 729,
+                "loc": {
+                  "start": {
+                    "line": 41,
+                    "column": 25
+                  },
+                  "end": {
+                    "line": 41,
+                    "column": 31
+                  }
+                },
+                "name": "paused",
+                "range": [
+                  723,
+                  729
+                ]
+              },
               "range": [
-                723,
+                722,
                 729
               ]
             },
             "range": [
-              722,
-              729
-            ]
-          },
-          "range": [
-            707,
-            730
-          ],
-          "loc": {
-            "start": {
-              "line": 41,
-              "column": 9
-            },
-            "end": {
-              "line": 41,
-              "column": 32
+              707,
+              730
+            ],
+            "loc": {
+              "start": {
+                "line": 41,
+                "column": 9
+              },
+              "end": {
+                "line": 41,
+                "column": 32
+              }
             }
           }
+        ],
+        "selfClosing": false,
+        "range": [
+          698,
+          731
+        ],
+        "loc": {
+          "start": {
+            "line": 41,
+            "column": 0
+          },
+          "end": {
+            "line": 41,
+            "column": 33
+          }
         }
-      ],
+      },
       "children": [
         {
           "type": "SvelteText",
@@ -2185,7 +2327,25 @@
               }
             }
           },
-          "attributes": [],
+          "startTag": {
+            "type": "SvelteStartTag",
+            "attributes": [],
+            "selfClosing": false,
+            "range": [
+              733,
+              737
+            ],
+            "loc": {
+              "start": {
+                "line": 42,
+                "column": 1
+              },
+              "end": {
+                "line": 42,
+                "column": 5
+              }
+            }
+          },
           "children": [
             {
               "type": "SvelteMustacheTag",
@@ -2226,6 +2386,23 @@
               }
             }
           ],
+          "endTag": {
+            "type": "SvelteEndTag",
+            "range": [
+              744,
+              749
+            ],
+            "loc": {
+              "start": {
+                "line": 42,
+                "column": 12
+              },
+              "end": {
+                "line": 42,
+                "column": 17
+              }
+            }
+          },
           "range": [
             733,
             749
@@ -2280,7 +2457,25 @@
               }
             }
           },
-          "attributes": [],
+          "startTag": {
+            "type": "SvelteStartTag",
+            "attributes": [],
+            "selfClosing": false,
+            "range": [
+              751,
+              754
+            ],
+            "loc": {
+              "start": {
+                "line": 43,
+                "column": 1
+              },
+              "end": {
+                "line": 43,
+                "column": 4
+              }
+            }
+          },
           "children": [
             {
               "type": "SvelteElement",
@@ -2303,7 +2498,25 @@
                   }
                 }
               },
-              "attributes": [],
+              "startTag": {
+                "type": "SvelteStartTag",
+                "attributes": [],
+                "selfClosing": false,
+                "range": [
+                  754,
+                  762
+                ],
+                "loc": {
+                  "start": {
+                    "line": 43,
+                    "column": 4
+                  },
+                  "end": {
+                    "line": 43,
+                    "column": 12
+                  }
+                }
+              },
               "children": [
                 {
                   "type": "SvelteMustacheTag",
@@ -2344,6 +2557,23 @@
                   }
                 }
               ],
+              "endTag": {
+                "type": "SvelteEndTag",
+                "range": [
+                  772,
+                  781
+                ],
+                "loc": {
+                  "start": {
+                    "line": 43,
+                    "column": 22
+                  },
+                  "end": {
+                    "line": 43,
+                    "column": 31
+                  }
+                }
+              },
               "range": [
                 754,
                 781
@@ -2416,6 +2646,23 @@
               }
             }
           ],
+          "endTag": {
+            "type": "SvelteEndTag",
+            "range": [
+              808,
+              812
+            ],
+            "loc": {
+              "start": {
+                "line": 43,
+                "column": 58
+              },
+              "end": {
+                "line": 43,
+                "column": 62
+              }
+            }
+          },
           "range": [
             751,
             812
@@ -2470,80 +2717,118 @@
               }
             }
           },
-          "attributes": [
-            {
-              "type": "SvelteDirective",
-              "kind": "Binding",
-              "name": {
-                "type": "Identifier",
-                "name": "this",
+          "startTag": {
+            "type": "SvelteStartTag",
+            "attributes": [
+              {
+                "type": "SvelteDirective",
+                "kind": "Binding",
+                "name": {
+                  "type": "Identifier",
+                  "name": "this",
+                  "range": [
+                    829,
+                    833
+                  ],
+                  "loc": {
+                    "start": {
+                      "line": 46,
+                      "column": 7
+                    },
+                    "end": {
+                      "line": 46,
+                      "column": 11
+                    }
+                  }
+                },
+                "modifiers": [],
+                "expression": {
+                  "type": "Identifier",
+                  "start": 835,
+                  "end": 840,
+                  "loc": {
+                    "start": {
+                      "line": 46,
+                      "column": 13
+                    },
+                    "end": {
+                      "line": 46,
+                      "column": 18
+                    }
+                  },
+                  "name": "audio",
+                  "range": [
+                    835,
+                    840
+                  ]
+                },
                 "range": [
-                  829,
-                  833
+                  824,
+                  841
                 ],
                 "loc": {
                   "start": {
                     "line": 46,
-                    "column": 7
+                    "column": 2
                   },
                   "end": {
                     "line": 46,
-                    "column": 11
+                    "column": 19
                   }
                 }
               },
-              "modifiers": [],
-              "expression": {
-                "type": "Identifier",
-                "start": 835,
-                "end": 840,
-                "loc": {
-                  "start": {
-                    "line": 46,
-                    "column": 13
-                  },
-                  "end": {
-                    "line": 46,
-                    "column": 18
+              {
+                "type": "SvelteDirective",
+                "kind": "Binding",
+                "name": {
+                  "start": 849,
+                  "end": 855,
+                  "type": "Identifier",
+                  "name": "paused",
+                  "range": [
+                    849,
+                    855
+                  ],
+                  "loc": {
+                    "start": {
+                      "line": 47,
+                      "column": 7
+                    },
+                    "end": {
+                      "line": 47,
+                      "column": 13
+                    }
                   }
                 },
-                "name": "audio",
-                "range": [
-                  835,
-                  840
-                ]
-              },
-              "range": [
-                824,
-                841
-              ],
-              "loc": {
-                "start": {
-                  "line": 46,
-                  "column": 2
+                "modifiers": [],
+                "expression": {
+                  "start": 849,
+                  "end": 855,
+                  "type": "Identifier",
+                  "name": "paused",
+                  "range": [
+                    849,
+                    855
+                  ],
+                  "loc": {
+                    "start": {
+                      "line": 47,
+                      "column": 7
+                    },
+                    "end": {
+                      "line": 47,
+                      "column": 13
+                    }
+                  }
                 },
-                "end": {
-                  "line": 46,
-                  "column": 19
-                }
-              }
-            },
-            {
-              "type": "SvelteDirective",
-              "kind": "Binding",
-              "name": {
-                "start": 849,
-                "end": 855,
-                "type": "Identifier",
-                "name": "paused",
                 "range": [
-                  849,
+                  844,
                   855
                 ],
                 "loc": {
                   "start": {
                     "line": 47,
-                    "column": 7
+                    "column": 2
                   },
                   "end": {
                     "line": 47,
@@ -2551,105 +2836,85 @@
                   }
                 }
               },
-              "modifiers": [],
-              "expression": {
-                "start": 849,
-                "end": 855,
-                "type": "Identifier",
-                "name": "paused",
+              {
+                "type": "SvelteDirective",
+                "kind": "EventHandler",
+                "name": {
+                  "type": "Identifier",
+                  "name": "play",
+                  "range": [
+                    861,
+                    865
+                  ],
+                  "loc": {
+                    "start": {
+                      "line": 48,
+                      "column": 5
+                    },
+                    "end": {
+                      "line": 48,
+                      "column": 9
+                    }
+                  }
+                },
+                "modifiers": [],
+                "expression": {
+                  "type": "Identifier",
+                  "start": 867,
+                  "end": 877,
+                  "loc": {
+                    "start": {
+                      "line": 48,
+                      "column": 11
+                    },
+                    "end": {
+                      "line": 48,
+                      "column": 21
+                    }
+                  },
+                  "name": "stopOthers",
+                  "range": [
+                    867,
+                    877
+                  ]
+                },
                 "range": [
-                  849,
-                  855
+                  858,
+                  878
                 ],
                 "loc": {
                   "start": {
-                    "line": 47,
-                    "column": 7
-                  },
-                  "end": {
-                    "line": 47,
-                    "column": 13
-                  }
-                }
-              },
-              "range": [
-                844,
-                855
-              ],
-              "loc": {
-                "start": {
-                  "line": 47,
-                  "column": 2
-                },
-                "end": {
-                  "line": 47,
-                  "column": 13
-                }
-              }
-            },
-            {
-              "type": "SvelteDirective",
-              "kind": "EventHandler",
-              "name": {
-                "type": "Identifier",
-                "name": "play",
-                "range": [
-                  861,
-                  865
-                ],
-                "loc": {
-                  "start": {
                     "line": 48,
-                    "column": 5
+                    "column": 2
                   },
                   "end": {
                     "line": 48,
-                    "column": 9
+                    "column": 22
                   }
                 }
               },
-              "modifiers": [],
-              "expression": {
-                "type": "Identifier",
-                "start": 867,
-                "end": 877,
-                "loc": {
-                  "start": {
-                    "line": 48,
-                    "column": 11
-                  },
-                  "end": {
-                    "line": 48,
-                    "column": 21
+              {
+                "type": "SvelteAttribute",
+                "boolean": true,
+                "key": {
+                  "type": "SvelteName",
+                  "name": "controls",
+                  "range": [
+                    881,
+                    889
+                  ],
+                  "loc": {
+                    "start": {
+                      "line": 49,
+                      "column": 2
+                    },
+                    "end": {
+                      "line": 49,
+                      "column": 10
+                    }
                   }
                 },
-                "name": "stopOthers",
-                "range": [
-                  867,
-                  877
-                ]
-              },
-              "range": [
-                858,
-                878
-              ],
-              "loc": {
-                "start": {
-                  "line": 48,
-                  "column": 2
-                },
-                "end": {
-                  "line": 48,
-                  "column": 22
-                }
-              }
-            },
-            {
-              "type": "SvelteAttribute",
-              "boolean": true,
-              "key": {
-                "type": "SvelteName",
-                "name": "controls",
+                "value": [],
                 "range": [
                   881,
                   889
@@ -2665,77 +2930,94 @@
                   }
                 }
               },
-              "value": [],
-              "range": [
-                881,
-                889
-              ],
-              "loc": {
-                "start": {
-                  "line": 49,
-                  "column": 2
+              {
+                "type": "SvelteShorthandAttribute",
+                "key": {
+                  "type": "Identifier",
+                  "name": "src",
+                  "range": [
+                    893,
+                    896
+                  ],
+                  "loc": {
+                    "start": {
+                      "line": 50,
+                      "column": 3
+                    },
+                    "end": {
+                      "line": 50,
+                      "column": 6
+                    }
+                  }
                 },
-                "end": {
-                  "line": 49,
-                  "column": 10
-                }
+                "value": {
+                  "type": "Identifier",
+                  "name": "src",
+                  "range": [
+                    893,
+                    896
+                  ],
+                  "loc": {
+                    "start": {
+                      "line": 50,
+                      "column": 3
+                    },
+                    "end": {
+                      "line": 50,
+                      "column": 6
+                    }
+                  }
+                },
+                "loc": {
+                  "start": {
+                    "line": 50,
+                    "column": 2
+                  },
+                  "end": {
+                    "line": 50,
+                    "column": 7
+                  }
+                },
+                "range": [
+                  892,
+                  897
+                ]
               }
-            },
-            {
-              "type": "SvelteShorthandAttribute",
-              "key": {
-                "type": "Identifier",
-                "name": "src",
-                "range": [
-                  893,
-                  896
-                ],
-                "loc": {
-                  "start": {
-                    "line": 50,
-                    "column": 3
-                  },
-                  "end": {
-                    "line": 50,
-                    "column": 6
-                  }
-                }
+            ],
+            "selfClosing": false,
+            "range": [
+              815,
+              900
+            ],
+            "loc": {
+              "start": {
+                "line": 45,
+                "column": 1
               },
-              "value": {
-                "type": "Identifier",
-                "name": "src",
-                "range": [
-                  893,
-                  896
-                ],
-                "loc": {
-                  "start": {
-                    "line": 50,
-                    "column": 3
-                  },
-                  "end": {
-                    "line": 50,
-                    "column": 6
-                  }
-                }
-              },
-              "loc": {
-                "start": {
-                  "line": 50,
-                  "column": 2
-                },
-                "end": {
-                  "line": 50,
-                  "column": 7
-                }
-              },
-              "range": [
-                892,
-                897
-              ]
+              "end": {
+                "line": 51,
+                "column": 2
+              }
             }
-          ],
+          },
           "children": [],
+          "endTag": {
+            "type": "SvelteEndTag",
+            "range": [
+              900,
+              908
+            ],
+            "loc": {
+              "start": {
+                "line": 51,
+                "column": 2
+              },
+              "end": {
+                "line": 51,
+                "column": 10
+              }
+            }
+          },
           "range": [
             815,
             908
@@ -2770,6 +3052,23 @@
           }
         }
       ],
+      "endTag": {
+        "type": "SvelteEndTag",
+        "range": [
+          909,
+          919
+        ],
+        "loc": {
+          "start": {
+            "line": 52,
+            "column": 0
+          },
+          "end": {
+            "line": 52,
+            "column": 10
+          }
+        }
+      },
       "range": [
         698,
         919

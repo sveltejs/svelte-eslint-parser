@@ -111,12 +111,12 @@ export function parseForESLint(
                 statement = statements[0]
             }
             if (
-                body.attributes.every(
+                body.startTag.attributes.every(
                     (attr) =>
                         attr.type === "SvelteAttribute" &&
                         attr.key.name === "context" &&
                         attr.value.length === 1 &&
-                        attr.value[0].type === "SvelteText" &&
+                        attr.value[0].type === "SvelteLiteral" &&
                         attr.value[0].value === "module",
                 )
             ) {

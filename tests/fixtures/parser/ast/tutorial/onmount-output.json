@@ -21,7 +21,25 @@
           }
         }
       },
-      "attributes": [],
+      "startTag": {
+        "type": "SvelteStartTag",
+        "attributes": [],
+        "selfClosing": false,
+        "range": [
+          0,
+          8
+        ],
+        "loc": {
+          "start": {
+            "line": 1,
+            "column": 0
+          },
+          "end": {
+            "line": 1,
+            "column": 8
+          }
+        }
+      },
       "body": [
         {
           "type": "ImportDeclaration",
@@ -640,6 +658,23 @@
           }
         }
       ],
+      "endTag": {
+        "type": "SvelteEndTag",
+        "range": [
+          205,
+          214
+        ],
+        "loc": {
+          "start": {
+            "line": 10,
+            "column": 0
+          },
+          "end": {
+            "line": 10,
+            "column": 9
+          }
+        }
+      },
       "range": [
         0,
         214
@@ -677,7 +712,7 @@
       "type": "SvelteStyleElement",
       "name": {
         "type": "SvelteName",
-        "name": "script",
+        "name": "style",
         "range": [
           217,
           222
@@ -693,8 +728,62 @@
           }
         }
       },
-      "attributes": [],
-      "children": [],
+      "startTag": {
+        "type": "SvelteStartTag",
+        "attributes": [],
+        "selfClosing": false,
+        "range": [
+          216,
+          223
+        ],
+        "loc": {
+          "start": {
+            "line": 12,
+            "column": 0
+          },
+          "end": {
+            "line": 12,
+            "column": 7
+          }
+        }
+      },
+      "children": [
+        {
+          "type": "SvelteText",
+          "value": "\n\t.photos {\n\t\twidth: 100%;\n\t\tdisplay: grid;\n\t\tgrid-template-columns: repeat(5, 1fr);\n\t\tgrid-gap: 8px;\n\t}\n\n\tfigure, img {\n\t\twidth: 100%;\n\t\tmargin: 0;\n\t}\n",
+          "range": [
+            223,
+            375
+          ],
+          "loc": {
+            "start": {
+              "line": 12,
+              "column": 7
+            },
+            "end": {
+              "line": 24,
+              "column": 0
+            }
+          }
+        }
+      ],
+      "endTag": {
+        "type": "SvelteEndTag",
+        "range": [
+          375,
+          383
+        ],
+        "loc": {
+          "start": {
+            "line": 24,
+            "column": 0
+          },
+          "end": {
+            "line": 24,
+            "column": 8
+          }
+        }
+      },
       "range": [
         216,
         383
@@ -749,7 +838,25 @@
           }
         }
       },
-      "attributes": [],
+      "startTag": {
+        "type": "SvelteStartTag",
+        "attributes": [],
+        "selfClosing": false,
+        "range": [
+          385,
+          389
+        ],
+        "loc": {
+          "start": {
+            "line": 26,
+            "column": 0
+          },
+          "end": {
+            "line": 26,
+            "column": 4
+          }
+        }
+      },
       "children": [
         {
           "type": "SvelteText",
@@ -770,6 +877,23 @@
           }
         }
       ],
+      "endTag": {
+        "type": "SvelteEndTag",
+        "range": [
+          400,
+          405
+        ],
+        "loc": {
+          "start": {
+            "line": 26,
+            "column": 15
+          },
+          "end": {
+            "line": 26,
+            "column": 20
+          }
+        }
+      },
       "range": [
         385,
         405
@@ -824,16 +948,53 @@
           }
         }
       },
-      "attributes": [
-        {
-          "type": "SvelteAttribute",
-          "boolean": false,
-          "key": {
-            "type": "SvelteName",
-            "name": "class",
+      "startTag": {
+        "type": "SvelteStartTag",
+        "attributes": [
+          {
+            "type": "SvelteAttribute",
+            "boolean": false,
+            "key": {
+              "type": "SvelteName",
+              "name": "class",
+              "range": [
+                412,
+                417
+              ],
+              "loc": {
+                "start": {
+                  "line": 28,
+                  "column": 5
+                },
+                "end": {
+                  "line": 28,
+                  "column": 10
+                }
+              }
+            },
+            "value": [
+              {
+                "type": "SvelteLiteral",
+                "value": "photos",
+                "range": [
+                  419,
+                  425
+                ],
+                "loc": {
+                  "start": {
+                    "line": 28,
+                    "column": 12
+                  },
+                  "end": {
+                    "line": 28,
+                    "column": 18
+                  }
+                }
+              }
+            ],
             "range": [
               412,
-              417
+              426
             ],
             "loc": {
               "start": {
@@ -842,46 +1003,27 @@
               },
               "end": {
                 "line": 28,
-                "column": 10
+                "column": 19
               }
-            }
-          },
-          "value": [
-            {
-              "type": "SvelteText",
-              "value": "photos",
-              "range": [
-                419,
-                425
-              ],
-              "loc": {
-                "start": {
-                  "line": 28,
-                  "column": 12
-                },
-                "end": {
-                  "line": 28,
-                  "column": 18
-                }
-              }
-            }
-          ],
-          "range": [
-            412,
-            426
-          ],
-          "loc": {
-            "start": {
-              "line": 28,
-              "column": 5
-            },
-            "end": {
-              "line": 28,
-              "column": 19
             }
           }
+        ],
+        "selfClosing": false,
+        "range": [
+          407,
+          427
+        ],
+        "loc": {
+          "start": {
+            "line": 28,
+            "column": 0
+          },
+          "end": {
+            "line": 28,
+            "column": 20
+          }
         }
-      ],
+      },
       "children": [
         {
           "type": "SvelteText",
@@ -967,7 +1109,25 @@
                   }
                 }
               },
-              "attributes": [],
+              "startTag": {
+                "type": "SvelteStartTag",
+                "attributes": [],
+                "selfClosing": false,
+                "range": [
+                  455,
+                  463
+                ],
+                "loc": {
+                  "start": {
+                    "line": 30,
+                    "column": 2
+                  },
+                  "end": {
+                    "line": 30,
+                    "column": 10
+                  }
+                }
+              },
               "children": [
                 {
                   "type": "SvelteText",
@@ -1008,16 +1168,114 @@
                       }
                     }
                   },
-                  "attributes": [
-                    {
-                      "type": "SvelteAttribute",
-                      "boolean": false,
-                      "key": {
-                        "type": "SvelteName",
-                        "name": "src",
+                  "startTag": {
+                    "type": "SvelteStartTag",
+                    "attributes": [
+                      {
+                        "type": "SvelteAttribute",
+                        "boolean": false,
+                        "key": {
+                          "type": "SvelteName",
+                          "name": "src",
+                          "range": [
+                            472,
+                            475
+                          ],
+                          "loc": {
+                            "start": {
+                              "line": 31,
+                              "column": 8
+                            },
+                            "end": {
+                              "line": 31,
+                              "column": 11
+                            }
+                          }
+                        },
+                        "value": [
+                          {
+                            "type": "SvelteMustacheTag",
+                            "kind": "text",
+                            "expression": {
+                              "type": "MemberExpression",
+                              "start": 477,
+                              "end": 495,
+                              "loc": {
+                                "start": {
+                                  "line": 31,
+                                  "column": 13
+                                },
+                                "end": {
+                                  "line": 31,
+                                  "column": 31
+                                }
+                              },
+                              "object": {
+                                "type": "Identifier",
+                                "start": 477,
+                                "end": 482,
+                                "loc": {
+                                  "start": {
+                                    "line": 31,
+                                    "column": 13
+                                  },
+                                  "end": {
+                                    "line": 31,
+                                    "column": 18
+                                  }
+                                },
+                                "name": "photo",
+                                "range": [
+                                  477,
+                                  482
+                                ]
+                              },
+                              "property": {
+                                "type": "Identifier",
+                                "start": 483,
+                                "end": 495,
+                                "loc": {
+                                  "start": {
+                                    "line": 31,
+                                    "column": 19
+                                  },
+                                  "end": {
+                                    "line": 31,
+                                    "column": 31
+                                  }
+                                },
+                                "name": "thumbnailUrl",
+                                "range": [
+                                  483,
+                                  495
+                                ]
+                              },
+                              "computed": false,
+                              "optional": false,
+                              "range": [
+                                477,
+                                495
+                              ]
+                            },
+                            "range": [
+                              476,
+                              496
+                            ],
+                            "loc": {
+                              "start": {
+                                "line": 31,
+                                "column": 12
+                              },
+                              "end": {
+                                "line": 31,
+                                "column": 32
+                              }
+                            }
+                          }
+                        ],
                         "range": [
                           472,
-                          475
+                          496
                         ],
                         "loc": {
                           "start": {
@@ -1026,115 +1284,115 @@
                           },
                           "end": {
                             "line": 31,
-                            "column": 11
+                            "column": 32
                           }
                         }
                       },
-                      "value": [
-                        {
-                          "type": "SvelteMustacheTag",
-                          "kind": "text",
-                          "expression": {
-                            "type": "MemberExpression",
-                            "start": 477,
-                            "end": 495,
-                            "loc": {
-                              "start": {
-                                "line": 31,
-                                "column": 13
-                              },
-                              "end": {
-                                "line": 31,
-                                "column": 31
-                              }
-                            },
-                            "object": {
-                              "type": "Identifier",
-                              "start": 477,
-                              "end": 482,
-                              "loc": {
-                                "start": {
-                                  "line": 31,
-                                  "column": 13
-                                },
-                                "end": {
-                                  "line": 31,
-                                  "column": 18
-                                }
-                              },
-                              "name": "photo",
-                              "range": [
-                                477,
-                                482
-                              ]
-                            },
-                            "property": {
-                              "type": "Identifier",
-                              "start": 483,
-                              "end": 495,
-                              "loc": {
-                                "start": {
-                                  "line": 31,
-                                  "column": 19
-                                },
-                                "end": {
-                                  "line": 31,
-                                  "column": 31
-                                }
-                              },
-                              "name": "thumbnailUrl",
-                              "range": [
-                                483,
-                                495
-                              ]
-                            },
-                            "computed": false,
-                            "optional": false,
-                            "range": [
-                              477,
-                              495
-                            ]
-                          },
+                      {
+                        "type": "SvelteAttribute",
+                        "boolean": false,
+                        "key": {
+                          "type": "SvelteName",
+                          "name": "alt",
                           "range": [
-                            476,
-                            496
+                            497,
+                            500
                           ],
                           "loc": {
                             "start": {
                               "line": 31,
-                              "column": 12
+                              "column": 33
                             },
                             "end": {
                               "line": 31,
-                              "column": 32
+                              "column": 36
                             }
                           }
-                        }
-                      ],
-                      "range": [
-                        472,
-                        496
-                      ],
-                      "loc": {
-                        "start": {
-                          "line": 31,
-                          "column": 8
                         },
-                        "end": {
-                          "line": 31,
-                          "column": 32
-                        }
-                      }
-                    },
-                    {
-                      "type": "SvelteAttribute",
-                      "boolean": false,
-                      "key": {
-                        "type": "SvelteName",
-                        "name": "alt",
+                        "value": [
+                          {
+                            "type": "SvelteMustacheTag",
+                            "kind": "text",
+                            "expression": {
+                              "type": "MemberExpression",
+                              "start": 502,
+                              "end": 513,
+                              "loc": {
+                                "start": {
+                                  "line": 31,
+                                  "column": 38
+                                },
+                                "end": {
+                                  "line": 31,
+                                  "column": 49
+                                }
+                              },
+                              "object": {
+                                "type": "Identifier",
+                                "start": 502,
+                                "end": 507,
+                                "loc": {
+                                  "start": {
+                                    "line": 31,
+                                    "column": 38
+                                  },
+                                  "end": {
+                                    "line": 31,
+                                    "column": 43
+                                  }
+                                },
+                                "name": "photo",
+                                "range": [
+                                  502,
+                                  507
+                                ]
+                              },
+                              "property": {
+                                "type": "Identifier",
+                                "start": 508,
+                                "end": 513,
+                                "loc": {
+                                  "start": {
+                                    "line": 31,
+                                    "column": 44
+                                  },
+                                  "end": {
+                                    "line": 31,
+                                    "column": 49
+                                  }
+                                },
+                                "name": "title",
+                                "range": [
+                                  508,
+                                  513
+                                ]
+                              },
+                              "computed": false,
+                              "optional": false,
+                              "range": [
+                                502,
+                                513
+                              ]
+                            },
+                            "range": [
+                              501,
+                              514
+                            ],
+                            "loc": {
+                              "start": {
+                                "line": 31,
+                                "column": 37
+                              },
+                              "end": {
+                                "line": 31,
+                                "column": 50
+                              }
+                            }
+                          }
+                        ],
                         "range": [
                           497,
-                          500
+                          514
                         ],
                         "loc": {
                           "start": {
@@ -1143,108 +1401,29 @@
                           },
                           "end": {
                             "line": 31,
-                            "column": 36
+                            "column": 50
                           }
-                        }
-                      },
-                      "value": [
-                        {
-                          "type": "SvelteMustacheTag",
-                          "kind": "text",
-                          "expression": {
-                            "type": "MemberExpression",
-                            "start": 502,
-                            "end": 513,
-                            "loc": {
-                              "start": {
-                                "line": 31,
-                                "column": 38
-                              },
-                              "end": {
-                                "line": 31,
-                                "column": 49
-                              }
-                            },
-                            "object": {
-                              "type": "Identifier",
-                              "start": 502,
-                              "end": 507,
-                              "loc": {
-                                "start": {
-                                  "line": 31,
-                                  "column": 38
-                                },
-                                "end": {
-                                  "line": 31,
-                                  "column": 43
-                                }
-                              },
-                              "name": "photo",
-                              "range": [
-                                502,
-                                507
-                              ]
-                            },
-                            "property": {
-                              "type": "Identifier",
-                              "start": 508,
-                              "end": 513,
-                              "loc": {
-                                "start": {
-                                  "line": 31,
-                                  "column": 44
-                                },
-                                "end": {
-                                  "line": 31,
-                                  "column": 49
-                                }
-                              },
-                              "name": "title",
-                              "range": [
-                                508,
-                                513
-                              ]
-                            },
-                            "computed": false,
-                            "optional": false,
-                            "range": [
-                              502,
-                              513
-                            ]
-                          },
-                          "range": [
-                            501,
-                            514
-                          ],
-                          "loc": {
-                            "start": {
-                              "line": 31,
-                              "column": 37
-                            },
-                            "end": {
-                              "line": 31,
-                              "column": 50
-                            }
-                          }
-                        }
-                      ],
-                      "range": [
-                        497,
-                        514
-                      ],
-                      "loc": {
-                        "start": {
-                          "line": 31,
-                          "column": 33
-                        },
-                        "end": {
-                          "line": 31,
-                          "column": 50
                         }
                       }
+                    ],
+                    "selfClosing": false,
+                    "range": [
+                      467,
+                      515
+                    ],
+                    "loc": {
+                      "start": {
+                        "line": 31,
+                        "column": 3
+                      },
+                      "end": {
+                        "line": 31,
+                        "column": 51
+                      }
                     }
-                  ],
+                  },
                   "children": [],
+                  "endTag": null,
                   "range": [
                     467,
                     515
@@ -1299,7 +1478,25 @@
                       }
                     }
                   },
-                  "attributes": [],
+                  "startTag": {
+                    "type": "SvelteStartTag",
+                    "attributes": [],
+                    "selfClosing": false,
+                    "range": [
+                      519,
+                      531
+                    ],
+                    "loc": {
+                      "start": {
+                        "line": 32,
+                        "column": 3
+                      },
+                      "end": {
+                        "line": 32,
+                        "column": 15
+                      }
+                    }
+                  },
                   "children": [
                     {
                       "type": "SvelteMustacheTag",
@@ -1381,6 +1578,23 @@
                       }
                     }
                   ],
+                  "endTag": {
+                    "type": "SvelteEndTag",
+                    "range": [
+                      544,
+                      557
+                    ],
+                    "loc": {
+                      "start": {
+                        "line": 32,
+                        "column": 28
+                      },
+                      "end": {
+                        "line": 32,
+                        "column": 41
+                      }
+                    }
+                  },
                   "range": [
                     519,
                     557
@@ -1415,6 +1629,23 @@
                   }
                 }
               ],
+              "endTag": {
+                "type": "SvelteEndTag",
+                "range": [
+                  560,
+                  569
+                ],
+                "loc": {
+                  "start": {
+                    "line": 33,
+                    "column": 2
+                  },
+                  "end": {
+                    "line": 33,
+                    "column": 11
+                  }
+                }
+              },
               "range": [
                 455,
                 569
@@ -1491,7 +1722,25 @@
                     }
                   }
                 },
-                "attributes": [],
+                "startTag": {
+                  "type": "SvelteStartTag",
+                  "attributes": [],
+                  "selfClosing": false,
+                  "range": [
+                    636,
+                    639
+                  ],
+                  "loc": {
+                    "start": {
+                      "line": 36,
+                      "column": 2
+                    },
+                    "end": {
+                      "line": 36,
+                      "column": 5
+                    }
+                  }
+                },
                 "children": [
                   {
                     "type": "SvelteText",
@@ -1512,6 +1761,23 @@
                     }
                   }
                 ],
+                "endTag": {
+                  "type": "SvelteEndTag",
+                  "range": [
+                    649,
+                    653
+                  ],
+                  "loc": {
+                    "start": {
+                      "line": 36,
+                      "column": 15
+                    },
+                    "end": {
+                      "line": 36,
+                      "column": 19
+                    }
+                  }
+                },
                 "range": [
                   636,
                   653
@@ -1577,6 +1843,23 @@
           }
         }
       ],
+      "endTag": {
+        "type": "SvelteEndTag",
+        "range": [
+          663,
+          669
+        ],
+        "loc": {
+          "start": {
+            "line": 38,
+            "column": 0
+          },
+          "end": {
+            "line": 38,
+            "column": 6
+          }
+        }
+      },
       "range": [
         407,
         669

@@ -21,7 +21,25 @@
           }
         }
       },
-      "attributes": [],
+      "startTag": {
+        "type": "SvelteStartTag",
+        "attributes": [],
+        "selfClosing": false,
+        "range": [
+          0,
+          8
+        ],
+        "loc": {
+          "start": {
+            "line": 1,
+            "column": 0
+          },
+          "end": {
+            "line": 1,
+            "column": 8
+          }
+        }
+      },
       "body": [
         {
           "type": "ImportDeclaration",
@@ -105,6 +123,23 @@
           }
         }
       ],
+      "endTag": {
+        "type": "SvelteEndTag",
+        "range": [
+          54,
+          63
+        ],
+        "loc": {
+          "start": {
+            "line": 3,
+            "column": 0
+          },
+          "end": {
+            "line": 3,
+            "column": 9
+          }
+        }
+      },
       "range": [
         0,
         63
@@ -142,7 +177,7 @@
       "type": "SvelteStyleElement",
       "name": {
         "type": "SvelteName",
-        "name": "script",
+        "name": "style",
         "range": [
           66,
           71
@@ -158,8 +193,62 @@
           }
         }
       },
-      "attributes": [],
-      "children": [],
+      "startTag": {
+        "type": "SvelteStartTag",
+        "attributes": [],
+        "selfClosing": false,
+        "range": [
+          65,
+          72
+        ],
+        "loc": {
+          "start": {
+            "line": 5,
+            "column": 0
+          },
+          "end": {
+            "line": 5,
+            "column": 7
+          }
+        }
+      },
+      "children": [
+        {
+          "type": "SvelteText",
+          "value": "\n\tdiv {\n\t\tpadding: 1em;\n\t\tmargin: 0 0 1em 0;\n\t\tbackground-color: #eee;\n\t}\n\n\t.active {\n\t\tbackground-color: #ff3e00;\n\t\tcolor: white;\n\t}\n",
+          "range": [
+            72,
+            206
+          ],
+          "loc": {
+            "start": {
+              "line": 5,
+              "column": 7
+            },
+            "end": {
+              "line": 16,
+              "column": 0
+            }
+          }
+        }
+      ],
+      "endTag": {
+        "type": "SvelteEndTag",
+        "range": [
+          206,
+          214
+        ],
+        "loc": {
+          "start": {
+            "line": 16,
+            "column": 0
+          },
+          "end": {
+            "line": 16,
+            "column": 8
+          }
+        }
+      },
       "range": [
         65,
         214
@@ -214,65 +303,83 @@
           }
         }
       },
-      "attributes": [
-        {
-          "type": "SvelteDirective",
-          "kind": "Let",
-          "name": {
-            "type": "Identifier",
-            "name": "hovering",
+      "startTag": {
+        "type": "SvelteStartTag",
+        "attributes": [
+          {
+            "type": "SvelteDirective",
+            "kind": "Let",
+            "name": {
+              "type": "Identifier",
+              "name": "hovering",
+              "range": [
+                231,
+                239
+              ],
+              "loc": {
+                "start": {
+                  "line": 18,
+                  "column": 15
+                },
+                "end": {
+                  "line": 18,
+                  "column": 23
+                }
+              }
+            },
+            "modifiers": [],
+            "expression": {
+              "type": "Identifier",
+              "start": 241,
+              "end": 249,
+              "loc": {
+                "start": {
+                  "line": 18,
+                  "column": 25
+                },
+                "end": {
+                  "line": 18,
+                  "column": 33
+                }
+              },
+              "name": "hovering",
+              "range": [
+                241,
+                249
+              ]
+            },
             "range": [
-              231,
-              239
+              227,
+              250
             ],
             "loc": {
               "start": {
                 "line": 18,
-                "column": 15
+                "column": 11
               },
               "end": {
                 "line": 18,
-                "column": 23
+                "column": 34
               }
-            }
-          },
-          "modifiers": [],
-          "expression": {
-            "type": "Identifier",
-            "start": 241,
-            "end": 249,
-            "loc": {
-              "start": {
-                "line": 18,
-                "column": 25
-              },
-              "end": {
-                "line": 18,
-                "column": 33
-              }
-            },
-            "name": "hovering",
-            "range": [
-              241,
-              249
-            ]
-          },
-          "range": [
-            227,
-            250
-          ],
-          "loc": {
-            "start": {
-              "line": 18,
-              "column": 11
-            },
-            "end": {
-              "line": 18,
-              "column": 34
             }
           }
+        ],
+        "selfClosing": false,
+        "range": [
+          216,
+          251
+        ],
+        "loc": {
+          "start": {
+            "line": 18,
+            "column": 0
+          },
+          "end": {
+            "line": 18,
+            "column": 35
+          }
         }
-      ],
+      },
       "children": [
         {
           "type": "SvelteText",
@@ -313,65 +420,83 @@
               }
             }
           },
-          "attributes": [
-            {
-              "type": "SvelteDirective",
-              "kind": "Class",
-              "name": {
-                "type": "Identifier",
-                "name": "active",
+          "startTag": {
+            "type": "SvelteStartTag",
+            "attributes": [
+              {
+                "type": "SvelteDirective",
+                "kind": "Class",
+                "name": {
+                  "type": "Identifier",
+                  "name": "active",
+                  "range": [
+                    264,
+                    270
+                  ],
+                  "loc": {
+                    "start": {
+                      "line": 19,
+                      "column": 12
+                    },
+                    "end": {
+                      "line": 19,
+                      "column": 18
+                    }
+                  }
+                },
+                "modifiers": [],
+                "expression": {
+                  "type": "Identifier",
+                  "start": 272,
+                  "end": 280,
+                  "loc": {
+                    "start": {
+                      "line": 19,
+                      "column": 20
+                    },
+                    "end": {
+                      "line": 19,
+                      "column": 28
+                    }
+                  },
+                  "name": "hovering",
+                  "range": [
+                    272,
+                    280
+                  ]
+                },
                 "range": [
-                  264,
-                  270
+                  258,
+                  281
                 ],
                 "loc": {
                   "start": {
                     "line": 19,
-                    "column": 12
+                    "column": 6
                   },
                   "end": {
                     "line": 19,
-                    "column": 18
+                    "column": 29
                   }
-                }
-              },
-              "modifiers": [],
-              "expression": {
-                "type": "Identifier",
-                "start": 272,
-                "end": 280,
-                "loc": {
-                  "start": {
-                    "line": 19,
-                    "column": 20
-                  },
-                  "end": {
-                    "line": 19,
-                    "column": 28
-                  }
-                },
-                "name": "hovering",
-                "range": [
-                  272,
-                  280
-                ]
-              },
-              "range": [
-                258,
-                281
-              ],
-              "loc": {
-                "start": {
-                  "line": 19,
-                  "column": 6
-                },
-                "end": {
-                  "line": 19,
-                  "column": 29
                 }
               }
+            ],
+            "selfClosing": false,
+            "range": [
+              253,
+              282
+            ],
+            "loc": {
+              "start": {
+                "line": 19,
+                "column": 1
+              },
+              "end": {
+                "line": 19,
+                "column": 30
+              }
             }
-          ],
+          },
           "children": [
             {
               "type": "SvelteText",
@@ -436,7 +561,25 @@
                       }
                     }
                   },
-                  "attributes": [],
+                  "startTag": {
+                    "type": "SvelteStartTag",
+                    "attributes": [],
+                    "selfClosing": false,
+                    "range": [
+                      303,
+                      306
+                    ],
+                    "loc": {
+                      "start": {
+                        "line": 21,
+                        "column": 3
+                      },
+                      "end": {
+                        "line": 21,
+                        "column": 6
+                      }
+                    }
+                  },
                   "children": [
                     {
                       "type": "SvelteText",
@@ -457,6 +600,23 @@
                       }
                     }
                   ],
+                  "endTag": {
+                    "type": "SvelteEndTag",
+                    "range": [
+                      330,
+                      334
+                    ],
+                    "loc": {
+                      "start": {
+                        "line": 21,
+                        "column": 30
+                      },
+                      "end": {
+                        "line": 21,
+                        "column": 34
+                      }
+                    }
+                  },
                   "range": [
                     303,
                     334
@@ -497,7 +657,25 @@
                         }
                       }
                     },
-                    "attributes": [],
+                    "startTag": {
+                      "type": "SvelteStartTag",
+                      "attributes": [],
+                      "selfClosing": false,
+                      "range": [
+                        348,
+                        351
+                      ],
+                      "loc": {
+                        "start": {
+                          "line": 23,
+                          "column": 3
+                        },
+                        "end": {
+                          "line": 23,
+                          "column": 6
+                        }
+                      }
+                    },
                     "children": [
                       {
                         "type": "SvelteText",
@@ -518,6 +696,23 @@
                         }
                       }
                     ],
+                    "endTag": {
+                      "type": "SvelteEndTag",
+                      "range": [
+                        365,
+                        369
+                      ],
+                      "loc": {
+                        "start": {
+                          "line": 23,
+                          "column": 20
+                        },
+                        "end": {
+                          "line": 23,
+                          "column": 24
+                        }
+                      }
+                    },
                     "range": [
                       348,
                       369
@@ -583,6 +778,23 @@
               }
             }
           ],
+          "endTag": {
+            "type": "SvelteEndTag",
+            "range": [
+              379,
+              385
+            ],
+            "loc": {
+              "start": {
+                "line": 25,
+                "column": 1
+              },
+              "end": {
+                "line": 25,
+                "column": 7
+              }
+            }
+          },
           "range": [
             253,
             385
@@ -617,6 +829,23 @@
           }
         }
       ],
+      "endTag": {
+        "type": "SvelteEndTag",
+        "range": [
+          386,
+          398
+        ],
+        "loc": {
+          "start": {
+            "line": 26,
+            "column": 0
+          },
+          "end": {
+            "line": 26,
+            "column": 12
+          }
+        }
+      },
       "range": [
         216,
         398
