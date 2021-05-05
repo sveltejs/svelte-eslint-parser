@@ -9,7 +9,7 @@ import type {
 import { sort } from "../sort"
 import {} from "./common"
 import type { Context } from "../../context"
-import { convertChildren, extractElementTokens } from "./element"
+import { convertChildren, extractElementTags } from "./element"
 import { convertAttributes } from "./attr"
 
 /**
@@ -38,13 +38,14 @@ export function convertSvelteRoot(
         const script: SvelteScriptElement = {
             type: "SvelteScriptElement",
             name: null as any,
-            attributes: [],
+            startTag: null as any,
             body: [],
+            endTag: null,
             parent: ast,
             ...ctx.getConvertLocation(instance),
         }
         extractAttributes(script, ctx)
-        extractElementTokens(script, ctx, {
+        extractElementTags(script, ctx, {
             buildNameNode: (openTokenRange) => {
                 ctx.addToken("HTMLIdentifier", openTokenRange)
                 const name: SvelteName = {
@@ -63,13 +64,14 @@ export function convertSvelteRoot(
         const script: SvelteScriptElement = {
             type: "SvelteScriptElement",
             name: null as any,
-            attributes: [],
+            startTag: null as any,
             body: [],
+            endTag: null,
             parent: ast,
             ...ctx.getConvertLocation(module),
         }
         extractAttributes(script, ctx)
-        extractElementTokens(script, ctx, {
+        extractElementTags(script, ctx, {
             buildNameNode: (openTokenRange) => {
                 ctx.addToken("HTMLIdentifier", openTokenRange)
                 const name: SvelteName = {
@@ -87,19 +89,20 @@ export function convertSvelteRoot(
         const style: SvelteStyleElement = {
             type: "SvelteStyleElement",
             name: null as any,
-            attributes: [],
+            startTag: null as any,
             children: [] as any,
+            endTag: null,
             parent: ast,
             ...ctx.getConvertLocation(svelteAst.css),
         }
 
         extractAttributes(style, ctx)
-        extractElementTokens(style, ctx, {
+        extractElementTags(style, ctx, {
             buildNameNode: (openTokenRange) => {
                 ctx.addToken("HTMLIdentifier", openTokenRange)
                 const name: SvelteName = {
                     type: "SvelteName",
-                    name: "script",
+                    name: "style",
                     parent: style,
                     ...ctx.getConvertLocation(openTokenRange),
                 }
@@ -107,14 +110,21 @@ export function convertSvelteRoot(
             },
         })
 
-        const contentsStart =
-            ctx.code.indexOf(
-                ">",
-                style.attributes[style.attributes.length - 1]?.range[1] ??
-                    style.name.range[1],
-            ) + 1
-        const contentsEnd = ctx.code.lastIndexOf("</style", style.range[1])
-        ctx.addToken("HTMLText", { start: contentsStart, end: contentsEnd })
+        if (style.endTag) {
+            const contentRange = {
+                start: style.startTag.range[1],
+                end: style.endTag.range[0],
+            }
+            ctx.addToken("HTMLText", contentRange)
+            style.children = [
+                {
+                    type: "SvelteText",
+                    value: ctx.code.slice(contentRange.start, contentRange.end),
+                    parent: style,
+                    ...ctx.getConvertLocation(contentRange),
+                },
+            ]
+        }
 
         body.push(style)
     }
@@ -177,7 +187,22 @@ function extractAttributes(
     const fakeElement = svelteAst.html.children.find(
         (c) => c.type === "Element",
     ) as SvAST.Element
-    element.attributes.push(
-        ...convertAttributes(fakeElement.attributes, element, ctx),
+
+    element.startTag = {
+        type: "SvelteStartTag",
+        attributes: [],
+        selfClosing: false,
+        parent: element,
+        range: [element.range[0], null as any],
+        loc: {
+            start: {
+                line: element.loc.start.line,
+                column: element.loc.start.column,
+            },
+            end: null as any,
+        },
+    }
+    element.startTag.attributes.push(
+        ...convertAttributes(fakeElement.attributes, element.startTag, ctx),
     )
 }

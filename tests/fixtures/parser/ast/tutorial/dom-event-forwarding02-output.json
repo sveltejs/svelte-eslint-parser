@@ -5,7 +5,7 @@
       "type": "SvelteStyleElement",
       "name": {
         "type": "SvelteName",
-        "name": "script",
+        "name": "style",
         "range": [
           1,
           6
@@ -21,8 +21,62 @@
           }
         }
       },
-      "attributes": [],
-      "children": [],
+      "startTag": {
+        "type": "SvelteStartTag",
+        "attributes": [],
+        "selfClosing": false,
+        "range": [
+          0,
+          7
+        ],
+        "loc": {
+          "start": {
+            "line": 1,
+            "column": 0
+          },
+          "end": {
+            "line": 1,
+            "column": 7
+          }
+        }
+      },
+      "children": [
+        {
+          "type": "SvelteText",
+          "value": "\n\tbutton {\n\t\theight: 4rem;\n\t\twidth: 8rem;\n\t\tbackground-color: #aaa;\n\t\tborder-color: #f1c40f;\n\t\tcolor: #f1c40f;\n\t\tfont-size: 1.25rem;\n\t\tbackground-image: linear-gradient(45deg, #f1c40f 50%, transparent 50%);\n\t\tbackground-position: 100%;\n\t\tbackground-size: 400%;\n\t\ttransition: background 300ms ease-in-out;\n\t}\n\tbutton:hover {\n\t\tbackground-position: 0;\n\t\tcolor: #aaa;\n\t}\n",
+          "range": [
+            7,
+            375
+          ],
+          "loc": {
+            "start": {
+              "line": 1,
+              "column": 7
+            },
+            "end": {
+              "line": 18,
+              "column": 0
+            }
+          }
+        }
+      ],
+      "endTag": {
+        "type": "SvelteEndTag",
+        "range": [
+          375,
+          383
+        ],
+        "loc": {
+          "start": {
+            "line": 18,
+            "column": 0
+          },
+          "end": {
+            "line": 18,
+            "column": 8
+          }
+        }
+      },
       "range": [
         0,
         383
@@ -77,46 +131,64 @@
           }
         }
       },
-      "attributes": [
-        {
-          "type": "SvelteDirective",
-          "kind": "EventHandler",
-          "name": {
-            "type": "Identifier",
-            "name": "click",
+      "startTag": {
+        "type": "SvelteStartTag",
+        "attributes": [
+          {
+            "type": "SvelteDirective",
+            "kind": "EventHandler",
+            "name": {
+              "type": "Identifier",
+              "name": "click",
+              "range": [
+                396,
+                401
+              ],
+              "loc": {
+                "start": {
+                  "line": 20,
+                  "column": 11
+                },
+                "end": {
+                  "line": 20,
+                  "column": 16
+                }
+              }
+            },
+            "modifiers": [],
+            "expression": null,
             "range": [
-              396,
+              393,
               401
             ],
             "loc": {
               "start": {
                 "line": 20,
-                "column": 11
+                "column": 8
               },
               "end": {
                 "line": 20,
                 "column": 16
               }
             }
+          }
+        ],
+        "selfClosing": false,
+        "range": [
+          385,
+          402
+        ],
+        "loc": {
+          "start": {
+            "line": 20,
+            "column": 0
           },
-          "modifiers": [],
-          "expression": null,
-          "range": [
-            393,
-            401
-          ],
-          "loc": {
-            "start": {
-              "line": 20,
-              "column": 8
-            },
-            "end": {
-              "line": 20,
-              "column": 16
-            }
+          "end": {
+            "line": 20,
+            "column": 17
           }
         }
-      ],
+      },
       "children": [
         {
           "type": "SvelteText",
@@ -137,6 +209,23 @@
           }
         }
       ],
+      "endTag": {
+        "type": "SvelteEndTag",
+        "range": [
+          413,
+          422
+        ],
+        "loc": {
+          "start": {
+            "line": 22,
+            "column": 0
+          },
+          "end": {
+            "line": 22,
+            "column": 9
+          }
+        }
+      },
       "range": [
         385,
         422

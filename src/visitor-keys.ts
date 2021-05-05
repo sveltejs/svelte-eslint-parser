@@ -11,10 +11,13 @@ type KeyofObject<T> = { [key in keyof T]: key }[keyof T]
 
 const svelteKeys: SvelteKeysType = {
     Program: ["body"],
-    SvelteScriptElement: ["attributes", "body"],
-    SvelteStyleElement: ["attributes", "children"],
-    SvelteElement: ["name", "attributes", "children"],
+    SvelteScriptElement: ["name", "startTag", "body", "endTag"],
+    SvelteStyleElement: ["name", "startTag", "children", "endTag"],
+    SvelteElement: ["name", "startTag", "children", "endTag"],
+    SvelteStartTag: ["attributes"],
+    SvelteEndTag: [],
     SvelteName: [],
+    SvelteLiteral: [],
     SvelteMustacheTag: ["expression"],
     SvelteDebugTag: ["identifiers"],
     SvelteIfBlock: ["expression", "children", "else"],
@@ -36,9 +39,9 @@ const svelteKeys: SvelteKeysType = {
     SvelteShorthandAttribute: ["key", "value"],
     SvelteSpreadAttribute: ["argument"],
     SvelteDirective: ["expression"],
-    SvelteReactiveStatement: ["label", "body"],
     SvelteText: [],
     SvelteHTMLComment: [],
+    SvelteReactiveStatement: ["label", "body"],
 }
 
 export const KEYS: SourceCode.VisitorKeys = unionWith(

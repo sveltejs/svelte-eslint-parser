@@ -21,7 +21,25 @@
           }
         }
       },
-      "attributes": [],
+      "startTag": {
+        "type": "SvelteStartTag",
+        "attributes": [],
+        "selfClosing": false,
+        "range": [
+          0,
+          8
+        ],
+        "loc": {
+          "start": {
+            "line": 1,
+            "column": 0
+          },
+          "end": {
+            "line": 1,
+            "column": 8
+          }
+        }
+      },
       "body": [
         {
           "type": "VariableDeclaration",
@@ -398,6 +416,23 @@
           "kind": "const"
         }
       ],
+      "endTag": {
+        "type": "SvelteEndTag",
+        "range": [
+          135,
+          144
+        ],
+        "loc": {
+          "start": {
+            "line": 6,
+            "column": 0
+          },
+          "end": {
+            "line": 6,
+            "column": 9
+          }
+        }
+      },
       "range": [
         0,
         144
@@ -435,7 +470,7 @@
       "type": "SvelteStyleElement",
       "name": {
         "type": "SvelteName",
-        "name": "script",
+        "name": "style",
         "range": [
           147,
           152
@@ -451,8 +486,62 @@
           }
         }
       },
-      "attributes": [],
-      "children": [],
+      "startTag": {
+        "type": "SvelteStartTag",
+        "attributes": [],
+        "selfClosing": false,
+        "range": [
+          146,
+          153
+        ],
+        "loc": {
+          "start": {
+            "line": 8,
+            "column": 0
+          },
+          "end": {
+            "line": 8,
+            "column": 7
+          }
+        }
+      },
+      "children": [
+        {
+          "type": "SvelteText",
+          "value": "\n\timg {\n\t\tposition: absolute;\n\t\tleft: 0;\n\t\tbottom: -60px;\n\t\ttransform: translate(-80%, 0) rotate(-30deg);\n\t\ttransform-origin: 100% 100%;\n\t\ttransition: transform 0.4s;\n\t}\n\n\t.curious {\n\t\ttransform: translate(-15%, 0) rotate(0deg);\n\t}\n\n\t:global(body) {\n\t\toverflow: hidden;\n\t}\n",
+          "range": [
+            153,
+            426
+          ],
+          "loc": {
+            "start": {
+              "line": 8,
+              "column": 7
+            },
+            "end": {
+              "line": 25,
+              "column": 0
+            }
+          }
+        }
+      ],
+      "endTag": {
+        "type": "SvelteEndTag",
+        "range": [
+          426,
+          434
+        ],
+        "loc": {
+          "start": {
+            "line": 25,
+            "column": 0
+          },
+          "end": {
+            "line": 25,
+            "column": 8
+          }
+        }
+      },
       "range": [
         146,
         434
@@ -507,123 +596,142 @@
           }
         }
       },
-      "attributes": [
-        {
-          "type": "SvelteDirective",
-          "kind": "EventHandler",
-          "name": {
-            "type": "Identifier",
-            "name": "mouseenter",
+      "startTag": {
+        "type": "SvelteStartTag",
+        "attributes": [
+          {
+            "type": "SvelteDirective",
+            "kind": "EventHandler",
+            "name": {
+              "type": "Identifier",
+              "name": "mouseenter",
+              "range": [
+                453,
+                463
+              ],
+              "loc": {
+                "start": {
+                  "line": 28,
+                  "column": 4
+                },
+                "end": {
+                  "line": 28,
+                  "column": 14
+                }
+              }
+            },
+            "modifiers": [],
+            "expression": {
+              "type": "Identifier",
+              "start": 465,
+              "end": 481,
+              "loc": {
+                "start": {
+                  "line": 28,
+                  "column": 16
+                },
+                "end": {
+                  "line": 28,
+                  "column": 32
+                }
+              },
+              "name": "handleMouseenter",
+              "range": [
+                465,
+                481
+              ]
+            },
             "range": [
-              453,
-              463
+              450,
+              482
             ],
             "loc": {
               "start": {
                 "line": 28,
-                "column": 4
+                "column": 1
               },
               "end": {
                 "line": 28,
-                "column": 14
+                "column": 33
               }
             }
           },
-          "modifiers": [],
-          "expression": {
-            "type": "Identifier",
-            "start": 465,
-            "end": 481,
-            "loc": {
-              "start": {
-                "line": 28,
-                "column": 16
-              },
-              "end": {
-                "line": 28,
-                "column": 32
+          {
+            "type": "SvelteDirective",
+            "kind": "EventHandler",
+            "name": {
+              "type": "Identifier",
+              "name": "mouseleave",
+              "range": [
+                487,
+                497
+              ],
+              "loc": {
+                "start": {
+                  "line": 29,
+                  "column": 4
+                },
+                "end": {
+                  "line": 29,
+                  "column": 14
+                }
               }
             },
-            "name": "handleMouseenter",
-            "range": [
-              465,
-              481
-            ]
-          },
-          "range": [
-            450,
-            482
-          ],
-          "loc": {
-            "start": {
-              "line": 28,
-              "column": 1
+            "modifiers": [],
+            "expression": {
+              "type": "Identifier",
+              "start": 499,
+              "end": 515,
+              "loc": {
+                "start": {
+                  "line": 29,
+                  "column": 16
+                },
+                "end": {
+                  "line": 29,
+                  "column": 32
+                }
+              },
+              "name": "handleMouseleave",
+              "range": [
+                499,
+                515
+              ]
             },
-            "end": {
-              "line": 28,
-              "column": 33
+            "range": [
+              484,
+              516
+            ],
+            "loc": {
+              "start": {
+                "line": 29,
+                "column": 1
+              },
+              "end": {
+                "line": 29,
+                "column": 33
+              }
             }
           }
-        },
-        {
-          "type": "SvelteDirective",
-          "kind": "EventHandler",
-          "name": {
-            "type": "Identifier",
-            "name": "mouseleave",
-            "range": [
-              487,
-              497
-            ],
-            "loc": {
-              "start": {
-                "line": 29,
-                "column": 4
-              },
-              "end": {
-                "line": 29,
-                "column": 14
-              }
-            }
+        ],
+        "selfClosing": true,
+        "range": [
+          436,
+          519
+        ],
+        "loc": {
+          "start": {
+            "line": 27,
+            "column": 0
           },
-          "modifiers": [],
-          "expression": {
-            "type": "Identifier",
-            "start": 499,
-            "end": 515,
-            "loc": {
-              "start": {
-                "line": 29,
-                "column": 16
-              },
-              "end": {
-                "line": 29,
-                "column": 32
-              }
-            },
-            "name": "handleMouseleave",
-            "range": [
-              499,
-              515
-            ]
-          },
-          "range": [
-            484,
-            516
-          ],
-          "loc": {
-            "start": {
-              "line": 29,
-              "column": 1
-            },
-            "end": {
-              "line": 29,
-              "column": 33
-            }
+          "end": {
+            "line": 30,
+            "column": 2
           }
         }
-      ],
+      },
       "children": [],
+      "endTag": null,
       "range": [
         436,
         519
@@ -714,178 +822,197 @@
           }
         }
       },
-      "attributes": [
-        {
-          "type": "SvelteDirective",
-          "kind": "Class",
-          "name": {
-            "type": "Identifier",
-            "name": "curious",
-            "range": [
-              612,
-              619
-            ],
-            "loc": {
-              "start": {
-                "line": 34,
-                "column": 7
-              },
-              "end": {
-                "line": 34,
-                "column": 14
-              }
-            }
-          },
-          "modifiers": [],
-          "expression": {
-            "type": "Identifier",
-            "start": 621,
-            "end": 630,
-            "loc": {
-              "start": {
-                "line": 34,
-                "column": 16
-              },
-              "end": {
-                "line": 34,
-                "column": 25
-              }
-            },
-            "name": "hereKitty",
-            "range": [
-              621,
-              630
-            ]
-          },
-          "range": [
-            606,
-            631
-          ],
-          "loc": {
-            "start": {
-              "line": 34,
-              "column": 1
-            },
-            "end": {
-              "line": 34,
-              "column": 26
-            }
-          }
-        },
-        {
-          "type": "SvelteAttribute",
-          "boolean": false,
-          "key": {
-            "type": "SvelteName",
-            "name": "alt",
-            "range": [
-              633,
-              636
-            ],
-            "loc": {
-              "start": {
-                "line": 35,
-                "column": 1
-              },
-              "end": {
-                "line": 35,
-                "column": 4
-              }
-            }
-          },
-          "value": [
-            {
-              "type": "SvelteText",
-              "value": "Kitten wants to know what's going on",
+      "startTag": {
+        "type": "SvelteStartTag",
+        "attributes": [
+          {
+            "type": "SvelteDirective",
+            "kind": "Class",
+            "name": {
+              "type": "Identifier",
+              "name": "curious",
               "range": [
-                638,
-                674
+                612,
+                619
               ],
               "loc": {
                 "start": {
-                  "line": 35,
-                  "column": 6
+                  "line": 34,
+                  "column": 7
                 },
                 "end": {
-                  "line": 35,
-                  "column": 42
+                  "line": 34,
+                  "column": 14
                 }
               }
-            }
-          ],
-          "range": [
-            633,
-            675
-          ],
-          "loc": {
-            "start": {
-              "line": 35,
-              "column": 1
             },
-            "end": {
-              "line": 35,
-              "column": 43
-            }
-          }
-        },
-        {
-          "type": "SvelteAttribute",
-          "boolean": false,
-          "key": {
-            "type": "SvelteName",
-            "name": "src",
-            "range": [
-              677,
-              680
-            ],
-            "loc": {
-              "start": {
-                "line": 36,
-                "column": 1
-              },
-              "end": {
-                "line": 36,
-                "column": 4
-              }
-            }
-          },
-          "value": [
-            {
-              "type": "SvelteText",
-              "value": "tutorial/kitten.png",
-              "range": [
-                682,
-                701
-              ],
+            "modifiers": [],
+            "expression": {
+              "type": "Identifier",
+              "start": 621,
+              "end": 630,
               "loc": {
                 "start": {
-                  "line": 36,
-                  "column": 6
+                  "line": 34,
+                  "column": 16
                 },
                 "end": {
-                  "line": 36,
+                  "line": 34,
                   "column": 25
                 }
+              },
+              "name": "hereKitty",
+              "range": [
+                621,
+                630
+              ]
+            },
+            "range": [
+              606,
+              631
+            ],
+            "loc": {
+              "start": {
+                "line": 34,
+                "column": 1
+              },
+              "end": {
+                "line": 34,
+                "column": 26
               }
             }
-          ],
-          "range": [
-            677,
-            702
-          ],
-          "loc": {
-            "start": {
-              "line": 36,
-              "column": 1
+          },
+          {
+            "type": "SvelteAttribute",
+            "boolean": false,
+            "key": {
+              "type": "SvelteName",
+              "name": "alt",
+              "range": [
+                633,
+                636
+              ],
+              "loc": {
+                "start": {
+                  "line": 35,
+                  "column": 1
+                },
+                "end": {
+                  "line": 35,
+                  "column": 4
+                }
+              }
             },
-            "end": {
-              "line": 36,
-              "column": 26
+            "value": [
+              {
+                "type": "SvelteLiteral",
+                "value": "Kitten wants to know what's going on",
+                "range": [
+                  638,
+                  674
+                ],
+                "loc": {
+                  "start": {
+                    "line": 35,
+                    "column": 6
+                  },
+                  "end": {
+                    "line": 35,
+                    "column": 42
+                  }
+                }
+              }
+            ],
+            "range": [
+              633,
+              675
+            ],
+            "loc": {
+              "start": {
+                "line": 35,
+                "column": 1
+              },
+              "end": {
+                "line": 35,
+                "column": 43
+              }
+            }
+          },
+          {
+            "type": "SvelteAttribute",
+            "boolean": false,
+            "key": {
+              "type": "SvelteName",
+              "name": "src",
+              "range": [
+                677,
+                680
+              ],
+              "loc": {
+                "start": {
+                  "line": 36,
+                  "column": 1
+                },
+                "end": {
+                  "line": 36,
+                  "column": 4
+                }
+              }
+            },
+            "value": [
+              {
+                "type": "SvelteLiteral",
+                "value": "tutorial/kitten.png",
+                "range": [
+                  682,
+                  701
+                ],
+                "loc": {
+                  "start": {
+                    "line": 36,
+                    "column": 6
+                  },
+                  "end": {
+                    "line": 36,
+                    "column": 25
+                  }
+                }
+              }
+            ],
+            "range": [
+              677,
+              702
+            ],
+            "loc": {
+              "start": {
+                "line": 36,
+                "column": 1
+              },
+              "end": {
+                "line": 36,
+                "column": 26
+              }
             }
           }
+        ],
+        "selfClosing": false,
+        "range": [
+          600,
+          704
+        ],
+        "loc": {
+          "start": {
+            "line": 33,
+            "column": 0
+          },
+          "end": {
+            "line": 37,
+            "column": 1
+          }
         }
-      ],
+      },
       "children": [],
+      "endTag": null,
       "range": [
         600,
         704

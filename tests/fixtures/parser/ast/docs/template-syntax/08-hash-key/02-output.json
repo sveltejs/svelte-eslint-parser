@@ -45,48 +45,66 @@
               }
             }
           },
-          "attributes": [
-            {
-              "type": "SvelteDirective",
-              "kind": "Transition",
-              "intro": true,
-              "outro": true,
-              "name": {
-                "type": "Identifier",
-                "name": "fade",
+          "startTag": {
+            "type": "SvelteStartTag",
+            "attributes": [
+              {
+                "type": "SvelteDirective",
+                "kind": "Transition",
+                "intro": true,
+                "outro": true,
+                "name": {
+                  "type": "Identifier",
+                  "name": "fade",
+                  "range": [
+                    30,
+                    34
+                  ],
+                  "loc": {
+                    "start": {
+                      "line": 2,
+                      "column": 17
+                    },
+                    "end": {
+                      "line": 2,
+                      "column": 21
+                    }
+                  }
+                },
+                "modifiers": [],
+                "expression": null,
                 "range": [
-                  30,
+                  19,
                   34
                 ],
                 "loc": {
                   "start": {
                     "line": 2,
-                    "column": 17
+                    "column": 6
                   },
                   "end": {
                     "line": 2,
                     "column": 21
                   }
                 }
+              }
+            ],
+            "selfClosing": false,
+            "range": [
+              14,
+              35
+            ],
+            "loc": {
+              "start": {
+                "line": 2,
+                "column": 1
               },
-              "modifiers": [],
-              "expression": null,
-              "range": [
-                19,
-                34
-              ],
-              "loc": {
-                "start": {
-                  "line": 2,
-                  "column": 6
-                },
-                "end": {
-                  "line": 2,
-                  "column": 21
-                }
+              "end": {
+                "line": 2,
+                "column": 22
               }
             }
-          ],
+          },
           "children": [
             {
               "type": "SvelteMustacheTag",
@@ -127,6 +145,23 @@
               }
             }
           ],
+          "endTag": {
+            "type": "SvelteEndTag",
+            "range": [
+              42,
+              48
+            ],
+            "loc": {
+              "start": {
+                "line": 2,
+                "column": 29
+              },
+              "end": {
+                "line": 2,
+                "column": 35
+              }
+            }
+          },
           "range": [
             14,
             48

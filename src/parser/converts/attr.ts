@@ -6,13 +6,11 @@ import type {
     SvelteBindingDirective,
     SvelteClassDirective,
     SvelteDirective,
-    SvelteElement,
     SvelteEventHandlerDirective,
     SvelteLetDirective,
-    SvelteScriptElement,
     SvelteSpreadAttribute,
-    SvelteStyleElement,
     SvelteTransitionDirective,
+    SvelteStartTag,
 } from "../../ast"
 import type ESTree from "estree"
 import type { Context } from "../../context"
@@ -25,13 +23,13 @@ import {
     getWithLoc,
 } from "./es"
 import { convertMustacheTag } from "./mustache"
-import { convertText } from "./text"
+import { convertTextToLiteral } from "./text"
 import { ParseError } from "../../errors"
 
 /** Convert for Attributes */
 export function* convertAttributes(
     attributes: SvAST.AttributeOrDirective[],
-    parent: SvelteElement | SvelteScriptElement | SvelteStyleElement,
+    parent: SvelteStartTag,
     ctx: Context,
 ): IterableIterator<
     | SvelteAttribute
@@ -134,7 +132,7 @@ function convertAttribute(
             return sAttr
         }
         if (v.type === "Text") {
-            attribute.value.push(convertText(v, attribute, ctx))
+            attribute.value.push(convertTextToLiteral(v, attribute, ctx))
             continue
         }
         if (v.type === "MustacheTag") {

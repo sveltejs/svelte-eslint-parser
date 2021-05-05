@@ -22,66 +22,85 @@
           }
         }
       },
-      "attributes": [
-        {
-          "type": "SvelteDirective",
-          "kind": "Binding",
-          "name": {
-            "type": "Identifier",
-            "name": "this",
+      "startTag": {
+        "type": "SvelteStartTag",
+        "attributes": [
+          {
+            "type": "SvelteDirective",
+            "kind": "Binding",
+            "name": {
+              "type": "Identifier",
+              "name": "this",
+              "range": [
+                19,
+                23
+              ],
+              "loc": {
+                "start": {
+                  "line": 1,
+                  "column": 19
+                },
+                "end": {
+                  "line": 1,
+                  "column": 23
+                }
+              }
+            },
+            "modifiers": [],
+            "expression": {
+              "type": "Identifier",
+              "start": 25,
+              "end": 29,
+              "loc": {
+                "start": {
+                  "line": 1,
+                  "column": 25
+                },
+                "end": {
+                  "line": 1,
+                  "column": 29
+                }
+              },
+              "name": "cart",
+              "range": [
+                25,
+                29
+              ]
+            },
             "range": [
-              19,
-              23
+              14,
+              30
             ],
             "loc": {
               "start": {
                 "line": 1,
-                "column": 19
+                "column": 14
               },
               "end": {
                 "line": 1,
-                "column": 23
+                "column": 30
               }
-            }
-          },
-          "modifiers": [],
-          "expression": {
-            "type": "Identifier",
-            "start": 25,
-            "end": 29,
-            "loc": {
-              "start": {
-                "line": 1,
-                "column": 25
-              },
-              "end": {
-                "line": 1,
-                "column": 29
-              }
-            },
-            "name": "cart",
-            "range": [
-              25,
-              29
-            ]
-          },
-          "range": [
-            14,
-            30
-          ],
-          "loc": {
-            "start": {
-              "line": 1,
-              "column": 14
-            },
-            "end": {
-              "line": 1,
-              "column": 30
             }
           }
+        ],
+        "selfClosing": true,
+        "range": [
+          0,
+          32
+        ],
+        "loc": {
+          "start": {
+            "line": 1,
+            "column": 0
+          },
+          "end": {
+            "line": 1,
+            "column": 32
+          }
         }
-      ],
+      },
       "children": [],
+      "endTag": null,
       "range": [
         0,
         32
@@ -136,66 +155,54 @@
           }
         }
       },
-      "attributes": [
-        {
-          "type": "SvelteDirective",
-          "kind": "EventHandler",
-          "name": {
-            "type": "Identifier",
-            "name": "click",
-            "range": [
-              45,
-              50
-            ],
-            "loc": {
-              "start": {
-                "line": 3,
-                "column": 11
-              },
-              "end": {
-                "line": 3,
-                "column": 16
-              }
-            }
-          },
-          "modifiers": [],
-          "expression": {
-            "type": "ArrowFunctionExpression",
-            "start": 52,
-            "end": 70,
-            "loc": {
-              "start": {
-                "line": 3,
-                "column": 18
-              },
-              "end": {
-                "line": 3,
-                "column": 36
+      "startTag": {
+        "type": "SvelteStartTag",
+        "attributes": [
+          {
+            "type": "SvelteDirective",
+            "kind": "EventHandler",
+            "name": {
+              "type": "Identifier",
+              "name": "click",
+              "range": [
+                45,
+                50
+              ],
+              "loc": {
+                "start": {
+                  "line": 3,
+                  "column": 11
+                },
+                "end": {
+                  "line": 3,
+                  "column": 16
+                }
               }
             },
-            "id": null,
-            "expression": true,
-            "generator": false,
-            "async": false,
-            "params": [],
-            "body": {
-              "type": "CallExpression",
-              "start": 58,
+            "modifiers": [],
+            "expression": {
+              "type": "ArrowFunctionExpression",
+              "start": 52,
               "end": 70,
               "loc": {
                 "start": {
                   "line": 3,
-                  "column": 24
+                  "column": 18
                 },
                 "end": {
                   "line": 3,
                   "column": 36
                 }
               },
-              "callee": {
-                "type": "MemberExpression",
+              "id": null,
+              "expression": true,
+              "generator": false,
+              "async": false,
+              "params": [],
+              "body": {
+                "type": "CallExpression",
                 "start": 58,
-                "end": 68,
+                "end": 70,
                 "loc": {
                   "start": {
                     "line": 3,
@@ -203,13 +210,13 @@
                   },
                   "end": {
                     "line": 3,
-                    "column": 34
+                    "column": 36
                   }
                 },
-                "object": {
-                  "type": "Identifier",
+                "callee": {
+                  "type": "MemberExpression",
                   "start": 58,
-                  "end": 62,
+                  "end": 68,
                   "loc": {
                     "start": {
                       "line": 3,
@@ -217,70 +224,100 @@
                     },
                     "end": {
                       "line": 3,
-                      "column": 28
-                    }
-                  },
-                  "name": "cart",
-                  "range": [
-                    58,
-                    62
-                  ]
-                },
-                "property": {
-                  "type": "Identifier",
-                  "start": 63,
-                  "end": 68,
-                  "loc": {
-                    "start": {
-                      "line": 3,
-                      "column": 29
-                    },
-                    "end": {
-                      "line": 3,
                       "column": 34
                     }
                   },
-                  "name": "empty",
+                  "object": {
+                    "type": "Identifier",
+                    "start": 58,
+                    "end": 62,
+                    "loc": {
+                      "start": {
+                        "line": 3,
+                        "column": 24
+                      },
+                      "end": {
+                        "line": 3,
+                        "column": 28
+                      }
+                    },
+                    "name": "cart",
+                    "range": [
+                      58,
+                      62
+                    ]
+                  },
+                  "property": {
+                    "type": "Identifier",
+                    "start": 63,
+                    "end": 68,
+                    "loc": {
+                      "start": {
+                        "line": 3,
+                        "column": 29
+                      },
+                      "end": {
+                        "line": 3,
+                        "column": 34
+                      }
+                    },
+                    "name": "empty",
+                    "range": [
+                      63,
+                      68
+                    ]
+                  },
+                  "computed": false,
+                  "optional": false,
                   "range": [
-                    63,
+                    58,
                     68
                   ]
                 },
-                "computed": false,
+                "arguments": [],
                 "optional": false,
                 "range": [
                   58,
-                  68
+                  70
                 ]
               },
-              "arguments": [],
-              "optional": false,
               "range": [
-                58,
+                52,
                 70
               ]
             },
             "range": [
-              52,
-              70
-            ]
-          },
-          "range": [
-            42,
-            71
-          ],
-          "loc": {
-            "start": {
-              "line": 3,
-              "column": 8
-            },
-            "end": {
-              "line": 3,
-              "column": 37
+              42,
+              71
+            ],
+            "loc": {
+              "start": {
+                "line": 3,
+                "column": 8
+              },
+              "end": {
+                "line": 3,
+                "column": 37
+              }
             }
           }
+        ],
+        "selfClosing": false,
+        "range": [
+          34,
+          72
+        ],
+        "loc": {
+          "start": {
+            "line": 3,
+            "column": 0
+          },
+          "end": {
+            "line": 3,
+            "column": 38
+          }
         }
-      ],
+      },
       "children": [
         {
           "type": "SvelteText",
@@ -301,6 +338,23 @@
           }
         }
       ],
+      "endTag": {
+        "type": "SvelteEndTag",
+        "range": [
+          94,
+          103
+        ],
+        "loc": {
+          "start": {
+            "line": 5,
+            "column": 0
+          },
+          "end": {
+            "line": 5,
+            "column": 9
+          }
+        }
+      },
       "range": [
         34,
         103

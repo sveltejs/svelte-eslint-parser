@@ -21,7 +21,25 @@
           }
         }
       },
-      "attributes": [],
+      "startTag": {
+        "type": "SvelteStartTag",
+        "attributes": [],
+        "selfClosing": false,
+        "range": [
+          0,
+          8
+        ],
+        "loc": {
+          "start": {
+            "line": 1,
+            "column": 0
+          },
+          "end": {
+            "line": 1,
+            "column": 8
+          }
+        }
+      },
       "body": [
         {
           "type": "VariableDeclaration",
@@ -374,6 +392,23 @@
           }
         }
       ],
+      "endTag": {
+        "type": "SvelteEndTag",
+        "range": [
+          111,
+          120
+        ],
+        "loc": {
+          "start": {
+            "line": 11,
+            "column": 0
+          },
+          "end": {
+            "line": 11,
+            "column": 9
+          }
+        }
+      },
       "range": [
         0,
         120
@@ -428,122 +463,140 @@
           }
         }
       },
-      "attributes": [
-        {
-          "type": "SvelteDirective",
-          "kind": "EventHandler",
-          "name": {
-            "type": "Identifier",
-            "name": "mouseenter",
+      "startTag": {
+        "type": "SvelteStartTag",
+        "attributes": [
+          {
+            "type": "SvelteDirective",
+            "kind": "EventHandler",
+            "name": {
+              "type": "Identifier",
+              "name": "mouseenter",
+              "range": [
+                130,
+                140
+              ],
+              "loc": {
+                "start": {
+                  "line": 13,
+                  "column": 8
+                },
+                "end": {
+                  "line": 13,
+                  "column": 18
+                }
+              }
+            },
+            "modifiers": [],
+            "expression": {
+              "type": "Identifier",
+              "start": 142,
+              "end": 147,
+              "loc": {
+                "start": {
+                  "line": 13,
+                  "column": 20
+                },
+                "end": {
+                  "line": 13,
+                  "column": 25
+                }
+              },
+              "name": "enter",
+              "range": [
+                142,
+                147
+              ]
+            },
             "range": [
-              130,
-              140
+              127,
+              148
             ],
             "loc": {
               "start": {
                 "line": 13,
-                "column": 8
+                "column": 5
               },
               "end": {
                 "line": 13,
-                "column": 18
+                "column": 26
               }
             }
           },
-          "modifiers": [],
-          "expression": {
-            "type": "Identifier",
-            "start": 142,
-            "end": 147,
+          {
+            "type": "SvelteDirective",
+            "kind": "EventHandler",
+            "name": {
+              "type": "Identifier",
+              "name": "mouseleave",
+              "range": [
+                152,
+                162
+              ],
+              "loc": {
+                "start": {
+                  "line": 13,
+                  "column": 30
+                },
+                "end": {
+                  "line": 13,
+                  "column": 40
+                }
+              }
+            },
+            "modifiers": [],
+            "expression": {
+              "type": "Identifier",
+              "start": 164,
+              "end": 169,
+              "loc": {
+                "start": {
+                  "line": 13,
+                  "column": 42
+                },
+                "end": {
+                  "line": 13,
+                  "column": 47
+                }
+              },
+              "name": "leave",
+              "range": [
+                164,
+                169
+              ]
+            },
+            "range": [
+              149,
+              170
+            ],
             "loc": {
               "start": {
                 "line": 13,
-                "column": 20
+                "column": 27
               },
               "end": {
                 "line": 13,
-                "column": 25
+                "column": 48
               }
-            },
-            "name": "enter",
-            "range": [
-              142,
-              147
-            ]
-          },
-          "range": [
-            127,
-            148
-          ],
-          "loc": {
-            "start": {
-              "line": 13,
-              "column": 5
-            },
-            "end": {
-              "line": 13,
-              "column": 26
             }
           }
-        },
-        {
-          "type": "SvelteDirective",
-          "kind": "EventHandler",
-          "name": {
-            "type": "Identifier",
-            "name": "mouseleave",
-            "range": [
-              152,
-              162
-            ],
-            "loc": {
-              "start": {
-                "line": 13,
-                "column": 30
-              },
-              "end": {
-                "line": 13,
-                "column": 40
-              }
-            }
+        ],
+        "selfClosing": false,
+        "range": [
+          122,
+          171
+        ],
+        "loc": {
+          "start": {
+            "line": 13,
+            "column": 0
           },
-          "modifiers": [],
-          "expression": {
-            "type": "Identifier",
-            "start": 164,
-            "end": 169,
-            "loc": {
-              "start": {
-                "line": 13,
-                "column": 42
-              },
-              "end": {
-                "line": 13,
-                "column": 47
-              }
-            },
-            "name": "leave",
-            "range": [
-              164,
-              169
-            ]
-          },
-          "range": [
-            149,
-            170
-          ],
-          "loc": {
-            "start": {
-              "line": 13,
-              "column": 27
-            },
-            "end": {
-              "line": 13,
-              "column": 48
-            }
+          "end": {
+            "line": 13,
+            "column": 49
           }
         }
-      ],
+      },
       "children": [
         {
           "type": "SvelteText",
@@ -584,16 +637,73 @@
               }
             }
           },
-          "attributes": [
-            {
-              "type": "SvelteAttribute",
-              "boolean": false,
-              "key": {
-                "type": "SvelteName",
-                "name": "hovering",
+          "startTag": {
+            "type": "SvelteStartTag",
+            "attributes": [
+              {
+                "type": "SvelteAttribute",
+                "boolean": false,
+                "key": {
+                  "type": "SvelteName",
+                  "name": "hovering",
+                  "range": [
+                    179,
+                    187
+                  ],
+                  "loc": {
+                    "start": {
+                      "line": 14,
+                      "column": 7
+                    },
+                    "end": {
+                      "line": 14,
+                      "column": 15
+                    }
+                  }
+                },
+                "value": [
+                  {
+                    "type": "SvelteMustacheTag",
+                    "kind": "text",
+                    "expression": {
+                      "type": "Identifier",
+                      "start": 189,
+                      "end": 197,
+                      "loc": {
+                        "start": {
+                          "line": 14,
+                          "column": 17
+                        },
+                        "end": {
+                          "line": 14,
+                          "column": 25
+                        }
+                      },
+                      "name": "hovering",
+                      "range": [
+                        189,
+                        197
+                      ]
+                    },
+                    "range": [
+                      188,
+                      198
+                    ],
+                    "loc": {
+                      "start": {
+                        "line": 14,
+                        "column": 16
+                      },
+                      "end": {
+                        "line": 14,
+                        "column": 26
+                      }
+                    }
+                  }
+                ],
                 "range": [
                   179,
-                  187
+                  198
                 ],
                 "loc": {
                   "start": {
@@ -602,67 +712,45 @@
                   },
                   "end": {
                     "line": 14,
-                    "column": 15
+                    "column": 26
                   }
-                }
-              },
-              "value": [
-                {
-                  "type": "SvelteMustacheTag",
-                  "kind": "text",
-                  "expression": {
-                    "type": "Identifier",
-                    "start": 189,
-                    "end": 197,
-                    "loc": {
-                      "start": {
-                        "line": 14,
-                        "column": 17
-                      },
-                      "end": {
-                        "line": 14,
-                        "column": 25
-                      }
-                    },
-                    "name": "hovering",
-                    "range": [
-                      189,
-                      197
-                    ]
-                  },
-                  "range": [
-                    188,
-                    198
-                  ],
-                  "loc": {
-                    "start": {
-                      "line": 14,
-                      "column": 16
-                    },
-                    "end": {
-                      "line": 14,
-                      "column": 26
-                    }
-                  }
-                }
-              ],
-              "range": [
-                179,
-                198
-              ],
-              "loc": {
-                "start": {
-                  "line": 14,
-                  "column": 7
-                },
-                "end": {
-                  "line": 14,
-                  "column": 26
                 }
               }
+            ],
+            "selfClosing": false,
+            "range": [
+              173,
+              199
+            ],
+            "loc": {
+              "start": {
+                "line": 14,
+                "column": 1
+              },
+              "end": {
+                "line": 14,
+                "column": 27
+              }
             }
-          ],
+          },
           "children": [],
+          "endTag": {
+            "type": "SvelteEndTag",
+            "range": [
+              199,
+              206
+            ],
+            "loc": {
+              "start": {
+                "line": 14,
+                "column": 27
+              },
+              "end": {
+                "line": 14,
+                "column": 34
+              }
+            }
+          },
           "range": [
             173,
             206
@@ -697,6 +785,23 @@
           }
         }
       ],
+      "endTag": {
+        "type": "SvelteEndTag",
+        "range": [
+          207,
+          213
+        ],
+        "loc": {
+          "start": {
+            "line": 15,
+            "column": 0
+          },
+          "end": {
+            "line": 15,
+            "column": 6
+          }
+        }
+      },
       "range": [
         122,
         213

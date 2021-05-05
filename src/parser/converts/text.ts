@@ -1,4 +1,4 @@
-import type { SvelteText } from "../../ast"
+import type { SvelteLiteral, SvelteText } from "../../ast"
 import type { Context } from "../../context"
 import type * as SvAST from "../svelte-ast-types"
 /** Convert for Text */
@@ -9,6 +9,22 @@ export function convertText(
 ): SvelteText {
     const text: SvelteText = {
         type: "SvelteText",
+        value: node.data,
+        parent,
+        ...ctx.getConvertLocation(node),
+    }
+    ctx.addToken("HTMLText", node)
+    return text
+}
+
+/** Convert for Text to Literal */
+export function convertTextToLiteral(
+    node: SvAST.Text,
+    parent: SvelteLiteral["parent"],
+    ctx: Context,
+): SvelteLiteral {
+    const text: SvelteLiteral = {
+        type: "SvelteLiteral",
         value: node.data,
         parent,
         ...ctx.getConvertLocation(node),

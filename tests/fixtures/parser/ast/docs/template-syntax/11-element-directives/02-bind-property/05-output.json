@@ -22,16 +22,53 @@
           }
         }
       },
-      "attributes": [
-        {
-          "type": "SvelteAttribute",
-          "boolean": false,
-          "key": {
-            "type": "SvelteName",
-            "name": "for",
+      "startTag": {
+        "type": "SvelteStartTag",
+        "attributes": [
+          {
+            "type": "SvelteAttribute",
+            "boolean": false,
+            "key": {
+              "type": "SvelteName",
+              "name": "for",
+              "range": [
+                7,
+                10
+              ],
+              "loc": {
+                "start": {
+                  "line": 1,
+                  "column": 7
+                },
+                "end": {
+                  "line": 1,
+                  "column": 10
+                }
+              }
+            },
+            "value": [
+              {
+                "type": "SvelteLiteral",
+                "value": "avatar",
+                "range": [
+                  12,
+                  18
+                ],
+                "loc": {
+                  "start": {
+                    "line": 1,
+                    "column": 12
+                  },
+                  "end": {
+                    "line": 1,
+                    "column": 18
+                  }
+                }
+              }
+            ],
             "range": [
               7,
-              10
+              19
             ],
             "loc": {
               "start": {
@@ -40,46 +77,27 @@
               },
               "end": {
                 "line": 1,
-                "column": 10
+                "column": 19
               }
-            }
-          },
-          "value": [
-            {
-              "type": "SvelteText",
-              "value": "avatar",
-              "range": [
-                12,
-                18
-              ],
-              "loc": {
-                "start": {
-                  "line": 1,
-                  "column": 12
-                },
-                "end": {
-                  "line": 1,
-                  "column": 18
-                }
-              }
-            }
-          ],
-          "range": [
-            7,
-            19
-          ],
-          "loc": {
-            "start": {
-              "line": 1,
-              "column": 7
-            },
-            "end": {
-              "line": 1,
-              "column": 19
             }
           }
+        ],
+        "selfClosing": false,
+        "range": [
+          0,
+          20
+        ],
+        "loc": {
+          "start": {
+            "line": 1,
+            "column": 0
+          },
+          "end": {
+            "line": 1,
+            "column": 20
+          }
         }
-      ],
+      },
       "children": [
         {
           "type": "SvelteText",
@@ -100,6 +118,23 @@
           }
         }
       ],
+      "endTag": {
+        "type": "SvelteEndTag",
+        "range": [
+          37,
+          45
+        ],
+        "loc": {
+          "start": {
+            "line": 1,
+            "column": 37
+          },
+          "end": {
+            "line": 1,
+            "column": 45
+          }
+        }
+      },
       "range": [
         0,
         45
@@ -154,16 +189,53 @@
           }
         }
       },
-      "attributes": [
-        {
-          "type": "SvelteAttribute",
-          "boolean": false,
-          "key": {
-            "type": "SvelteName",
-            "name": "accept",
+      "startTag": {
+        "type": "SvelteStartTag",
+        "attributes": [
+          {
+            "type": "SvelteAttribute",
+            "boolean": false,
+            "key": {
+              "type": "SvelteName",
+              "name": "accept",
+              "range": [
+                54,
+                60
+              ],
+              "loc": {
+                "start": {
+                  "line": 3,
+                  "column": 1
+                },
+                "end": {
+                  "line": 3,
+                  "column": 7
+                }
+              }
+            },
+            "value": [
+              {
+                "type": "SvelteLiteral",
+                "value": "image/png, image/jpeg",
+                "range": [
+                  62,
+                  83
+                ],
+                "loc": {
+                  "start": {
+                    "line": 3,
+                    "column": 9
+                  },
+                  "end": {
+                    "line": 3,
+                    "column": 30
+                  }
+                }
+              }
+            ],
             "range": [
               54,
-              60
+              84
             ],
             "loc": {
               "start": {
@@ -172,61 +244,62 @@
               },
               "end": {
                 "line": 3,
-                "column": 7
+                "column": 31
               }
             }
           },
-          "value": [
-            {
-              "type": "SvelteText",
-              "value": "image/png, image/jpeg",
+          {
+            "type": "SvelteDirective",
+            "kind": "Binding",
+            "name": {
+              "start": 91,
+              "end": 96,
+              "type": "Identifier",
+              "name": "files",
               "range": [
-                62,
-                83
+                91,
+                96
               ],
               "loc": {
                 "start": {
-                  "line": 3,
-                  "column": 9
+                  "line": 4,
+                  "column": 6
                 },
                 "end": {
-                  "line": 3,
-                  "column": 30
+                  "line": 4,
+                  "column": 11
                 }
               }
-            }
-          ],
-          "range": [
-            54,
-            84
-          ],
-          "loc": {
-            "start": {
-              "line": 3,
-              "column": 1
             },
-            "end": {
-              "line": 3,
-              "column": 31
-            }
-          }
-        },
-        {
-          "type": "SvelteDirective",
-          "kind": "Binding",
-          "name": {
-            "start": 91,
-            "end": 96,
-            "type": "Identifier",
-            "name": "files",
+            "modifiers": [],
+            "expression": {
+              "start": 91,
+              "end": 96,
+              "type": "Identifier",
+              "name": "files",
+              "range": [
+                91,
+                96
+              ],
+              "loc": {
+                "start": {
+                  "line": 4,
+                  "column": 6
+                },
+                "end": {
+                  "line": 4,
+                  "column": 11
+                }
+              }
+            },
             "range": [
-              91,
+              86,
               96
             ],
             "loc": {
               "start": {
                 "line": 4,
-                "column": 6
+                "column": 1
               },
               "end": {
                 "line": 4,
@@ -234,51 +307,50 @@
               }
             }
           },
-          "modifiers": [],
-          "expression": {
-            "start": 91,
-            "end": 96,
-            "type": "Identifier",
-            "name": "files",
-            "range": [
-              91,
-              96
-            ],
-            "loc": {
-              "start": {
-                "line": 4,
-                "column": 6
-              },
-              "end": {
-                "line": 4,
-                "column": 11
+          {
+            "type": "SvelteAttribute",
+            "boolean": false,
+            "key": {
+              "type": "SvelteName",
+              "name": "id",
+              "range": [
+                98,
+                100
+              ],
+              "loc": {
+                "start": {
+                  "line": 5,
+                  "column": 1
+                },
+                "end": {
+                  "line": 5,
+                  "column": 3
+                }
               }
-            }
-          },
-          "range": [
-            86,
-            96
-          ],
-          "loc": {
-            "start": {
-              "line": 4,
-              "column": 1
             },
-            "end": {
-              "line": 4,
-              "column": 11
-            }
-          }
-        },
-        {
-          "type": "SvelteAttribute",
-          "boolean": false,
-          "key": {
-            "type": "SvelteName",
-            "name": "id",
+            "value": [
+              {
+                "type": "SvelteLiteral",
+                "value": "avatar",
+                "range": [
+                  102,
+                  108
+                ],
+                "loc": {
+                  "start": {
+                    "line": 5,
+                    "column": 5
+                  },
+                  "end": {
+                    "line": 5,
+                    "column": 11
+                  }
+                }
+              }
+            ],
             "range": [
               98,
-              100
+              109
             ],
             "loc": {
               "start": {
@@ -287,54 +359,54 @@
               },
               "end": {
                 "line": 5,
-                "column": 3
+                "column": 12
               }
             }
           },
-          "value": [
-            {
-              "type": "SvelteText",
-              "value": "avatar",
+          {
+            "type": "SvelteAttribute",
+            "boolean": false,
+            "key": {
+              "type": "SvelteName",
+              "name": "name",
               "range": [
-                102,
-                108
+                111,
+                115
               ],
               "loc": {
                 "start": {
-                  "line": 5,
-                  "column": 5
+                  "line": 6,
+                  "column": 1
                 },
                 "end": {
-                  "line": 5,
-                  "column": 11
+                  "line": 6,
+                  "column": 5
                 }
               }
-            }
-          ],
-          "range": [
-            98,
-            109
-          ],
-          "loc": {
-            "start": {
-              "line": 5,
-              "column": 1
             },
-            "end": {
-              "line": 5,
-              "column": 12
-            }
-          }
-        },
-        {
-          "type": "SvelteAttribute",
-          "boolean": false,
-          "key": {
-            "type": "SvelteName",
-            "name": "name",
+            "value": [
+              {
+                "type": "SvelteLiteral",
+                "value": "avatar",
+                "range": [
+                  117,
+                  123
+                ],
+                "loc": {
+                  "start": {
+                    "line": 6,
+                    "column": 7
+                  },
+                  "end": {
+                    "line": 6,
+                    "column": 13
+                  }
+                }
+              }
+            ],
             "range": [
               111,
-              115
+              124
             ],
             "loc": {
               "start": {
@@ -343,54 +415,54 @@
               },
               "end": {
                 "line": 6,
-                "column": 5
+                "column": 14
               }
             }
           },
-          "value": [
-            {
-              "type": "SvelteText",
-              "value": "avatar",
+          {
+            "type": "SvelteAttribute",
+            "boolean": false,
+            "key": {
+              "type": "SvelteName",
+              "name": "type",
               "range": [
-                117,
-                123
+                126,
+                130
               ],
               "loc": {
                 "start": {
-                  "line": 6,
-                  "column": 7
+                  "line": 7,
+                  "column": 1
                 },
                 "end": {
-                  "line": 6,
-                  "column": 13
+                  "line": 7,
+                  "column": 5
                 }
               }
-            }
-          ],
-          "range": [
-            111,
-            124
-          ],
-          "loc": {
-            "start": {
-              "line": 6,
-              "column": 1
             },
-            "end": {
-              "line": 6,
-              "column": 14
-            }
-          }
-        },
-        {
-          "type": "SvelteAttribute",
-          "boolean": false,
-          "key": {
-            "type": "SvelteName",
-            "name": "type",
+            "value": [
+              {
+                "type": "SvelteLiteral",
+                "value": "file",
+                "range": [
+                  132,
+                  136
+                ],
+                "loc": {
+                  "start": {
+                    "line": 7,
+                    "column": 7
+                  },
+                  "end": {
+                    "line": 7,
+                    "column": 11
+                  }
+                }
+              }
+            ],
             "range": [
               126,
-              130
+              137
             ],
             "loc": {
               "start": {
@@ -399,47 +471,29 @@
               },
               "end": {
                 "line": 7,
-                "column": 5
+                "column": 12
               }
-            }
-          },
-          "value": [
-            {
-              "type": "SvelteText",
-              "value": "file",
-              "range": [
-                132,
-                136
-              ],
-              "loc": {
-                "start": {
-                  "line": 7,
-                  "column": 7
-                },
-                "end": {
-                  "line": 7,
-                  "column": 11
-                }
-              }
-            }
-          ],
-          "range": [
-            126,
-            137
-          ],
-          "loc": {
-            "start": {
-              "line": 7,
-              "column": 1
-            },
-            "end": {
-              "line": 7,
-              "column": 12
             }
           }
+        ],
+        "selfClosing": true,
+        "range": [
+          46,
+          140
+        ],
+        "loc": {
+          "start": {
+            "line": 2,
+            "column": 0
+          },
+          "end": {
+            "line": 8,
+            "column": 2
+          }
         }
-      ],
+      },
       "children": [],
+      "endTag": null,
       "range": [
         46,
         140
