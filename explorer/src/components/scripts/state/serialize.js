@@ -23,6 +23,7 @@ export function serializeState(state) {
     const saveData = {
         code: state.code,
         rules: state.rules ? getEnabledRules(state.rules) : undefined,
+        useEslintPluginSvelte3: state.useEslintPluginSvelte3,
     }
     const jsonString = JSON.stringify(saveData)
     // eslint-disable-next-line node/no-unsupported-features/node-builtins -- ignore

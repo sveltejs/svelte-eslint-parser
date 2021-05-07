@@ -33,6 +33,9 @@ export default {
                 return {}
             },
         },
+        useEslintPluginSvelte3: {
+            type: Boolean,
+        },
     },
     emits: ["update:modelValue", "updateMessages"],
     data() {
@@ -49,16 +52,29 @@ export default {
             },
             deep: true,
         },
+        useEslintPluginSvelte3() {
+            this.lint(this.modelValue)
+        },
     },
     mounted() {
         this.lint(this.modelValue)
     },
     methods: {
+        async getEslintPluginSvelte3Options() {
+            const pluginSvelte3 = await import("eslint-plugin-svelte3")
+            return {
+                preprocess: pluginSvelte3.processors.svelte3.preprocess,
+                postprocess: pluginSvelte3.processors.svelte3.postprocess,
+            }
+        },
         async lint(code) {
-            const options = {
-                parser: "svelte-eslint-parser",
+            const config = {
+                parser: this.useEslintPluginSvelte3
+                    ? undefined
+                    : "svelte-eslint-parser",
                 parserOptions: {
                     ecmaVersion: 2020,
+                    sourceType: "module",
                 },
                 rules: this.rules,
                 env: {
@@ -66,12 +82,14 @@ export default {
                     es2021: true,
                 },
             }
-
-            const messages = linter.verify(code, options)
+            const options = this.useEslintPluginSvelte3
+                ? await this.getEslintPluginSvelte3Options()
+                : {}
+            const messages = linter.verify(code, config, options)
 
             this.$emit("updateMessages", messages)
 
-            const fixResult = linter.verifyAndFix(code, options)
+            const fixResult = linter.verifyAndFix(code, config, options)
             this.fixedValue = fixResult.output
 
             this.leftMarkers = await Promise.all(messages.map(messageToMarker))

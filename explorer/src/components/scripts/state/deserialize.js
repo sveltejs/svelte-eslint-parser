@@ -28,6 +28,10 @@ export function deserializeState(serializedString) {
             if (typeof json.code === "string") {
                 state.code = json.code
             }
+            if (json.useEslintPluginSvelte3 === true) {
+                state.useEslintPluginSvelte3 = true
+            }
+
             if (typeof json.rules === "object" && json.rules != null) {
                 state.rules = {}
                 for (const id of Object.keys(json.rules)) {
