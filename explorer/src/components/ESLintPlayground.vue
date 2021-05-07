@@ -1,6 +1,19 @@
 <template>
     <div class="playground-root">
-        <div class="playground-tools"></div>
+        <div class="playground-tools">
+            <label>
+                <input v-model="useEslintPluginSvelte3" type="checkbox" />
+                See result of
+                <a href="https://github.com/sveltejs/eslint-plugin-svelte3"
+                    >eslint-plugin-svelte3</a
+                >.
+            </label>
+            <template v-if="useEslintPluginSvelte3">
+                <span style="color: red"
+                    >svelte-eslint-parser is not used.</span
+                >
+            </template>
+        </div>
         <div class="playground-content">
             <RulesSettings
                 ref="settings"
@@ -12,6 +25,7 @@
                     v-model="code"
                     :rules="rules"
                     class="eslint-playground"
+                    :use-eslint-plugin-svelte3="useEslintPluginSvelte3"
                     @update-messages="onUpdateMessages"
                 />
                 <div class="messages">
@@ -76,6 +90,7 @@ export default {
             code: state.code || DEFAULT_CODE,
             rules: state.rules || Object.assign({}, DEFAULT_RULES_CONFIG),
             messages: [],
+            useEslintPluginSvelte3: Boolean(state.useEslintPluginSvelte3),
         }
     },
     computed: {
@@ -89,6 +104,7 @@ export default {
             const serializedString = serializeState({
                 code,
                 rules,
+                useEslintPluginSvelte3: this.useEslintPluginSvelte3,
             })
             return serializedString
         },
@@ -127,7 +143,9 @@ export default {
                 this.code = state.code || DEFAULT_CODE
                 this.rules =
                     state.rules || Object.assign({}, DEFAULT_RULES_CONFIG)
-                this.script = state.script
+                this.useEslintPluginSvelte3 = Boolean(
+                    state.useEslintPluginSvelte3,
+                )
             }
         },
     },
