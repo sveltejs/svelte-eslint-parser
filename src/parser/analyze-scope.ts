@@ -203,9 +203,6 @@ function removeReferenceFromThrough(reference: Reference, baseScope: Scope) {
                 if (!variable.references.includes(ref)) {
                     variable.references.push(ref)
                 }
-                if (!variable.identifiers.includes(ref.identifier)) {
-                    variable.identifiers.push(ref.identifier)
-                }
                 return false
             }
             return true

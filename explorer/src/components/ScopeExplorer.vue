@@ -247,40 +247,40 @@ function processScope(options, ctx, scope) {
     ctx.appendIndent().appendText("{\n").indent()
     ctx.appendIndent().appendText(`"type": "${scope.type}",\n`)
     ctx.appendIndent().appendText(`"variables": [\n`).indent()
-    for (const variable of scope.variables) {
+    scope.variables.forEach((variable, index) => {
         processVariable(options, ctx, variable)
-        if (scope.variables[scope.variables.length - 1] !== variable) {
+        if (scope.variables.length - 1 !== index) {
             ctx.appendText(",")
         }
         ctx.appendText("\n")
-    }
+    })
     ctx.outdent().appendIndent().appendText(`],\n`)
     ctx.appendIndent().appendText(`"references": [\n`).indent()
-    for (const reference of scope.references) {
+    scope.references.forEach((reference, index) => {
         processReference(options, ctx, reference)
-        if (scope.references[scope.references.length - 1] !== reference) {
+        if (scope.references.length - 1 !== index) {
             ctx.appendText(",")
         }
         ctx.appendText("\n")
-    }
+    })
     ctx.outdent().appendIndent().appendText(`],\n`)
     ctx.appendIndent().appendText(`"childScopes": [\n`).indent()
-    for (const childScope of scope.childScopes) {
+    scope.childScopes.forEach((childScope, index) => {
         processScope(options, ctx, childScope)
-        if (scope.childScopes[scope.childScopes.length - 1] !== childScope) {
+        if (scope.childScopes.length - 1 !== index) {
             ctx.appendText(",")
         }
         ctx.appendText("\n")
-    }
+    })
     ctx.outdent().appendIndent().appendText(`],\n`)
     ctx.appendIndent().appendText(`"through": [\n`).indent()
-    for (const through of scope.through) {
+    scope.through.forEach((through, index) => {
         processReference(options, ctx, through)
-        if (scope.through[scope.through.length - 1] !== through) {
+        if (scope.through.length - 1 !== index) {
             ctx.appendText(",")
         }
         ctx.appendText("\n")
-    }
+    })
     ctx.outdent().appendIndent().appendText(`]\n`)
     ctx.outdent().appendIndent().appendText("}")
 }
@@ -294,35 +294,33 @@ function processVariable(options, ctx, variable) {
     ctx.appendIndent().appendText("{\n").indent()
     ctx.appendIndent().appendText(`"name": "${variable.name}",\n`)
     ctx.appendIndent().appendText(`"identifiers": [\n`).indent()
-    for (const identifier of variable.identifiers) {
+    variable.identifiers.forEach((identifier, index) => {
         ctx.appendIndent()
         processJsonValue(options, ctx, identifier)
-        if (
-            variable.identifiers[variable.identifiers.length - 1] !== identifier
-        ) {
+        if (variable.identifiers.length - 1 !== index) {
             ctx.appendText(",")
         }
         ctx.appendText("\n")
-    }
+    })
     ctx.outdent().appendIndent().appendText(`],\n`)
     ctx.appendIndent().appendText(`"defs": [\n`).indent()
-    for (const def of variable.defs) {
+    variable.defs.forEach((def, index) => {
         ctx.appendIndent()
         processJsonValue(options, ctx, def)
-        if (variable.defs[variable.defs.length - 1] !== def) {
+        if (variable.defs.length - 1 !== index) {
             ctx.appendText(",")
         }
         ctx.appendText("\n")
-    }
+    })
     ctx.outdent().appendIndent().appendText(`],\n`)
     ctx.appendIndent().appendText(`"references": [\n`).indent()
-    for (const reference of variable.references) {
+    variable.references.forEach((reference, index) => {
         processReference(options, ctx, reference)
-        if (variable.references[variable.references.length - 1] !== reference) {
+        if (variable.references.length - 1 !== index) {
             ctx.appendText(",")
         }
         ctx.appendText("\n")
-    }
+    })
     ctx.outdent().appendIndent().appendText(`]\n`)
     ctx.outdent().appendIndent().appendText("}")
 }

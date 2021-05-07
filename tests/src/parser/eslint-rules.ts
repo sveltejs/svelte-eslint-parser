@@ -27,6 +27,7 @@ const RULES = [
     "no-import-assign",
     "prefer-const",
     "spaced-comment",
+    "no-redeclare",
 ]
 
 describe("svelte-eslint-parser with ESLint rules", () => {
