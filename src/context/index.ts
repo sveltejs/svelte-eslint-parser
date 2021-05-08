@@ -4,18 +4,19 @@ import type ESTree from "estree"
 import type { ScopeManager } from "eslint-scope"
 import { TemplateScopeManager } from "./template-scope-manager"
 
+type ContextSourceCode = {
+    svelte: string
+    script: {
+        code: string
+        attrs: Record<string, string | undefined>
+    }
+}
 export class Context {
     public readonly code: string
 
     public readonly parserOptions: any
 
-    public readonly sourceCode: {
-        svelte: string
-        script: {
-            code: string
-            attrs: Record<string, string | undefined>
-        }
-    }
+    public readonly sourceCode: ContextSourceCode
 
     public readonly tokens: Token[] = []
 
@@ -31,43 +32,30 @@ export class Context {
         this.code = code
         this.parserOptions = parserOptions
         this.locs = new LinesAndColumns(code)
-        const sourceCode: {
-            svelte: string
+
+        let svelteCode = ""
+        let scriptCode = ""
+        let scriptAttrs: Record<string, string | undefined> = {}
+
+        let start = 0
+        for (const script of extractScriptBlocks(code)) {
+            const before = code.slice(start, script.codeRange[0])
+            svelteCode += before + script.code.replace(/[^\n\r ]/g, " ")
+            scriptCode += before.replace(/[^\n\r ]/g, " ") + script.code
+            scriptAttrs = Object.assign(scriptAttrs, script.attrs)
+            start = script.codeRange[1]
+        }
+        const before = code.slice(start)
+        svelteCode += before
+        scriptCode += before.replace(/[^\n\r ]/g, " ")
+
+        this.sourceCode = {
+            svelte: svelteCode,
             script: {
-                code: string
-                ranges: {
-                    code: [number, number]
-                    tag: [number, number]
-                }[]
-                attrs: Record<string, string | undefined>
-            }
-        } = {
-            svelte: code,
-            script: {
-                code: code.replace(/[^\n\r ]/g, " "),
-                ranges: [],
-                attrs: {},
+                code: scriptCode,
+                attrs: scriptAttrs,
             },
         }
-        for (const script of extractScriptBlocks(code)) {
-            sourceCode.svelte =
-                sourceCode.svelte.slice(0, script.codeRange[0]) +
-                script.code.replace(/[^\n\r ]/g, " ") +
-                sourceCode.svelte.slice(script.codeRange[1])
-            sourceCode.script.code =
-                sourceCode.script.code.slice(0, script.codeRange[0]) +
-                script.code +
-                sourceCode.script.code.slice(script.codeRange[1])
-            sourceCode.script.ranges.push({
-                code: script.codeRange,
-                tag: script.tagRange,
-            })
-            sourceCode.script.attrs = Object.assign(
-                sourceCode.script.attrs,
-                script.attrs,
-            )
-        }
-        this.sourceCode = sourceCode
     }
 
     public getLocFromIndex(index: number): { line: number; column: number } {

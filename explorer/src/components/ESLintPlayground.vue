@@ -13,6 +13,7 @@
                     >svelte-eslint-parser is not used.</span
                 >
             </template>
+            <span style="margin-left: 16px">{{ time }}</span>
         </div>
         <div class="playground-content">
             <RulesSettings
@@ -27,6 +28,7 @@
                     class="eslint-playground"
                     :use-eslint-plugin-svelte3="useEslintPluginSvelte3"
                     @update-messages="onUpdateMessages"
+                    @time="(t) => (time = `${t}ms`)"
                 />
                 <div class="messages">
                     <ol>
@@ -91,6 +93,7 @@ export default {
             rules: state.rules || Object.assign({}, DEFAULT_RULES_CONFIG),
             messages: [],
             useEslintPluginSvelte3: Boolean(state.useEslintPluginSvelte3),
+            time: "",
         }
     },
     computed: {

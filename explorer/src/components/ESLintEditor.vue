@@ -37,7 +37,7 @@ export default {
             type: Boolean,
         },
     },
-    emits: ["update:modelValue", "updateMessages"],
+    emits: ["update:modelValue", "updateMessages", "time"],
     data() {
         return {
             fixedValue: this.modelValue,
@@ -85,7 +85,12 @@ export default {
             const options = this.useEslintPluginSvelte3
                 ? await this.getEslintPluginSvelte3Options()
                 : {}
+
+            const start = Date.now()
             const messages = linter.verify(code, config, options)
+            const time = Date.now() - start
+
+            this.$emit("time", time)
 
             this.$emit("updateMessages", messages)
 

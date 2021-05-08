@@ -170,7 +170,7 @@ function extractAttributes(
 ) {
     const script = element.type === "SvelteScriptElement"
     const code =
-        ctx.sourceCode.svelte.slice(0, element.range[0]).replace(/./g, " ") +
+        " ".repeat(element.range[0]) +
         ctx.sourceCode.svelte
             .slice(...element.range)
             .replace(

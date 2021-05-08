@@ -17,7 +17,7 @@ export interface ESLintCustomParser {
 
 const createRequire: (filename: string) => (modName: string) => any =
     // Added in v12.2.0
-    (Module as any).createRequire ||
+    Module.createRequire ||
     // Added in v10.12.0, but deprecated in v12.2.0.
     Module.createRequireFromPath ||
     // Polyfill - This is not executed on the tests on node@>=10.
