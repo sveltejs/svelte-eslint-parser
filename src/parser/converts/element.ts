@@ -455,7 +455,7 @@ function convertSlotTemplateElement(
 
 /** Extract element tag and tokens */
 export function extractElementTags<
-    E extends SvelteScriptElement | SvelteElement | SvelteStyleElement
+    E extends SvelteScriptElement | SvelteElement | SvelteStyleElement,
 >(
     element: E,
     ctx: Context,

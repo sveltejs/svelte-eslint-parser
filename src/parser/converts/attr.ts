@@ -379,7 +379,7 @@ function convertLetDirective(
 function processDirective<
     D extends SvAST.Directive,
     S extends SvelteDirective,
-    E extends D["expression"] & S["expression"]
+    E extends D["expression"] & S["expression"],
 >(
     node: D & { expression: null | E },
     directive: S,

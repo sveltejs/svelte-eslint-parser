@@ -125,9 +125,7 @@ export class Context {
 }
 
 /** Extract <script> blocks */
-function* extractScriptBlocks(
-    code: string,
-): IterableIterator<{
+function* extractScriptBlocks(code: string): IterableIterator<{
     code: string
     codeRange: [number, number]
     tag: string
@@ -145,7 +143,8 @@ function* extractScriptBlocks(
         ]
 
         // eslint-disable-next-line regexp/no-unused-capturing-group -- maybe bug
-        const attrRe = /(<key>[^\s=]+)(?:=(?:"(<val>[^"]*)"|'(<val>[^"]*)'|(<val>[^\s=]+)))?/giu
+        const attrRe =
+            /(<key>[^\s=]+)(?:=(?:"(<val>[^"]*)"|'(<val>[^"]*)'|(<val>[^\s=]+)))?/giu
         const attrs: Record<string, string | undefined> = {}
         while ((res = attrRe.exec(attributes))) {
             attrs[res.groups!.key] = res.groups!.val

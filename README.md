@@ -28,6 +28,11 @@ The [`@ota-meshi/eslint-plugin-svelte`] is an ESLint plugin that uses The [svelt
 [`@ota-meshi/eslint-plugin-svelte`]: https://github.com/ota-meshi/eslint-plugin-svelte
 [implemented some rules]: https://ota-meshi.github.io/eslint-plugin-svelte/rules/
 
+### Benefits of Using AST
+
+- We can create rules using the information contained in the AST. e.g. [@ota-meshi/svelte/no-dupe-else-if-blocks](https://ota-meshi.github.io/eslint-plugin-svelte/rules/no-dupe-else-if-blocks.html), [@ota-meshi/svelte/no-at-html-tags](https://ota-meshi.github.io/eslint-plugin-svelte/rules/no-at-html-tags.html), and [@ota-meshi/svelte/no-at-debug-tags](https://ota-meshi.github.io/eslint-plugin-svelte/rules/no-at-debug-tags.html) rules.
+- Rules that use text work well. e.g. [eol-last](https://eslint.org/docs/rules/eol-last), [unicode-bom](https://eslint.org/docs/rules/unicode-bom) rules, and [eslint-plugin-prettier](https://github.com/prettier/eslint-plugin-prettier).
+
 ## ❗ Attention
 
 The [svelte-eslint-parser] can not be used with the [eslint-plugin-svelte3].

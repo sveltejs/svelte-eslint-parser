@@ -14,9 +14,7 @@ export function* listupFixtures(): IterableIterator<{
     yield* listupFixturesImpl(AST_FIXTURE_ROOT)
 }
 
-function* listupFixturesImpl(
-    dir: string,
-): IterableIterator<{
+function* listupFixturesImpl(dir: string): IterableIterator<{
     input: string
     inputFileName: string
     outputFileName: string
