@@ -142,8 +142,8 @@ function* extractScriptBlocks(code: string): IterableIterator<{
             tagRange[1] - 9,
         ]
 
-        // eslint-disable-next-line regexp/no-unused-capturing-group -- maybe bug
         const attrRe =
+            // eslint-disable-next-line regexp/no-unused-capturing-group -- maybe bug
             /(<key>[^\s=]+)(?:=(?:"(<val>[^"]*)"|'(<val>[^"]*)'|(<val>[^\s=]+)))?/giu
         const attrs: Record<string, string | undefined> = {}
         while ((res = attrRe.exec(attributes))) {
