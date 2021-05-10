@@ -23,6 +23,11 @@ You can check it on [Online DEMO](https://ota-meshi.github.io/svelte-eslint-pars
 
 The [svelte-eslint-parser] aims to make it easy to create your own rules for the [Svelte] by allowing the template AST to be used in the rules.
 
+The [`@ota-meshi/eslint-plugin-svelte`] is an ESLint plugin that uses The [svelte-eslint-parser]. I have already [implemented some rules].
+
+[`@ota-meshi/eslint-plugin-svelte`]: https://github.com/ota-meshi/eslint-plugin-svelte
+[implemented some rules]: https://ota-meshi.github.io/eslint-plugin-svelte/rules/
+
 ## ❗ Attention
 
 The [svelte-eslint-parser] can not be used with the [eslint-plugin-svelte3].
@@ -117,6 +122,7 @@ Example **.vscode/settings.json**:
 
 - [AST.md](./docs/AST.md) is AST specification. You can check it on the [Online DEMO](https://ota-meshi.github.io/svelte-eslint-parser/).
 - The parser will generate its own [ScopeManager](https://eslint.org/docs/developer-guide/scope-manager-interface). You can check it on the [Online DEMO](https://ota-meshi.github.io/svelte-eslint-parser/scope).
+- I have already [implemented some rules] in the [`@ota-meshi/eslint-plugin-svelte`]. The source code for these rules will be helpful to you.
 
 ## :beers: Contributing
 
