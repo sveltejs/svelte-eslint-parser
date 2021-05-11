@@ -30,8 +30,16 @@ The [`@ota-meshi/eslint-plugin-svelte`] is an ESLint plugin that uses The [svelt
 
 ### Benefits of Using AST
 
-- We can create rules using the information contained in the AST. e.g. [@ota-meshi/svelte/no-dupe-else-if-blocks](https://ota-meshi.github.io/eslint-plugin-svelte/rules/no-dupe-else-if-blocks.html), [@ota-meshi/svelte/no-at-html-tags](https://ota-meshi.github.io/eslint-plugin-svelte/rules/no-at-html-tags.html), and [@ota-meshi/svelte/no-at-debug-tags](https://ota-meshi.github.io/eslint-plugin-svelte/rules/no-at-debug-tags.html) rules.
-- Rules that use text work well. e.g. [eol-last](https://eslint.org/docs/rules/eol-last), [unicode-bom](https://eslint.org/docs/rules/unicode-bom) rules, and [eslint-plugin-prettier](https://github.com/prettier/eslint-plugin-prettier).
+- We can create rules using the information contained in the AST.  
+  e.g.
+  - [@ota-meshi/svelte/no-dupe-else-if-blocks](https://ota-meshi.github.io/eslint-plugin-svelte/rules/no-dupe-else-if-blocks.html) rule
+  - [@ota-meshi/svelte/no-at-html-tags](https://ota-meshi.github.io/eslint-plugin-svelte/rules/no-at-html-tags.html) rule
+  - [@ota-meshi/svelte/no-at-debug-tags](https://ota-meshi.github.io/eslint-plugin-svelte/rules/no-at-debug-tags.html) rule
+- Rules that use text work well.  
+  e.g.
+  - [eol-last](https://eslint.org/docs/rules/eol-last) rule
+  - [unicode-bom](https://eslint.org/docs/rules/unicode-bom) rule
+  - [eslint-plugin-prettier](https://github.com/prettier/eslint-plugin-prettier)
 
 ## ❗ Attention
 
