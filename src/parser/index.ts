@@ -58,10 +58,10 @@ export function parseForESLint(
 
     const ctx = new Context(code, parserOptions)
 
-    const resultScript = parseScript(ctx.sourceCode.script, parserOptions)
+    const resultScript = parseScript(ctx.sourceCode.scripts, parserOptions)
     ctx.readyScopeManager(resultScript.scopeManager!)
     const resultTemplate = parseTemplate(
-        ctx.sourceCode.svelte,
+        ctx.sourceCode.template,
         ctx,
         parserOptions,
     )

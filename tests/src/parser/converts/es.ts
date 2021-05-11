@@ -167,7 +167,7 @@ describe("tokens test", () => {
                 let range = useRanges.shift()
                 for (
                     let index = 0;
-                    index < ctx.sourceCode.svelte.length;
+                    index < ctx.sourceCode.template.length;
                     index++
                 ) {
                     while (range && range[1] <= index) {
@@ -177,7 +177,7 @@ describe("tokens test", () => {
                         index = range[1] - 1
                         continue
                     }
-                    const c = ctx.sourceCode.svelte[index]
+                    const c = ctx.sourceCode.template[index]
                     if (!c.trim()) {
                         continue
                     }

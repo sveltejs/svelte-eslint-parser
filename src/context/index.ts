@@ -5,8 +5,8 @@ import type { ScopeManager } from "eslint-scope"
 import { TemplateScopeManager } from "./template-scope-manager"
 
 type ContextSourceCode = {
-    svelte: string
-    script: {
+    template: string
+    scripts: {
         code: string
         attrs: Record<string, string | undefined>
     }
@@ -33,25 +33,30 @@ export class Context {
         this.parserOptions = parserOptions
         this.locs = new LinesAndColumns(code)
 
-        let svelteCode = ""
+        let templateCode = ""
         let scriptCode = ""
         let scriptAttrs: Record<string, string | undefined> = {}
 
         let start = 0
-        for (const script of extractScriptBlocks(code)) {
-            const before = code.slice(start, script.codeRange[0])
-            svelteCode += before + script.code.replace(/[^\n\r ]/g, " ")
-            scriptCode += before.replace(/[^\n\r ]/g, " ") + script.code
-            scriptAttrs = Object.assign(scriptAttrs, script.attrs)
-            start = script.codeRange[1]
+        for (const block of extractBlocks(code)) {
+            const before = code.slice(start, block.codeRange[0])
+            const blankCode = block.code.replace(/[^\n\r ]/g, " ")
+            templateCode += before + blankCode
+            if (block.tag === "script") {
+                scriptCode += before.replace(/[^\n\r ]/g, " ") + block.code
+                scriptAttrs = Object.assign(scriptAttrs, block.attrs)
+            } else {
+                scriptCode += before.replace(/[^\n\r ]/g, " ") + blankCode
+            }
+            start = block.codeRange[1]
         }
         const before = code.slice(start)
-        svelteCode += before
+        templateCode += before
         scriptCode += before.replace(/[^\n\r ]/g, " ")
 
         this.sourceCode = {
-            svelte: svelteCode,
-            script: {
+            template: templateCode,
+            scripts: {
                 code: scriptCode,
                 attrs: scriptAttrs,
             },
@@ -125,36 +130,43 @@ export class Context {
 }
 
 /** Extract <script> blocks */
-function* extractScriptBlocks(code: string): IterableIterator<{
+function* extractBlocks(code: string): IterableIterator<{
     code: string
     codeRange: [number, number]
-    tag: string
-    tagRange: [number, number]
     attrs: Record<string, string | undefined>
+    tag: "script" | "style"
 }> {
-    const scriptRe = /<script(\s[\s\S]*?)?>([\s\S]*?)<\/script>/giu
-    let res
-    while ((res = scriptRe.exec(code))) {
-        const [tag, attributes = "", context] = res
-        const tagRange: [number, number] = [res.index, scriptRe.lastIndex]
-        const codeRange: [number, number] = [
-            tagRange[0] + 8 + attributes.length,
-            tagRange[1] - 9,
-        ]
+    const startTagRe = /<(script|style)(\s[\s\S]*?)?>/giu
+    const endScriptTagRe = /<\/script(?:\s[\s\S]*?)?>/giu
+    const endStyleTagRe = /<\/style(?:\s[\s\S]*?)?>/giu
+    let startTagRes
+    while ((startTagRes = startTagRe.exec(code))) {
+        const [startTag, tag, attributes = ""] = startTagRes
+        const startTagStart = startTagRes.index
+        const startTagEnd = startTagStart + startTag.length
+        const endTagRe =
+            tag.toLowerCase() === "script" ? endScriptTagRe : endStyleTagRe
+        endTagRe.lastIndex = startTagRe.lastIndex
+        const endTagRes = endTagRe.exec(code)
+        if (endTagRes) {
+            const endTagStart = endTagRes.index
+            const codeRange: [number, number] = [startTagEnd, endTagStart]
 
-        const attrRe =
-            // eslint-disable-next-line regexp/no-unused-capturing-group -- maybe bug
-            /(<key>[^\s=]+)(?:=(?:"(<val>[^"]*)"|'(<val>[^"]*)'|(<val>[^\s=]+)))?/giu
-        const attrs: Record<string, string | undefined> = {}
-        while ((res = attrRe.exec(attributes))) {
-            attrs[res.groups!.key] = res.groups!.val
-        }
-        yield {
-            code: context,
-            codeRange,
-            tag,
-            tagRange,
-            attrs,
+            const attrRe =
+                // eslint-disable-next-line regexp/no-unused-capturing-group -- maybe bug
+                /(<key>[^\s=]+)(?:=(?:"(<val>[^"]*)"|'(<val>[^"]*)'|(<val>[^\s=]+)))?/giu
+            const attrs: Record<string, string | undefined> = {}
+            let attrRes
+            while ((attrRes = attrRe.exec(attributes))) {
+                attrs[attrRes.groups!.key] = attrRes.groups!.val
+            }
+            yield {
+                code: code.slice(...codeRange),
+                codeRange,
+                attrs,
+                tag: tag as "script" | "style",
+            }
+            startTagRe.lastIndex = endTagRe.lastIndex
         }
     }
 }

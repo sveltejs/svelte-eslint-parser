@@ -131,7 +131,7 @@ export function convertSvelteRoot(
 
     const useRanges = sort([...ctx.tokens, ...ctx.comments]).map((t) => t.range)
     let range = useRanges.shift()
-    for (let index = 0; index < ctx.sourceCode.svelte.length; index++) {
+    for (let index = 0; index < ctx.sourceCode.template.length; index++) {
         while (range && range[1] <= index) {
             range = useRanges.shift()
         }
@@ -139,7 +139,7 @@ export function convertSvelteRoot(
             index = range[1] - 1
             continue
         }
-        const c = ctx.sourceCode.svelte[index]
+        const c = ctx.sourceCode.template[index]
         if (!c.trim()) {
             continue
         }
@@ -171,7 +171,7 @@ function extractAttributes(
     const script = element.type === "SvelteScriptElement"
     const code =
         " ".repeat(element.range[0]) +
-        ctx.sourceCode.svelte
+        ctx.sourceCode.template
             .slice(...element.range)
             .replace(
                 script
