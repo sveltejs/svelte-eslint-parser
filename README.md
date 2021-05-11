@@ -23,7 +23,7 @@ You can check it on [Online DEMO](https://ota-meshi.github.io/svelte-eslint-pars
 
 The [svelte-eslint-parser] aims to make it easy to create your own rules for the [Svelte] by allowing the template AST to be used in the rules.
 
-The [`@ota-meshi/eslint-plugin-svelte`] is an ESLint plugin that uses The [svelte-eslint-parser]. I have already [implemented some rules].
+The [`@ota-meshi/eslint-plugin-svelte`] is an ESLint plugin that uses the [svelte-eslint-parser]. I have already [implemented some rules].
 
 [`@ota-meshi/eslint-plugin-svelte`]: https://github.com/ota-meshi/eslint-plugin-svelte
 [implemented some rules]: https://ota-meshi.github.io/eslint-plugin-svelte/rules/
