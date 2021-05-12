@@ -42,6 +42,7 @@ function replacer(key: string, value: any) {
 function parse(code: string, filePath: string) {
     return parseForESLint(code, {
         filePath,
+        parser: { ts: "@typescript-eslint/parser" },
     })
 }
 
@@ -72,6 +73,7 @@ for (const {
                 parser: "svelte-eslint-parser",
                 parserOptions: {
                     ecmaVersion: 2020,
+                    parser: { ts: "@typescript-eslint/parser" },
                 },
                 rules: {
                     [rule]: "error",
