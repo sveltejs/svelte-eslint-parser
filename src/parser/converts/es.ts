@@ -462,6 +462,98 @@ const EXTRACT_TOKENS: {
         parent: ESTree.Node | null,
     ) => void
 } = EXTRACT_TOKENS0
+const GET_LOC: {
+    [key in ESTree.Node["type"]]: (
+        node: any,
+        ctx: Context,
+        parent: ESTree.Node | null,
+    ) => { start: number; end: number }
+} = {
+    ArrayExpression: getWithLoc,
+    ArrayPattern: getWithLoc,
+    ArrowFunctionExpression: getWithLoc,
+    AssignmentExpression: getWithLoc,
+    AssignmentPattern: getWithLoc,
+    AwaitExpression: getWithLoc,
+    BinaryExpression: getWithLoc,
+    BlockStatement: getWithLoc,
+    BreakStatement: getWithLoc,
+    CallExpression: getWithLoc,
+    CatchClause: getWithLoc,
+    ChainExpression: getWithLoc,
+    ClassBody: getWithLoc,
+    ClassDeclaration: getWithLoc,
+    ClassExpression: getWithLoc,
+    ConditionalExpression: getWithLoc,
+    ContinueStatement: getWithLoc,
+    DebuggerStatement: getWithLoc,
+    DoWhileStatement: getWithLoc,
+    EmptyStatement: getWithLoc,
+    ExportAllDeclaration: getWithLoc,
+    ExportDefaultDeclaration: getWithLoc,
+    ExportNamedDeclaration: getWithLoc,
+    ExportSpecifier: getWithLoc,
+    ExpressionStatement: getWithLoc,
+    ForInStatement: getWithLoc,
+    ForOfStatement: getWithLoc,
+    ForStatement: getWithLoc,
+    FunctionDeclaration: getWithLoc,
+    FunctionExpression: getWithLoc,
+    Identifier: getWithLoc,
+    IfStatement: getWithLoc,
+    ImportDeclaration: getWithLoc,
+    ImportDefaultSpecifier: getWithLoc,
+    ImportExpression: getWithLoc,
+    ImportNamespaceSpecifier: getWithLoc,
+    ImportSpecifier: getWithLoc,
+    LabeledStatement: getWithLoc,
+    Literal: getWithLoc,
+    LogicalExpression: getWithLoc,
+    MemberExpression: getWithLoc,
+    MetaProperty: getWithLoc,
+    MethodDefinition: getWithLoc,
+    NewExpression: getWithLoc,
+    ObjectExpression: getWithLoc,
+    ObjectPattern: getWithLoc,
+    Program: getWithLoc,
+    Property: getWithLoc,
+    RestElement: getWithLoc,
+    ReturnStatement: getWithLoc,
+    SequenceExpression: getWithLoc,
+    SpreadElement: getWithLoc,
+    Super: getWithLoc,
+    SwitchCase: getWithLoc,
+    SwitchStatement: getWithLoc,
+    TaggedTemplateExpression: getWithLoc,
+    TemplateElement(
+        node: ESTree.TemplateElement,
+        _ctx: Context,
+        parent: ESTree.Node | null,
+    ) {
+        const literal: ESTree.TemplateLiteral = parent as never
+
+        const start =
+            literal.quasis[0] === node
+                ? getWithLoc(literal).start
+                : getWithLoc(node).start - 1
+        const end =
+            literal.quasis[literal.quasis.length - 1] === node
+                ? getWithLoc(literal).end
+                : getWithLoc(node).end + 2
+        return { start, end }
+    },
+    TemplateLiteral: getWithLoc,
+    ThisExpression: getWithLoc,
+    ThrowStatement: getWithLoc,
+    TryStatement: getWithLoc,
+    UnaryExpression: getWithLoc,
+    UpdateExpression: getWithLoc,
+    VariableDeclaration: getWithLoc,
+    VariableDeclarator: getWithLoc,
+    WhileStatement: getWithLoc,
+    WithStatement: getWithLoc,
+    YieldExpression: getWithLoc,
+}
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars -- ignore
 export function convertESNode<N extends ESTree.Node>(
@@ -524,7 +616,9 @@ function convertESNode0<N extends ESTree.Node>(
     const result = {
         ...node,
         parent,
-        ...ctx.getConvertLocation(getWithLoc(node)),
+        ...ctx.getConvertLocation(
+            (GET_LOC[node.type] ?? getWithLoc)(node, ctx, parent),
+        ),
     }
 
     for (const key of getKeys(node)) {

@@ -28,6 +28,7 @@ const RULES = [
     "prefer-const",
     "spaced-comment",
     "no-redeclare",
+    "template-curly-spacing",
 ]
 
 describe("svelte-eslint-parser with ESLint rules", () => {
