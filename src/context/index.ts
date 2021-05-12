@@ -153,12 +153,15 @@ function* extractBlocks(code: string): IterableIterator<{
             const codeRange: [number, number] = [startTagEnd, endTagStart]
 
             const attrRe =
-                // eslint-disable-next-line regexp/no-unused-capturing-group -- maybe bug
-                /(<key>[^\s=]+)(?:=(?:"(<val>[^"]*)"|'(<val>[^"]*)'|(<val>[^\s=]+)))?/giu
+                /(?<key>[^\s=]+)(?:=(?:"(?<val1>[^"]*)"|'(?<val2>[^"]*)'|(?<val3>[^\s=]+)))?/giu
             const attrs: Record<string, string | undefined> = {}
             let attrRes
             while ((attrRes = attrRe.exec(attributes))) {
-                attrs[attrRes.groups!.key] = attrRes.groups!.val
+                attrs[attrRes.groups!.key] =
+                    (attrRes.groups!.val1 ||
+                        attrRes.groups!.val2 ||
+                        attrRes.groups!.val3) ??
+                    null
             }
             yield {
                 code: code.slice(...codeRange),

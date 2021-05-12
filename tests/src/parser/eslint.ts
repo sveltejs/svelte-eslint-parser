@@ -225,6 +225,7 @@ describe("eslint custom parser", () => {
                     parser: "svelte-eslint-parser",
                     parserOptions: {
                         ecmaVersion: 2020,
+                        parser: { ts: "@typescript-eslint/parser" },
                     },
                     rules: {
                         "no-unused-labels": "error",

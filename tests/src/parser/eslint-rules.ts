@@ -46,6 +46,7 @@ describe("svelte-eslint-parser with ESLint rules", () => {
                         parser: "svelte-eslint-parser",
                         parserOptions: {
                             ecmaVersion: 2020,
+                            parser: { ts: "@typescript-eslint/parser" },
                         },
                         rules: {
                             [rule]: "error",
