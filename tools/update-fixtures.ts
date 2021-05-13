@@ -2,7 +2,12 @@ import fs from "fs"
 import { Linter } from "eslint"
 import * as parser from "../src/index"
 import { parseForESLint } from "../src/parser"
-import { getMessageData, listupFixtures } from "../tests/src/parser/test-utils"
+import {
+    getMessageData,
+    listupFixtures,
+    nodeReplacer,
+    scopeToJSON,
+} from "../tests/src/parser/test-utils"
 
 const RULES = [
     "no-unused-labels",
@@ -20,23 +25,6 @@ const RULES = [
 ]
 
 /**
- * Remove `parent` properties from the given AST.
- */
-function replacer(key: string, value: any) {
-    if (key === "parent") {
-        return undefined
-    }
-    if (value instanceof RegExp) {
-        return String(value)
-    }
-    if (typeof value === "bigint") {
-        return null // Make it null so it can be checked on node8.
-        // return `${String(value)}n`
-    }
-    return value
-}
-
-/**
  * Parse
  */
 function parse(code: string, filePath: string) {
@@ -50,14 +38,17 @@ for (const {
     input,
     inputFileName,
     outputFileName,
+    scopeFileName,
     getRuleOutputFileName,
 } of listupFixtures()) {
     try {
         // eslint-disable-next-line no-console -- ignore
         console.log(inputFileName)
-        const ast = parse(input, inputFileName).ast
-        const astJson = JSON.stringify(ast, replacer, 2)
+        const result = parse(input, inputFileName)
+        const astJson = JSON.stringify(result.ast, nodeReplacer, 2)
         fs.writeFileSync(outputFileName, astJson, "utf8")
+        const scopeJson = scopeToJSON(result.scopeManager)
+        fs.writeFileSync(scopeFileName, scopeJson, "utf8")
     } catch (e) {
         // eslint-disable-next-line no-console -- ignore
         console.error(e)

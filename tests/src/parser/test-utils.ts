@@ -1,7 +1,8 @@
 import path from "path"
 import fs from "fs"
-import type { Linter } from "eslint"
+import type { Linter, Scope as ESLintScope } from "eslint"
 import { LinesAndColumns } from "../../../src/context"
+import type { Reference, Scope, ScopeManager, Variable } from "eslint-scope"
 
 const AST_FIXTURE_ROOT = path.resolve(__dirname, "../../fixtures/parser/ast")
 
@@ -9,6 +10,7 @@ export function* listupFixtures(): IterableIterator<{
     input: string
     inputFileName: string
     outputFileName: string
+    scopeFileName: string
     getRuleOutputFileName: (ruleName: string) => string
 }> {
     yield* listupFixturesImpl(AST_FIXTURE_ROOT)
@@ -18,6 +20,7 @@ function* listupFixturesImpl(dir: string): IterableIterator<{
     input: string
     inputFileName: string
     outputFileName: string
+    scopeFileName: string
     getRuleOutputFileName: (ruleName: string) => string
 }> {
     for (const filename of fs.readdirSync(dir)) {
@@ -27,12 +30,17 @@ function* listupFixturesImpl(dir: string): IterableIterator<{
                 /input\.svelte$/u,
                 "output.json",
             )
+            const scopeFileName = inputFileName.replace(
+                /input\.svelte$/u,
+                "scope-output.json",
+            )
 
             const input = fs.readFileSync(inputFileName, "utf8")
             yield {
                 input,
                 inputFileName,
                 outputFileName,
+                scopeFileName,
                 getRuleOutputFileName: (ruleName) => {
                     return inputFileName.replace(
                         /input\.svelte$/u,
@@ -89,4 +97,62 @@ export function getMessageData(
         line: message.line,
         column: message.column,
     }
+}
+
+export function scopeToJSON(scopeManager: ScopeManager): string {
+    const scope = normalizeScope(scopeManager.globalScope)
+    return JSON.stringify(scope, nodeReplacer, 2)
+}
+
+function normalizeScope(scope: Scope): any {
+    return {
+        type: scope.type,
+        variables: scope.variables.map(normalizeVar),
+        references: scope.references.map(normalizeReference),
+        childScopes: scope.childScopes.map(normalizeScope),
+        through: scope.through.map(normalizeReference),
+    }
+}
+
+function normalizeVar(v: Variable) {
+    return {
+        name: v.name,
+        identifiers: v.identifiers,
+        defs: v.defs.map(normalizeDef),
+        references: v.references.map(normalizeReference),
+    }
+}
+
+function normalizeReference(reference: Reference) {
+    return {
+        identifier: reference.identifier,
+        from: reference.from.type,
+        resolved: reference.resolved?.defs?.[0]?.name ?? null,
+        init: reference.init ?? null,
+    }
+}
+
+function normalizeDef(reference: ESLintScope.Definition) {
+    return {
+        type: reference.type,
+        node: reference.node,
+        name: reference.name,
+    }
+}
+
+/**
+ * Remove `parent` properties from the given AST.
+ */
+export function nodeReplacer(key: string, value: any): any {
+    if (key === "parent") {
+        return undefined
+    }
+    if (value instanceof RegExp) {
+        return String(value)
+    }
+    if (typeof value === "bigint") {
+        return null // Make it null so it can be checked on node8.
+        // return `${String(value)}n`
+    }
+    return value
 }
