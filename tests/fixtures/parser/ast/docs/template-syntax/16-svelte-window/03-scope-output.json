@@ -30,8 +30,11 @@
           "identifiers": [
             {
               "type": "Identifier",
-              "start": 19,
-              "end": 32,
+              "name": "handleKeydown",
+              "range": [
+                19,
+                32
+              ],
               "loc": {
                 "start": {
                   "line": 2,
@@ -41,197 +44,54 @@
                   "line": 2,
                   "column": 23
                 }
-              },
-              "range": [
-                19,
-                32
-              ],
-              "name": "handleKeydown"
+              }
             }
           ],
           "defs": [
             {
               "type": "FunctionName",
-              "node": {
-                "type": "FunctionDeclaration",
-                "start": 10,
-                "end": 85,
+              "name": {
+                "type": "Identifier",
+                "name": "handleKeydown",
+                "range": [
+                  19,
+                  32
+                ],
                 "loc": {
                   "start": {
                     "line": 2,
-                    "column": 1
+                    "column": 10
                   },
                   "end": {
-                    "line": 4,
-                    "column": 2
+                    "line": 2,
+                    "column": 23
                   }
-                },
-                "range": [
-                  10,
-                  85
-                ],
-                "id": {
-                  "type": "Identifier",
-                  "start": 19,
-                  "end": 32,
-                  "loc": {
-                    "start": {
-                      "line": 2,
-                      "column": 10
-                    },
-                    "end": {
-                      "line": 2,
-                      "column": 23
-                    }
-                  },
-                  "range": [
-                    19,
-                    32
-                  ],
-                  "name": "handleKeydown"
-                },
-                "expression": false,
-                "generator": false,
+                }
+              },
+              "node": {
+                "type": "FunctionDeclaration",
                 "async": false,
-                "params": [
-                  {
-                    "type": "Identifier",
-                    "start": 33,
-                    "end": 38,
-                    "loc": {
-                      "start": {
-                        "line": 2,
-                        "column": 24
-                      },
-                      "end": {
-                        "line": 2,
-                        "column": 29
-                      }
-                    },
-                    "range": [
-                      33,
-                      38
-                    ],
-                    "name": "event"
-                  }
-                ],
                 "body": {
                   "type": "BlockStatement",
-                  "start": 40,
-                  "end": 85,
-                  "loc": {
-                    "start": {
-                      "line": 2,
-                      "column": 31
-                    },
-                    "end": {
-                      "line": 4,
-                      "column": 2
-                    }
-                  },
-                  "range": [
-                    40,
-                    85
-                  ],
                   "body": [
                     {
                       "type": "ExpressionStatement",
-                      "start": 44,
-                      "end": 82,
-                      "loc": {
-                        "start": {
-                          "line": 3,
-                          "column": 2
-                        },
-                        "end": {
-                          "line": 3,
-                          "column": 40
-                        }
-                      },
-                      "range": [
-                        44,
-                        82
-                      ],
                       "expression": {
                         "type": "CallExpression",
-                        "start": 44,
-                        "end": 81,
-                        "loc": {
-                          "start": {
-                            "line": 3,
-                            "column": 2
-                          },
-                          "end": {
-                            "line": 3,
-                            "column": 39
-                          }
-                        },
-                        "range": [
-                          44,
-                          81
-                        ],
-                        "callee": {
-                          "type": "Identifier",
-                          "start": 44,
-                          "end": 49,
-                          "loc": {
-                            "start": {
-                              "line": 3,
-                              "column": 2
-                            },
-                            "end": {
-                              "line": 3,
-                              "column": 7
-                            }
-                          },
-                          "range": [
-                            44,
-                            49
-                          ],
-                          "name": "alert"
-                        },
                         "arguments": [
                           {
                             "type": "TemplateLiteral",
-                            "start": 50,
-                            "end": 80,
-                            "loc": {
-                              "start": {
-                                "line": 3,
-                                "column": 8
-                              },
-                              "end": {
-                                "line": 3,
-                                "column": 38
-                              }
-                            },
-                            "range": [
-                              50,
-                              80
-                            ],
                             "expressions": [
                               {
                                 "type": "MemberExpression",
-                                "start": 65,
-                                "end": 74,
-                                "loc": {
-                                  "start": {
-                                    "line": 3,
-                                    "column": 23
-                                  },
-                                  "end": {
-                                    "line": 3,
-                                    "column": 32
-                                  }
-                                },
-                                "range": [
-                                  65,
-                                  74
-                                ],
+                                "computed": false,
                                 "object": {
                                   "type": "Identifier",
-                                  "start": 65,
-                                  "end": 70,
+                                  "name": "event",
+                                  "range": [
+                                    65,
+                                    70
+                                  ],
                                   "loc": {
                                     "start": {
                                       "line": 3,
@@ -241,17 +101,16 @@
                                       "line": 3,
                                       "column": 28
                                     }
-                                  },
-                                  "range": [
-                                    65,
-                                    70
-                                  ],
-                                  "name": "event"
+                                  }
                                 },
+                                "optional": false,
                                 "property": {
                                   "type": "Identifier",
-                                  "start": 71,
-                                  "end": 74,
+                                  "name": "key",
+                                  "range": [
+                                    71,
+                                    74
+                                  ],
                                   "loc": {
                                     "start": {
                                       "line": 3,
@@ -261,22 +120,36 @@
                                       "line": 3,
                                       "column": 32
                                     }
-                                  },
-                                  "range": [
-                                    71,
-                                    74
-                                  ],
-                                  "name": "key"
+                                  }
                                 },
-                                "computed": false,
-                                "optional": false
+                                "range": [
+                                  65,
+                                  74
+                                ],
+                                "loc": {
+                                  "start": {
+                                    "line": 3,
+                                    "column": 23
+                                  },
+                                  "end": {
+                                    "line": 3,
+                                    "column": 32
+                                  }
+                                }
                               }
                             ],
                             "quasis": [
                               {
                                 "type": "TemplateElement",
-                                "start": 51,
-                                "end": 63,
+                                "tail": false,
+                                "value": {
+                                  "cooked": "pressed the ",
+                                  "raw": "pressed the "
+                                },
+                                "range": [
+                                  50,
+                                  65
+                                ],
                                 "loc": {
                                   "start": {
                                     "line": 3,
@@ -286,21 +159,19 @@
                                     "line": 3,
                                     "column": 23
                                   }
-                                },
-                                "range": [
-                                  50,
-                                  65
-                                ],
-                                "value": {
-                                  "raw": "pressed the ",
-                                  "cooked": "pressed the "
-                                },
-                                "tail": false
+                                }
                               },
                               {
                                 "type": "TemplateElement",
-                                "start": 75,
-                                "end": 79,
+                                "tail": true,
+                                "value": {
+                                  "cooked": " key",
+                                  "raw": " key"
+                                },
+                                "range": [
+                                  74,
+                                  80
+                                ],
                                 "loc": {
                                   "start": {
                                     "line": 3,
@@ -310,45 +181,144 @@
                                     "line": 3,
                                     "column": 38
                                   }
-                                },
-                                "range": [
-                                  74,
-                                  80
-                                ],
-                                "value": {
-                                  "raw": " key",
-                                  "cooked": " key"
-                                },
-                                "tail": true
+                                }
                               }
-                            ]
+                            ],
+                            "range": [
+                              50,
+                              80
+                            ],
+                            "loc": {
+                              "start": {
+                                "line": 3,
+                                "column": 8
+                              },
+                              "end": {
+                                "line": 3,
+                                "column": 38
+                              }
+                            }
                           }
                         ],
-                        "optional": false
+                        "callee": {
+                          "type": "Identifier",
+                          "name": "alert",
+                          "range": [
+                            44,
+                            49
+                          ],
+                          "loc": {
+                            "start": {
+                              "line": 3,
+                              "column": 2
+                            },
+                            "end": {
+                              "line": 3,
+                              "column": 7
+                            }
+                          }
+                        },
+                        "optional": false,
+                        "range": [
+                          44,
+                          81
+                        ],
+                        "loc": {
+                          "start": {
+                            "line": 3,
+                            "column": 2
+                          },
+                          "end": {
+                            "line": 3,
+                            "column": 39
+                          }
+                        }
+                      },
+                      "range": [
+                        44,
+                        82
+                      ],
+                      "loc": {
+                        "start": {
+                          "line": 3,
+                          "column": 2
+                        },
+                        "end": {
+                          "line": 3,
+                          "column": 40
+                        }
                       }
                     }
-                  ]
-                }
-              },
-              "name": {
-                "type": "Identifier",
-                "start": 19,
-                "end": 32,
+                  ],
+                  "range": [
+                    40,
+                    85
+                  ],
+                  "loc": {
+                    "start": {
+                      "line": 2,
+                      "column": 31
+                    },
+                    "end": {
+                      "line": 4,
+                      "column": 2
+                    }
+                  }
+                },
+                "expression": false,
+                "generator": false,
+                "id": {
+                  "type": "Identifier",
+                  "name": "handleKeydown",
+                  "range": [
+                    19,
+                    32
+                  ],
+                  "loc": {
+                    "start": {
+                      "line": 2,
+                      "column": 10
+                    },
+                    "end": {
+                      "line": 2,
+                      "column": 23
+                    }
+                  }
+                },
+                "params": [
+                  {
+                    "type": "Identifier",
+                    "name": "event",
+                    "range": [
+                      33,
+                      38
+                    ],
+                    "loc": {
+                      "start": {
+                        "line": 2,
+                        "column": 24
+                      },
+                      "end": {
+                        "line": 2,
+                        "column": 29
+                      }
+                    }
+                  }
+                ],
+                "range": [
+                  10,
+                  85
+                ],
                 "loc": {
                   "start": {
                     "line": 2,
-                    "column": 10
+                    "column": 1
                   },
                   "end": {
-                    "line": 2,
-                    "column": 23
+                    "line": 4,
+                    "column": 2
                   }
-                },
-                "range": [
-                  19,
-                  32
-                ],
-                "name": "handleKeydown"
+                }
               }
             }
           ],
@@ -356,8 +326,11 @@
             {
               "identifier": {
                 "type": "Identifier",
-                "start": 124,
-                "end": 137,
+                "name": "handleKeydown",
+                "range": [
+                  124,
+                  137
+                ],
                 "loc": {
                   "start": {
                     "line": 7,
@@ -367,18 +340,17 @@
                     "line": 7,
                     "column": 40
                   }
-                },
-                "name": "handleKeydown",
-                "range": [
-                  124,
-                  137
-                ]
+                }
               },
               "from": "module",
+              "init": null,
               "resolved": {
                 "type": "Identifier",
-                "start": 19,
-                "end": 32,
+                "name": "handleKeydown",
+                "range": [
+                  19,
+                  32
+                ],
                 "loc": {
                   "start": {
                     "line": 2,
@@ -388,14 +360,8 @@
                     "line": 2,
                     "column": 23
                   }
-                },
-                "range": [
-                  19,
-                  32
-                ],
-                "name": "handleKeydown"
-              },
-              "init": null
+                }
+              }
             }
           ]
         }
@@ -404,8 +370,11 @@
         {
           "identifier": {
             "type": "Identifier",
-            "start": 124,
-            "end": 137,
+            "name": "handleKeydown",
+            "range": [
+              124,
+              137
+            ],
             "loc": {
               "start": {
                 "line": 7,
@@ -415,18 +384,17 @@
                 "line": 7,
                 "column": 40
               }
-            },
-            "name": "handleKeydown",
-            "range": [
-              124,
-              137
-            ]
+            }
           },
           "from": "module",
+          "init": null,
           "resolved": {
             "type": "Identifier",
-            "start": 19,
-            "end": 32,
+            "name": "handleKeydown",
+            "range": [
+              19,
+              32
+            ],
             "loc": {
               "start": {
                 "line": 2,
@@ -436,14 +404,8 @@
                 "line": 2,
                 "column": 23
               }
-            },
-            "range": [
-              19,
-              32
-            ],
-            "name": "handleKeydown"
-          },
-          "init": null
+            }
+          }
         }
       ],
       "childScopes": [
@@ -461,8 +423,11 @@
               "identifiers": [
                 {
                   "type": "Identifier",
-                  "start": 33,
-                  "end": 38,
+                  "name": "event",
+                  "range": [
+                    33,
+                    38
+                  ],
                   "loc": {
                     "start": {
                       "line": 2,
@@ -472,197 +437,54 @@
                       "line": 2,
                       "column": 29
                     }
-                  },
-                  "range": [
-                    33,
-                    38
-                  ],
-                  "name": "event"
+                  }
                 }
               ],
               "defs": [
                 {
                   "type": "Parameter",
-                  "node": {
-                    "type": "FunctionDeclaration",
-                    "start": 10,
-                    "end": 85,
+                  "name": {
+                    "type": "Identifier",
+                    "name": "event",
+                    "range": [
+                      33,
+                      38
+                    ],
                     "loc": {
                       "start": {
                         "line": 2,
-                        "column": 1
+                        "column": 24
                       },
                       "end": {
-                        "line": 4,
-                        "column": 2
+                        "line": 2,
+                        "column": 29
                       }
-                    },
-                    "range": [
-                      10,
-                      85
-                    ],
-                    "id": {
-                      "type": "Identifier",
-                      "start": 19,
-                      "end": 32,
-                      "loc": {
-                        "start": {
-                          "line": 2,
-                          "column": 10
-                        },
-                        "end": {
-                          "line": 2,
-                          "column": 23
-                        }
-                      },
-                      "range": [
-                        19,
-                        32
-                      ],
-                      "name": "handleKeydown"
-                    },
-                    "expression": false,
-                    "generator": false,
+                    }
+                  },
+                  "node": {
+                    "type": "FunctionDeclaration",
                     "async": false,
-                    "params": [
-                      {
-                        "type": "Identifier",
-                        "start": 33,
-                        "end": 38,
-                        "loc": {
-                          "start": {
-                            "line": 2,
-                            "column": 24
-                          },
-                          "end": {
-                            "line": 2,
-                            "column": 29
-                          }
-                        },
-                        "range": [
-                          33,
-                          38
-                        ],
-                        "name": "event"
-                      }
-                    ],
                     "body": {
                       "type": "BlockStatement",
-                      "start": 40,
-                      "end": 85,
-                      "loc": {
-                        "start": {
-                          "line": 2,
-                          "column": 31
-                        },
-                        "end": {
-                          "line": 4,
-                          "column": 2
-                        }
-                      },
-                      "range": [
-                        40,
-                        85
-                      ],
                       "body": [
                         {
                           "type": "ExpressionStatement",
-                          "start": 44,
-                          "end": 82,
-                          "loc": {
-                            "start": {
-                              "line": 3,
-                              "column": 2
-                            },
-                            "end": {
-                              "line": 3,
-                              "column": 40
-                            }
-                          },
-                          "range": [
-                            44,
-                            82
-                          ],
                           "expression": {
                             "type": "CallExpression",
-                            "start": 44,
-                            "end": 81,
-                            "loc": {
-                              "start": {
-                                "line": 3,
-                                "column": 2
-                              },
-                              "end": {
-                                "line": 3,
-                                "column": 39
-                              }
-                            },
-                            "range": [
-                              44,
-                              81
-                            ],
-                            "callee": {
-                              "type": "Identifier",
-                              "start": 44,
-                              "end": 49,
-                              "loc": {
-                                "start": {
-                                  "line": 3,
-                                  "column": 2
-                                },
-                                "end": {
-                                  "line": 3,
-                                  "column": 7
-                                }
-                              },
-                              "range": [
-                                44,
-                                49
-                              ],
-                              "name": "alert"
-                            },
                             "arguments": [
                               {
                                 "type": "TemplateLiteral",
-                                "start": 50,
-                                "end": 80,
-                                "loc": {
-                                  "start": {
-                                    "line": 3,
-                                    "column": 8
-                                  },
-                                  "end": {
-                                    "line": 3,
-                                    "column": 38
-                                  }
-                                },
-                                "range": [
-                                  50,
-                                  80
-                                ],
                                 "expressions": [
                                   {
                                     "type": "MemberExpression",
-                                    "start": 65,
-                                    "end": 74,
-                                    "loc": {
-                                      "start": {
-                                        "line": 3,
-                                        "column": 23
-                                      },
-                                      "end": {
-                                        "line": 3,
-                                        "column": 32
-                                      }
-                                    },
-                                    "range": [
-                                      65,
-                                      74
-                                    ],
+                                    "computed": false,
                                     "object": {
                                       "type": "Identifier",
-                                      "start": 65,
-                                      "end": 70,
+                                      "name": "event",
+                                      "range": [
+                                        65,
+                                        70
+                                      ],
                                       "loc": {
                                         "start": {
                                           "line": 3,
@@ -672,17 +494,16 @@
                                           "line": 3,
                                           "column": 28
                                         }
-                                      },
-                                      "range": [
-                                        65,
-                                        70
-                                      ],
-                                      "name": "event"
+                                      }
                                     },
+                                    "optional": false,
                                     "property": {
                                       "type": "Identifier",
-                                      "start": 71,
-                                      "end": 74,
+                                      "name": "key",
+                                      "range": [
+                                        71,
+                                        74
+                                      ],
                                       "loc": {
                                         "start": {
                                           "line": 3,
@@ -692,22 +513,36 @@
                                           "line": 3,
                                           "column": 32
                                         }
-                                      },
-                                      "range": [
-                                        71,
-                                        74
-                                      ],
-                                      "name": "key"
+                                      }
                                     },
-                                    "computed": false,
-                                    "optional": false
+                                    "range": [
+                                      65,
+                                      74
+                                    ],
+                                    "loc": {
+                                      "start": {
+                                        "line": 3,
+                                        "column": 23
+                                      },
+                                      "end": {
+                                        "line": 3,
+                                        "column": 32
+                                      }
+                                    }
                                   }
                                 ],
                                 "quasis": [
                                   {
                                     "type": "TemplateElement",
-                                    "start": 51,
-                                    "end": 63,
+                                    "tail": false,
+                                    "value": {
+                                      "cooked": "pressed the ",
+                                      "raw": "pressed the "
+                                    },
+                                    "range": [
+                                      50,
+                                      65
+                                    ],
                                     "loc": {
                                       "start": {
                                         "line": 3,
@@ -717,21 +552,19 @@
                                         "line": 3,
                                         "column": 23
                                       }
-                                    },
-                                    "range": [
-                                      50,
-                                      65
-                                    ],
-                                    "value": {
-                                      "raw": "pressed the ",
-                                      "cooked": "pressed the "
-                                    },
-                                    "tail": false
+                                    }
                                   },
                                   {
                                     "type": "TemplateElement",
-                                    "start": 75,
-                                    "end": 79,
+                                    "tail": true,
+                                    "value": {
+                                      "cooked": " key",
+                                      "raw": " key"
+                                    },
+                                    "range": [
+                                      74,
+                                      80
+                                    ],
                                     "loc": {
                                       "start": {
                                         "line": 3,
@@ -741,45 +574,144 @@
                                         "line": 3,
                                         "column": 38
                                       }
-                                    },
-                                    "range": [
-                                      74,
-                                      80
-                                    ],
-                                    "value": {
-                                      "raw": " key",
-                                      "cooked": " key"
-                                    },
-                                    "tail": true
+                                    }
                                   }
-                                ]
+                                ],
+                                "range": [
+                                  50,
+                                  80
+                                ],
+                                "loc": {
+                                  "start": {
+                                    "line": 3,
+                                    "column": 8
+                                  },
+                                  "end": {
+                                    "line": 3,
+                                    "column": 38
+                                  }
+                                }
                               }
                             ],
-                            "optional": false
+                            "callee": {
+                              "type": "Identifier",
+                              "name": "alert",
+                              "range": [
+                                44,
+                                49
+                              ],
+                              "loc": {
+                                "start": {
+                                  "line": 3,
+                                  "column": 2
+                                },
+                                "end": {
+                                  "line": 3,
+                                  "column": 7
+                                }
+                              }
+                            },
+                            "optional": false,
+                            "range": [
+                              44,
+                              81
+                            ],
+                            "loc": {
+                              "start": {
+                                "line": 3,
+                                "column": 2
+                              },
+                              "end": {
+                                "line": 3,
+                                "column": 39
+                              }
+                            }
+                          },
+                          "range": [
+                            44,
+                            82
+                          ],
+                          "loc": {
+                            "start": {
+                              "line": 3,
+                              "column": 2
+                            },
+                            "end": {
+                              "line": 3,
+                              "column": 40
+                            }
                           }
                         }
-                      ]
-                    }
-                  },
-                  "name": {
-                    "type": "Identifier",
-                    "start": 33,
-                    "end": 38,
+                      ],
+                      "range": [
+                        40,
+                        85
+                      ],
+                      "loc": {
+                        "start": {
+                          "line": 2,
+                          "column": 31
+                        },
+                        "end": {
+                          "line": 4,
+                          "column": 2
+                        }
+                      }
+                    },
+                    "expression": false,
+                    "generator": false,
+                    "id": {
+                      "type": "Identifier",
+                      "name": "handleKeydown",
+                      "range": [
+                        19,
+                        32
+                      ],
+                      "loc": {
+                        "start": {
+                          "line": 2,
+                          "column": 10
+                        },
+                        "end": {
+                          "line": 2,
+                          "column": 23
+                        }
+                      }
+                    },
+                    "params": [
+                      {
+                        "type": "Identifier",
+                        "name": "event",
+                        "range": [
+                          33,
+                          38
+                        ],
+                        "loc": {
+                          "start": {
+                            "line": 2,
+                            "column": 24
+                          },
+                          "end": {
+                            "line": 2,
+                            "column": 29
+                          }
+                        }
+                      }
+                    ],
+                    "range": [
+                      10,
+                      85
+                    ],
                     "loc": {
                       "start": {
                         "line": 2,
-                        "column": 24
+                        "column": 1
                       },
                       "end": {
-                        "line": 2,
-                        "column": 29
+                        "line": 4,
+                        "column": 2
                       }
-                    },
-                    "range": [
-                      33,
-                      38
-                    ],
-                    "name": "event"
+                    }
                   }
                 }
               ],
@@ -787,8 +719,11 @@
                 {
                   "identifier": {
                     "type": "Identifier",
-                    "start": 65,
-                    "end": 70,
+                    "name": "event",
+                    "range": [
+                      65,
+                      70
+                    ],
                     "loc": {
                       "start": {
                         "line": 3,
@@ -798,18 +733,17 @@
                         "line": 3,
                         "column": 28
                       }
-                    },
-                    "range": [
-                      65,
-                      70
-                    ],
-                    "name": "event"
+                    }
                   },
                   "from": "function",
+                  "init": null,
                   "resolved": {
                     "type": "Identifier",
-                    "start": 33,
-                    "end": 38,
+                    "name": "event",
+                    "range": [
+                      33,
+                      38
+                    ],
                     "loc": {
                       "start": {
                         "line": 2,
@@ -819,14 +753,8 @@
                         "line": 2,
                         "column": 29
                       }
-                    },
-                    "range": [
-                      33,
-                      38
-                    ],
-                    "name": "event"
-                  },
-                  "init": null
+                    }
+                  }
                 }
               ]
             }
@@ -835,8 +763,11 @@
             {
               "identifier": {
                 "type": "Identifier",
-                "start": 44,
-                "end": 49,
+                "name": "alert",
+                "range": [
+                  44,
+                  49
+                ],
                 "loc": {
                   "start": {
                     "line": 3,
@@ -846,22 +777,20 @@
                     "line": 3,
                     "column": 7
                   }
-                },
-                "range": [
-                  44,
-                  49
-                ],
-                "name": "alert"
+                }
               },
               "from": "function",
-              "resolved": null,
-              "init": null
+              "init": null,
+              "resolved": null
             },
             {
               "identifier": {
                 "type": "Identifier",
-                "start": 65,
-                "end": 70,
+                "name": "event",
+                "range": [
+                  65,
+                  70
+                ],
                 "loc": {
                   "start": {
                     "line": 3,
@@ -871,18 +800,17 @@
                     "line": 3,
                     "column": 28
                   }
-                },
-                "range": [
-                  65,
-                  70
-                ],
-                "name": "event"
+                }
               },
               "from": "function",
+              "init": null,
               "resolved": {
                 "type": "Identifier",
-                "start": 33,
-                "end": 38,
+                "name": "event",
+                "range": [
+                  33,
+                  38
+                ],
                 "loc": {
                   "start": {
                     "line": 2,
@@ -892,14 +820,8 @@
                     "line": 2,
                     "column": 29
                   }
-                },
-                "range": [
-                  33,
-                  38
-                ],
-                "name": "event"
-              },
-              "init": null
+                }
+              }
             }
           ],
           "childScopes": [],
@@ -907,8 +829,11 @@
             {
               "identifier": {
                 "type": "Identifier",
-                "start": 44,
-                "end": 49,
+                "name": "alert",
+                "range": [
+                  44,
+                  49
+                ],
                 "loc": {
                   "start": {
                     "line": 3,
@@ -918,16 +843,11 @@
                     "line": 3,
                     "column": 7
                   }
-                },
-                "range": [
-                  44,
-                  49
-                ],
-                "name": "alert"
+                }
               },
               "from": "function",
-              "resolved": null,
-              "init": null
+              "init": null,
+              "resolved": null
             }
           ]
         }
@@ -936,8 +856,11 @@
         {
           "identifier": {
             "type": "Identifier",
-            "start": 44,
-            "end": 49,
+            "name": "alert",
+            "range": [
+              44,
+              49
+            ],
             "loc": {
               "start": {
                 "line": 3,
@@ -947,16 +870,11 @@
                 "line": 3,
                 "column": 7
               }
-            },
-            "range": [
-              44,
-              49
-            ],
-            "name": "alert"
+            }
           },
           "from": "function",
-          "resolved": null,
-          "init": null
+          "init": null,
+          "resolved": null
         }
       ]
     }
@@ -965,8 +883,11 @@
     {
       "identifier": {
         "type": "Identifier",
-        "start": 44,
-        "end": 49,
+        "name": "alert",
+        "range": [
+          44,
+          49
+        ],
         "loc": {
           "start": {
             "line": 3,
@@ -976,16 +897,11 @@
             "line": 3,
             "column": 7
           }
-        },
-        "range": [
-          44,
-          49
-        ],
-        "name": "alert"
+        }
       },
       "from": "function",
-      "resolved": null,
-      "init": null
+      "init": null,
+      "resolved": null
     }
   ]
 }

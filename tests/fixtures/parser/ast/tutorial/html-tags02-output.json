@@ -43,45 +43,17 @@
       "body": [
         {
           "type": "VariableDeclaration",
-          "start": 10,
-          "end": 76,
-          "loc": {
-            "start": {
-              "line": 2,
-              "column": 1
-            },
-            "end": {
-              "line": 2,
-              "column": 67
-            }
-          },
-          "range": [
-            10,
-            76
-          ],
+          "kind": "let",
           "declarations": [
             {
               "type": "VariableDeclarator",
-              "start": 14,
-              "end": 75,
-              "loc": {
-                "start": {
-                  "line": 2,
-                  "column": 5
-                },
-                "end": {
-                  "line": 2,
-                  "column": 66
-                }
-              },
-              "range": [
-                14,
-                75
-              ],
               "id": {
                 "type": "Identifier",
-                "start": 14,
-                "end": 20,
+                "name": "string",
+                "range": [
+                  14,
+                  20
+                ],
                 "loc": {
                   "start": {
                     "line": 2,
@@ -91,37 +63,23 @@
                     "line": 2,
                     "column": 11
                   }
-                },
-                "range": [
-                  14,
-                  20
-                ],
-                "name": "string"
+                }
               },
               "init": {
                 "type": "TemplateLiteral",
-                "start": 23,
-                "end": 75,
-                "loc": {
-                  "start": {
-                    "line": 2,
-                    "column": 14
-                  },
-                  "end": {
-                    "line": 2,
-                    "column": 66
-                  }
-                },
-                "range": [
-                  23,
-                  75
-                ],
                 "expressions": [],
                 "quasis": [
                   {
                     "type": "TemplateElement",
-                    "start": 24,
-                    "end": 74,
+                    "tail": true,
+                    "value": {
+                      "cooked": "this string contains some <strong>HTML!!!</strong>",
+                      "raw": "this string contains some <strong>HTML!!!</strong>"
+                    },
+                    "range": [
+                      23,
+                      75
+                    ],
                     "loc": {
                       "start": {
                         "line": 2,
@@ -131,22 +89,54 @@
                         "line": 2,
                         "column": 66
                       }
-                    },
-                    "range": [
-                      23,
-                      75
-                    ],
-                    "value": {
-                      "raw": "this string contains some <strong>HTML!!!</strong>",
-                      "cooked": "this string contains some <strong>HTML!!!</strong>"
-                    },
-                    "tail": true
+                    }
                   }
-                ]
+                ],
+                "range": [
+                  23,
+                  75
+                ],
+                "loc": {
+                  "start": {
+                    "line": 2,
+                    "column": 14
+                  },
+                  "end": {
+                    "line": 2,
+                    "column": 66
+                  }
+                }
+              },
+              "range": [
+                14,
+                75
+              ],
+              "loc": {
+                "start": {
+                  "line": 2,
+                  "column": 5
+                },
+                "end": {
+                  "line": 2,
+                  "column": 66
+                }
               }
             }
           ],
-          "kind": "let"
+          "range": [
+            10,
+            76
+          ],
+          "loc": {
+            "start": {
+              "line": 2,
+              "column": 1
+            },
+            "end": {
+              "line": 2,
+              "column": 67
+            }
+          }
         }
       ],
       "endTag": {
@@ -245,8 +235,11 @@
           "kind": "raw",
           "expression": {
             "type": "Identifier",
-            "start": 98,
-            "end": 104,
+            "name": "string",
+            "range": [
+              98,
+              104
+            ],
             "loc": {
               "start": {
                 "line": 5,
@@ -256,12 +249,7 @@
                 "line": 5,
                 "column": 16
               }
-            },
-            "name": "string",
-            "range": [
-              98,
-              104
-            ]
+            }
           },
           "range": [
             91,
@@ -372,8 +360,10 @@
     {
       "type": "Keyword",
       "value": "let",
-      "start": 10,
-      "end": 13,
+      "range": [
+        10,
+        13
+      ],
       "loc": {
         "start": {
           "line": 2,
@@ -383,17 +373,15 @@
           "line": 2,
           "column": 4
         }
-      },
-      "range": [
-        10,
-        13
-      ]
+      }
     },
     {
       "type": "Identifier",
       "value": "string",
-      "start": 14,
-      "end": 20,
+      "range": [
+        14,
+        20
+      ],
       "loc": {
         "start": {
           "line": 2,
@@ -403,17 +391,15 @@
           "line": 2,
           "column": 11
         }
-      },
-      "range": [
-        14,
-        20
-      ]
+      }
     },
     {
       "type": "Punctuator",
       "value": "=",
-      "start": 21,
-      "end": 22,
+      "range": [
+        21,
+        22
+      ],
       "loc": {
         "start": {
           "line": 2,
@@ -423,15 +409,15 @@
           "line": 2,
           "column": 13
         }
-      },
-      "range": [
-        21,
-        22
-      ]
+      }
     },
     {
       "type": "Template",
       "value": "`this string contains some <strong>HTML!!!</strong>`",
+      "range": [
+        23,
+        75
+      ],
       "loc": {
         "start": {
           "line": 2,
@@ -441,19 +427,15 @@
           "line": 2,
           "column": 66
         }
-      },
-      "start": 23,
-      "end": 75,
-      "range": [
-        23,
-        75
-      ]
+      }
     },
     {
       "type": "Punctuator",
       "value": ";",
-      "start": 75,
-      "end": 76,
+      "range": [
+        75,
+        76
+      ],
       "loc": {
         "start": {
           "line": 2,
@@ -463,11 +445,7 @@
           "line": 2,
           "column": 67
         }
-      },
-      "range": [
-        75,
-        76
-      ]
+      }
     },
     {
       "type": "Punctuator",

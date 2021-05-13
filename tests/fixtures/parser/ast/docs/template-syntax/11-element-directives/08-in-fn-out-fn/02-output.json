@@ -3,27 +3,6 @@
   "body": [
     {
       "type": "SvelteIfBlock",
-      "elseif": false,
-      "expression": {
-        "type": "Identifier",
-        "start": 5,
-        "end": 12,
-        "loc": {
-          "start": {
-            "line": 1,
-            "column": 5
-          },
-          "end": {
-            "line": 1,
-            "column": 12
-          }
-        },
-        "name": "visible",
-        "range": [
-          5,
-          12
-        ]
-      },
       "children": [
         {
           "type": "SvelteElement",
@@ -52,8 +31,6 @@
               {
                 "type": "SvelteDirective",
                 "kind": "Transition",
-                "intro": true,
-                "outro": false,
                 "name": {
                   "type": "Identifier",
                   "name": "fly",
@@ -72,8 +49,10 @@
                     }
                   }
                 },
-                "modifiers": [],
                 "expression": null,
+                "intro": true,
+                "modifiers": [],
+                "outro": false,
                 "range": [
                   20,
                   26
@@ -92,8 +71,6 @@
               {
                 "type": "SvelteDirective",
                 "kind": "Transition",
-                "intro": false,
-                "outro": true,
                 "name": {
                   "type": "Identifier",
                   "name": "fade",
@@ -112,8 +89,10 @@
                     }
                   }
                 },
-                "modifiers": [],
                 "expression": null,
+                "intro": false,
+                "modifiers": [],
+                "outro": true,
                 "range": [
                   27,
                   35
@@ -200,6 +179,25 @@
         }
       ],
       "else": null,
+      "elseif": false,
+      "expression": {
+        "type": "Identifier",
+        "name": "visible",
+        "range": [
+          5,
+          12
+        ],
+        "loc": {
+          "start": {
+            "line": 1,
+            "column": 5
+          },
+          "end": {
+            "line": 1,
+            "column": 12
+          }
+        }
+      },
       "range": [
         0,
         72

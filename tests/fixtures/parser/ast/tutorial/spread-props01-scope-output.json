@@ -30,8 +30,11 @@
           "identifiers": [
             {
               "type": "Identifier",
-              "start": 17,
-              "end": 21,
+              "name": "Info",
+              "range": [
+                17,
+                21
+              ],
               "loc": {
                 "start": {
                   "line": 2,
@@ -41,21 +44,19 @@
                   "line": 2,
                   "column": 12
                 }
-              },
-              "range": [
-                17,
-                21
-              ],
-              "name": "Info"
+              }
             }
           ],
           "defs": [
             {
               "type": "ImportBinding",
-              "node": {
-                "type": "ImportDefaultSpecifier",
-                "start": 17,
-                "end": 21,
+              "name": {
+                "type": "Identifier",
+                "name": "Info",
+                "range": [
+                  17,
+                  21
+                ],
                 "loc": {
                   "start": {
                     "line": 2,
@@ -65,15 +66,17 @@
                     "line": 2,
                     "column": 12
                   }
-                },
-                "range": [
-                  17,
-                  21
-                ],
+                }
+              },
+              "node": {
+                "type": "ImportDefaultSpecifier",
                 "local": {
                   "type": "Identifier",
-                  "start": 17,
-                  "end": 21,
+                  "name": "Info",
+                  "range": [
+                    17,
+                    21
+                  ],
                   "loc": {
                     "start": {
                       "line": 2,
@@ -83,18 +86,12 @@
                       "line": 2,
                       "column": 12
                     }
-                  },
-                  "range": [
-                    17,
-                    21
-                  ],
-                  "name": "Info"
-                }
-              },
-              "name": {
-                "type": "Identifier",
-                "start": 17,
-                "end": 21,
+                  }
+                },
+                "range": [
+                  17,
+                  21
+                ],
                 "loc": {
                   "start": {
                     "line": 2,
@@ -104,12 +101,7 @@
                     "line": 2,
                     "column": 12
                   }
-                },
-                "range": [
-                  17,
-                  21
-                ],
-                "name": "Info"
+                }
               }
             }
           ],
@@ -134,10 +126,14 @@
                 }
               },
               "from": "module",
+              "init": null,
               "resolved": {
                 "type": "Identifier",
-                "start": 17,
-                "end": 21,
+                "name": "Info",
+                "range": [
+                  17,
+                  21
+                ],
                 "loc": {
                   "start": {
                     "line": 2,
@@ -147,14 +143,8 @@
                     "line": 2,
                     "column": 12
                   }
-                },
-                "range": [
-                  17,
-                  21
-                ],
-                "name": "Info"
-              },
-              "init": null
+                }
+              }
             }
           ]
         },
@@ -163,8 +153,11 @@
           "identifiers": [
             {
               "type": "Identifier",
-              "start": 52,
-              "end": 55,
+              "name": "pkg",
+              "range": [
+                52,
+                55
+              ],
               "loc": {
                 "start": {
                   "line": 4,
@@ -174,39 +167,39 @@
                   "line": 4,
                   "column": 10
                 }
-              },
-              "range": [
-                52,
-                55
-              ],
-              "name": "pkg"
+              }
             }
           ],
           "defs": [
             {
               "type": "Variable",
-              "node": {
-                "type": "VariableDeclarator",
-                "start": 52,
-                "end": 146,
+              "name": {
+                "type": "Identifier",
+                "name": "pkg",
+                "range": [
+                  52,
+                  55
+                ],
                 "loc": {
                   "start": {
                     "line": 4,
                     "column": 7
                   },
                   "end": {
-                    "line": 9,
-                    "column": 2
+                    "line": 4,
+                    "column": 10
                   }
-                },
-                "range": [
-                  52,
-                  146
-                ],
+                }
+              },
+              "node": {
+                "type": "VariableDeclarator",
                 "id": {
                   "type": "Identifier",
-                  "start": 52,
-                  "end": 55,
+                  "name": "pkg",
+                  "range": [
+                    52,
+                    55
+                  ],
                   "loc": {
                     "start": {
                       "line": 4,
@@ -216,57 +209,22 @@
                       "line": 4,
                       "column": 10
                     }
-                  },
-                  "range": [
-                    52,
-                    55
-                  ],
-                  "name": "pkg"
+                  }
                 },
                 "init": {
                   "type": "ObjectExpression",
-                  "start": 58,
-                  "end": 146,
-                  "loc": {
-                    "start": {
-                      "line": 4,
-                      "column": 13
-                    },
-                    "end": {
-                      "line": 9,
-                      "column": 2
-                    }
-                  },
-                  "range": [
-                    58,
-                    146
-                  ],
                   "properties": [
                     {
                       "type": "Property",
-                      "start": 62,
-                      "end": 76,
-                      "loc": {
-                        "start": {
-                          "line": 5,
-                          "column": 2
-                        },
-                        "end": {
-                          "line": 5,
-                          "column": 16
-                        }
-                      },
-                      "range": [
-                        62,
-                        76
-                      ],
-                      "method": false,
-                      "shorthand": false,
+                      "kind": "init",
                       "computed": false,
                       "key": {
                         "type": "Identifier",
-                        "start": 62,
-                        "end": 66,
+                        "name": "name",
+                        "range": [
+                          62,
+                          66
+                        ],
                         "loc": {
                           "start": {
                             "line": 5,
@@ -276,17 +234,18 @@
                             "line": 5,
                             "column": 6
                           }
-                        },
-                        "range": [
-                          62,
-                          66
-                        ],
-                        "name": "name"
+                        }
                       },
+                      "method": false,
+                      "shorthand": false,
                       "value": {
                         "type": "Literal",
-                        "start": 68,
-                        "end": 76,
+                        "raw": "'svelte'",
+                        "value": "svelte",
+                        "range": [
+                          68,
+                          76
+                        ],
                         "loc": {
                           "start": {
                             "line": 5,
@@ -296,41 +255,34 @@
                             "line": 5,
                             "column": 16
                           }
-                        },
-                        "range": [
-                          68,
-                          76
-                        ],
-                        "value": "svelte",
-                        "raw": "'svelte'"
-                      },
-                      "kind": "init"
-                    },
-                    {
-                      "type": "Property",
-                      "start": 80,
-                      "end": 90,
-                      "loc": {
-                        "start": {
-                          "line": 6,
-                          "column": 2
-                        },
-                        "end": {
-                          "line": 6,
-                          "column": 12
                         }
                       },
                       "range": [
-                        80,
-                        90
+                        62,
+                        76
                       ],
-                      "method": false,
-                      "shorthand": false,
+                      "loc": {
+                        "start": {
+                          "line": 5,
+                          "column": 2
+                        },
+                        "end": {
+                          "line": 5,
+                          "column": 16
+                        }
+                      }
+                    },
+                    {
+                      "type": "Property",
+                      "kind": "init",
                       "computed": false,
                       "key": {
                         "type": "Identifier",
-                        "start": 80,
-                        "end": 87,
+                        "name": "version",
+                        "range": [
+                          80,
+                          87
+                        ],
                         "loc": {
                           "start": {
                             "line": 6,
@@ -340,17 +292,18 @@
                             "line": 6,
                             "column": 9
                           }
-                        },
-                        "range": [
-                          80,
-                          87
-                        ],
-                        "name": "version"
+                        }
                       },
+                      "method": false,
+                      "shorthand": false,
                       "value": {
                         "type": "Literal",
-                        "start": 89,
-                        "end": 90,
+                        "raw": "3",
+                        "value": 3,
+                        "range": [
+                          89,
+                          90
+                        ],
                         "loc": {
                           "start": {
                             "line": 6,
@@ -360,41 +313,34 @@
                             "line": 6,
                             "column": 12
                           }
-                        },
-                        "range": [
-                          89,
-                          90
-                        ],
-                        "value": 3,
-                        "raw": "3"
-                      },
-                      "kind": "init"
-                    },
-                    {
-                      "type": "Property",
-                      "start": 94,
-                      "end": 110,
-                      "loc": {
-                        "start": {
-                          "line": 7,
-                          "column": 2
-                        },
-                        "end": {
-                          "line": 7,
-                          "column": 18
                         }
                       },
                       "range": [
-                        94,
-                        110
+                        80,
+                        90
                       ],
-                      "method": false,
-                      "shorthand": false,
+                      "loc": {
+                        "start": {
+                          "line": 6,
+                          "column": 2
+                        },
+                        "end": {
+                          "line": 6,
+                          "column": 12
+                        }
+                      }
+                    },
+                    {
+                      "type": "Property",
+                      "kind": "init",
                       "computed": false,
                       "key": {
                         "type": "Identifier",
-                        "start": 94,
-                        "end": 99,
+                        "name": "speed",
+                        "range": [
+                          94,
+                          99
+                        ],
                         "loc": {
                           "start": {
                             "line": 7,
@@ -404,17 +350,18 @@
                             "line": 7,
                             "column": 7
                           }
-                        },
-                        "range": [
-                          94,
-                          99
-                        ],
-                        "name": "speed"
+                        }
                       },
+                      "method": false,
+                      "shorthand": false,
                       "value": {
                         "type": "Literal",
-                        "start": 101,
-                        "end": 110,
+                        "raw": "'blazing'",
+                        "value": "blazing",
+                        "range": [
+                          101,
+                          110
+                        ],
                         "loc": {
                           "start": {
                             "line": 7,
@@ -424,41 +371,34 @@
                             "line": 7,
                             "column": 18
                           }
-                        },
-                        "range": [
-                          101,
-                          110
-                        ],
-                        "value": "blazing",
-                        "raw": "'blazing'"
-                      },
-                      "kind": "init"
-                    },
-                    {
-                      "type": "Property",
-                      "start": 114,
-                      "end": 143,
-                      "loc": {
-                        "start": {
-                          "line": 8,
-                          "column": 2
-                        },
-                        "end": {
-                          "line": 8,
-                          "column": 31
                         }
                       },
                       "range": [
-                        114,
-                        143
+                        94,
+                        110
                       ],
-                      "method": false,
-                      "shorthand": false,
+                      "loc": {
+                        "start": {
+                          "line": 7,
+                          "column": 2
+                        },
+                        "end": {
+                          "line": 7,
+                          "column": 18
+                        }
+                      }
+                    },
+                    {
+                      "type": "Property",
+                      "kind": "init",
                       "computed": false,
                       "key": {
                         "type": "Identifier",
-                        "start": 114,
-                        "end": 121,
+                        "name": "website",
+                        "range": [
+                          114,
+                          121
+                        ],
                         "loc": {
                           "start": {
                             "line": 8,
@@ -468,17 +408,18 @@
                             "line": 8,
                             "column": 9
                           }
-                        },
-                        "range": [
-                          114,
-                          121
-                        ],
-                        "name": "website"
+                        }
                       },
+                      "method": false,
+                      "shorthand": false,
                       "value": {
                         "type": "Literal",
-                        "start": 123,
-                        "end": 143,
+                        "raw": "'https://svelte.dev'",
+                        "value": "https://svelte.dev",
+                        "range": [
+                          123,
+                          143
+                        ],
                         "loc": {
                           "start": {
                             "line": 8,
@@ -488,38 +429,53 @@
                             "line": 8,
                             "column": 31
                           }
-                        },
-                        "range": [
-                          123,
-                          143
-                        ],
-                        "value": "https://svelte.dev",
-                        "raw": "'https://svelte.dev'"
+                        }
                       },
-                      "kind": "init"
+                      "range": [
+                        114,
+                        143
+                      ],
+                      "loc": {
+                        "start": {
+                          "line": 8,
+                          "column": 2
+                        },
+                        "end": {
+                          "line": 8,
+                          "column": 31
+                        }
+                      }
                     }
-                  ]
-                }
-              },
-              "name": {
-                "type": "Identifier",
-                "start": 52,
-                "end": 55,
+                  ],
+                  "range": [
+                    58,
+                    146
+                  ],
+                  "loc": {
+                    "start": {
+                      "line": 4,
+                      "column": 13
+                    },
+                    "end": {
+                      "line": 9,
+                      "column": 2
+                    }
+                  }
+                },
+                "range": [
+                  52,
+                  146
+                ],
                 "loc": {
                   "start": {
                     "line": 4,
                     "column": 7
                   },
                   "end": {
-                    "line": 4,
-                    "column": 10
+                    "line": 9,
+                    "column": 2
                   }
-                },
-                "range": [
-                  52,
-                  55
-                ],
-                "name": "pkg"
+                }
               }
             }
           ],
@@ -527,8 +483,11 @@
             {
               "identifier": {
                 "type": "Identifier",
-                "start": 52,
-                "end": 55,
+                "name": "pkg",
+                "range": [
+                  52,
+                  55
+                ],
                 "loc": {
                   "start": {
                     "line": 4,
@@ -538,18 +497,17 @@
                     "line": 4,
                     "column": 10
                   }
-                },
-                "range": [
-                  52,
-                  55
-                ],
-                "name": "pkg"
+                }
               },
               "from": "module",
+              "init": true,
               "resolved": {
                 "type": "Identifier",
-                "start": 52,
-                "end": 55,
+                "name": "pkg",
+                "range": [
+                  52,
+                  55
+                ],
                 "loc": {
                   "start": {
                     "line": 4,
@@ -559,20 +517,17 @@
                     "line": 4,
                     "column": 10
                   }
-                },
-                "range": [
-                  52,
-                  55
-                ],
-                "name": "pkg"
-              },
-              "init": true
+                }
+              }
             },
             {
               "identifier": {
                 "type": "Identifier",
-                "start": 171,
-                "end": 174,
+                "name": "pkg",
+                "range": [
+                  171,
+                  174
+                ],
                 "loc": {
                   "start": {
                     "line": 12,
@@ -582,18 +537,17 @@
                     "line": 12,
                     "column": 15
                   }
-                },
-                "name": "pkg",
-                "range": [
-                  171,
-                  174
-                ]
+                }
               },
               "from": "module",
+              "init": null,
               "resolved": {
                 "type": "Identifier",
-                "start": 52,
-                "end": 55,
+                "name": "pkg",
+                "range": [
+                  52,
+                  55
+                ],
                 "loc": {
                   "start": {
                     "line": 4,
@@ -603,20 +557,17 @@
                     "line": 4,
                     "column": 10
                   }
-                },
-                "range": [
-                  52,
-                  55
-                ],
-                "name": "pkg"
-              },
-              "init": null
+                }
+              }
             },
             {
               "identifier": {
                 "type": "Identifier",
-                "start": 190,
-                "end": 193,
+                "name": "pkg",
+                "range": [
+                  190,
+                  193
+                ],
                 "loc": {
                   "start": {
                     "line": 12,
@@ -626,18 +577,17 @@
                     "line": 12,
                     "column": 34
                   }
-                },
-                "name": "pkg",
-                "range": [
-                  190,
-                  193
-                ]
+                }
               },
               "from": "module",
+              "init": null,
               "resolved": {
                 "type": "Identifier",
-                "start": 52,
-                "end": 55,
+                "name": "pkg",
+                "range": [
+                  52,
+                  55
+                ],
                 "loc": {
                   "start": {
                     "line": 4,
@@ -647,20 +597,17 @@
                     "line": 4,
                     "column": 10
                   }
-                },
-                "range": [
-                  52,
-                  55
-                ],
-                "name": "pkg"
-              },
-              "init": null
+                }
+              }
             },
             {
               "identifier": {
                 "type": "Identifier",
-                "start": 210,
-                "end": 213,
+                "name": "pkg",
+                "range": [
+                  210,
+                  213
+                ],
                 "loc": {
                   "start": {
                     "line": 12,
@@ -670,18 +617,17 @@
                     "line": 12,
                     "column": 54
                   }
-                },
-                "name": "pkg",
-                "range": [
-                  210,
-                  213
-                ]
+                }
               },
               "from": "module",
+              "init": null,
               "resolved": {
                 "type": "Identifier",
-                "start": 52,
-                "end": 55,
+                "name": "pkg",
+                "range": [
+                  52,
+                  55
+                ],
                 "loc": {
                   "start": {
                     "line": 4,
@@ -691,20 +637,17 @@
                     "line": 4,
                     "column": 10
                   }
-                },
-                "range": [
-                  52,
-                  55
-                ],
-                "name": "pkg"
-              },
-              "init": null
+                }
+              }
             },
             {
               "identifier": {
                 "type": "Identifier",
-                "start": 230,
-                "end": 233,
+                "name": "pkg",
+                "range": [
+                  230,
+                  233
+                ],
                 "loc": {
                   "start": {
                     "line": 12,
@@ -714,18 +657,17 @@
                     "line": 12,
                     "column": 74
                   }
-                },
-                "name": "pkg",
-                "range": [
-                  230,
-                  233
-                ]
+                }
               },
               "from": "module",
+              "init": null,
               "resolved": {
                 "type": "Identifier",
-                "start": 52,
-                "end": 55,
+                "name": "pkg",
+                "range": [
+                  52,
+                  55
+                ],
                 "loc": {
                   "start": {
                     "line": 4,
@@ -735,14 +677,8 @@
                     "line": 4,
                     "column": 10
                   }
-                },
-                "range": [
-                  52,
-                  55
-                ],
-                "name": "pkg"
-              },
-              "init": null
+                }
+              }
             }
           ]
         }
@@ -751,8 +687,11 @@
         {
           "identifier": {
             "type": "Identifier",
-            "start": 52,
-            "end": 55,
+            "name": "pkg",
+            "range": [
+              52,
+              55
+            ],
             "loc": {
               "start": {
                 "line": 4,
@@ -762,18 +701,17 @@
                 "line": 4,
                 "column": 10
               }
-            },
-            "range": [
-              52,
-              55
-            ],
-            "name": "pkg"
+            }
           },
           "from": "module",
+          "init": true,
           "resolved": {
             "type": "Identifier",
-            "start": 52,
-            "end": 55,
+            "name": "pkg",
+            "range": [
+              52,
+              55
+            ],
             "loc": {
               "start": {
                 "line": 4,
@@ -783,20 +721,17 @@
                 "line": 4,
                 "column": 10
               }
-            },
-            "range": [
-              52,
-              55
-            ],
-            "name": "pkg"
-          },
-          "init": true
+            }
+          }
         },
         {
           "identifier": {
             "type": "Identifier",
-            "start": 171,
-            "end": 174,
+            "name": "pkg",
+            "range": [
+              171,
+              174
+            ],
             "loc": {
               "start": {
                 "line": 12,
@@ -806,18 +741,17 @@
                 "line": 12,
                 "column": 15
               }
-            },
-            "name": "pkg",
-            "range": [
-              171,
-              174
-            ]
+            }
           },
           "from": "module",
+          "init": null,
           "resolved": {
             "type": "Identifier",
-            "start": 52,
-            "end": 55,
+            "name": "pkg",
+            "range": [
+              52,
+              55
+            ],
             "loc": {
               "start": {
                 "line": 4,
@@ -827,20 +761,17 @@
                 "line": 4,
                 "column": 10
               }
-            },
-            "range": [
-              52,
-              55
-            ],
-            "name": "pkg"
-          },
-          "init": null
+            }
+          }
         },
         {
           "identifier": {
             "type": "Identifier",
-            "start": 190,
-            "end": 193,
+            "name": "pkg",
+            "range": [
+              190,
+              193
+            ],
             "loc": {
               "start": {
                 "line": 12,
@@ -850,18 +781,17 @@
                 "line": 12,
                 "column": 34
               }
-            },
-            "name": "pkg",
-            "range": [
-              190,
-              193
-            ]
+            }
           },
           "from": "module",
+          "init": null,
           "resolved": {
             "type": "Identifier",
-            "start": 52,
-            "end": 55,
+            "name": "pkg",
+            "range": [
+              52,
+              55
+            ],
             "loc": {
               "start": {
                 "line": 4,
@@ -871,20 +801,17 @@
                 "line": 4,
                 "column": 10
               }
-            },
-            "range": [
-              52,
-              55
-            ],
-            "name": "pkg"
-          },
-          "init": null
+            }
+          }
         },
         {
           "identifier": {
             "type": "Identifier",
-            "start": 210,
-            "end": 213,
+            "name": "pkg",
+            "range": [
+              210,
+              213
+            ],
             "loc": {
               "start": {
                 "line": 12,
@@ -894,18 +821,17 @@
                 "line": 12,
                 "column": 54
               }
-            },
-            "name": "pkg",
-            "range": [
-              210,
-              213
-            ]
+            }
           },
           "from": "module",
+          "init": null,
           "resolved": {
             "type": "Identifier",
-            "start": 52,
-            "end": 55,
+            "name": "pkg",
+            "range": [
+              52,
+              55
+            ],
             "loc": {
               "start": {
                 "line": 4,
@@ -915,20 +841,17 @@
                 "line": 4,
                 "column": 10
               }
-            },
-            "range": [
-              52,
-              55
-            ],
-            "name": "pkg"
-          },
-          "init": null
+            }
+          }
         },
         {
           "identifier": {
             "type": "Identifier",
-            "start": 230,
-            "end": 233,
+            "name": "pkg",
+            "range": [
+              230,
+              233
+            ],
             "loc": {
               "start": {
                 "line": 12,
@@ -938,18 +861,17 @@
                 "line": 12,
                 "column": 74
               }
-            },
-            "name": "pkg",
-            "range": [
-              230,
-              233
-            ]
+            }
           },
           "from": "module",
+          "init": null,
           "resolved": {
             "type": "Identifier",
-            "start": 52,
-            "end": 55,
+            "name": "pkg",
+            "range": [
+              52,
+              55
+            ],
             "loc": {
               "start": {
                 "line": 4,
@@ -959,14 +881,8 @@
                 "line": 4,
                 "column": 10
               }
-            },
-            "range": [
-              52,
-              55
-            ],
-            "name": "pkg"
-          },
-          "init": null
+            }
+          }
         },
         {
           "identifier": {
@@ -988,10 +904,14 @@
             }
           },
           "from": "module",
+          "init": null,
           "resolved": {
             "type": "Identifier",
-            "start": 17,
-            "end": 21,
+            "name": "Info",
+            "range": [
+              17,
+              21
+            ],
             "loc": {
               "start": {
                 "line": 2,
@@ -1001,14 +921,8 @@
                 "line": 2,
                 "column": 12
               }
-            },
-            "range": [
-              17,
-              21
-            ],
-            "name": "Info"
-          },
-          "init": null
+            }
+          }
         }
       ],
       "childScopes": [],

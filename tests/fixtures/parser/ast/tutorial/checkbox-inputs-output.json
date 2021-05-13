@@ -43,45 +43,17 @@
       "body": [
         {
           "type": "VariableDeclaration",
-          "start": 10,
-          "end": 26,
-          "loc": {
-            "start": {
-              "line": 2,
-              "column": 1
-            },
-            "end": {
-              "line": 2,
-              "column": 17
-            }
-          },
-          "range": [
-            10,
-            26
-          ],
+          "kind": "let",
           "declarations": [
             {
               "type": "VariableDeclarator",
-              "start": 14,
-              "end": 25,
-              "loc": {
-                "start": {
-                  "line": 2,
-                  "column": 5
-                },
-                "end": {
-                  "line": 2,
-                  "column": 16
-                }
-              },
-              "range": [
-                14,
-                25
-              ],
               "id": {
                 "type": "Identifier",
-                "start": 14,
-                "end": 17,
+                "name": "yes",
+                "range": [
+                  14,
+                  17
+                ],
                 "loc": {
                   "start": {
                     "line": 2,
@@ -91,17 +63,16 @@
                     "line": 2,
                     "column": 8
                   }
-                },
-                "range": [
-                  14,
-                  17
-                ],
-                "name": "yes"
+                }
               },
               "init": {
                 "type": "Literal",
-                "start": 20,
-                "end": 25,
+                "raw": "false",
+                "value": false,
+                "range": [
+                  20,
+                  25
+                ],
                 "loc": {
                   "start": {
                     "line": 2,
@@ -111,17 +82,38 @@
                     "line": 2,
                     "column": 16
                   }
+                }
+              },
+              "range": [
+                14,
+                25
+              ],
+              "loc": {
+                "start": {
+                  "line": 2,
+                  "column": 5
                 },
-                "range": [
-                  20,
-                  25
-                ],
-                "value": false,
-                "raw": "false"
+                "end": {
+                  "line": 2,
+                  "column": 16
+                }
               }
             }
           ],
-          "kind": "let"
+          "range": [
+            10,
+            26
+          ],
+          "loc": {
+            "start": {
+              "line": 2,
+              "column": 1
+            },
+            "end": {
+              "line": 2,
+              "column": 17
+            }
+          }
         }
       ],
       "endTag": {
@@ -334,11 +326,13 @@
                     }
                   }
                 },
-                "modifiers": [],
                 "expression": {
                   "type": "Identifier",
-                  "start": 82,
-                  "end": 85,
+                  "name": "yes",
+                  "range": [
+                    82,
+                    85
+                  ],
                   "loc": {
                     "start": {
                       "line": 6,
@@ -348,13 +342,9 @@
                       "line": 6,
                       "column": 39
                     }
-                  },
-                  "name": "yes",
-                  "range": [
-                    82,
-                    85
-                  ]
+                  }
                 },
+                "modifiers": [],
                 "range": [
                   68,
                   86
@@ -475,27 +465,6 @@
     },
     {
       "type": "SvelteIfBlock",
-      "elseif": false,
-      "expression": {
-        "type": "Identifier",
-        "start": 136,
-        "end": 139,
-        "loc": {
-          "start": {
-            "line": 10,
-            "column": 5
-          },
-          "end": {
-            "line": 10,
-            "column": 8
-          }
-        },
-        "name": "yes",
-        "range": [
-          136,
-          139
-        ]
-      },
       "children": [
         {
           "type": "SvelteElement",
@@ -701,6 +670,25 @@
           }
         }
       },
+      "elseif": false,
+      "expression": {
+        "type": "Identifier",
+        "name": "yes",
+        "range": [
+          136,
+          139
+        ],
+        "loc": {
+          "start": {
+            "line": 10,
+            "column": 5
+          },
+          "end": {
+            "line": 10,
+            "column": 8
+          }
+        }
+      },
       "range": [
         131,
         311
@@ -785,24 +773,13 @@
                 "kind": "text",
                 "expression": {
                   "type": "UnaryExpression",
-                  "start": 331,
-                  "end": 335,
-                  "loc": {
-                    "start": {
-                      "line": 16,
-                      "column": 18
-                    },
-                    "end": {
-                      "line": 16,
-                      "column": 22
-                    }
-                  },
-                  "operator": "!",
-                  "prefix": true,
                   "argument": {
                     "type": "Identifier",
-                    "start": 332,
-                    "end": 335,
+                    "name": "yes",
+                    "range": [
+                      332,
+                      335
+                    ],
                     "loc": {
                       "start": {
                         "line": 16,
@@ -812,17 +789,24 @@
                         "line": 16,
                         "column": 22
                       }
-                    },
-                    "name": "yes",
-                    "range": [
-                      332,
-                      335
-                    ]
+                    }
                   },
+                  "operator": "!",
+                  "prefix": true,
                   "range": [
                     331,
                     335
-                  ]
+                  ],
+                  "loc": {
+                    "start": {
+                      "line": 16,
+                      "column": 18
+                    },
+                    "end": {
+                      "line": 16,
+                      "column": 22
+                    }
+                  }
                 },
                 "range": [
                   330,
@@ -985,8 +969,10 @@
     {
       "type": "Keyword",
       "value": "let",
-      "start": 10,
-      "end": 13,
+      "range": [
+        10,
+        13
+      ],
       "loc": {
         "start": {
           "line": 2,
@@ -996,17 +982,15 @@
           "line": 2,
           "column": 4
         }
-      },
-      "range": [
-        10,
-        13
-      ]
+      }
     },
     {
       "type": "Identifier",
       "value": "yes",
-      "start": 14,
-      "end": 17,
+      "range": [
+        14,
+        17
+      ],
       "loc": {
         "start": {
           "line": 2,
@@ -1016,17 +1000,15 @@
           "line": 2,
           "column": 8
         }
-      },
-      "range": [
-        14,
-        17
-      ]
+      }
     },
     {
       "type": "Punctuator",
       "value": "=",
-      "start": 18,
-      "end": 19,
+      "range": [
+        18,
+        19
+      ],
       "loc": {
         "start": {
           "line": 2,
@@ -1036,17 +1018,15 @@
           "line": 2,
           "column": 10
         }
-      },
-      "range": [
-        18,
-        19
-      ]
+      }
     },
     {
       "type": "Boolean",
       "value": "false",
-      "start": 20,
-      "end": 25,
+      "range": [
+        20,
+        25
+      ],
       "loc": {
         "start": {
           "line": 2,
@@ -1056,17 +1036,15 @@
           "line": 2,
           "column": 16
         }
-      },
-      "range": [
-        20,
-        25
-      ]
+      }
     },
     {
       "type": "Punctuator",
       "value": ";",
-      "start": 25,
-      "end": 26,
+      "range": [
+        25,
+        26
+      ],
       "loc": {
         "start": {
           "line": 2,
@@ -1076,11 +1054,7 @@
           "line": 2,
           "column": 17
         }
-      },
-      "range": [
-        25,
-        26
-      ]
+      }
     },
     {
       "type": "Punctuator",

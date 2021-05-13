@@ -30,8 +30,11 @@
           "identifiers": [
             {
               "type": "Identifier",
-              "start": 14,
-              "end": 20,
+              "name": "string",
+              "range": [
+                14,
+                20
+              ],
               "loc": {
                 "start": {
                   "line": 2,
@@ -41,21 +44,19 @@
                   "line": 2,
                   "column": 11
                 }
-              },
-              "range": [
-                14,
-                20
-              ],
-              "name": "string"
+              }
             }
           ],
           "defs": [
             {
               "type": "Variable",
-              "node": {
-                "type": "VariableDeclarator",
-                "start": 14,
-                "end": 75,
+              "name": {
+                "type": "Identifier",
+                "name": "string",
+                "range": [
+                  14,
+                  20
+                ],
                 "loc": {
                   "start": {
                     "line": 2,
@@ -63,17 +64,19 @@
                   },
                   "end": {
                     "line": 2,
-                    "column": 66
+                    "column": 11
                   }
-                },
-                "range": [
-                  14,
-                  75
-                ],
+                }
+              },
+              "node": {
+                "type": "VariableDeclarator",
                 "id": {
                   "type": "Identifier",
-                  "start": 14,
-                  "end": 20,
+                  "name": "string",
+                  "range": [
+                    14,
+                    20
+                  ],
                   "loc": {
                     "start": {
                       "line": 2,
@@ -83,37 +86,23 @@
                       "line": 2,
                       "column": 11
                     }
-                  },
-                  "range": [
-                    14,
-                    20
-                  ],
-                  "name": "string"
+                  }
                 },
                 "init": {
                   "type": "TemplateLiteral",
-                  "start": 23,
-                  "end": 75,
-                  "loc": {
-                    "start": {
-                      "line": 2,
-                      "column": 14
-                    },
-                    "end": {
-                      "line": 2,
-                      "column": 66
-                    }
-                  },
-                  "range": [
-                    23,
-                    75
-                  ],
                   "expressions": [],
                   "quasis": [
                     {
                       "type": "TemplateElement",
-                      "start": 24,
-                      "end": 74,
+                      "tail": true,
+                      "value": {
+                        "cooked": "this string contains some <strong>HTML!!!</strong>",
+                        "raw": "this string contains some <strong>HTML!!!</strong>"
+                      },
+                      "range": [
+                        23,
+                        75
+                      ],
                       "loc": {
                         "start": {
                           "line": 2,
@@ -123,24 +112,28 @@
                           "line": 2,
                           "column": 66
                         }
-                      },
-                      "range": [
-                        23,
-                        75
-                      ],
-                      "value": {
-                        "raw": "this string contains some <strong>HTML!!!</strong>",
-                        "cooked": "this string contains some <strong>HTML!!!</strong>"
-                      },
-                      "tail": true
+                      }
                     }
-                  ]
-                }
-              },
-              "name": {
-                "type": "Identifier",
-                "start": 14,
-                "end": 20,
+                  ],
+                  "range": [
+                    23,
+                    75
+                  ],
+                  "loc": {
+                    "start": {
+                      "line": 2,
+                      "column": 14
+                    },
+                    "end": {
+                      "line": 2,
+                      "column": 66
+                    }
+                  }
+                },
+                "range": [
+                  14,
+                  75
+                ],
                 "loc": {
                   "start": {
                     "line": 2,
@@ -148,14 +141,9 @@
                   },
                   "end": {
                     "line": 2,
-                    "column": 11
+                    "column": 66
                   }
-                },
-                "range": [
-                  14,
-                  20
-                ],
-                "name": "string"
+                }
               }
             }
           ],
@@ -163,8 +151,11 @@
             {
               "identifier": {
                 "type": "Identifier",
-                "start": 14,
-                "end": 20,
+                "name": "string",
+                "range": [
+                  14,
+                  20
+                ],
                 "loc": {
                   "start": {
                     "line": 2,
@@ -174,18 +165,17 @@
                     "line": 2,
                     "column": 11
                   }
-                },
-                "range": [
-                  14,
-                  20
-                ],
-                "name": "string"
+                }
               },
               "from": "module",
+              "init": true,
               "resolved": {
                 "type": "Identifier",
-                "start": 14,
-                "end": 20,
+                "name": "string",
+                "range": [
+                  14,
+                  20
+                ],
                 "loc": {
                   "start": {
                     "line": 2,
@@ -195,20 +185,17 @@
                     "line": 2,
                     "column": 11
                   }
-                },
-                "range": [
-                  14,
-                  20
-                ],
-                "name": "string"
-              },
-              "init": true
+                }
+              }
             },
             {
               "identifier": {
                 "type": "Identifier",
-                "start": 92,
-                "end": 98,
+                "name": "string",
+                "range": [
+                  92,
+                  98
+                ],
                 "loc": {
                   "start": {
                     "line": 5,
@@ -218,18 +205,17 @@
                     "line": 5,
                     "column": 10
                   }
-                },
-                "name": "string",
-                "range": [
-                  92,
-                  98
-                ]
+                }
               },
               "from": "module",
+              "init": null,
               "resolved": {
                 "type": "Identifier",
-                "start": 14,
-                "end": 20,
+                "name": "string",
+                "range": [
+                  14,
+                  20
+                ],
                 "loc": {
                   "start": {
                     "line": 2,
@@ -239,14 +225,8 @@
                     "line": 2,
                     "column": 11
                   }
-                },
-                "range": [
-                  14,
-                  20
-                ],
-                "name": "string"
-              },
-              "init": null
+                }
+              }
             }
           ]
         }
@@ -255,8 +235,11 @@
         {
           "identifier": {
             "type": "Identifier",
-            "start": 14,
-            "end": 20,
+            "name": "string",
+            "range": [
+              14,
+              20
+            ],
             "loc": {
               "start": {
                 "line": 2,
@@ -266,18 +249,17 @@
                 "line": 2,
                 "column": 11
               }
-            },
-            "range": [
-              14,
-              20
-            ],
-            "name": "string"
+            }
           },
           "from": "module",
+          "init": true,
           "resolved": {
             "type": "Identifier",
-            "start": 14,
-            "end": 20,
+            "name": "string",
+            "range": [
+              14,
+              20
+            ],
             "loc": {
               "start": {
                 "line": 2,
@@ -287,20 +269,17 @@
                 "line": 2,
                 "column": 11
               }
-            },
-            "range": [
-              14,
-              20
-            ],
-            "name": "string"
-          },
-          "init": true
+            }
+          }
         },
         {
           "identifier": {
             "type": "Identifier",
-            "start": 92,
-            "end": 98,
+            "name": "string",
+            "range": [
+              92,
+              98
+            ],
             "loc": {
               "start": {
                 "line": 5,
@@ -310,18 +289,17 @@
                 "line": 5,
                 "column": 10
               }
-            },
-            "name": "string",
-            "range": [
-              92,
-              98
-            ]
+            }
           },
           "from": "module",
+          "init": null,
           "resolved": {
             "type": "Identifier",
-            "start": 14,
-            "end": 20,
+            "name": "string",
+            "range": [
+              14,
+              20
+            ],
             "loc": {
               "start": {
                 "line": 2,
@@ -331,14 +309,8 @@
                 "line": 2,
                 "column": 11
               }
-            },
-            "range": [
-              14,
-              20
-            ],
-            "name": "string"
-          },
-          "init": null
+            }
+          }
         }
       ],
       "childScopes": [],

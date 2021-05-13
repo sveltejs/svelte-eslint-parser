@@ -30,8 +30,11 @@
           "identifiers": [
             {
               "type": "Identifier",
-              "start": 14,
-              "end": 18,
+              "name": "user",
+              "range": [
+                14,
+                18
+              ],
               "loc": {
                 "start": {
                   "line": 2,
@@ -41,39 +44,39 @@
                   "line": 2,
                   "column": 9
                 }
-              },
-              "range": [
-                14,
-                18
-              ],
-              "name": "user"
+              }
             }
           ],
           "defs": [
             {
               "type": "Variable",
-              "node": {
-                "type": "VariableDeclarator",
-                "start": 14,
-                "end": 68,
+              "name": {
+                "type": "Identifier",
+                "name": "user",
+                "range": [
+                  14,
+                  18
+                ],
                 "loc": {
                   "start": {
                     "line": 2,
                     "column": 5
                   },
                   "end": {
-                    "line": 5,
-                    "column": 2
+                    "line": 2,
+                    "column": 9
                   }
-                },
-                "range": [
-                  14,
-                  68
-                ],
+                }
+              },
+              "node": {
+                "type": "VariableDeclarator",
                 "id": {
                   "type": "Identifier",
-                  "start": 14,
-                  "end": 18,
+                  "name": "user",
+                  "range": [
+                    14,
+                    18
+                  ],
                   "loc": {
                     "start": {
                       "line": 2,
@@ -83,57 +86,22 @@
                       "line": 2,
                       "column": 9
                     }
-                  },
-                  "range": [
-                    14,
-                    18
-                  ],
-                  "name": "user"
+                  }
                 },
                 "init": {
                   "type": "ObjectExpression",
-                  "start": 21,
-                  "end": 68,
-                  "loc": {
-                    "start": {
-                      "line": 2,
-                      "column": 12
-                    },
-                    "end": {
-                      "line": 5,
-                      "column": 2
-                    }
-                  },
-                  "range": [
-                    21,
-                    68
-                  ],
                   "properties": [
                     {
                       "type": "Property",
-                      "start": 25,
-                      "end": 41,
-                      "loc": {
-                        "start": {
-                          "line": 3,
-                          "column": 2
-                        },
-                        "end": {
-                          "line": 3,
-                          "column": 18
-                        }
-                      },
-                      "range": [
-                        25,
-                        41
-                      ],
-                      "method": false,
-                      "shorthand": false,
+                      "kind": "init",
                       "computed": false,
                       "key": {
                         "type": "Identifier",
-                        "start": 25,
-                        "end": 34,
+                        "name": "firstname",
+                        "range": [
+                          25,
+                          34
+                        ],
                         "loc": {
                           "start": {
                             "line": 3,
@@ -143,17 +111,18 @@
                             "line": 3,
                             "column": 11
                           }
-                        },
-                        "range": [
-                          25,
-                          34
-                        ],
-                        "name": "firstname"
+                        }
                       },
+                      "method": false,
+                      "shorthand": false,
                       "value": {
                         "type": "Literal",
-                        "start": 36,
-                        "end": 41,
+                        "raw": "'Ada'",
+                        "value": "Ada",
+                        "range": [
+                          36,
+                          41
+                        ],
                         "loc": {
                           "start": {
                             "line": 3,
@@ -163,41 +132,34 @@
                             "line": 3,
                             "column": 18
                           }
-                        },
-                        "range": [
-                          36,
-                          41
-                        ],
-                        "value": "Ada",
-                        "raw": "'Ada'"
-                      },
-                      "kind": "init"
-                    },
-                    {
-                      "type": "Property",
-                      "start": 45,
-                      "end": 65,
-                      "loc": {
-                        "start": {
-                          "line": 4,
-                          "column": 2
-                        },
-                        "end": {
-                          "line": 4,
-                          "column": 22
                         }
                       },
                       "range": [
-                        45,
-                        65
+                        25,
+                        41
                       ],
-                      "method": false,
-                      "shorthand": false,
+                      "loc": {
+                        "start": {
+                          "line": 3,
+                          "column": 2
+                        },
+                        "end": {
+                          "line": 3,
+                          "column": 18
+                        }
+                      }
+                    },
+                    {
+                      "type": "Property",
+                      "kind": "init",
                       "computed": false,
                       "key": {
                         "type": "Identifier",
-                        "start": 45,
-                        "end": 53,
+                        "name": "lastname",
+                        "range": [
+                          45,
+                          53
+                        ],
                         "loc": {
                           "start": {
                             "line": 4,
@@ -207,17 +169,18 @@
                             "line": 4,
                             "column": 10
                           }
-                        },
-                        "range": [
-                          45,
-                          53
-                        ],
-                        "name": "lastname"
+                        }
                       },
+                      "method": false,
+                      "shorthand": false,
                       "value": {
                         "type": "Literal",
-                        "start": 55,
-                        "end": 65,
+                        "raw": "'Lovelace'",
+                        "value": "Lovelace",
+                        "range": [
+                          55,
+                          65
+                        ],
                         "loc": {
                           "start": {
                             "line": 4,
@@ -227,38 +190,53 @@
                             "line": 4,
                             "column": 22
                           }
-                        },
-                        "range": [
-                          55,
-                          65
-                        ],
-                        "value": "Lovelace",
-                        "raw": "'Lovelace'"
+                        }
                       },
-                      "kind": "init"
+                      "range": [
+                        45,
+                        65
+                      ],
+                      "loc": {
+                        "start": {
+                          "line": 4,
+                          "column": 2
+                        },
+                        "end": {
+                          "line": 4,
+                          "column": 22
+                        }
+                      }
                     }
-                  ]
-                }
-              },
-              "name": {
-                "type": "Identifier",
-                "start": 14,
-                "end": 18,
+                  ],
+                  "range": [
+                    21,
+                    68
+                  ],
+                  "loc": {
+                    "start": {
+                      "line": 2,
+                      "column": 12
+                    },
+                    "end": {
+                      "line": 5,
+                      "column": 2
+                    }
+                  }
+                },
+                "range": [
+                  14,
+                  68
+                ],
                 "loc": {
                   "start": {
                     "line": 2,
                     "column": 5
                   },
                   "end": {
-                    "line": 2,
-                    "column": 9
+                    "line": 5,
+                    "column": 2
                   }
-                },
-                "range": [
-                  14,
-                  18
-                ],
-                "name": "user"
+                }
               }
             }
           ],
@@ -266,8 +244,11 @@
             {
               "identifier": {
                 "type": "Identifier",
-                "start": 14,
-                "end": 18,
+                "name": "user",
+                "range": [
+                  14,
+                  18
+                ],
                 "loc": {
                   "start": {
                     "line": 2,
@@ -277,18 +258,17 @@
                     "line": 2,
                     "column": 9
                   }
-                },
-                "range": [
-                  14,
-                  18
-                ],
-                "name": "user"
+                }
               },
               "from": "module",
+              "init": true,
               "resolved": {
                 "type": "Identifier",
-                "start": 14,
-                "end": 18,
+                "name": "user",
+                "range": [
+                  14,
+                  18
+                ],
                 "loc": {
                   "start": {
                     "line": 2,
@@ -298,41 +278,37 @@
                     "line": 2,
                     "column": 9
                   }
-                },
-                "range": [
-                  14,
-                  18
-                ],
-                "name": "user"
-              },
-              "init": true
+                }
+              }
             },
             {
               "identifier": {
                 "type": "Identifier",
-                "start": 100,
-                "end": 104,
-                "loc": {
-                  "start": {
-                    "line": 8,
-                    "column": 19
-                  },
-                  "end": {
-                    "line": 8,
-                    "column": 23
-                  }
-                },
                 "name": "user",
                 "range": [
                   100,
                   104
-                ]
+                ],
+                "loc": {
+                  "start": {
+                    "line": 8,
+                    "column": 19
+                  },
+                  "end": {
+                    "line": 8,
+                    "column": 23
+                  }
+                }
               },
               "from": "module",
+              "init": null,
               "resolved": {
                 "type": "Identifier",
-                "start": 14,
-                "end": 18,
+                "name": "user",
+                "range": [
+                  14,
+                  18
+                ],
                 "loc": {
                   "start": {
                     "line": 2,
@@ -342,20 +318,17 @@
                     "line": 2,
                     "column": 9
                   }
-                },
-                "range": [
-                  14,
-                  18
-                ],
-                "name": "user"
-              },
-              "init": null
+                }
+              }
             },
             {
               "identifier": {
                 "type": "Identifier",
-                "start": 136,
-                "end": 140,
+                "name": "user",
+                "range": [
+                  136,
+                  140
+                ],
                 "loc": {
                   "start": {
                     "line": 9,
@@ -365,18 +338,17 @@
                     "line": 9,
                     "column": 23
                   }
-                },
-                "name": "user",
-                "range": [
-                  136,
-                  140
-                ]
+                }
               },
               "from": "module",
+              "init": null,
               "resolved": {
                 "type": "Identifier",
-                "start": 14,
-                "end": 18,
+                "name": "user",
+                "range": [
+                  14,
+                  18
+                ],
                 "loc": {
                   "start": {
                     "line": 2,
@@ -386,20 +358,17 @@
                     "line": 2,
                     "column": 9
                   }
-                },
-                "range": [
-                  14,
-                  18
-                ],
-                "name": "user"
-              },
-              "init": null
+                }
+              }
             },
             {
               "identifier": {
                 "type": "Identifier",
-                "start": 161,
-                "end": 165,
+                "name": "user",
+                "range": [
+                  161,
+                  165
+                ],
                 "loc": {
                   "start": {
                     "line": 11,
@@ -409,18 +378,17 @@
                     "line": 11,
                     "column": 12
                   }
-                },
-                "name": "user",
-                "range": [
-                  161,
-                  165
-                ]
+                }
               },
               "from": "module",
+              "init": null,
               "resolved": {
                 "type": "Identifier",
-                "start": 14,
-                "end": 18,
+                "name": "user",
+                "range": [
+                  14,
+                  18
+                ],
                 "loc": {
                   "start": {
                     "line": 2,
@@ -430,20 +398,17 @@
                     "line": 2,
                     "column": 9
                   }
-                },
-                "range": [
-                  14,
-                  18
-                ],
-                "name": "user"
-              },
-              "init": null
+                }
+              }
             },
             {
               "identifier": {
                 "type": "Identifier",
-                "start": 179,
-                "end": 183,
+                "name": "user",
+                "range": [
+                  179,
+                  183
+                ],
                 "loc": {
                   "start": {
                     "line": 13,
@@ -453,18 +418,17 @@
                     "line": 13,
                     "column": 15
                   }
-                },
-                "name": "user",
-                "range": [
-                  179,
-                  183
-                ]
+                }
               },
               "from": "module",
+              "init": null,
               "resolved": {
                 "type": "Identifier",
-                "start": 14,
-                "end": 18,
+                "name": "user",
+                "range": [
+                  14,
+                  18
+                ],
                 "loc": {
                   "start": {
                     "line": 2,
@@ -474,14 +438,8 @@
                     "line": 2,
                     "column": 9
                   }
-                },
-                "range": [
-                  14,
-                  18
-                ],
-                "name": "user"
-              },
-              "init": null
+                }
+              }
             }
           ]
         }
@@ -490,8 +448,11 @@
         {
           "identifier": {
             "type": "Identifier",
-            "start": 14,
-            "end": 18,
+            "name": "user",
+            "range": [
+              14,
+              18
+            ],
             "loc": {
               "start": {
                 "line": 2,
@@ -501,18 +462,17 @@
                 "line": 2,
                 "column": 9
               }
-            },
-            "range": [
-              14,
-              18
-            ],
-            "name": "user"
+            }
           },
           "from": "module",
+          "init": true,
           "resolved": {
             "type": "Identifier",
-            "start": 14,
-            "end": 18,
+            "name": "user",
+            "range": [
+              14,
+              18
+            ],
             "loc": {
               "start": {
                 "line": 2,
@@ -522,41 +482,37 @@
                 "line": 2,
                 "column": 9
               }
-            },
-            "range": [
-              14,
-              18
-            ],
-            "name": "user"
-          },
-          "init": true
+            }
+          }
         },
         {
           "identifier": {
             "type": "Identifier",
-            "start": 100,
-            "end": 104,
-            "loc": {
-              "start": {
-                "line": 8,
-                "column": 19
-              },
-              "end": {
-                "line": 8,
-                "column": 23
-              }
-            },
             "name": "user",
             "range": [
               100,
               104
-            ]
+            ],
+            "loc": {
+              "start": {
+                "line": 8,
+                "column": 19
+              },
+              "end": {
+                "line": 8,
+                "column": 23
+              }
+            }
           },
           "from": "module",
+          "init": null,
           "resolved": {
             "type": "Identifier",
-            "start": 14,
-            "end": 18,
+            "name": "user",
+            "range": [
+              14,
+              18
+            ],
             "loc": {
               "start": {
                 "line": 2,
@@ -566,20 +522,17 @@
                 "line": 2,
                 "column": 9
               }
-            },
-            "range": [
-              14,
-              18
-            ],
-            "name": "user"
-          },
-          "init": null
+            }
+          }
         },
         {
           "identifier": {
             "type": "Identifier",
-            "start": 136,
-            "end": 140,
+            "name": "user",
+            "range": [
+              136,
+              140
+            ],
             "loc": {
               "start": {
                 "line": 9,
@@ -589,18 +542,17 @@
                 "line": 9,
                 "column": 23
               }
-            },
-            "name": "user",
-            "range": [
-              136,
-              140
-            ]
+            }
           },
           "from": "module",
+          "init": null,
           "resolved": {
             "type": "Identifier",
-            "start": 14,
-            "end": 18,
+            "name": "user",
+            "range": [
+              14,
+              18
+            ],
             "loc": {
               "start": {
                 "line": 2,
@@ -610,20 +562,17 @@
                 "line": 2,
                 "column": 9
               }
-            },
-            "range": [
-              14,
-              18
-            ],
-            "name": "user"
-          },
-          "init": null
+            }
+          }
         },
         {
           "identifier": {
             "type": "Identifier",
-            "start": 161,
-            "end": 165,
+            "name": "user",
+            "range": [
+              161,
+              165
+            ],
             "loc": {
               "start": {
                 "line": 11,
@@ -633,18 +582,17 @@
                 "line": 11,
                 "column": 12
               }
-            },
-            "name": "user",
-            "range": [
-              161,
-              165
-            ]
+            }
           },
           "from": "module",
+          "init": null,
           "resolved": {
             "type": "Identifier",
-            "start": 14,
-            "end": 18,
+            "name": "user",
+            "range": [
+              14,
+              18
+            ],
             "loc": {
               "start": {
                 "line": 2,
@@ -654,20 +602,17 @@
                 "line": 2,
                 "column": 9
               }
-            },
-            "range": [
-              14,
-              18
-            ],
-            "name": "user"
-          },
-          "init": null
+            }
+          }
         },
         {
           "identifier": {
             "type": "Identifier",
-            "start": 179,
-            "end": 183,
+            "name": "user",
+            "range": [
+              179,
+              183
+            ],
             "loc": {
               "start": {
                 "line": 13,
@@ -677,18 +622,17 @@
                 "line": 13,
                 "column": 15
               }
-            },
-            "name": "user",
-            "range": [
-              179,
-              183
-            ]
+            }
           },
           "from": "module",
+          "init": null,
           "resolved": {
             "type": "Identifier",
-            "start": 14,
-            "end": 18,
+            "name": "user",
+            "range": [
+              14,
+              18
+            ],
             "loc": {
               "start": {
                 "line": 2,
@@ -698,14 +642,8 @@
                 "line": 2,
                 "column": 9
               }
-            },
-            "range": [
-              14,
-              18
-            ],
-            "name": "user"
-          },
-          "init": null
+            }
+          }
         }
       ],
       "childScopes": [],

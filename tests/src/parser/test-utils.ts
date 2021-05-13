@@ -154,5 +154,60 @@ export function nodeReplacer(key: string, value: any): any {
         return null // Make it null so it can be checked on node8.
         // return `${String(value)}n`
     }
-    return value
+    return normalizeObject(value)
+}
+
+function normalizeObject(value: any) {
+    if (!value || typeof value !== "object" || Array.isArray(value)) {
+        return value
+    }
+    const isNode =
+        typeof value.type === "string" &&
+        (typeof value.start === "number" ||
+            typeof value.range?.[0] === "number")
+
+    function firsts(k: string) {
+        const o = [
+            "type",
+            "kind",
+            "name",
+            "startTag",
+            // scope
+            "identifier",
+            "from",
+            "variables",
+            "identifiers",
+            "defs",
+            "references",
+            "childScopes",
+            // locs
+            "start",
+            "end",
+            "line",
+            "column",
+        ].indexOf(k)
+
+        return o === -1 ? Infinity : o
+    }
+
+    function lasts(k: string) {
+        return ["range", "loc"].indexOf(k)
+    }
+
+    let entries = Object.entries(value)
+    if (isNode) {
+        entries = entries.filter(
+            ([k]) => k !== "parent" && k !== "start" && k !== "end",
+        )
+    }
+
+    return Object.fromEntries(
+        entries.sort(([a], [b]) => {
+            const c = firsts(a) - firsts(b) || lasts(a) - lasts(b)
+            if (c) {
+                return c
+            }
+            return a < b ? -1 : a > b ? 1 : 0
+        }),
+    )
 }
