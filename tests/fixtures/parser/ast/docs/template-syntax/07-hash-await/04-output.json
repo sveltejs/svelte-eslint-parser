@@ -3,10 +3,14 @@
   "body": [
     {
       "type": "SvelteAwaitBlock",
+      "catch": null,
       "expression": {
         "type": "Identifier",
-        "start": 8,
-        "end": 15,
+        "name": "promise",
+        "range": [
+          8,
+          15
+        ],
         "loc": {
           "start": {
             "line": 1,
@@ -16,36 +20,11 @@
             "line": 1,
             "column": 15
           }
-        },
-        "name": "promise",
-        "range": [
-          8,
-          15
-        ]
+        }
       },
       "pending": null,
       "then": {
         "type": "SvelteAwaitThenBlock",
-        "value": {
-          "type": "Identifier",
-          "name": "value",
-          "start": 21,
-          "end": 26,
-          "range": [
-            21,
-            26
-          ],
-          "loc": {
-            "start": {
-              "line": 1,
-              "column": 21
-            },
-            "end": {
-              "line": 1,
-              "column": 26
-            }
-          }
-        },
         "children": [
           {
             "type": "SvelteText",
@@ -129,8 +108,11 @@
                 "kind": "text",
                 "expression": {
                   "type": "Identifier",
-                  "start": 46,
-                  "end": 51,
+                  "name": "value",
+                  "range": [
+                    46,
+                    51
+                  ],
                   "loc": {
                     "start": {
                       "line": 2,
@@ -140,12 +122,7 @@
                       "line": 2,
                       "column": 23
                     }
-                  },
-                  "name": "value",
-                  "range": [
-                    46,
-                    51
-                  ]
+                  }
                 },
                 "range": [
                   45,
@@ -214,6 +191,24 @@
             }
           }
         ],
+        "value": {
+          "type": "Identifier",
+          "name": "value",
+          "range": [
+            21,
+            26
+          ],
+          "loc": {
+            "start": {
+              "line": 1,
+              "column": 21
+            },
+            "end": {
+              "line": 1,
+              "column": 26
+            }
+          }
+        },
         "range": [
           0,
           57
@@ -229,7 +224,6 @@
           }
         }
       },
-      "catch": null,
       "range": [
         0,
         65

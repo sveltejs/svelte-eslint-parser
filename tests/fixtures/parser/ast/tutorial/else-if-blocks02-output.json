@@ -43,45 +43,17 @@
       "body": [
         {
           "type": "VariableDeclaration",
-          "start": 10,
-          "end": 20,
-          "loc": {
-            "start": {
-              "line": 2,
-              "column": 1
-            },
-            "end": {
-              "line": 2,
-              "column": 11
-            }
-          },
-          "range": [
-            10,
-            20
-          ],
+          "kind": "let",
           "declarations": [
             {
               "type": "VariableDeclarator",
-              "start": 14,
-              "end": 19,
-              "loc": {
-                "start": {
-                  "line": 2,
-                  "column": 5
-                },
-                "end": {
-                  "line": 2,
-                  "column": 10
-                }
-              },
-              "range": [
-                14,
-                19
-              ],
               "id": {
                 "type": "Identifier",
-                "start": 14,
-                "end": 15,
+                "name": "x",
+                "range": [
+                  14,
+                  15
+                ],
                 "loc": {
                   "start": {
                     "line": 2,
@@ -91,17 +63,16 @@
                     "line": 2,
                     "column": 6
                   }
-                },
-                "range": [
-                  14,
-                  15
-                ],
-                "name": "x"
+                }
               },
               "init": {
                 "type": "Literal",
-                "start": 18,
-                "end": 19,
+                "raw": "7",
+                "value": 7,
+                "range": [
+                  18,
+                  19
+                ],
                 "loc": {
                   "start": {
                     "line": 2,
@@ -111,17 +82,38 @@
                     "line": 2,
                     "column": 10
                   }
+                }
+              },
+              "range": [
+                14,
+                19
+              ],
+              "loc": {
+                "start": {
+                  "line": 2,
+                  "column": 5
                 },
-                "range": [
-                  18,
-                  19
-                ],
-                "value": 7,
-                "raw": "7"
+                "end": {
+                  "line": 2,
+                  "column": 10
+                }
               }
             }
           ],
-          "kind": "let"
+          "range": [
+            10,
+            20
+          ],
+          "loc": {
+            "start": {
+              "line": 2,
+              "column": 1
+            },
+            "end": {
+              "line": 2,
+              "column": 11
+            }
+          }
         }
       ],
       "endTag": {
@@ -176,68 +168,6 @@
     },
     {
       "type": "SvelteIfBlock",
-      "elseif": false,
-      "expression": {
-        "type": "BinaryExpression",
-        "start": 37,
-        "end": 43,
-        "loc": {
-          "start": {
-            "line": 5,
-            "column": 5
-          },
-          "end": {
-            "line": 5,
-            "column": 11
-          }
-        },
-        "left": {
-          "type": "Identifier",
-          "start": 37,
-          "end": 38,
-          "loc": {
-            "start": {
-              "line": 5,
-              "column": 5
-            },
-            "end": {
-              "line": 5,
-              "column": 6
-            }
-          },
-          "name": "x",
-          "range": [
-            37,
-            38
-          ]
-        },
-        "operator": ">",
-        "right": {
-          "type": "Literal",
-          "start": 41,
-          "end": 43,
-          "loc": {
-            "start": {
-              "line": 5,
-              "column": 9
-            },
-            "end": {
-              "line": 5,
-              "column": 11
-            }
-          },
-          "value": 10,
-          "raw": "10",
-          "range": [
-            41,
-            43
-          ]
-        },
-        "range": [
-          37,
-          43
-        ]
-      },
       "children": [
         {
           "type": "SvelteElement",
@@ -285,8 +215,11 @@
               "kind": "text",
               "expression": {
                 "type": "Identifier",
-                "start": 50,
-                "end": 51,
+                "name": "x",
+                "range": [
+                  50,
+                  51
+                ],
                 "loc": {
                   "start": {
                     "line": 6,
@@ -296,12 +229,7 @@
                     "line": 6,
                     "column": 6
                   }
-                },
-                "name": "x",
-                "range": [
-                  50,
-                  51
-                ]
+                }
               },
               "range": [
                 49,
@@ -375,68 +303,6 @@
         "children": [
           {
             "type": "SvelteIfBlock",
-            "elseif": true,
-            "expression": {
-              "type": "BinaryExpression",
-              "start": 86,
-              "end": 91,
-              "loc": {
-                "start": {
-                  "line": 7,
-                  "column": 10
-                },
-                "end": {
-                  "line": 7,
-                  "column": 15
-                }
-              },
-              "left": {
-                "type": "Literal",
-                "start": 86,
-                "end": 87,
-                "loc": {
-                  "start": {
-                    "line": 7,
-                    "column": 10
-                  },
-                  "end": {
-                    "line": 7,
-                    "column": 11
-                  }
-                },
-                "value": 5,
-                "raw": "5",
-                "range": [
-                  86,
-                  87
-                ]
-              },
-              "operator": ">",
-              "right": {
-                "type": "Identifier",
-                "start": 90,
-                "end": 91,
-                "loc": {
-                  "start": {
-                    "line": 7,
-                    "column": 14
-                  },
-                  "end": {
-                    "line": 7,
-                    "column": 15
-                  }
-                },
-                "name": "x",
-                "range": [
-                  90,
-                  91
-                ]
-              },
-              "range": [
-                86,
-                91
-              ]
-            },
             "children": [
               {
                 "type": "SvelteElement",
@@ -484,8 +350,11 @@
                     "kind": "text",
                     "expression": {
                       "type": "Identifier",
-                      "start": 98,
-                      "end": 99,
+                      "name": "x",
+                      "range": [
+                        98,
+                        99
+                      ],
                       "loc": {
                         "start": {
                           "line": 8,
@@ -495,12 +364,7 @@
                           "line": 8,
                           "column": 6
                         }
-                      },
-                      "name": "x",
-                      "range": [
-                        98,
-                        99
-                      ]
+                      }
                     },
                     "range": [
                       97,
@@ -618,8 +482,11 @@
                       "kind": "text",
                       "expression": {
                         "type": "Identifier",
-                        "start": 133,
-                        "end": 134,
+                        "name": "x",
+                        "range": [
+                          133,
+                          134
+                        ],
                         "loc": {
                           "start": {
                             "line": 10,
@@ -629,12 +496,7 @@
                             "line": 10,
                             "column": 6
                           }
-                        },
-                        "name": "x",
-                        "range": [
-                          133,
-                          134
-                        ]
+                        }
                       },
                       "range": [
                         132,
@@ -718,6 +580,62 @@
                 }
               }
             },
+            "elseif": true,
+            "expression": {
+              "type": "BinaryExpression",
+              "left": {
+                "type": "Literal",
+                "raw": "5",
+                "value": 5,
+                "range": [
+                  86,
+                  87
+                ],
+                "loc": {
+                  "start": {
+                    "line": 7,
+                    "column": 10
+                  },
+                  "end": {
+                    "line": 7,
+                    "column": 11
+                  }
+                }
+              },
+              "operator": ">",
+              "right": {
+                "type": "Identifier",
+                "name": "x",
+                "range": [
+                  90,
+                  91
+                ],
+                "loc": {
+                  "start": {
+                    "line": 7,
+                    "column": 14
+                  },
+                  "end": {
+                    "line": 7,
+                    "column": 15
+                  }
+                }
+              },
+              "range": [
+                86,
+                91
+              ],
+              "loc": {
+                "start": {
+                  "line": 7,
+                  "column": 10
+                },
+                "end": {
+                  "line": 7,
+                  "column": 15
+                }
+              }
+            },
             "range": [
               76,
               165
@@ -746,6 +664,62 @@
           "end": {
             "line": 11,
             "column": 5
+          }
+        }
+      },
+      "elseif": false,
+      "expression": {
+        "type": "BinaryExpression",
+        "left": {
+          "type": "Identifier",
+          "name": "x",
+          "range": [
+            37,
+            38
+          ],
+          "loc": {
+            "start": {
+              "line": 5,
+              "column": 5
+            },
+            "end": {
+              "line": 5,
+              "column": 6
+            }
+          }
+        },
+        "operator": ">",
+        "right": {
+          "type": "Literal",
+          "raw": "10",
+          "value": 10,
+          "range": [
+            41,
+            43
+          ],
+          "loc": {
+            "start": {
+              "line": 5,
+              "column": 9
+            },
+            "end": {
+              "line": 5,
+              "column": 11
+            }
+          }
+        },
+        "range": [
+          37,
+          43
+        ],
+        "loc": {
+          "start": {
+            "line": 5,
+            "column": 5
+          },
+          "end": {
+            "line": 5,
+            "column": 11
           }
         }
       },
@@ -825,8 +799,10 @@
     {
       "type": "Keyword",
       "value": "let",
-      "start": 10,
-      "end": 13,
+      "range": [
+        10,
+        13
+      ],
       "loc": {
         "start": {
           "line": 2,
@@ -836,17 +812,15 @@
           "line": 2,
           "column": 4
         }
-      },
-      "range": [
-        10,
-        13
-      ]
+      }
     },
     {
       "type": "Identifier",
       "value": "x",
-      "start": 14,
-      "end": 15,
+      "range": [
+        14,
+        15
+      ],
       "loc": {
         "start": {
           "line": 2,
@@ -856,17 +830,15 @@
           "line": 2,
           "column": 6
         }
-      },
-      "range": [
-        14,
-        15
-      ]
+      }
     },
     {
       "type": "Punctuator",
       "value": "=",
-      "start": 16,
-      "end": 17,
+      "range": [
+        16,
+        17
+      ],
       "loc": {
         "start": {
           "line": 2,
@@ -876,17 +848,15 @@
           "line": 2,
           "column": 8
         }
-      },
-      "range": [
-        16,
-        17
-      ]
+      }
     },
     {
       "type": "Numeric",
       "value": "7",
-      "start": 18,
-      "end": 19,
+      "range": [
+        18,
+        19
+      ],
       "loc": {
         "start": {
           "line": 2,
@@ -896,17 +866,15 @@
           "line": 2,
           "column": 10
         }
-      },
-      "range": [
-        18,
-        19
-      ]
+      }
     },
     {
       "type": "Punctuator",
       "value": ";",
-      "start": 19,
-      "end": 20,
+      "range": [
+        19,
+        20
+      ],
       "loc": {
         "start": {
           "line": 2,
@@ -916,11 +884,7 @@
           "line": 2,
           "column": 11
         }
-      },
-      "range": [
-        19,
-        20
-      ]
+      }
     },
     {
       "type": "Punctuator",

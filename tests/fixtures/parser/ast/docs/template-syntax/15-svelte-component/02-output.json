@@ -52,8 +52,11 @@
                 "kind": "text",
                 "expression": {
                   "type": "Identifier",
-                  "start": 57,
-                  "end": 60,
+                  "name": "bar",
+                  "range": [
+                    57,
+                    60
+                  ],
                   "loc": {
                     "start": {
                       "line": 1,
@@ -63,12 +66,7 @@
                       "line": 1,
                       "column": 60
                     }
-                  },
-                  "name": "bar",
-                  "range": [
-                    57,
-                    60
-                  ]
+                  }
                 },
                 "range": [
                   56,
@@ -106,22 +104,14 @@
             "kind": "this",
             "expression": {
               "type": "MemberExpression",
-              "start": 24,
-              "end": 50,
-              "loc": {
-                "start": {
-                  "line": 1,
-                  "column": 24
-                },
-                "end": {
-                  "line": 1,
-                  "column": 50
-                }
-              },
+              "computed": false,
               "object": {
                 "type": "Identifier",
-                "start": 24,
-                "end": 40,
+                "name": "currentSelection",
+                "range": [
+                  24,
+                  40
+                ],
                 "loc": {
                   "start": {
                     "line": 1,
@@ -131,17 +121,16 @@
                     "line": 1,
                     "column": 40
                   }
-                },
-                "name": "currentSelection",
-                "range": [
-                  24,
-                  40
-                ]
+                }
               },
+              "optional": false,
               "property": {
                 "type": "Identifier",
-                "start": 41,
-                "end": 50,
+                "name": "component",
+                "range": [
+                  41,
+                  50
+                ],
                 "loc": {
                   "start": {
                     "line": 1,
@@ -151,19 +140,22 @@
                     "line": 1,
                     "column": 50
                   }
-                },
-                "name": "component",
-                "range": [
-                  41,
-                  50
-                ]
+                }
               },
-              "computed": false,
-              "optional": false,
               "range": [
                 24,
                 50
-              ]
+              ],
+              "loc": {
+                "start": {
+                  "line": 1,
+                  "column": 24
+                },
+                "end": {
+                  "line": 1,
+                  "column": 50
+                }
+              }
             },
             "range": [
               18,

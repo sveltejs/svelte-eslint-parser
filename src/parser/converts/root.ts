@@ -6,7 +6,6 @@ import type {
     SvelteScriptElement,
     SvelteStyleElement,
 } from "../../ast"
-import { sort } from "../sort"
 import {} from "./common"
 import type { Context } from "../../context"
 import { convertChildren, extractElementTags } from "./element"
@@ -129,38 +128,7 @@ export function convertSvelteRoot(
         body.push(style)
     }
 
-    const useRanges = sort([...ctx.tokens, ...ctx.comments]).map((t) => t.range)
-    let range = useRanges.shift()
-    for (let index = 0; index < ctx.sourceCode.template.length; index++) {
-        while (range && range[1] <= index) {
-            range = useRanges.shift()
-        }
-        if (range && range[0] <= index) {
-            index = range[1] - 1
-            continue
-        }
-        const c = ctx.sourceCode.template[index]
-        if (!c.trim()) {
-            continue
-        }
-        if (isPunctuator(c)) {
-            ctx.addToken("Punctuator", { start: index, end: index + 1 })
-        } else {
-            // unknown
-            // It is may be a bug.
-            ctx.addToken("Identifier", { start: index, end: index + 1 })
-        }
-    }
-    sort(ctx.comments)
-    sort(ctx.tokens)
     return ast
-
-    /**
-     * Checks if the given char is punctuator
-     */
-    function isPunctuator(c: string) {
-        return /^[^\w$]$/iu.test(c)
-    }
 }
 
 /** Extract attrs */

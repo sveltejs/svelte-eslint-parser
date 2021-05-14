@@ -1,7 +1,6 @@
 import type { SvelteDebugTag, SvelteMustacheTag } from "../../ast"
 import type { Context } from "../../context"
 import type * as SvAST from "../svelte-ast-types"
-import { analyzeExpressionScope, convertESNode } from "./es"
 /** Convert for MustacheTag */
 export function convertMustacheTag(
     node: SvAST.MustacheTag,
@@ -37,11 +36,11 @@ export function convertDebugTag(
         parent,
         ...ctx.getConvertLocation(node),
     }
-    mustache.identifiers = node.identifiers.map((id) => {
-        const es = convertESNode(id, mustache, ctx)!
-        analyzeExpressionScope(es, ctx)
-        return es
-    })
+    for (const id of node.identifiers) {
+        ctx.scriptLet.addExpression(id, mustache, (es) => {
+            mustache.identifiers.push(es)
+        })
+    }
     const atDebugStart = ctx.code.indexOf("@debug", mustache.range[0])
     ctx.addToken("MustacheKeyword", {
         start: atDebugStart,
@@ -64,8 +63,8 @@ function convertMustacheTag0<K extends SvelteMustacheTag["kind"]>(
         parent,
         ...ctx.getConvertLocation(node),
     }
-    const es = convertESNode(node.expression, mustache, ctx)!
-    analyzeExpressionScope(es, ctx)
-    mustache.expression = es
+    ctx.scriptLet.addExpression(node.expression, mustache, (es) => {
+        mustache.expression = es
+    })
     return mustache
 }

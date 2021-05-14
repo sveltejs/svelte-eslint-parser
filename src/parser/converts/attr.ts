@@ -15,16 +15,11 @@ import type {
 import type ESTree from "estree"
 import type { Context } from "../../context"
 import type * as SvAST from "../svelte-ast-types"
-import { indexOf } from "./common"
-import {
-    analyzeExpressionScope,
-    analyzePatternScope,
-    convertESNode,
-    getWithLoc,
-} from "./es"
+import { getWithLoc, indexOf } from "./common"
 import { convertMustacheTag } from "./mustache"
 import { convertTextToLiteral } from "./text"
 import { ParseError } from "../../errors"
+import type { ScriptLetCallback } from "../../context/script-let"
 
 /** Convert for Attributes */
 export function* convertAttributes(
@@ -107,13 +102,14 @@ function convertAttribute(
         parent: attribute,
         ...ctx.getConvertLocation(keyRange),
     }
-    ctx.addToken("HTMLIdentifier", keyRange)
     if (node.value === true) {
         // Boolean attribute
         attribute.boolean = true
+        ctx.addToken("HTMLIdentifier", keyRange)
         return attribute
     }
-    for (const v of node.value) {
+    for (let index = 0; index < node.value.length; index++) {
+        const v = node.value[index]
         if (v.type === "AttributeShorthand") {
             const key: ESTree.Identifier = {
                 ...attribute.key,
@@ -127,11 +123,19 @@ function convertAttribute(
                 loc: attribute.loc,
                 range: attribute.range,
             }
-            ;(key as any).parent = sAttr
-            analyzeExpressionScope(sAttr.key, ctx)
+            ctx.scriptLet.addExpression(key, sAttr, (es) => {
+                sAttr.key = es
+                sAttr.value = es
+            })
             return sAttr
         }
         if (v.type === "Text") {
+            const next = node.value[index + 1]
+            if (next && next.start < v.end) {
+                // Maybe bug in Svelte can cause the completion index to shift.
+                // console.log(ctx.getText(v), v.data)
+                v.end = next.start
+            }
             attribute.value.push(convertTextToLiteral(v, attribute, ctx))
             continue
         }
@@ -147,6 +151,9 @@ function convertAttribute(
             ctx,
         )
     }
+
+    // Not required for shorthands. Therefore, register the token here.
+    ctx.addToken("HTMLIdentifier", keyRange)
 
     return attribute
 }
@@ -170,9 +177,9 @@ function convertSpreadAttribute(
         end: spreadStart + 3,
     })
 
-    const es = convertESNode(node.expression, attribute, ctx)!
-    analyzeExpressionScope(es, ctx)
-    attribute.argument = es
+    ctx.scriptLet.addExpression(node.expression, attribute, (es) => {
+        attribute.argument = es
+    })
 
     return attribute
 }
@@ -193,22 +200,25 @@ function convertBindingDirective(
         ...ctx.getConvertLocation(node),
     }
     processDirective(node, directive, ctx, (expression) => {
-        const es = convertESNode(expression, directive, ctx)
-        analyzeExpressionScope(es, ctx)
-
-        const reference = ctx.templateScopeManager.currentScope.references.find(
-            (ref) => ref.identifier === es,
+        return ctx.scriptLet.addExpression(
+            expression,
+            directive,
+            (es, { getInnermostScope }) => {
+                directive.expression = es
+                const scope = getInnermostScope(es)
+                const reference = scope.references.find(
+                    (ref) => ref.identifier === es,
+                )
+                if (reference) {
+                    // The bind directive does read and write.
+                    reference.isWrite = () => true
+                    reference.isWriteOnly = () => false
+                    reference.isReadWrite = () => true
+                    reference.isReadOnly = () => false
+                    reference.isRead = () => true
+                }
+            },
         )
-        if (reference) {
-            // The bind directive does read and write.
-            reference.isWrite = () => true
-            reference.isWriteOnly = () => false
-            reference.isReadWrite = () => true
-            reference.isReadOnly = () => false
-            reference.isRead = () => true
-        }
-
-        return es
     })
     return directive
 }
@@ -283,11 +293,8 @@ function convertTransitionDirective(
         directive,
         ctx,
         buildProcessExpressionForExpression(directive, ctx),
+        (name) => ctx.scriptLet.addExpression(name, directive),
     )
-    if (directive.expression !== directive.name) {
-        // Transition name is reference
-        analyzeExpressionScope(directive.name, ctx)
-    }
     return directive
 }
 
@@ -311,11 +318,8 @@ function convertAnimationDirective(
         directive,
         ctx,
         buildProcessExpressionForExpression(directive, ctx),
+        (name) => ctx.scriptLet.addExpression(name, directive),
     )
-    if (directive.expression !== directive.name) {
-        // Animation name is reference
-        analyzeExpressionScope(directive.name, ctx)
-    }
     return directive
 }
 
@@ -339,11 +343,8 @@ function convertActionDirective(
         directive,
         ctx,
         buildProcessExpressionForExpression(directive, ctx),
+        (name) => ctx.scriptLet.addExpression(name, directive),
     )
-    if (directive.expression !== directive.name) {
-        // Action name is reference
-        analyzeExpressionScope(directive.name, ctx)
-    }
     return directive
 }
 
@@ -362,16 +363,26 @@ function convertLetDirective(
         parent,
         ...ctx.getConvertLocation(node),
     }
-    processDirective(node, directive, ctx, (pattern) => {
-        const es = convertESNode(pattern, directive, ctx)
-        analyzePatternScope(es, ctx)
-        return es
-    })
-    if (!directive.expression) {
-        // shorthand
-        analyzePatternScope(directive.name, ctx)
-        directive.expression = directive.name
-    }
+    processDirective(
+        node,
+        directive,
+        ctx,
+        (pattern) => {
+            return ctx.letDirCollections
+                .getCollection()
+                .addPattern(pattern, directive)
+        },
+        node.expression
+            ? undefined
+            : (name) => {
+                  // shorthand
+                  return ctx.letDirCollections
+                      .getCollection()
+                      .addPattern(name, directive, (es) => {
+                          directive.expression = es
+                      })
+              },
+    )
     return directive
 }
 
@@ -384,7 +395,10 @@ function processDirective<
     node: D & { expression: null | E },
     directive: S,
     ctx: Context,
-    processExpression: (expression: E) => E,
+    processExpression: (expression: E) => ScriptLetCallback<NonNullable<E>>[],
+    processName?: (
+        expression: ESTree.Identifier,
+    ) => ScriptLetCallback<ESTree.Identifier>[],
 ) {
     const colonIndex = ctx.code.indexOf(":", directive.range[0])
     ctx.addToken("HTMLIdentifier", {
@@ -417,20 +431,25 @@ function processDirective<
         }
     }
 
+    let isShorthand = false
+
     if (node.expression) {
-        directive.expression = processExpression(node.expression)
+        isShorthand =
+            node.expression.type === "Identifier" &&
+            node.expression.name === node.name &&
+            getWithLoc(node.expression).start === nameRange.start &&
+            getWithLoc(node.expression).end === nameRange.end
+        processExpression(node.expression).push((es) => {
+            directive.expression = es
+
+            if (isShorthand) {
+                directive.name = directive.expression as ESTree.Identifier
+            }
+        })
     }
 
     // put name
-    if (
-        directive.expression?.type === "Identifier" &&
-        directive.expression.name === node.name &&
-        getWithLoc(directive.expression).start === nameRange.start &&
-        getWithLoc(directive.expression).end === nameRange.end
-    ) {
-        // shorthand
-        directive.name = directive.expression
-    } else {
+    if (!isShorthand) {
         directive.name = {
             type: "Identifier",
             name: node.name,
@@ -438,7 +457,16 @@ function processDirective<
             parent: directive,
             ...ctx.getConvertLocation(nameRange),
         }
-        ctx.addToken("HTMLIdentifier", nameRange)
+        if (processName) {
+            processName(directive.name).push((es) => {
+                directive.name = es
+            })
+        } else {
+            ctx.addToken("HTMLIdentifier", nameRange)
+            // ctx.scriptLet.addExpression(directive.name, directive, (es) => {
+            //     directive.name = es
+            // })
+        }
     }
 }
 
@@ -446,10 +474,8 @@ function processDirective<
 function buildProcessExpressionForExpression(
     directive: SvelteDirective & { expression: null | ESTree.Expression },
     ctx: Context,
-): (expression: ESTree.Expression) => ESTree.Expression {
+): (expression: ESTree.Expression) => ScriptLetCallback<ESTree.Expression>[] {
     return (expression) => {
-        const es = convertESNode(expression, directive, ctx)
-        analyzeExpressionScope(es, ctx)
-        return es
+        return ctx.scriptLet.addExpression(expression, directive)
     }
 }

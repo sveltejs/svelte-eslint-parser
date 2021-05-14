@@ -43,67 +43,14 @@
       "body": [
         {
           "type": "ImportDeclaration",
-          "start": 10,
-          "end": 53,
-          "loc": {
-            "start": {
-              "line": 2,
-              "column": 1
-            },
-            "end": {
-              "line": 2,
-              "column": 44
-            }
-          },
-          "range": [
-            10,
-            53
-          ],
-          "specifiers": [
-            {
-              "type": "ImportDefaultSpecifier",
-              "start": 17,
-              "end": 26,
-              "loc": {
-                "start": {
-                  "line": 2,
-                  "column": 8
-                },
-                "end": {
-                  "line": 2,
-                  "column": 17
-                }
-              },
-              "range": [
-                17,
-                26
-              ],
-              "local": {
-                "type": "Identifier",
-                "start": 17,
-                "end": 26,
-                "loc": {
-                  "start": {
-                    "line": 2,
-                    "column": 8
-                  },
-                  "end": {
-                    "line": 2,
-                    "column": 17
-                  }
-                },
-                "range": [
-                  17,
-                  26
-                ],
-                "name": "Hoverable"
-              }
-            }
-          ],
           "source": {
             "type": "Literal",
-            "start": 32,
-            "end": 52,
+            "raw": "'./Hoverable.svelte'",
+            "value": "./Hoverable.svelte",
+            "range": [
+              32,
+              52
+            ],
             "loc": {
               "start": {
                 "line": 2,
@@ -113,13 +60,58 @@
                 "line": 2,
                 "column": 43
               }
+            }
+          },
+          "specifiers": [
+            {
+              "type": "ImportDefaultSpecifier",
+              "local": {
+                "type": "Identifier",
+                "name": "Hoverable",
+                "range": [
+                  17,
+                  26
+                ],
+                "loc": {
+                  "start": {
+                    "line": 2,
+                    "column": 8
+                  },
+                  "end": {
+                    "line": 2,
+                    "column": 17
+                  }
+                }
+              },
+              "range": [
+                17,
+                26
+              ],
+              "loc": {
+                "start": {
+                  "line": 2,
+                  "column": 8
+                },
+                "end": {
+                  "line": 2,
+                  "column": 17
+                }
+              }
+            }
+          ],
+          "range": [
+            10,
+            53
+          ],
+          "loc": {
+            "start": {
+              "line": 2,
+              "column": 1
             },
-            "range": [
-              32,
-              52
-            ],
-            "value": "./Hoverable.svelte",
-            "raw": "'./Hoverable.svelte'"
+            "end": {
+              "line": 2,
+              "column": 44
+            }
           }
         }
       ],
@@ -327,11 +319,13 @@
                 }
               }
             },
-            "modifiers": [],
             "expression": {
               "type": "Identifier",
-              "start": 241,
-              "end": 247,
+              "name": "active",
+              "range": [
+                241,
+                247
+              ],
               "loc": {
                 "start": {
                   "line": 18,
@@ -341,13 +335,9 @@
                   "line": 18,
                   "column": 31
                 }
-              },
-              "name": "active",
-              "range": [
-                241,
-                247
-              ]
+              }
             },
+            "modifiers": [],
             "range": [
               227,
               248
@@ -427,8 +417,24 @@
                 "type": "SvelteDirective",
                 "kind": "Class",
                 "name": {
-                  "start": 262,
-                  "end": 268,
+                  "type": "Identifier",
+                  "name": "active",
+                  "range": [
+                    262,
+                    268
+                  ],
+                  "loc": {
+                    "start": {
+                      "line": 19,
+                      "column": 12
+                    },
+                    "end": {
+                      "line": 19,
+                      "column": 18
+                    }
+                  }
+                },
+                "expression": {
                   "type": "Identifier",
                   "name": "active",
                   "range": [
@@ -447,26 +453,6 @@
                   }
                 },
                 "modifiers": [],
-                "expression": {
-                  "start": 262,
-                  "end": 268,
-                  "type": "Identifier",
-                  "name": "active",
-                  "range": [
-                    262,
-                    268
-                  ],
-                  "loc": {
-                    "start": {
-                      "line": 19,
-                      "column": 12
-                    },
-                    "end": {
-                      "line": 19,
-                      "column": 18
-                    }
-                  }
-                },
                 "range": [
                   256,
                   268
@@ -520,27 +506,6 @@
             },
             {
               "type": "SvelteIfBlock",
-              "elseif": false,
-              "expression": {
-                "type": "Identifier",
-                "start": 277,
-                "end": 283,
-                "loc": {
-                  "start": {
-                    "line": 20,
-                    "column": 7
-                  },
-                  "end": {
-                    "line": 20,
-                    "column": 13
-                  }
-                },
-                "name": "active",
-                "range": [
-                  277,
-                  283
-                ]
-              },
               "children": [
                 {
                   "type": "SvelteElement",
@@ -746,6 +711,25 @@
                   }
                 }
               },
+              "elseif": false,
+              "expression": {
+                "type": "Identifier",
+                "name": "active",
+                "range": [
+                  277,
+                  283
+                ],
+                "loc": {
+                  "start": {
+                    "line": 20,
+                    "column": 7
+                  },
+                  "end": {
+                    "line": 20,
+                    "column": 13
+                  }
+                }
+              },
               "range": [
                 272,
                 362
@@ -924,8 +908,10 @@
     {
       "type": "Keyword",
       "value": "import",
-      "start": 10,
-      "end": 16,
+      "range": [
+        10,
+        16
+      ],
       "loc": {
         "start": {
           "line": 2,
@@ -935,17 +921,15 @@
           "line": 2,
           "column": 7
         }
-      },
-      "range": [
-        10,
-        16
-      ]
+      }
     },
     {
       "type": "Identifier",
       "value": "Hoverable",
-      "start": 17,
-      "end": 26,
+      "range": [
+        17,
+        26
+      ],
       "loc": {
         "start": {
           "line": 2,
@@ -955,17 +939,15 @@
           "line": 2,
           "column": 17
         }
-      },
-      "range": [
-        17,
-        26
-      ]
+      }
     },
     {
       "type": "Identifier",
       "value": "from",
-      "start": 27,
-      "end": 31,
+      "range": [
+        27,
+        31
+      ],
       "loc": {
         "start": {
           "line": 2,
@@ -975,17 +957,15 @@
           "line": 2,
           "column": 22
         }
-      },
-      "range": [
-        27,
-        31
-      ]
+      }
     },
     {
       "type": "String",
       "value": "'./Hoverable.svelte'",
-      "start": 32,
-      "end": 52,
+      "range": [
+        32,
+        52
+      ],
       "loc": {
         "start": {
           "line": 2,
@@ -995,17 +975,15 @@
           "line": 2,
           "column": 43
         }
-      },
-      "range": [
-        32,
-        52
-      ]
+      }
     },
     {
       "type": "Punctuator",
       "value": ";",
-      "start": 52,
-      "end": 53,
+      "range": [
+        52,
+        53
+      ],
       "loc": {
         "start": {
           "line": 2,
@@ -1015,11 +993,7 @@
           "line": 2,
           "column": 44
         }
-      },
-      "range": [
-        52,
-        53
-      ]
+      }
     },
     {
       "type": "Punctuator",

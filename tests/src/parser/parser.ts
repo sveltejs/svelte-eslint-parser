@@ -3,25 +3,8 @@ import fs from "fs"
 
 import { traverseNodes } from "../../../src/traverse"
 import { parseForESLint } from "../../../src"
-import { listupFixtures } from "./test-utils"
+import { listupFixtures, nodeReplacer, scopeToJSON } from "./test-utils"
 import type { Comment, SvelteProgram, Token } from "../../../src/ast"
-
-/**
- * Remove `parent` properties from the given AST.
- */
-function replacer(key: string, value: any) {
-    if (key === "parent") {
-        return undefined
-    }
-    if (value instanceof RegExp) {
-        return String(value)
-    }
-    if (typeof value === "bigint") {
-        return null // Make it null so it can be checked on node8.
-        // return `${String(value)}n`
-    }
-    return value
-}
 
 function parse(code: string, filePath: string) {
     return parseForESLint(code, {
@@ -31,15 +14,25 @@ function parse(code: string, filePath: string) {
 }
 
 describe("Check for AST.", () => {
-    for (const { input, inputFileName, outputFileName } of listupFixtures()) {
+    for (const {
+        input,
+        inputFileName,
+        outputFileName,
+        scopeFileName,
+    } of listupFixtures()) {
         describe(inputFileName, () => {
             let result: any
 
             it("most to generate the expected AST.", () => {
                 result = parse(input, inputFileName)
-                const astJson = JSON.stringify(result.ast, replacer, 2)
+                const astJson = JSON.stringify(result.ast, nodeReplacer, 2)
                 const output = fs.readFileSync(outputFileName, "utf8")
                 assert.strictEqual(astJson, output)
+            })
+            it("most to generate the expected scope.", () => {
+                const json = scopeToJSON(result.scopeManager)
+                const output = fs.readFileSync(scopeFileName, "utf8")
+                assert.strictEqual(json, output)
             })
 
             it("location must be correct.", () => {

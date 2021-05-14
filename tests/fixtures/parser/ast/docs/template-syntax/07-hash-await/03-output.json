@@ -3,10 +3,14 @@
   "body": [
     {
       "type": "SvelteAwaitBlock",
+      "catch": null,
       "expression": {
         "type": "Identifier",
-        "start": 8,
-        "end": 15,
+        "name": "promise",
+        "range": [
+          8,
+          15
+        ],
         "loc": {
           "start": {
             "line": 1,
@@ -16,12 +20,7 @@
             "line": 1,
             "column": 15
           }
-        },
-        "name": "promise",
-        "range": [
-          8,
-          15
-        ]
+        }
       },
       "pending": {
         "type": "SvelteAwaitPendingBlock",
@@ -208,26 +207,6 @@
       },
       "then": {
         "type": "SvelteAwaitThenBlock",
-        "value": {
-          "type": "Identifier",
-          "name": "value",
-          "start": 97,
-          "end": 102,
-          "range": [
-            97,
-            102
-          ],
-          "loc": {
-            "start": {
-              "line": 4,
-              "column": 7
-            },
-            "end": {
-              "line": 4,
-              "column": 12
-            }
-          }
-        },
         "children": [
           {
             "type": "SvelteText",
@@ -347,8 +326,11 @@
                 "kind": "text",
                 "expression": {
                   "type": "Identifier",
-                  "start": 152,
-                  "end": 157,
+                  "name": "value",
+                  "range": [
+                    152,
+                    157
+                  ],
                   "loc": {
                     "start": {
                       "line": 6,
@@ -358,12 +340,7 @@
                       "line": 6,
                       "column": 22
                     }
-                  },
-                  "name": "value",
-                  "range": [
-                    152,
-                    157
-                  ]
+                  }
                 },
                 "range": [
                   151,
@@ -432,6 +409,24 @@
             }
           }
         ],
+        "value": {
+          "type": "Identifier",
+          "name": "value",
+          "range": [
+            97,
+            102
+          ],
+          "loc": {
+            "start": {
+              "line": 4,
+              "column": 7
+            },
+            "end": {
+              "line": 4,
+              "column": 12
+            }
+          }
+        },
         "range": [
           90,
           163
@@ -447,7 +442,6 @@
           }
         }
       },
-      "catch": null,
       "range": [
         0,
         171

@@ -43,67 +43,14 @@
       "body": [
         {
           "type": "ImportDeclaration",
-          "start": 10,
-          "end": 43,
-          "loc": {
-            "start": {
-              "line": 2,
-              "column": 1
-            },
-            "end": {
-              "line": 2,
-              "column": 34
-            }
-          },
-          "range": [
-            10,
-            43
-          ],
-          "specifiers": [
-            {
-              "type": "ImportDefaultSpecifier",
-              "start": 17,
-              "end": 21,
-              "loc": {
-                "start": {
-                  "line": 2,
-                  "column": 8
-                },
-                "end": {
-                  "line": 2,
-                  "column": 12
-                }
-              },
-              "range": [
-                17,
-                21
-              ],
-              "local": {
-                "type": "Identifier",
-                "start": 17,
-                "end": 21,
-                "loc": {
-                  "start": {
-                    "line": 2,
-                    "column": 8
-                  },
-                  "end": {
-                    "line": 2,
-                    "column": 12
-                  }
-                },
-                "range": [
-                  17,
-                  21
-                ],
-                "name": "Info"
-              }
-            }
-          ],
           "source": {
             "type": "Literal",
-            "start": 27,
-            "end": 42,
+            "raw": "'./Info.svelte'",
+            "value": "./Info.svelte",
+            "range": [
+              27,
+              42
+            ],
             "loc": {
               "start": {
                 "line": 2,
@@ -113,56 +60,73 @@
                 "line": 2,
                 "column": 33
               }
+            }
+          },
+          "specifiers": [
+            {
+              "type": "ImportDefaultSpecifier",
+              "local": {
+                "type": "Identifier",
+                "name": "Info",
+                "range": [
+                  17,
+                  21
+                ],
+                "loc": {
+                  "start": {
+                    "line": 2,
+                    "column": 8
+                  },
+                  "end": {
+                    "line": 2,
+                    "column": 12
+                  }
+                }
+              },
+              "range": [
+                17,
+                21
+              ],
+              "loc": {
+                "start": {
+                  "line": 2,
+                  "column": 8
+                },
+                "end": {
+                  "line": 2,
+                  "column": 12
+                }
+              }
+            }
+          ],
+          "range": [
+            10,
+            43
+          ],
+          "loc": {
+            "start": {
+              "line": 2,
+              "column": 1
             },
-            "range": [
-              27,
-              42
-            ],
-            "value": "./Info.svelte",
-            "raw": "'./Info.svelte'"
+            "end": {
+              "line": 2,
+              "column": 34
+            }
           }
         },
         {
           "type": "VariableDeclaration",
-          "start": 46,
-          "end": 147,
-          "loc": {
-            "start": {
-              "line": 4,
-              "column": 1
-            },
-            "end": {
-              "line": 9,
-              "column": 3
-            }
-          },
-          "range": [
-            46,
-            147
-          ],
+          "kind": "const",
           "declarations": [
             {
               "type": "VariableDeclarator",
-              "start": 52,
-              "end": 146,
-              "loc": {
-                "start": {
-                  "line": 4,
-                  "column": 7
-                },
-                "end": {
-                  "line": 9,
-                  "column": 2
-                }
-              },
-              "range": [
-                52,
-                146
-              ],
               "id": {
                 "type": "Identifier",
-                "start": 52,
-                "end": 55,
+                "name": "pkg",
+                "range": [
+                  52,
+                  55
+                ],
                 "loc": {
                   "start": {
                     "line": 4,
@@ -172,57 +136,22 @@
                     "line": 4,
                     "column": 10
                   }
-                },
-                "range": [
-                  52,
-                  55
-                ],
-                "name": "pkg"
+                }
               },
               "init": {
                 "type": "ObjectExpression",
-                "start": 58,
-                "end": 146,
-                "loc": {
-                  "start": {
-                    "line": 4,
-                    "column": 13
-                  },
-                  "end": {
-                    "line": 9,
-                    "column": 2
-                  }
-                },
-                "range": [
-                  58,
-                  146
-                ],
                 "properties": [
                   {
                     "type": "Property",
-                    "start": 62,
-                    "end": 76,
-                    "loc": {
-                      "start": {
-                        "line": 5,
-                        "column": 2
-                      },
-                      "end": {
-                        "line": 5,
-                        "column": 16
-                      }
-                    },
-                    "range": [
-                      62,
-                      76
-                    ],
-                    "method": false,
-                    "shorthand": false,
+                    "kind": "init",
                     "computed": false,
                     "key": {
                       "type": "Identifier",
-                      "start": 62,
-                      "end": 66,
+                      "name": "name",
+                      "range": [
+                        62,
+                        66
+                      ],
                       "loc": {
                         "start": {
                           "line": 5,
@@ -232,17 +161,18 @@
                           "line": 5,
                           "column": 6
                         }
-                      },
-                      "range": [
-                        62,
-                        66
-                      ],
-                      "name": "name"
+                      }
                     },
+                    "method": false,
+                    "shorthand": false,
                     "value": {
                       "type": "Literal",
-                      "start": 68,
-                      "end": 76,
+                      "raw": "'svelte'",
+                      "value": "svelte",
+                      "range": [
+                        68,
+                        76
+                      ],
                       "loc": {
                         "start": {
                           "line": 5,
@@ -252,41 +182,34 @@
                           "line": 5,
                           "column": 16
                         }
-                      },
-                      "range": [
-                        68,
-                        76
-                      ],
-                      "value": "svelte",
-                      "raw": "'svelte'"
-                    },
-                    "kind": "init"
-                  },
-                  {
-                    "type": "Property",
-                    "start": 80,
-                    "end": 90,
-                    "loc": {
-                      "start": {
-                        "line": 6,
-                        "column": 2
-                      },
-                      "end": {
-                        "line": 6,
-                        "column": 12
                       }
                     },
                     "range": [
-                      80,
-                      90
+                      62,
+                      76
                     ],
-                    "method": false,
-                    "shorthand": false,
+                    "loc": {
+                      "start": {
+                        "line": 5,
+                        "column": 2
+                      },
+                      "end": {
+                        "line": 5,
+                        "column": 16
+                      }
+                    }
+                  },
+                  {
+                    "type": "Property",
+                    "kind": "init",
                     "computed": false,
                     "key": {
                       "type": "Identifier",
-                      "start": 80,
-                      "end": 87,
+                      "name": "version",
+                      "range": [
+                        80,
+                        87
+                      ],
                       "loc": {
                         "start": {
                           "line": 6,
@@ -296,17 +219,18 @@
                           "line": 6,
                           "column": 9
                         }
-                      },
-                      "range": [
-                        80,
-                        87
-                      ],
-                      "name": "version"
+                      }
                     },
+                    "method": false,
+                    "shorthand": false,
                     "value": {
                       "type": "Literal",
-                      "start": 89,
-                      "end": 90,
+                      "raw": "3",
+                      "value": 3,
+                      "range": [
+                        89,
+                        90
+                      ],
                       "loc": {
                         "start": {
                           "line": 6,
@@ -316,41 +240,34 @@
                           "line": 6,
                           "column": 12
                         }
-                      },
-                      "range": [
-                        89,
-                        90
-                      ],
-                      "value": 3,
-                      "raw": "3"
-                    },
-                    "kind": "init"
-                  },
-                  {
-                    "type": "Property",
-                    "start": 94,
-                    "end": 110,
-                    "loc": {
-                      "start": {
-                        "line": 7,
-                        "column": 2
-                      },
-                      "end": {
-                        "line": 7,
-                        "column": 18
                       }
                     },
                     "range": [
-                      94,
-                      110
+                      80,
+                      90
                     ],
-                    "method": false,
-                    "shorthand": false,
+                    "loc": {
+                      "start": {
+                        "line": 6,
+                        "column": 2
+                      },
+                      "end": {
+                        "line": 6,
+                        "column": 12
+                      }
+                    }
+                  },
+                  {
+                    "type": "Property",
+                    "kind": "init",
                     "computed": false,
                     "key": {
                       "type": "Identifier",
-                      "start": 94,
-                      "end": 99,
+                      "name": "speed",
+                      "range": [
+                        94,
+                        99
+                      ],
                       "loc": {
                         "start": {
                           "line": 7,
@@ -360,17 +277,18 @@
                           "line": 7,
                           "column": 7
                         }
-                      },
-                      "range": [
-                        94,
-                        99
-                      ],
-                      "name": "speed"
+                      }
                     },
+                    "method": false,
+                    "shorthand": false,
                     "value": {
                       "type": "Literal",
-                      "start": 101,
-                      "end": 110,
+                      "raw": "'blazing'",
+                      "value": "blazing",
+                      "range": [
+                        101,
+                        110
+                      ],
                       "loc": {
                         "start": {
                           "line": 7,
@@ -380,41 +298,34 @@
                           "line": 7,
                           "column": 18
                         }
-                      },
-                      "range": [
-                        101,
-                        110
-                      ],
-                      "value": "blazing",
-                      "raw": "'blazing'"
-                    },
-                    "kind": "init"
-                  },
-                  {
-                    "type": "Property",
-                    "start": 114,
-                    "end": 143,
-                    "loc": {
-                      "start": {
-                        "line": 8,
-                        "column": 2
-                      },
-                      "end": {
-                        "line": 8,
-                        "column": 31
                       }
                     },
                     "range": [
-                      114,
-                      143
+                      94,
+                      110
                     ],
-                    "method": false,
-                    "shorthand": false,
+                    "loc": {
+                      "start": {
+                        "line": 7,
+                        "column": 2
+                      },
+                      "end": {
+                        "line": 7,
+                        "column": 18
+                      }
+                    }
+                  },
+                  {
+                    "type": "Property",
+                    "kind": "init",
                     "computed": false,
                     "key": {
                       "type": "Identifier",
-                      "start": 114,
-                      "end": 121,
+                      "name": "website",
+                      "range": [
+                        114,
+                        121
+                      ],
                       "loc": {
                         "start": {
                           "line": 8,
@@ -424,17 +335,18 @@
                           "line": 8,
                           "column": 9
                         }
-                      },
-                      "range": [
-                        114,
-                        121
-                      ],
-                      "name": "website"
+                      }
                     },
+                    "method": false,
+                    "shorthand": false,
                     "value": {
                       "type": "Literal",
-                      "start": 123,
-                      "end": 143,
+                      "raw": "'https://svelte.dev'",
+                      "value": "https://svelte.dev",
+                      "range": [
+                        123,
+                        143
+                      ],
                       "loc": {
                         "start": {
                           "line": 8,
@@ -444,21 +356,69 @@
                           "line": 8,
                           "column": 31
                         }
-                      },
-                      "range": [
-                        123,
-                        143
-                      ],
-                      "value": "https://svelte.dev",
-                      "raw": "'https://svelte.dev'"
+                      }
                     },
-                    "kind": "init"
+                    "range": [
+                      114,
+                      143
+                    ],
+                    "loc": {
+                      "start": {
+                        "line": 8,
+                        "column": 2
+                      },
+                      "end": {
+                        "line": 8,
+                        "column": 31
+                      }
+                    }
                   }
-                ]
+                ],
+                "range": [
+                  58,
+                  146
+                ],
+                "loc": {
+                  "start": {
+                    "line": 4,
+                    "column": 13
+                  },
+                  "end": {
+                    "line": 9,
+                    "column": 2
+                  }
+                }
+              },
+              "range": [
+                52,
+                146
+              ],
+              "loc": {
+                "start": {
+                  "line": 4,
+                  "column": 7
+                },
+                "end": {
+                  "line": 9,
+                  "column": 2
+                }
               }
             }
           ],
-          "kind": "const"
+          "range": [
+            46,
+            147
+          ],
+          "loc": {
+            "start": {
+              "line": 4,
+              "column": 1
+            },
+            "end": {
+              "line": 9,
+              "column": 3
+            }
+          }
         }
       ],
       "endTag": {
@@ -539,8 +499,11 @@
             "type": "SvelteSpreadAttribute",
             "argument": {
               "type": "Identifier",
-              "start": 169,
-              "end": 172,
+              "name": "pkg",
+              "range": [
+                169,
+                172
+              ],
               "loc": {
                 "start": {
                   "line": 12,
@@ -550,12 +513,7 @@
                   "line": 12,
                   "column": 13
                 }
-              },
-              "name": "pkg",
-              "range": [
-                169,
-                172
-              ]
+              }
             },
             "range": [
               165,
@@ -667,8 +625,10 @@
     {
       "type": "Keyword",
       "value": "import",
-      "start": 10,
-      "end": 16,
+      "range": [
+        10,
+        16
+      ],
       "loc": {
         "start": {
           "line": 2,
@@ -678,17 +638,15 @@
           "line": 2,
           "column": 7
         }
-      },
-      "range": [
-        10,
-        16
-      ]
+      }
     },
     {
       "type": "Identifier",
       "value": "Info",
-      "start": 17,
-      "end": 21,
+      "range": [
+        17,
+        21
+      ],
       "loc": {
         "start": {
           "line": 2,
@@ -698,17 +656,15 @@
           "line": 2,
           "column": 12
         }
-      },
-      "range": [
-        17,
-        21
-      ]
+      }
     },
     {
       "type": "Identifier",
       "value": "from",
-      "start": 22,
-      "end": 26,
+      "range": [
+        22,
+        26
+      ],
       "loc": {
         "start": {
           "line": 2,
@@ -718,17 +674,15 @@
           "line": 2,
           "column": 17
         }
-      },
-      "range": [
-        22,
-        26
-      ]
+      }
     },
     {
       "type": "String",
       "value": "'./Info.svelte'",
-      "start": 27,
-      "end": 42,
+      "range": [
+        27,
+        42
+      ],
       "loc": {
         "start": {
           "line": 2,
@@ -738,17 +692,15 @@
           "line": 2,
           "column": 33
         }
-      },
-      "range": [
-        27,
-        42
-      ]
+      }
     },
     {
       "type": "Punctuator",
       "value": ";",
-      "start": 42,
-      "end": 43,
+      "range": [
+        42,
+        43
+      ],
       "loc": {
         "start": {
           "line": 2,
@@ -758,17 +710,15 @@
           "line": 2,
           "column": 34
         }
-      },
-      "range": [
-        42,
-        43
-      ]
+      }
     },
     {
       "type": "Keyword",
       "value": "const",
-      "start": 46,
-      "end": 51,
+      "range": [
+        46,
+        51
+      ],
       "loc": {
         "start": {
           "line": 4,
@@ -778,17 +728,15 @@
           "line": 4,
           "column": 6
         }
-      },
-      "range": [
-        46,
-        51
-      ]
+      }
     },
     {
       "type": "Identifier",
       "value": "pkg",
-      "start": 52,
-      "end": 55,
+      "range": [
+        52,
+        55
+      ],
       "loc": {
         "start": {
           "line": 4,
@@ -798,17 +746,15 @@
           "line": 4,
           "column": 10
         }
-      },
-      "range": [
-        52,
-        55
-      ]
+      }
     },
     {
       "type": "Punctuator",
       "value": "=",
-      "start": 56,
-      "end": 57,
+      "range": [
+        56,
+        57
+      ],
       "loc": {
         "start": {
           "line": 4,
@@ -818,17 +764,15 @@
           "line": 4,
           "column": 12
         }
-      },
-      "range": [
-        56,
-        57
-      ]
+      }
     },
     {
       "type": "Punctuator",
       "value": "{",
-      "start": 58,
-      "end": 59,
+      "range": [
+        58,
+        59
+      ],
       "loc": {
         "start": {
           "line": 4,
@@ -838,17 +782,15 @@
           "line": 4,
           "column": 14
         }
-      },
-      "range": [
-        58,
-        59
-      ]
+      }
     },
     {
       "type": "Identifier",
       "value": "name",
-      "start": 62,
-      "end": 66,
+      "range": [
+        62,
+        66
+      ],
       "loc": {
         "start": {
           "line": 5,
@@ -858,17 +800,15 @@
           "line": 5,
           "column": 6
         }
-      },
-      "range": [
-        62,
-        66
-      ]
+      }
     },
     {
       "type": "Punctuator",
       "value": ":",
-      "start": 66,
-      "end": 67,
+      "range": [
+        66,
+        67
+      ],
       "loc": {
         "start": {
           "line": 5,
@@ -878,17 +818,15 @@
           "line": 5,
           "column": 7
         }
-      },
-      "range": [
-        66,
-        67
-      ]
+      }
     },
     {
       "type": "String",
       "value": "'svelte'",
-      "start": 68,
-      "end": 76,
+      "range": [
+        68,
+        76
+      ],
       "loc": {
         "start": {
           "line": 5,
@@ -898,17 +836,15 @@
           "line": 5,
           "column": 16
         }
-      },
-      "range": [
-        68,
-        76
-      ]
+      }
     },
     {
       "type": "Punctuator",
       "value": ",",
-      "start": 76,
-      "end": 77,
+      "range": [
+        76,
+        77
+      ],
       "loc": {
         "start": {
           "line": 5,
@@ -918,17 +854,15 @@
           "line": 5,
           "column": 17
         }
-      },
-      "range": [
-        76,
-        77
-      ]
+      }
     },
     {
       "type": "Identifier",
       "value": "version",
-      "start": 80,
-      "end": 87,
+      "range": [
+        80,
+        87
+      ],
       "loc": {
         "start": {
           "line": 6,
@@ -938,17 +872,15 @@
           "line": 6,
           "column": 9
         }
-      },
-      "range": [
-        80,
-        87
-      ]
+      }
     },
     {
       "type": "Punctuator",
       "value": ":",
-      "start": 87,
-      "end": 88,
+      "range": [
+        87,
+        88
+      ],
       "loc": {
         "start": {
           "line": 6,
@@ -958,17 +890,15 @@
           "line": 6,
           "column": 10
         }
-      },
-      "range": [
-        87,
-        88
-      ]
+      }
     },
     {
       "type": "Numeric",
       "value": "3",
-      "start": 89,
-      "end": 90,
+      "range": [
+        89,
+        90
+      ],
       "loc": {
         "start": {
           "line": 6,
@@ -978,17 +908,15 @@
           "line": 6,
           "column": 12
         }
-      },
-      "range": [
-        89,
-        90
-      ]
+      }
     },
     {
       "type": "Punctuator",
       "value": ",",
-      "start": 90,
-      "end": 91,
+      "range": [
+        90,
+        91
+      ],
       "loc": {
         "start": {
           "line": 6,
@@ -998,17 +926,15 @@
           "line": 6,
           "column": 13
         }
-      },
-      "range": [
-        90,
-        91
-      ]
+      }
     },
     {
       "type": "Identifier",
       "value": "speed",
-      "start": 94,
-      "end": 99,
+      "range": [
+        94,
+        99
+      ],
       "loc": {
         "start": {
           "line": 7,
@@ -1018,17 +944,15 @@
           "line": 7,
           "column": 7
         }
-      },
-      "range": [
-        94,
-        99
-      ]
+      }
     },
     {
       "type": "Punctuator",
       "value": ":",
-      "start": 99,
-      "end": 100,
+      "range": [
+        99,
+        100
+      ],
       "loc": {
         "start": {
           "line": 7,
@@ -1038,17 +962,15 @@
           "line": 7,
           "column": 8
         }
-      },
-      "range": [
-        99,
-        100
-      ]
+      }
     },
     {
       "type": "String",
       "value": "'blazing'",
-      "start": 101,
-      "end": 110,
+      "range": [
+        101,
+        110
+      ],
       "loc": {
         "start": {
           "line": 7,
@@ -1058,17 +980,15 @@
           "line": 7,
           "column": 18
         }
-      },
-      "range": [
-        101,
-        110
-      ]
+      }
     },
     {
       "type": "Punctuator",
       "value": ",",
-      "start": 110,
-      "end": 111,
+      "range": [
+        110,
+        111
+      ],
       "loc": {
         "start": {
           "line": 7,
@@ -1078,17 +998,15 @@
           "line": 7,
           "column": 19
         }
-      },
-      "range": [
-        110,
-        111
-      ]
+      }
     },
     {
       "type": "Identifier",
       "value": "website",
-      "start": 114,
-      "end": 121,
+      "range": [
+        114,
+        121
+      ],
       "loc": {
         "start": {
           "line": 8,
@@ -1098,17 +1016,15 @@
           "line": 8,
           "column": 9
         }
-      },
-      "range": [
-        114,
-        121
-      ]
+      }
     },
     {
       "type": "Punctuator",
       "value": ":",
-      "start": 121,
-      "end": 122,
+      "range": [
+        121,
+        122
+      ],
       "loc": {
         "start": {
           "line": 8,
@@ -1118,17 +1034,15 @@
           "line": 8,
           "column": 10
         }
-      },
-      "range": [
-        121,
-        122
-      ]
+      }
     },
     {
       "type": "String",
       "value": "'https://svelte.dev'",
-      "start": 123,
-      "end": 143,
+      "range": [
+        123,
+        143
+      ],
       "loc": {
         "start": {
           "line": 8,
@@ -1138,17 +1052,15 @@
           "line": 8,
           "column": 31
         }
-      },
-      "range": [
-        123,
-        143
-      ]
+      }
     },
     {
       "type": "Punctuator",
       "value": "}",
-      "start": 145,
-      "end": 146,
+      "range": [
+        145,
+        146
+      ],
       "loc": {
         "start": {
           "line": 9,
@@ -1158,17 +1070,15 @@
           "line": 9,
           "column": 2
         }
-      },
-      "range": [
-        145,
-        146
-      ]
+      }
     },
     {
       "type": "Punctuator",
       "value": ";",
-      "start": 146,
-      "end": 147,
+      "range": [
+        146,
+        147
+      ],
       "loc": {
         "start": {
           "line": 9,
@@ -1178,11 +1088,7 @@
           "line": 9,
           "column": 3
         }
-      },
-      "range": [
-        146,
-        147
-      ]
+      }
     },
     {
       "type": "Punctuator",

@@ -3,50 +3,8 @@
   "body": [
     {
       "type": "SvelteAwaitBlock",
-      "expression": {
-        "type": "Identifier",
-        "start": 8,
-        "end": 15,
-        "loc": {
-          "start": {
-            "line": 1,
-            "column": 8
-          },
-          "end": {
-            "line": 1,
-            "column": 15
-          }
-        },
-        "name": "promise",
-        "range": [
-          8,
-          15
-        ]
-      },
-      "pending": null,
-      "then": null,
       "catch": {
         "type": "SvelteAwaitCatchBlock",
-        "error": {
-          "type": "Identifier",
-          "name": "error",
-          "start": 22,
-          "end": 27,
-          "range": [
-            22,
-            27
-          ],
-          "loc": {
-            "start": {
-              "line": 1,
-              "column": 22
-            },
-            "end": {
-              "line": 1,
-              "column": 27
-            }
-          }
-        },
         "children": [
           {
             "type": "SvelteText",
@@ -130,8 +88,11 @@
                 "kind": "text",
                 "expression": {
                   "type": "Identifier",
-                  "start": 47,
-                  "end": 52,
+                  "name": "error",
+                  "range": [
+                    47,
+                    52
+                  ],
                   "loc": {
                     "start": {
                       "line": 2,
@@ -141,12 +102,7 @@
                       "line": 2,
                       "column": 23
                     }
-                  },
-                  "name": "error",
-                  "range": [
-                    47,
-                    52
-                  ]
+                  }
                 },
                 "range": [
                   46,
@@ -215,6 +171,24 @@
             }
           }
         ],
+        "error": {
+          "type": "Identifier",
+          "name": "error",
+          "range": [
+            22,
+            27
+          ],
+          "loc": {
+            "start": {
+              "line": 1,
+              "column": 22
+            },
+            "end": {
+              "line": 1,
+              "column": 27
+            }
+          }
+        },
         "range": [
           0,
           58
@@ -230,6 +204,26 @@
           }
         }
       },
+      "expression": {
+        "type": "Identifier",
+        "name": "promise",
+        "range": [
+          8,
+          15
+        ],
+        "loc": {
+          "start": {
+            "line": 1,
+            "column": 8
+          },
+          "end": {
+            "line": 1,
+            "column": 15
+          }
+        }
+      },
+      "pending": null,
+      "then": null,
       "range": [
         0,
         66

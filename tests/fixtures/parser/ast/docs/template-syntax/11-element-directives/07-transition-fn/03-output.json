@@ -3,27 +3,6 @@
   "body": [
     {
       "type": "SvelteIfBlock",
-      "elseif": false,
-      "expression": {
-        "type": "Identifier",
-        "start": 5,
-        "end": 12,
-        "loc": {
-          "start": {
-            "line": 1,
-            "column": 5
-          },
-          "end": {
-            "line": 1,
-            "column": 12
-          }
-        },
-        "name": "visible",
-        "range": [
-          5,
-          12
-        ]
-      },
       "children": [
         {
           "type": "SvelteElement",
@@ -52,8 +31,6 @@
               {
                 "type": "SvelteDirective",
                 "kind": "Transition",
-                "intro": true,
-                "outro": true,
                 "name": {
                   "type": "Identifier",
                   "name": "fade",
@@ -72,43 +49,20 @@
                     }
                   }
                 },
-                "modifiers": [],
                 "expression": {
                   "type": "ObjectExpression",
-                  "start": 38,
-                  "end": 56,
-                  "loc": {
-                    "start": {
-                      "line": 2,
-                      "column": 24
-                    },
-                    "end": {
-                      "line": 2,
-                      "column": 42
-                    }
-                  },
                   "properties": [
                     {
                       "type": "Property",
-                      "start": 40,
-                      "end": 54,
-                      "loc": {
-                        "start": {
-                          "line": 2,
-                          "column": 26
-                        },
-                        "end": {
-                          "line": 2,
-                          "column": 40
-                        }
-                      },
-                      "method": false,
-                      "shorthand": false,
+                      "kind": "init",
                       "computed": false,
                       "key": {
                         "type": "Identifier",
-                        "start": 40,
-                        "end": 48,
+                        "name": "duration",
+                        "range": [
+                          40,
+                          48
+                        ],
                         "loc": {
                           "start": {
                             "line": 2,
@@ -118,17 +72,18 @@
                             "line": 2,
                             "column": 34
                           }
-                        },
-                        "name": "duration",
-                        "range": [
-                          40,
-                          48
-                        ]
+                        }
                       },
+                      "method": false,
+                      "shorthand": false,
                       "value": {
                         "type": "Literal",
-                        "start": 50,
-                        "end": 54,
+                        "raw": "2000",
+                        "value": 2000,
+                        "range": [
+                          50,
+                          54
+                        ],
                         "loc": {
                           "start": {
                             "line": 2,
@@ -138,26 +93,42 @@
                             "line": 2,
                             "column": 40
                           }
-                        },
-                        "value": 2000,
-                        "raw": "2000",
-                        "range": [
-                          50,
-                          54
-                        ]
+                        }
                       },
-                      "kind": "init",
                       "range": [
                         40,
                         54
-                      ]
+                      ],
+                      "loc": {
+                        "start": {
+                          "line": 2,
+                          "column": 26
+                        },
+                        "end": {
+                          "line": 2,
+                          "column": 40
+                        }
+                      }
                     }
                   ],
                   "range": [
                     38,
                     56
-                  ]
+                  ],
+                  "loc": {
+                    "start": {
+                      "line": 2,
+                      "column": 24
+                    },
+                    "end": {
+                      "line": 2,
+                      "column": 42
+                    }
+                  }
                 },
+                "intro": true,
+                "modifiers": [],
+                "outro": true,
                 "range": [
                   20,
                   58
@@ -244,6 +215,25 @@
         }
       ],
       "else": null,
+      "elseif": false,
+      "expression": {
+        "type": "Identifier",
+        "name": "visible",
+        "range": [
+          5,
+          12
+        ],
+        "loc": {
+          "start": {
+            "line": 1,
+            "column": 5
+          },
+          "end": {
+            "line": 1,
+            "column": 12
+          }
+        }
+      },
       "range": [
         0,
         112
@@ -408,7 +398,7 @@
       }
     },
     {
-      "type": "HTMLIdentifier",
+      "type": "Identifier",
       "value": "fade",
       "range": [
         31,

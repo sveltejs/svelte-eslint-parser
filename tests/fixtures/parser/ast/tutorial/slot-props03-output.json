@@ -43,67 +43,14 @@
       "body": [
         {
           "type": "ImportDeclaration",
-          "start": 10,
-          "end": 53,
-          "loc": {
-            "start": {
-              "line": 2,
-              "column": 1
-            },
-            "end": {
-              "line": 2,
-              "column": 44
-            }
-          },
-          "range": [
-            10,
-            53
-          ],
-          "specifiers": [
-            {
-              "type": "ImportDefaultSpecifier",
-              "start": 17,
-              "end": 26,
-              "loc": {
-                "start": {
-                  "line": 2,
-                  "column": 8
-                },
-                "end": {
-                  "line": 2,
-                  "column": 17
-                }
-              },
-              "range": [
-                17,
-                26
-              ],
-              "local": {
-                "type": "Identifier",
-                "start": 17,
-                "end": 26,
-                "loc": {
-                  "start": {
-                    "line": 2,
-                    "column": 8
-                  },
-                  "end": {
-                    "line": 2,
-                    "column": 17
-                  }
-                },
-                "range": [
-                  17,
-                  26
-                ],
-                "name": "Hoverable"
-              }
-            }
-          ],
           "source": {
             "type": "Literal",
-            "start": 32,
-            "end": 52,
+            "raw": "'./Hoverable.svelte'",
+            "value": "./Hoverable.svelte",
+            "range": [
+              32,
+              52
+            ],
             "loc": {
               "start": {
                 "line": 2,
@@ -113,13 +60,58 @@
                 "line": 2,
                 "column": 43
               }
+            }
+          },
+          "specifiers": [
+            {
+              "type": "ImportDefaultSpecifier",
+              "local": {
+                "type": "Identifier",
+                "name": "Hoverable",
+                "range": [
+                  17,
+                  26
+                ],
+                "loc": {
+                  "start": {
+                    "line": 2,
+                    "column": 8
+                  },
+                  "end": {
+                    "line": 2,
+                    "column": 17
+                  }
+                }
+              },
+              "range": [
+                17,
+                26
+              ],
+              "loc": {
+                "start": {
+                  "line": 2,
+                  "column": 8
+                },
+                "end": {
+                  "line": 2,
+                  "column": 17
+                }
+              }
+            }
+          ],
+          "range": [
+            10,
+            53
+          ],
+          "loc": {
+            "start": {
+              "line": 2,
+              "column": 1
             },
-            "range": [
-              32,
-              52
-            ],
-            "value": "./Hoverable.svelte",
-            "raw": "'./Hoverable.svelte'"
+            "end": {
+              "line": 2,
+              "column": 44
+            }
           }
         }
       ],
@@ -327,11 +319,13 @@
                 }
               }
             },
-            "modifiers": [],
             "expression": {
               "type": "Identifier",
-              "start": 241,
-              "end": 249,
+              "name": "hovering",
+              "range": [
+                241,
+                249
+              ],
               "loc": {
                 "start": {
                   "line": 18,
@@ -341,13 +335,9 @@
                   "line": 18,
                   "column": 33
                 }
-              },
-              "name": "hovering",
-              "range": [
-                241,
-                249
-              ]
+              }
             },
+            "modifiers": [],
             "range": [
               227,
               250
@@ -444,11 +434,13 @@
                     }
                   }
                 },
-                "modifiers": [],
                 "expression": {
                   "type": "Identifier",
-                  "start": 272,
-                  "end": 280,
+                  "name": "hovering",
+                  "range": [
+                    272,
+                    280
+                  ],
                   "loc": {
                     "start": {
                       "line": 19,
@@ -458,13 +450,9 @@
                       "line": 19,
                       "column": 28
                     }
-                  },
-                  "name": "hovering",
-                  "range": [
-                    272,
-                    280
-                  ]
+                  }
                 },
+                "modifiers": [],
                 "range": [
                   258,
                   281
@@ -518,27 +506,6 @@
             },
             {
               "type": "SvelteIfBlock",
-              "elseif": false,
-              "expression": {
-                "type": "Identifier",
-                "start": 290,
-                "end": 298,
-                "loc": {
-                  "start": {
-                    "line": 20,
-                    "column": 7
-                  },
-                  "end": {
-                    "line": 20,
-                    "column": 15
-                  }
-                },
-                "name": "hovering",
-                "range": [
-                  290,
-                  298
-                ]
-              },
               "children": [
                 {
                   "type": "SvelteElement",
@@ -744,6 +711,25 @@
                   }
                 }
               },
+              "elseif": false,
+              "expression": {
+                "type": "Identifier",
+                "name": "hovering",
+                "range": [
+                  290,
+                  298
+                ],
+                "loc": {
+                  "start": {
+                    "line": 20,
+                    "column": 7
+                  },
+                  "end": {
+                    "line": 20,
+                    "column": 15
+                  }
+                }
+              },
               "range": [
                 285,
                 377
@@ -922,8 +908,10 @@
     {
       "type": "Keyword",
       "value": "import",
-      "start": 10,
-      "end": 16,
+      "range": [
+        10,
+        16
+      ],
       "loc": {
         "start": {
           "line": 2,
@@ -933,17 +921,15 @@
           "line": 2,
           "column": 7
         }
-      },
-      "range": [
-        10,
-        16
-      ]
+      }
     },
     {
       "type": "Identifier",
       "value": "Hoverable",
-      "start": 17,
-      "end": 26,
+      "range": [
+        17,
+        26
+      ],
       "loc": {
         "start": {
           "line": 2,
@@ -953,17 +939,15 @@
           "line": 2,
           "column": 17
         }
-      },
-      "range": [
-        17,
-        26
-      ]
+      }
     },
     {
       "type": "Identifier",
       "value": "from",
-      "start": 27,
-      "end": 31,
+      "range": [
+        27,
+        31
+      ],
       "loc": {
         "start": {
           "line": 2,
@@ -973,17 +957,15 @@
           "line": 2,
           "column": 22
         }
-      },
-      "range": [
-        27,
-        31
-      ]
+      }
     },
     {
       "type": "String",
       "value": "'./Hoverable.svelte'",
-      "start": 32,
-      "end": 52,
+      "range": [
+        32,
+        52
+      ],
       "loc": {
         "start": {
           "line": 2,
@@ -993,17 +975,15 @@
           "line": 2,
           "column": 43
         }
-      },
-      "range": [
-        32,
-        52
-      ]
+      }
     },
     {
       "type": "Punctuator",
       "value": ";",
-      "start": 52,
-      "end": 53,
+      "range": [
+        52,
+        53
+      ],
       "loc": {
         "start": {
           "line": 2,
@@ -1013,11 +993,7 @@
           "line": 2,
           "column": 44
         }
-      },
-      "range": [
-        52,
-        53
-      ]
+      }
     },
     {
       "type": "Punctuator",

@@ -3,27 +3,6 @@
   "body": [
     {
       "type": "SvelteIfBlock",
-      "elseif": false,
-      "expression": {
-        "type": "Identifier",
-        "start": 5,
-        "end": 12,
-        "loc": {
-          "start": {
-            "line": 1,
-            "column": 5
-          },
-          "end": {
-            "line": 1,
-            "column": 12
-          }
-        },
-        "name": "visible",
-        "range": [
-          5,
-          12
-        ]
-      },
       "children": [
         {
           "type": "SvelteElement",
@@ -52,8 +31,6 @@
               {
                 "type": "SvelteDirective",
                 "kind": "Transition",
-                "intro": true,
-                "outro": true,
                 "name": {
                   "type": "Identifier",
                   "name": "fade",
@@ -72,8 +49,10 @@
                     }
                   }
                 },
-                "modifiers": [],
                 "expression": null,
+                "intro": true,
+                "modifiers": [],
+                "outro": true,
                 "range": [
                   20,
                   35
@@ -160,6 +139,25 @@
         }
       ],
       "else": null,
+      "elseif": false,
+      "expression": {
+        "type": "Identifier",
+        "name": "visible",
+        "range": [
+          5,
+          12
+        ],
+        "loc": {
+          "start": {
+            "line": 1,
+            "column": 5
+          },
+          "end": {
+            "line": 1,
+            "column": 12
+          }
+        }
+      },
       "range": [
         0,
         69
@@ -324,7 +322,7 @@
       }
     },
     {
-      "type": "HTMLIdentifier",
+      "type": "Identifier",
       "value": "fade",
       "range": [
         31,
