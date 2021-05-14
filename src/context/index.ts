@@ -1,15 +1,53 @@
 import type { Comment, Locations, Position, Token } from "../ast"
 import lodash from "lodash"
 import type ESTree from "estree"
-import type { ScopeManager } from "eslint-scope"
-import { TemplateScopeManager } from "./template-scope-manager"
+import { ScriptLetContext } from "./script-let"
+import { LetDirectiveCollections } from "./let-directive-collection"
 
-type ContextSourceCode = {
-    template: string
-    scripts: {
-        code: string
-        attrs: Record<string, string | undefined>
+export class ScriptsSourceCode {
+    private readonly raw
+
+    public readonly attrs: Record<string, string | undefined>
+
+    private _vcode: string | null = null
+
+    public separateSemiIndex: number
+
+    public constructor(
+        script: string,
+        attrs: Record<string, string | undefined>,
+    ) {
+        this.raw = script
+        this.attrs = attrs
+        this.separateSemiIndex = script.length
     }
+
+    public get vcode(): string {
+        if (this._vcode == null) {
+            return this.raw
+        }
+        return this._vcode
+    }
+
+    public addLet(letCode: string): { start: number; end: number } {
+        if (this._vcode == null) {
+            this._vcode = this.raw.trimEnd()
+            this.separateSemiIndex = this._vcode.length
+            this._vcode += ";"
+            const after = this.raw.slice(this._vcode.length)
+            this._vcode += after
+        }
+        const start = this._vcode.length
+        this._vcode += letCode
+        return {
+            start,
+            end: this._vcode.length,
+        }
+    }
+}
+export type ContextSourceCode = {
+    template: string
+    scripts: ScriptsSourceCode
 }
 export class Context {
     public readonly code: string
@@ -26,7 +64,9 @@ export class Context {
 
     private readonly locsMap = new Map<number, Position>()
 
-    private _templateScopeManager: TemplateScopeManager | null = null
+    public readonly scriptLet: ScriptLetContext
+
+    public readonly letDirCollections = new LetDirectiveCollections()
 
     public constructor(code: string, parserOptions: any) {
         this.code = code
@@ -50,17 +90,15 @@ export class Context {
             }
             start = block.codeRange[1]
         }
-        const before = code.slice(start)
-        templateCode += before
-        scriptCode += before.replace(/[^\n\r ]/g, " ")
+        const after = code.slice(start)
+        templateCode += after
+        scriptCode += after.replace(/[^\n\r ]/g, " ")
 
         this.sourceCode = {
             template: templateCode,
-            scripts: {
-                code: scriptCode,
-                attrs: scriptAttrs,
-            },
+            scripts: new ScriptsSourceCode(scriptCode, scriptAttrs),
         }
+        this.scriptLet = new ScriptLetContext(this)
     }
 
     public getLocFromIndex(index: number): { line: number; column: number } {
@@ -118,14 +156,6 @@ export class Context {
      */
     public getText(range: { start: number; end: number }): string {
         return this.code.slice(range.start, range.end)
-    }
-
-    public readyScopeManager(scopeManager: ScopeManager): void {
-        this._templateScopeManager = new TemplateScopeManager(scopeManager)
-    }
-
-    public get templateScopeManager(): TemplateScopeManager {
-        return this._templateScopeManager!
     }
 }
 

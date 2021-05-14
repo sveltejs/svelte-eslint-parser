@@ -24,152 +24,31 @@
   "childScopes": [
     {
       "type": "module",
-      "variables": [
-        {
-          "name": "thing",
-          "identifiers": [
-            {
-              "type": "Identifier",
-              "name": "thing",
-              "range": [
-                177,
-                182
-              ],
-              "loc": {
-                "start": {
-                  "line": 11,
-                  "column": 29
-                },
-                "end": {
-                  "line": 11,
-                  "column": 34
-                }
-              }
-            }
-          ],
-          "defs": [
-            {
-              "type": "Parameter",
-              "name": {
-                "type": "Identifier",
-                "name": "thing",
-                "range": [
-                  177,
-                  182
-                ],
-                "loc": {
-                  "start": {
-                    "line": 11,
-                    "column": 29
-                  },
-                  "end": {
-                    "line": 11,
-                    "column": 34
-                  }
-                }
-              },
-              "node": {
-                "type": "SvelteDirective",
-                "kind": "Let",
-                "name": {
-                  "type": "Identifier",
-                  "name": "prop",
-                  "range": [
-                    171,
-                    175
-                  ],
-                  "loc": {
-                    "start": {
-                      "line": 11,
-                      "column": 23
-                    },
-                    "end": {
-                      "line": 11,
-                      "column": 27
-                    }
-                  }
-                },
-                "expression": {
-                  "type": "Identifier",
-                  "name": "thing",
-                  "range": [
-                    177,
-                    182
-                  ],
-                  "loc": {
-                    "start": {
-                      "line": 11,
-                      "column": 29
-                    },
-                    "end": {
-                      "line": 11,
-                      "column": 34
-                    }
-                  }
-                },
-                "modifiers": [],
-                "range": [
-                  167,
-                  183
-                ],
-                "loc": {
-                  "start": {
-                    "line": 11,
-                    "column": 19
-                  },
-                  "end": {
-                    "line": 11,
-                    "column": 35
-                  }
-                }
-              }
-            }
-          ],
-          "references": [
-            {
-              "identifier": {
-                "type": "Identifier",
-                "name": "thing",
-                "range": [
-                  192,
-                  197
-                ],
-                "loc": {
-                  "start": {
-                    "line": 12,
-                    "column": 7
-                  },
-                  "end": {
-                    "line": 12,
-                    "column": 12
-                  }
-                }
-              },
-              "from": "module",
-              "init": null,
-              "resolved": {
-                "type": "Identifier",
-                "name": "thing",
-                "range": [
-                  177,
-                  182
-                ],
-                "loc": {
-                  "start": {
-                    "line": 11,
-                    "column": 29
-                  },
-                  "end": {
-                    "line": 11,
-                    "column": 34
-                  }
-                }
-              }
-            }
-          ]
-        }
-      ],
+      "variables": [],
       "references": [
+        {
+          "identifier": {
+            "type": "Identifier",
+            "name": "items",
+            "range": [
+              39,
+              44
+            ],
+            "loc": {
+              "start": {
+                "line": 3,
+                "column": 8
+              },
+              "end": {
+                "line": 3,
+                "column": 13
+              }
+            }
+          },
+          "from": "module",
+          "init": null,
+          "resolved": null
+        },
         {
           "identifier": {
             "type": "Identifier",
@@ -196,46 +75,6 @@
         {
           "identifier": {
             "type": "Identifier",
-            "name": "thing",
-            "range": [
-              192,
-              197
-            ],
-            "loc": {
-              "start": {
-                "line": 12,
-                "column": 7
-              },
-              "end": {
-                "line": 12,
-                "column": 12
-              }
-            }
-          },
-          "from": "module",
-          "init": null,
-          "resolved": {
-            "type": "Identifier",
-            "name": "thing",
-            "range": [
-              177,
-              182
-            ],
-            "loc": {
-              "start": {
-                "line": 11,
-                "column": 29
-              },
-              "end": {
-                "line": 11,
-                "column": 34
-              }
-            }
-          }
-        },
-        {
-          "identifier": {
-            "type": "Identifier",
             "name": "FancyList",
             "range": [
               149,
@@ -257,7 +96,1021 @@
           "resolved": null
         }
       ],
-      "childScopes": [],
+      "childScopes": [
+        {
+          "type": "function",
+          "variables": [
+            {
+              "name": "item",
+              "identifiers": [
+                {
+                  "type": "Identifier",
+                  "name": "item",
+                  "range": [
+                    48,
+                    52
+                  ],
+                  "loc": {
+                    "start": {
+                      "line": 3,
+                      "column": 17
+                    },
+                    "end": {
+                      "line": 3,
+                      "column": 21
+                    }
+                  }
+                }
+              ],
+              "defs": [
+                {
+                  "type": "Parameter",
+                  "name": {
+                    "type": "Identifier",
+                    "name": "item",
+                    "range": [
+                      48,
+                      52
+                    ],
+                    "loc": {
+                      "start": {
+                        "line": 3,
+                        "column": 17
+                      },
+                      "end": {
+                        "line": 3,
+                        "column": 21
+                      }
+                    }
+                  },
+                  "node": {
+                    "type": "SvelteEachBlock",
+                    "children": [
+                      {
+                        "type": "SvelteElement",
+                        "kind": "html",
+                        "name": {
+                          "type": "SvelteName",
+                          "name": "li",
+                          "range": [
+                            57,
+                            59
+                          ],
+                          "loc": {
+                            "start": {
+                              "line": 4,
+                              "column": 3
+                            },
+                            "end": {
+                              "line": 4,
+                              "column": 5
+                            }
+                          }
+                        },
+                        "startTag": {
+                          "type": "SvelteStartTag",
+                          "attributes": [
+                            {
+                              "type": "SvelteAttribute",
+                              "boolean": false,
+                              "key": {
+                                "type": "SvelteName",
+                                "name": "class",
+                                "range": [
+                                  60,
+                                  65
+                                ],
+                                "loc": {
+                                  "start": {
+                                    "line": 4,
+                                    "column": 6
+                                  },
+                                  "end": {
+                                    "line": 4,
+                                    "column": 11
+                                  }
+                                }
+                              },
+                              "value": [
+                                {
+                                  "type": "SvelteLiteral",
+                                  "value": "fancy",
+                                  "range": [
+                                    67,
+                                    72
+                                  ],
+                                  "loc": {
+                                    "start": {
+                                      "line": 4,
+                                      "column": 13
+                                    },
+                                    "end": {
+                                      "line": 4,
+                                      "column": 18
+                                    }
+                                  }
+                                }
+                              ],
+                              "range": [
+                                60,
+                                73
+                              ],
+                              "loc": {
+                                "start": {
+                                  "line": 4,
+                                  "column": 6
+                                },
+                                "end": {
+                                  "line": 4,
+                                  "column": 19
+                                }
+                              }
+                            }
+                          ],
+                          "selfClosing": false,
+                          "range": [
+                            56,
+                            74
+                          ],
+                          "loc": {
+                            "start": {
+                              "line": 4,
+                              "column": 2
+                            },
+                            "end": {
+                              "line": 4,
+                              "column": 20
+                            }
+                          }
+                        },
+                        "children": [
+                          {
+                            "type": "SvelteText",
+                            "value": "\n\t\t\t",
+                            "range": [
+                              74,
+                              78
+                            ],
+                            "loc": {
+                              "start": {
+                                "line": 4,
+                                "column": 20
+                              },
+                              "end": {
+                                "line": 5,
+                                "column": 3
+                              }
+                            }
+                          },
+                          {
+                            "type": "SvelteElement",
+                            "kind": "html",
+                            "name": {
+                              "type": "SvelteName",
+                              "name": "slot",
+                              "range": [
+                                79,
+                                83
+                              ],
+                              "loc": {
+                                "start": {
+                                  "line": 5,
+                                  "column": 4
+                                },
+                                "end": {
+                                  "line": 5,
+                                  "column": 8
+                                }
+                              }
+                            },
+                            "startTag": {
+                              "type": "SvelteStartTag",
+                              "attributes": [
+                                {
+                                  "type": "SvelteAttribute",
+                                  "boolean": false,
+                                  "key": {
+                                    "type": "SvelteName",
+                                    "name": "prop",
+                                    "range": [
+                                      84,
+                                      88
+                                    ],
+                                    "loc": {
+                                      "start": {
+                                        "line": 5,
+                                        "column": 9
+                                      },
+                                      "end": {
+                                        "line": 5,
+                                        "column": 13
+                                      }
+                                    }
+                                  },
+                                  "value": [
+                                    {
+                                      "type": "SvelteMustacheTag",
+                                      "kind": "text",
+                                      "expression": {
+                                        "type": "Identifier",
+                                        "name": "item",
+                                        "range": [
+                                          90,
+                                          94
+                                        ],
+                                        "loc": {
+                                          "start": {
+                                            "line": 5,
+                                            "column": 15
+                                          },
+                                          "end": {
+                                            "line": 5,
+                                            "column": 19
+                                          }
+                                        }
+                                      },
+                                      "range": [
+                                        89,
+                                        95
+                                      ],
+                                      "loc": {
+                                        "start": {
+                                          "line": 5,
+                                          "column": 14
+                                        },
+                                        "end": {
+                                          "line": 5,
+                                          "column": 20
+                                        }
+                                      }
+                                    }
+                                  ],
+                                  "range": [
+                                    84,
+                                    95
+                                  ],
+                                  "loc": {
+                                    "start": {
+                                      "line": 5,
+                                      "column": 9
+                                    },
+                                    "end": {
+                                      "line": 5,
+                                      "column": 20
+                                    }
+                                  }
+                                }
+                              ],
+                              "selfClosing": false,
+                              "range": [
+                                78,
+                                96
+                              ],
+                              "loc": {
+                                "start": {
+                                  "line": 5,
+                                  "column": 3
+                                },
+                                "end": {
+                                  "line": 5,
+                                  "column": 21
+                                }
+                              }
+                            },
+                            "children": [],
+                            "endTag": {
+                              "type": "SvelteEndTag",
+                              "range": [
+                                96,
+                                103
+                              ],
+                              "loc": {
+                                "start": {
+                                  "line": 5,
+                                  "column": 21
+                                },
+                                "end": {
+                                  "line": 5,
+                                  "column": 28
+                                }
+                              }
+                            },
+                            "range": [
+                              78,
+                              103
+                            ],
+                            "loc": {
+                              "start": {
+                                "line": 5,
+                                "column": 3
+                              },
+                              "end": {
+                                "line": 5,
+                                "column": 28
+                              }
+                            }
+                          },
+                          {
+                            "type": "SvelteText",
+                            "value": "\n\t\t",
+                            "range": [
+                              103,
+                              106
+                            ],
+                            "loc": {
+                              "start": {
+                                "line": 5,
+                                "column": 28
+                              },
+                              "end": {
+                                "line": 6,
+                                "column": 2
+                              }
+                            }
+                          }
+                        ],
+                        "endTag": {
+                          "type": "SvelteEndTag",
+                          "range": [
+                            106,
+                            111
+                          ],
+                          "loc": {
+                            "start": {
+                              "line": 6,
+                              "column": 2
+                            },
+                            "end": {
+                              "line": 6,
+                              "column": 7
+                            }
+                          }
+                        },
+                        "range": [
+                          56,
+                          111
+                        ],
+                        "loc": {
+                          "start": {
+                            "line": 4,
+                            "column": 2
+                          },
+                          "end": {
+                            "line": 6,
+                            "column": 7
+                          }
+                        }
+                      }
+                    ],
+                    "context": {
+                      "type": "Identifier",
+                      "name": "item",
+                      "range": [
+                        48,
+                        52
+                      ],
+                      "loc": {
+                        "start": {
+                          "line": 3,
+                          "column": 17
+                        },
+                        "end": {
+                          "line": 3,
+                          "column": 21
+                        }
+                      }
+                    },
+                    "else": null,
+                    "expression": {
+                      "type": "Identifier",
+                      "name": "items",
+                      "range": [
+                        39,
+                        44
+                      ],
+                      "loc": {
+                        "start": {
+                          "line": 3,
+                          "column": 8
+                        },
+                        "end": {
+                          "line": 3,
+                          "column": 13
+                        }
+                      }
+                    },
+                    "index": null,
+                    "key": null,
+                    "range": [
+                      32,
+                      120
+                    ],
+                    "loc": {
+                      "start": {
+                        "line": 3,
+                        "column": 1
+                      },
+                      "end": {
+                        "line": 7,
+                        "column": 8
+                      }
+                    }
+                  }
+                }
+              ],
+              "references": [
+                {
+                  "identifier": {
+                    "type": "Identifier",
+                    "name": "item",
+                    "range": [
+                      90,
+                      94
+                    ],
+                    "loc": {
+                      "start": {
+                        "line": 5,
+                        "column": 15
+                      },
+                      "end": {
+                        "line": 5,
+                        "column": 19
+                      }
+                    }
+                  },
+                  "from": "function",
+                  "init": null,
+                  "resolved": {
+                    "type": "Identifier",
+                    "name": "item",
+                    "range": [
+                      48,
+                      52
+                    ],
+                    "loc": {
+                      "start": {
+                        "line": 3,
+                        "column": 17
+                      },
+                      "end": {
+                        "line": 3,
+                        "column": 21
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          ],
+          "references": [
+            {
+              "identifier": {
+                "type": "Identifier",
+                "name": "item",
+                "range": [
+                  90,
+                  94
+                ],
+                "loc": {
+                  "start": {
+                    "line": 5,
+                    "column": 15
+                  },
+                  "end": {
+                    "line": 5,
+                    "column": 19
+                  }
+                }
+              },
+              "from": "function",
+              "init": null,
+              "resolved": {
+                "type": "Identifier",
+                "name": "item",
+                "range": [
+                  48,
+                  52
+                ],
+                "loc": {
+                  "start": {
+                    "line": 3,
+                    "column": 17
+                  },
+                  "end": {
+                    "line": 3,
+                    "column": 21
+                  }
+                }
+              }
+            }
+          ],
+          "childScopes": [],
+          "through": []
+        },
+        {
+          "type": "function",
+          "variables": [
+            {
+              "name": "thing",
+              "identifiers": [
+                {
+                  "type": "Identifier",
+                  "name": "thing",
+                  "range": [
+                    177,
+                    182
+                  ],
+                  "loc": {
+                    "start": {
+                      "line": 11,
+                      "column": 29
+                    },
+                    "end": {
+                      "line": 11,
+                      "column": 34
+                    }
+                  }
+                }
+              ],
+              "defs": [
+                {
+                  "type": "Parameter",
+                  "name": {
+                    "type": "Identifier",
+                    "name": "thing",
+                    "range": [
+                      177,
+                      182
+                    ],
+                    "loc": {
+                      "start": {
+                        "line": 11,
+                        "column": 29
+                      },
+                      "end": {
+                        "line": 11,
+                        "column": 34
+                      }
+                    }
+                  },
+                  "node": {
+                    "type": "SvelteElement",
+                    "kind": "component",
+                    "name": {
+                      "type": "Identifier",
+                      "name": "FancyList",
+                      "range": [
+                        149,
+                        158
+                      ],
+                      "loc": {
+                        "start": {
+                          "line": 11,
+                          "column": 1
+                        },
+                        "end": {
+                          "line": 11,
+                          "column": 10
+                        }
+                      }
+                    },
+                    "startTag": {
+                      "type": "SvelteStartTag",
+                      "attributes": [
+                        {
+                          "type": "SvelteShorthandAttribute",
+                          "key": {
+                            "type": "Identifier",
+                            "name": "items",
+                            "range": [
+                              160,
+                              165
+                            ],
+                            "loc": {
+                              "start": {
+                                "line": 11,
+                                "column": 12
+                              },
+                              "end": {
+                                "line": 11,
+                                "column": 17
+                              }
+                            }
+                          },
+                          "value": {
+                            "type": "Identifier",
+                            "name": "items",
+                            "range": [
+                              160,
+                              165
+                            ],
+                            "loc": {
+                              "start": {
+                                "line": 11,
+                                "column": 12
+                              },
+                              "end": {
+                                "line": 11,
+                                "column": 17
+                              }
+                            }
+                          },
+                          "range": [
+                            159,
+                            166
+                          ],
+                          "loc": {
+                            "start": {
+                              "line": 11,
+                              "column": 11
+                            },
+                            "end": {
+                              "line": 11,
+                              "column": 18
+                            }
+                          }
+                        },
+                        {
+                          "type": "SvelteDirective",
+                          "kind": "Let",
+                          "name": {
+                            "type": "Identifier",
+                            "name": "prop",
+                            "range": [
+                              171,
+                              175
+                            ],
+                            "loc": {
+                              "start": {
+                                "line": 11,
+                                "column": 23
+                              },
+                              "end": {
+                                "line": 11,
+                                "column": 27
+                              }
+                            }
+                          },
+                          "expression": {
+                            "type": "Identifier",
+                            "name": "thing",
+                            "range": [
+                              177,
+                              182
+                            ],
+                            "loc": {
+                              "start": {
+                                "line": 11,
+                                "column": 29
+                              },
+                              "end": {
+                                "line": 11,
+                                "column": 34
+                              }
+                            }
+                          },
+                          "modifiers": [],
+                          "range": [
+                            167,
+                            183
+                          ],
+                          "loc": {
+                            "start": {
+                              "line": 11,
+                              "column": 19
+                            },
+                            "end": {
+                              "line": 11,
+                              "column": 35
+                            }
+                          }
+                        }
+                      ],
+                      "selfClosing": false,
+                      "range": [
+                        148,
+                        184
+                      ],
+                      "loc": {
+                        "start": {
+                          "line": 11,
+                          "column": 0
+                        },
+                        "end": {
+                          "line": 11,
+                          "column": 36
+                        }
+                      }
+                    },
+                    "children": [
+                      {
+                        "type": "SvelteText",
+                        "value": "\n\t",
+                        "range": [
+                          184,
+                          186
+                        ],
+                        "loc": {
+                          "start": {
+                            "line": 11,
+                            "column": 36
+                          },
+                          "end": {
+                            "line": 12,
+                            "column": 1
+                          }
+                        }
+                      },
+                      {
+                        "type": "SvelteElement",
+                        "kind": "html",
+                        "name": {
+                          "type": "SvelteName",
+                          "name": "div",
+                          "range": [
+                            187,
+                            190
+                          ],
+                          "loc": {
+                            "start": {
+                              "line": 12,
+                              "column": 2
+                            },
+                            "end": {
+                              "line": 12,
+                              "column": 5
+                            }
+                          }
+                        },
+                        "startTag": {
+                          "type": "SvelteStartTag",
+                          "attributes": [],
+                          "selfClosing": false,
+                          "range": [
+                            186,
+                            191
+                          ],
+                          "loc": {
+                            "start": {
+                              "line": 12,
+                              "column": 1
+                            },
+                            "end": {
+                              "line": 12,
+                              "column": 6
+                            }
+                          }
+                        },
+                        "children": [
+                          {
+                            "type": "SvelteMustacheTag",
+                            "kind": "text",
+                            "expression": {
+                              "type": "MemberExpression",
+                              "computed": false,
+                              "object": {
+                                "type": "Identifier",
+                                "name": "thing",
+                                "range": [
+                                  192,
+                                  197
+                                ],
+                                "loc": {
+                                  "start": {
+                                    "line": 12,
+                                    "column": 7
+                                  },
+                                  "end": {
+                                    "line": 12,
+                                    "column": 12
+                                  }
+                                }
+                              },
+                              "optional": false,
+                              "property": {
+                                "type": "Identifier",
+                                "name": "text",
+                                "range": [
+                                  198,
+                                  202
+                                ],
+                                "loc": {
+                                  "start": {
+                                    "line": 12,
+                                    "column": 13
+                                  },
+                                  "end": {
+                                    "line": 12,
+                                    "column": 17
+                                  }
+                                }
+                              },
+                              "range": [
+                                192,
+                                202
+                              ],
+                              "loc": {
+                                "start": {
+                                  "line": 12,
+                                  "column": 7
+                                },
+                                "end": {
+                                  "line": 12,
+                                  "column": 17
+                                }
+                              }
+                            },
+                            "range": [
+                              191,
+                              203
+                            ],
+                            "loc": {
+                              "start": {
+                                "line": 12,
+                                "column": 6
+                              },
+                              "end": {
+                                "line": 12,
+                                "column": 18
+                              }
+                            }
+                          }
+                        ],
+                        "endTag": {
+                          "type": "SvelteEndTag",
+                          "range": [
+                            203,
+                            209
+                          ],
+                          "loc": {
+                            "start": {
+                              "line": 12,
+                              "column": 18
+                            },
+                            "end": {
+                              "line": 12,
+                              "column": 24
+                            }
+                          }
+                        },
+                        "range": [
+                          186,
+                          209
+                        ],
+                        "loc": {
+                          "start": {
+                            "line": 12,
+                            "column": 1
+                          },
+                          "end": {
+                            "line": 12,
+                            "column": 24
+                          }
+                        }
+                      },
+                      {
+                        "type": "SvelteText",
+                        "value": "\n",
+                        "range": [
+                          209,
+                          210
+                        ],
+                        "loc": {
+                          "start": {
+                            "line": 12,
+                            "column": 24
+                          },
+                          "end": {
+                            "line": 13,
+                            "column": 0
+                          }
+                        }
+                      }
+                    ],
+                    "endTag": {
+                      "type": "SvelteEndTag",
+                      "range": [
+                        210,
+                        222
+                      ],
+                      "loc": {
+                        "start": {
+                          "line": 13,
+                          "column": 0
+                        },
+                        "end": {
+                          "line": 13,
+                          "column": 12
+                        }
+                      }
+                    },
+                    "range": [
+                      148,
+                      222
+                    ],
+                    "loc": {
+                      "start": {
+                        "line": 11,
+                        "column": 0
+                      },
+                      "end": {
+                        "line": 13,
+                        "column": 12
+                      }
+                    }
+                  }
+                }
+              ],
+              "references": [
+                {
+                  "identifier": {
+                    "type": "Identifier",
+                    "name": "thing",
+                    "range": [
+                      192,
+                      197
+                    ],
+                    "loc": {
+                      "start": {
+                        "line": 12,
+                        "column": 7
+                      },
+                      "end": {
+                        "line": 12,
+                        "column": 12
+                      }
+                    }
+                  },
+                  "from": "function",
+                  "init": null,
+                  "resolved": {
+                    "type": "Identifier",
+                    "name": "thing",
+                    "range": [
+                      177,
+                      182
+                    ],
+                    "loc": {
+                      "start": {
+                        "line": 11,
+                        "column": 29
+                      },
+                      "end": {
+                        "line": 11,
+                        "column": 34
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          ],
+          "references": [
+            {
+              "identifier": {
+                "type": "Identifier",
+                "name": "thing",
+                "range": [
+                  192,
+                  197
+                ],
+                "loc": {
+                  "start": {
+                    "line": 12,
+                    "column": 7
+                  },
+                  "end": {
+                    "line": 12,
+                    "column": 12
+                  }
+                }
+              },
+              "from": "function",
+              "init": null,
+              "resolved": {
+                "type": "Identifier",
+                "name": "thing",
+                "range": [
+                  177,
+                  182
+                ],
+                "loc": {
+                  "start": {
+                    "line": 11,
+                    "column": 29
+                  },
+                  "end": {
+                    "line": 11,
+                    "column": 34
+                  }
+                }
+              }
+            }
+          ],
+          "childScopes": [],
+          "through": []
+        }
+      ],
       "through": [
         {
           "identifier": {
@@ -278,7 +1131,7 @@
               }
             }
           },
-          "from": "for",
+          "from": "module",
           "init": null,
           "resolved": null
         },
@@ -351,7 +1204,7 @@
           }
         }
       },
-      "from": "for",
+      "from": "module",
       "init": null,
       "resolved": null
     },

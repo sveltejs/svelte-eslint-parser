@@ -3,15 +3,13 @@ import type { ESLintCustomParser } from "./espree"
 import { getEspree } from "./espree"
 import { analyzeReactiveScope, analyzeScope } from "./analyze-scope"
 import { traverseNodes } from "../traverse"
+import type { ScriptsSourceCode } from "../context"
 
 /**
  * Parse for script
  */
 export function parseScript(
-    script: {
-        code: string
-        attrs: Record<string, string | undefined>
-    },
+    script: ScriptsSourceCode,
     parserOptions: any = {},
 ): ESLintExtendedProgram {
     const result = parseScriptWithoutAnalyzeScope(script, parserOptions)
@@ -46,19 +44,14 @@ export function parseScript(
  * Parse for script without analyze scope
  */
 function parseScriptWithoutAnalyzeScope(
-    {
-        code,
-        attrs,
-    }: {
-        code: string
-        attrs: Record<string, string | undefined>
-    },
+    { vcode, attrs }: ScriptsSourceCode,
     options: any,
 ): ESLintExtendedProgram {
     const parser: ESLintCustomParser = getParser(attrs, options.parser)
 
     const result =
-        parser.parseForESLint?.(code, options) ?? parser.parse?.(code, options)
+        parser.parseForESLint?.(vcode, options) ??
+        parser.parse?.(vcode, options)
 
     if ("ast" in result && result.ast != null) {
         return result

@@ -1,6 +1,6 @@
 import { KEYS } from "../visitor-keys"
 import { Context } from "../context"
-import type { Comment, SvelteProgram, Token } from "../ast"
+import type { Comment, SvelteProgram, SvelteScriptElement, Token } from "../ast"
 import type { Program } from "estree"
 import type { ScopeManager } from "eslint-scope"
 import { Variable } from "eslint-scope"
@@ -57,14 +57,19 @@ export function parseForESLint(
     }
 
     const ctx = new Context(code, parserOptions)
-
-    const resultScript = parseScript(ctx.sourceCode.scripts, parserOptions)
-    ctx.readyScopeManager(resultScript.scopeManager!)
     const resultTemplate = parseTemplate(
         ctx.sourceCode.template,
         ctx,
         parserOptions,
     )
+
+    const resultScript = parseScript(ctx.sourceCode.scripts, parserOptions)
+    ctx.scriptLet.restore(resultScript)
+    ctx.tokens.push(...resultScript.ast.tokens)
+    ctx.comments.push(...resultScript.ast.comments)
+    sort(ctx.comments)
+    sort(ctx.tokens)
+    extractTokens(ctx)
     analyzeStoreScope(resultScript.scopeManager!)
 
     // Add $$xxx variable
@@ -91,37 +96,37 @@ export function parseForESLint(
 
     const statements = [...resultScript.ast.body]
 
-    ast.comments.push(...resultScript.ast.comments)
-    sort(ast.comments)
-    ast.tokens.push(...resultScript.ast.tokens)
-    sort(ast.tokens)
     ast.sourceType = resultScript.ast.sourceType
 
-    for (const body of ast.body) {
-        if (body.type === "SvelteScriptElement") {
-            let statement = statements[0]
-            while (
-                statement &&
-                body.range[0] <= statement.range![0] &&
-                statement.range![1] <= body.range[1]
-            ) {
-                ;(statement as any).parent = body
-                body.body.push(statement)
-                statements.shift()
-                statement = statements[0]
-            }
-            if (
-                !body.startTag.attributes.some(
-                    (attr) =>
-                        attr.type === "SvelteAttribute" &&
-                        attr.key.name === "context" &&
-                        attr.value.length === 1 &&
-                        attr.value[0].type === "SvelteLiteral" &&
-                        attr.value[0].value === "module",
-                )
-            ) {
-                analyzePropsScope(body, resultScript.scopeManager!)
-            }
+    const scriptElements = ast.body.filter(
+        (b): b is SvelteScriptElement => b.type === "SvelteScriptElement",
+    )
+    for (let index = 0; index < scriptElements.length; index++) {
+        const body = scriptElements[index]
+        let statement = statements[0]
+
+        while (
+            statement &&
+            body.range[0] <= statement.range![0] &&
+            (statement.range![1] <= body.range[1] ||
+                index === scriptElements.length - 1)
+        ) {
+            ;(statement as any).parent = body
+            body.body.push(statement)
+            statements.shift()
+            statement = statements[0]
+        }
+        if (
+            !body.startTag.attributes.some(
+                (attr) =>
+                    attr.type === "SvelteAttribute" &&
+                    attr.key.name === "context" &&
+                    attr.value.length === 1 &&
+                    attr.value[0].type === "SvelteLiteral" &&
+                    attr.value[0].value === "module",
+            )
+        ) {
+            analyzePropsScope(body, resultScript.scopeManager!)
         }
     }
     if (statements.length) {
@@ -142,4 +147,39 @@ export function parseForESLint(
     resultScript.visitorKeys = Object.assign({}, KEYS, resultScript.visitorKeys)
 
     return resultScript as any
+}
+
+/** Extract tokens */
+function extractTokens(ctx: Context) {
+    const useRanges = sort([...ctx.tokens, ...ctx.comments]).map((t) => t.range)
+    let range = useRanges.shift()
+    for (let index = 0; index < ctx.sourceCode.template.length; index++) {
+        while (range && range[1] <= index) {
+            range = useRanges.shift()
+        }
+        if (range && range[0] <= index) {
+            index = range[1] - 1
+            continue
+        }
+        const c = ctx.sourceCode.template[index]
+        if (!c.trim()) {
+            continue
+        }
+        if (isPunctuator(c)) {
+            ctx.addToken("Punctuator", { start: index, end: index + 1 })
+        } else {
+            // unknown
+            // It is may be a bug.
+            ctx.addToken("Identifier", { start: index, end: index + 1 })
+        }
+    }
+    sort(ctx.comments)
+    sort(ctx.tokens)
+
+    /**
+     * Checks if the given char is punctuator
+     */
+    function isPunctuator(c: string) {
+        return /^[^\w$]$/iu.test(c)
+    }
 }

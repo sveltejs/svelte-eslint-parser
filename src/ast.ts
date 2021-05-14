@@ -71,6 +71,7 @@ export type SvelteNode =
     | SvelteShorthandAttribute
     | SvelteSpreadAttribute
     | SvelteDirective
+    | SvelteSpecialDirective
     | SvelteHTMLComment
     | SvelteReactiveStatement
 

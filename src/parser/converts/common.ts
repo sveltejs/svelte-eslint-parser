@@ -1,3 +1,4 @@
+import type ESTree from "estree"
 /** indexOf */
 export function indexOf(
     str: string,
@@ -26,4 +27,21 @@ export function lastIndexOf(
         }
     }
     return -1
+}
+
+export function getWithLoc<N extends ESTree.Comment>(
+    node: N,
+): N & { start: number; end: number }
+export function getWithLoc<
+    N extends ESTree.Node | { start: number; end: number },
+>(node: N): N & { start: number; end: number }
+export function getWithLoc<
+    N extends ESTree.Node | { start: number; end: number },
+>(
+    node: N | null | undefined,
+): (N & { start: number; end: number }) | null | undefined
+
+/** Get node with location */
+export function getWithLoc(node: any): { start: number; end: number } {
+    return node
 }

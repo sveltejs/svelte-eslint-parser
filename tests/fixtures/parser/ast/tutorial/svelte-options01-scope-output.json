@@ -125,7 +125,7 @@
                   }
                 }
               },
-              "from": "for",
+              "from": "function",
               "init": null,
               "resolved": {
                 "type": "Identifier",
@@ -966,7 +966,7 @@
                   }
                 }
               },
-              "from": "for",
+              "from": "module",
               "init": null,
               "resolved": {
                 "type": "Identifier",
@@ -1828,6 +1828,46 @@
           },
           "from": "module",
           "init": true,
+          "resolved": {
+            "type": "Identifier",
+            "name": "todos",
+            "range": [
+              50,
+              55
+            ],
+            "loc": {
+              "start": {
+                "line": 4,
+                "column": 5
+              },
+              "end": {
+                "line": 4,
+                "column": 10
+              }
+            }
+          }
+        },
+        {
+          "identifier": {
+            "type": "Identifier",
+            "name": "todos",
+            "range": [
+              505,
+              510
+            ],
+            "loc": {
+              "start": {
+                "line": 28,
+                "column": 7
+              },
+              "end": {
+                "line": 28,
+                "column": 12
+              }
+            }
+          },
+          "from": "module",
+          "init": null,
           "resolved": {
             "type": "Identifier",
             "name": "todos",
@@ -4027,6 +4067,758 @@
                   "end": {
                     "line": 4,
                     "column": 10
+                  }
+                }
+              }
+            }
+          ]
+        },
+        {
+          "type": "function",
+          "variables": [
+            {
+              "name": "todo",
+              "identifiers": [
+                {
+                  "type": "Identifier",
+                  "name": "todo",
+                  "range": [
+                    514,
+                    518
+                  ],
+                  "loc": {
+                    "start": {
+                      "line": 28,
+                      "column": 16
+                    },
+                    "end": {
+                      "line": 28,
+                      "column": 20
+                    }
+                  }
+                }
+              ],
+              "defs": [
+                {
+                  "type": "Parameter",
+                  "name": {
+                    "type": "Identifier",
+                    "name": "todo",
+                    "range": [
+                      514,
+                      518
+                    ],
+                    "loc": {
+                      "start": {
+                        "line": 28,
+                        "column": 16
+                      },
+                      "end": {
+                        "line": 28,
+                        "column": 20
+                      }
+                    }
+                  },
+                  "node": {
+                    "type": "SvelteEachBlock",
+                    "children": [
+                      {
+                        "type": "SvelteElement",
+                        "kind": "component",
+                        "name": {
+                          "type": "Identifier",
+                          "name": "Todo",
+                          "range": [
+                            522,
+                            526
+                          ],
+                          "loc": {
+                            "start": {
+                              "line": 29,
+                              "column": 2
+                            },
+                            "end": {
+                              "line": 29,
+                              "column": 6
+                            }
+                          }
+                        },
+                        "startTag": {
+                          "type": "SvelteStartTag",
+                          "attributes": [
+                            {
+                              "type": "SvelteShorthandAttribute",
+                              "key": {
+                                "type": "Identifier",
+                                "name": "todo",
+                                "range": [
+                                  528,
+                                  532
+                                ],
+                                "loc": {
+                                  "start": {
+                                    "line": 29,
+                                    "column": 8
+                                  },
+                                  "end": {
+                                    "line": 29,
+                                    "column": 12
+                                  }
+                                }
+                              },
+                              "value": {
+                                "type": "Identifier",
+                                "name": "todo",
+                                "range": [
+                                  528,
+                                  532
+                                ],
+                                "loc": {
+                                  "start": {
+                                    "line": 29,
+                                    "column": 8
+                                  },
+                                  "end": {
+                                    "line": 29,
+                                    "column": 12
+                                  }
+                                }
+                              },
+                              "range": [
+                                527,
+                                533
+                              ],
+                              "loc": {
+                                "start": {
+                                  "line": 29,
+                                  "column": 7
+                                },
+                                "end": {
+                                  "line": 29,
+                                  "column": 13
+                                }
+                              }
+                            },
+                            {
+                              "type": "SvelteDirective",
+                              "kind": "EventHandler",
+                              "name": {
+                                "type": "Identifier",
+                                "name": "click",
+                                "range": [
+                                  537,
+                                  542
+                                ],
+                                "loc": {
+                                  "start": {
+                                    "line": 29,
+                                    "column": 17
+                                  },
+                                  "end": {
+                                    "line": 29,
+                                    "column": 22
+                                  }
+                                }
+                              },
+                              "expression": {
+                                "type": "ArrowFunctionExpression",
+                                "async": false,
+                                "body": {
+                                  "type": "CallExpression",
+                                  "arguments": [
+                                    {
+                                      "type": "Identifier",
+                                      "name": "todo",
+                                      "range": [
+                                        557,
+                                        561
+                                      ],
+                                      "loc": {
+                                        "start": {
+                                          "line": 29,
+                                          "column": 37
+                                        },
+                                        "end": {
+                                          "line": 29,
+                                          "column": 41
+                                        }
+                                      }
+                                    }
+                                  ],
+                                  "callee": {
+                                    "type": "Identifier",
+                                    "name": "toggle",
+                                    "range": [
+                                      550,
+                                      556
+                                    ],
+                                    "loc": {
+                                      "start": {
+                                        "line": 29,
+                                        "column": 30
+                                      },
+                                      "end": {
+                                        "line": 29,
+                                        "column": 36
+                                      }
+                                    }
+                                  },
+                                  "optional": false,
+                                  "range": [
+                                    550,
+                                    562
+                                  ],
+                                  "loc": {
+                                    "start": {
+                                      "line": 29,
+                                      "column": 30
+                                    },
+                                    "end": {
+                                      "line": 29,
+                                      "column": 42
+                                    }
+                                  }
+                                },
+                                "expression": true,
+                                "generator": false,
+                                "id": null,
+                                "params": [],
+                                "range": [
+                                  544,
+                                  562
+                                ],
+                                "loc": {
+                                  "start": {
+                                    "line": 29,
+                                    "column": 24
+                                  },
+                                  "end": {
+                                    "line": 29,
+                                    "column": 42
+                                  }
+                                }
+                              },
+                              "modifiers": [],
+                              "range": [
+                                534,
+                                563
+                              ],
+                              "loc": {
+                                "start": {
+                                  "line": 29,
+                                  "column": 14
+                                },
+                                "end": {
+                                  "line": 29,
+                                  "column": 43
+                                }
+                              }
+                            }
+                          ],
+                          "selfClosing": true,
+                          "range": [
+                            521,
+                            565
+                          ],
+                          "loc": {
+                            "start": {
+                              "line": 29,
+                              "column": 1
+                            },
+                            "end": {
+                              "line": 29,
+                              "column": 45
+                            }
+                          }
+                        },
+                        "children": [],
+                        "endTag": null,
+                        "range": [
+                          521,
+                          565
+                        ],
+                        "loc": {
+                          "start": {
+                            "line": 29,
+                            "column": 1
+                          },
+                          "end": {
+                            "line": 29,
+                            "column": 45
+                          }
+                        }
+                      }
+                    ],
+                    "context": {
+                      "type": "Identifier",
+                      "name": "todo",
+                      "range": [
+                        514,
+                        518
+                      ],
+                      "loc": {
+                        "start": {
+                          "line": 28,
+                          "column": 16
+                        },
+                        "end": {
+                          "line": 28,
+                          "column": 20
+                        }
+                      }
+                    },
+                    "else": null,
+                    "expression": {
+                      "type": "Identifier",
+                      "name": "todos",
+                      "range": [
+                        505,
+                        510
+                      ],
+                      "loc": {
+                        "start": {
+                          "line": 28,
+                          "column": 7
+                        },
+                        "end": {
+                          "line": 28,
+                          "column": 12
+                        }
+                      }
+                    },
+                    "index": null,
+                    "key": null,
+                    "range": [
+                      498,
+                      573
+                    ],
+                    "loc": {
+                      "start": {
+                        "line": 28,
+                        "column": 0
+                      },
+                      "end": {
+                        "line": 30,
+                        "column": 7
+                      }
+                    }
+                  }
+                }
+              ],
+              "references": [
+                {
+                  "identifier": {
+                    "type": "Identifier",
+                    "name": "todo",
+                    "range": [
+                      528,
+                      532
+                    ],
+                    "loc": {
+                      "start": {
+                        "line": 29,
+                        "column": 8
+                      },
+                      "end": {
+                        "line": 29,
+                        "column": 12
+                      }
+                    }
+                  },
+                  "from": "function",
+                  "init": null,
+                  "resolved": {
+                    "type": "Identifier",
+                    "name": "todo",
+                    "range": [
+                      514,
+                      518
+                    ],
+                    "loc": {
+                      "start": {
+                        "line": 28,
+                        "column": 16
+                      },
+                      "end": {
+                        "line": 28,
+                        "column": 20
+                      }
+                    }
+                  }
+                },
+                {
+                  "identifier": {
+                    "type": "Identifier",
+                    "name": "todo",
+                    "range": [
+                      557,
+                      561
+                    ],
+                    "loc": {
+                      "start": {
+                        "line": 29,
+                        "column": 37
+                      },
+                      "end": {
+                        "line": 29,
+                        "column": 41
+                      }
+                    }
+                  },
+                  "from": "function",
+                  "init": null,
+                  "resolved": {
+                    "type": "Identifier",
+                    "name": "todo",
+                    "range": [
+                      514,
+                      518
+                    ],
+                    "loc": {
+                      "start": {
+                        "line": 28,
+                        "column": 16
+                      },
+                      "end": {
+                        "line": 28,
+                        "column": 20
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          ],
+          "references": [
+            {
+              "identifier": {
+                "type": "Identifier",
+                "name": "todo",
+                "range": [
+                  528,
+                  532
+                ],
+                "loc": {
+                  "start": {
+                    "line": 29,
+                    "column": 8
+                  },
+                  "end": {
+                    "line": 29,
+                    "column": 12
+                  }
+                }
+              },
+              "from": "function",
+              "init": null,
+              "resolved": {
+                "type": "Identifier",
+                "name": "todo",
+                "range": [
+                  514,
+                  518
+                ],
+                "loc": {
+                  "start": {
+                    "line": 28,
+                    "column": 16
+                  },
+                  "end": {
+                    "line": 28,
+                    "column": 20
+                  }
+                }
+              }
+            },
+            {
+              "identifier": {
+                "type": "Identifier",
+                "name": "Todo",
+                "range": [
+                  522,
+                  526
+                ],
+                "loc": {
+                  "start": {
+                    "line": 29,
+                    "column": 2
+                  },
+                  "end": {
+                    "line": 29,
+                    "column": 6
+                  }
+                }
+              },
+              "from": "function",
+              "init": null,
+              "resolved": {
+                "type": "Identifier",
+                "name": "Todo",
+                "range": [
+                  17,
+                  21
+                ],
+                "loc": {
+                  "start": {
+                    "line": 2,
+                    "column": 8
+                  },
+                  "end": {
+                    "line": 2,
+                    "column": 12
+                  }
+                }
+              }
+            }
+          ],
+          "childScopes": [
+            {
+              "type": "function",
+              "variables": [],
+              "references": [
+                {
+                  "identifier": {
+                    "type": "Identifier",
+                    "name": "toggle",
+                    "range": [
+                      550,
+                      556
+                    ],
+                    "loc": {
+                      "start": {
+                        "line": 29,
+                        "column": 30
+                      },
+                      "end": {
+                        "line": 29,
+                        "column": 36
+                      }
+                    }
+                  },
+                  "from": "function",
+                  "init": null,
+                  "resolved": {
+                    "type": "Identifier",
+                    "name": "toggle",
+                    "range": [
+                      228,
+                      234
+                    ],
+                    "loc": {
+                      "start": {
+                        "line": 10,
+                        "column": 10
+                      },
+                      "end": {
+                        "line": 10,
+                        "column": 16
+                      }
+                    }
+                  }
+                },
+                {
+                  "identifier": {
+                    "type": "Identifier",
+                    "name": "todo",
+                    "range": [
+                      557,
+                      561
+                    ],
+                    "loc": {
+                      "start": {
+                        "line": 29,
+                        "column": 37
+                      },
+                      "end": {
+                        "line": 29,
+                        "column": 41
+                      }
+                    }
+                  },
+                  "from": "function",
+                  "init": null,
+                  "resolved": {
+                    "type": "Identifier",
+                    "name": "todo",
+                    "range": [
+                      514,
+                      518
+                    ],
+                    "loc": {
+                      "start": {
+                        "line": 28,
+                        "column": 16
+                      },
+                      "end": {
+                        "line": 28,
+                        "column": 20
+                      }
+                    }
+                  }
+                }
+              ],
+              "childScopes": [],
+              "through": [
+                {
+                  "identifier": {
+                    "type": "Identifier",
+                    "name": "toggle",
+                    "range": [
+                      550,
+                      556
+                    ],
+                    "loc": {
+                      "start": {
+                        "line": 29,
+                        "column": 30
+                      },
+                      "end": {
+                        "line": 29,
+                        "column": 36
+                      }
+                    }
+                  },
+                  "from": "function",
+                  "init": null,
+                  "resolved": {
+                    "type": "Identifier",
+                    "name": "toggle",
+                    "range": [
+                      228,
+                      234
+                    ],
+                    "loc": {
+                      "start": {
+                        "line": 10,
+                        "column": 10
+                      },
+                      "end": {
+                        "line": 10,
+                        "column": 16
+                      }
+                    }
+                  }
+                },
+                {
+                  "identifier": {
+                    "type": "Identifier",
+                    "name": "todo",
+                    "range": [
+                      557,
+                      561
+                    ],
+                    "loc": {
+                      "start": {
+                        "line": 29,
+                        "column": 37
+                      },
+                      "end": {
+                        "line": 29,
+                        "column": 41
+                      }
+                    }
+                  },
+                  "from": "function",
+                  "init": null,
+                  "resolved": {
+                    "type": "Identifier",
+                    "name": "todo",
+                    "range": [
+                      514,
+                      518
+                    ],
+                    "loc": {
+                      "start": {
+                        "line": 28,
+                        "column": 16
+                      },
+                      "end": {
+                        "line": 28,
+                        "column": 20
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          ],
+          "through": [
+            {
+              "identifier": {
+                "type": "Identifier",
+                "name": "toggle",
+                "range": [
+                  550,
+                  556
+                ],
+                "loc": {
+                  "start": {
+                    "line": 29,
+                    "column": 30
+                  },
+                  "end": {
+                    "line": 29,
+                    "column": 36
+                  }
+                }
+              },
+              "from": "function",
+              "init": null,
+              "resolved": {
+                "type": "Identifier",
+                "name": "toggle",
+                "range": [
+                  228,
+                  234
+                ],
+                "loc": {
+                  "start": {
+                    "line": 10,
+                    "column": 10
+                  },
+                  "end": {
+                    "line": 10,
+                    "column": 16
+                  }
+                }
+              }
+            },
+            {
+              "identifier": {
+                "type": "Identifier",
+                "name": "Todo",
+                "range": [
+                  522,
+                  526
+                ],
+                "loc": {
+                  "start": {
+                    "line": 29,
+                    "column": 2
+                  },
+                  "end": {
+                    "line": 29,
+                    "column": 6
+                  }
+                }
+              },
+              "from": "function",
+              "init": null,
+              "resolved": {
+                "type": "Identifier",
+                "name": "Todo",
+                "range": [
+                  17,
+                  21
+                ],
+                "loc": {
+                  "start": {
+                    "line": 2,
+                    "column": 8
+                  },
+                  "end": {
+                    "line": 2,
+                    "column": 12
                   }
                 }
               }

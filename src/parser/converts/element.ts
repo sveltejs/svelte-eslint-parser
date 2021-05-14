@@ -32,14 +32,13 @@ import {
     convertIfBlock,
     convertKeyBlock,
 } from "./block"
-import { indexOf } from "./common"
+import { getWithLoc, indexOf } from "./common"
 import {
     convertMustacheTag,
     convertDebugTag,
     convertRawMustacheTag,
 } from "./mustache"
 import { convertText } from "./text"
-import { analyzeExpressionScope, convertESNode, getWithLoc } from "./es"
 import { convertAttributes } from "./attr"
 
 /* eslint-disable complexity -- X */
@@ -199,10 +198,23 @@ function convertHTMLElement(
         parent,
         ...locs,
     }
+
+    ctx.letDirCollections.beginExtract()
     element.startTag.attributes.push(
         ...convertAttributes(node.attributes, element.startTag, ctx),
     )
-    element.children.push(...convertChildren(node, element, ctx))
+    const lets = ctx.letDirCollections.extract()
+    if (lets.isEmpty()) {
+        element.children.push(...convertChildren(node, element, ctx))
+    } else {
+        ctx.scriptLet.nestBlock(
+            element,
+            lets.getLetParams(),
+            lets.getCallback(),
+        )
+        element.children.push(...convertChildren(node, element, ctx))
+        ctx.scriptLet.closeScope()
+    }
 
     extractElementTags(element, ctx, {
         buildNameNode: (openTokenRange) => {
@@ -256,10 +268,22 @@ function convertSpecialElement(
         parent,
         ...locs,
     }
+    ctx.letDirCollections.beginExtract()
     element.startTag.attributes.push(
         ...convertAttributes(node.attributes, element.startTag, ctx),
     )
-    element.children.push(...convertChildren(node, element, ctx))
+    const lets = ctx.letDirCollections.extract()
+    if (lets.isEmpty()) {
+        element.children.push(...convertChildren(node, element, ctx))
+    } else {
+        ctx.scriptLet.nestBlock(
+            element,
+            lets.getLetParams(),
+            lets.getCallback(),
+        )
+        element.children.push(...convertChildren(node, element, ctx))
+        ctx.scriptLet.closeScope()
+    }
 
     if (
         node.type === "InlineComponent" &&
@@ -291,9 +315,9 @@ function convertSpecialElement(
             start: startIndex,
             end: eqIndex,
         })
-        const es = convertESNode(node.expression, thisAttr, ctx)
-        analyzeExpressionScope(es, ctx)
-        thisAttr.expression = es
+        ctx.scriptLet.addExpression(node.expression, thisAttr, (es) => {
+            thisAttr.expression = es
+        })
         element.startTag.attributes.push(thisAttr)
     }
 
@@ -343,10 +367,22 @@ function convertComponentElement(
         parent,
         ...locs,
     }
+    ctx.letDirCollections.beginExtract()
     element.startTag.attributes.push(
         ...convertAttributes(node.attributes, element.startTag, ctx),
     )
-    element.children.push(...convertChildren(node, element, ctx))
+    const lets = ctx.letDirCollections.extract()
+    if (lets.isEmpty()) {
+        element.children.push(...convertChildren(node, element, ctx))
+    } else {
+        ctx.scriptLet.nestBlock(
+            element,
+            lets.getLetParams(),
+            lets.getCallback(),
+        )
+        element.children.push(...convertChildren(node, element, ctx))
+        ctx.scriptLet.closeScope()
+    }
 
     extractElementTags(element, ctx, {
         buildNameNode: (openTokenRange) => {
@@ -356,7 +392,8 @@ function convertComponentElement(
                 start: openTokenRange.start,
                 end: openTokenRange.start + id.length,
             }
-            ctx.addToken("Identifier", idRange)
+            // ctx.addToken("Identifier", idRange)
+
             const identifier: ESTree.Identifier = {
                 type: "Identifier",
                 name: id,
@@ -366,11 +403,16 @@ function convertComponentElement(
             }
             let object: SvelteComponentElement["name"] = identifier
 
+            // eslint-disable-next-line func-style -- var
+            let esCallback = (es: ESTree.Identifier) => {
+                element.name = es
+            }
+
             let start = idRange.end + 1
             for (const name of chains) {
                 const range = { start, end: start + name.length }
                 ctx.addToken("HTMLIdentifier", range)
-                const men: SvelteMemberExpressionName = {
+                const mem: SvelteMemberExpressionName = {
                     type: "SvelteMemberExpressionName",
                     object,
                     property: {
@@ -385,13 +427,23 @@ function convertComponentElement(
                         end: range.end,
                     }),
                 }
-                men.property.parent = men
-                ;(object as any).parent = men
-                object = men
+                mem.property.parent = mem
+                ;(object as any).parent = mem
+                object = mem
                 start = range.end + 1
+                if (mem.object === identifier) {
+                    esCallback = (es: ESTree.Identifier) => {
+                        mem.object = es
+                    }
+                }
             }
 
-            analyzeExpressionScope(identifier, ctx)
+            ctx.scriptLet.addExpression(
+                identifier,
+                (identifier as any).parent,
+                esCallback,
+            )
+
             return object
         },
     })

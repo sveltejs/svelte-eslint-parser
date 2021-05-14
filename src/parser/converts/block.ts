@@ -1,5 +1,4 @@
 import type * as SvAST from "../svelte-ast-types"
-import type ESTree from "estree"
 import type {
     SvelteAwaitBlock,
     SvelteAwaitCatchBlock,
@@ -11,13 +10,8 @@ import type {
     SvelteKeyBlock,
 } from "../../ast"
 import type { Context } from "../../context"
-import {
-    analyzeExpressionScope,
-    analyzePatternScope,
-    convertESNode,
-} from "./es"
 import { convertChildren } from "./element"
-import { indexOf, lastIndexOf } from "./common"
+import { getWithLoc, indexOf, lastIndexOf } from "./common"
 
 /** Convert for IfBlock */
 export function convertIfBlock(
@@ -39,13 +33,12 @@ export function convertIfBlock(
         parent,
         ...ctx.getConvertLocation({ start: nodeStart, end: node.end }),
     }
-    const es = convertESNode(node.expression, ifBlock, ctx)!
-    analyzeExpressionScope(es, ctx)
-    ifBlock.expression = es
 
-    ctx.templateScopeManager.nestBlockScope(ifBlock, "block")
+    ctx.scriptLet.nestIfBlock(node.expression, ifBlock, (es) => {
+        ifBlock.expression = es
+    })
     ifBlock.children.push(...convertChildren(node, ifBlock, ctx))
-    ctx.templateScopeManager.closeScope()
+    ctx.scriptLet.closeScope()
     if (node.elseif) {
         const index = ctx.code.indexOf("if", nodeStart)
         ctx.addToken("MustacheKeyword", { start: index, end: index + 2 })
@@ -86,9 +79,9 @@ export function convertIfBlock(
     if (elseIfBlock) {
         elseBlock.children.push(elseIfBlock)
     } else {
-        ctx.templateScopeManager.nestBlockScope(elseBlock, "block")
+        ctx.scriptLet.nestBlock(elseBlock)
         elseBlock.children.push(...convertChildren(node.else, elseBlock, ctx))
-        ctx.templateScopeManager.closeScope()
+        ctx.scriptLet.closeScope()
         extractMustacheBlockTokens(elseBlock, ctx, { startOnly: true })
     }
 
@@ -113,48 +106,43 @@ export function convertEachBlock(
         parent,
         ...ctx.getConvertLocation(node),
     }
-    ctx.templateScopeManager.nestBlockScope(eachBlock, "for")
 
-    const expression = convertESNode(node.expression, eachBlock, ctx)!
-    analyzeExpressionScope(expression, ctx)
-    eachBlock.expression = expression
-    const asStart = ctx.code.indexOf("as", eachBlock.expression.range![1])
+    let indexRange: null | { start: number; end: number } = null
+
+    if (node.index) {
+        const start = ctx.code.indexOf(node.index, getWithLoc(node.context).end)
+        indexRange = {
+            start,
+            end: start + node.index.length,
+        }
+    }
+
+    ctx.scriptLet.nestEachBlock(
+        node.expression,
+        node.context,
+        indexRange,
+        eachBlock,
+        (expression, context, index) => {
+            eachBlock.expression = expression
+            eachBlock.context = context
+            eachBlock.index = index
+        },
+    )
+
+    const asStart = ctx.code.indexOf("as", getWithLoc(node.expression).end)
     ctx.addToken("Keyword", {
         start: asStart,
         end: asStart + 2,
     })
-    const context = convertESNode(node.context, eachBlock, ctx)!
-    analyzePatternScope(context, ctx)
-    eachBlock.context = context
 
-    if (node.index) {
-        const start = ctx.code.indexOf(
-            node.index,
-            (eachBlock.context as any).range![1],
-        )
-        const rangeData = {
-            start,
-            end: start + node.index.length,
-        }
-        const index: ESTree.Identifier = {
-            type: "Identifier",
-            name: node.index,
-            // @ts-expect-error -- ignore
-            parent: eachBlock,
-            ...ctx.getConvertLocation(rangeData),
-        }
-        analyzePatternScope(index, ctx)
-        eachBlock.index = index
-        ctx.addToken("Identifier", rangeData)
-    }
     if (node.key) {
-        const key = convertESNode(node.key, eachBlock, ctx)!
-        analyzeExpressionScope(key, ctx)
-        eachBlock.key = key
+        ctx.scriptLet.addExpression(node.key, eachBlock, (key) => {
+            eachBlock.key = key
+        })
     }
     eachBlock.children.push(...convertChildren(node, eachBlock, ctx))
 
-    ctx.templateScopeManager.closeScope()
+    ctx.scriptLet.closeScope()
     extractMustacheBlockTokens(eachBlock, ctx)
 
     if (!node.else) {
@@ -174,9 +162,9 @@ export function convertEachBlock(
     }
     eachBlock.else = elseBlock
 
-    ctx.templateScopeManager.nestBlockScope(elseBlock, "block")
+    ctx.scriptLet.nestBlock(elseBlock)
     elseBlock.children.push(...convertChildren(node.else, elseBlock, ctx))
-    ctx.templateScopeManager.closeScope()
+    ctx.scriptLet.closeScope()
     extractMustacheBlockTokens(elseBlock, ctx, { startOnly: true })
 
     return eachBlock
@@ -198,9 +186,9 @@ export function convertAwaitBlock(
         ...ctx.getConvertLocation(node),
     }
 
-    const expression = convertESNode(node.expression, awaitBlock, ctx)!
-    analyzeExpressionScope(expression, ctx)
-    awaitBlock.expression = expression
+    ctx.scriptLet.addExpression(node.expression, awaitBlock, (expression) => {
+        awaitBlock.expression = expression
+    })
 
     if (!node.pending.skip) {
         const pendingBlock: SvelteAwaitPendingBlock = {
@@ -209,12 +197,12 @@ export function convertAwaitBlock(
             parent: awaitBlock,
             ...ctx.getConvertLocation(node.pending),
         }
-        ctx.templateScopeManager.nestBlockScope(pendingBlock, "block")
+        ctx.scriptLet.nestBlock(pendingBlock)
         pendingBlock.children.push(
             ...convertChildren(node.pending, pendingBlock, ctx),
         )
         awaitBlock.pending = pendingBlock
-        ctx.templateScopeManager.closeScope()
+        ctx.scriptLet.closeScope()
     }
     if (!node.then.skip) {
         const thenStart = awaitBlock.pending ? node.then.start : node.start
@@ -229,22 +217,24 @@ export function convertAwaitBlock(
             }),
         }
 
-        ctx.templateScopeManager.nestBlockScope(thenBlock, "block")
-        const value = convertESNode(node.value, thenBlock, ctx)!
-        analyzePatternScope(value, ctx)
-        thenBlock.value = value
+        ctx.scriptLet.nestBlock(thenBlock, [node.value], ([value]) => {
+            thenBlock.value = value
+        })
         thenBlock.children.push(...convertChildren(node.then, thenBlock, ctx))
         if (awaitBlock.pending) {
             extractMustacheBlockTokens(thenBlock, ctx, { startOnly: true })
         } else {
-            const thenIndex = ctx.code.indexOf("then", expression.range![1])
+            const thenIndex = ctx.code.indexOf(
+                "then",
+                getWithLoc(node.expression).end,
+            )
             ctx.addToken("MustacheKeyword", {
                 start: thenIndex,
                 end: thenIndex + 4,
             })
         }
         awaitBlock.then = thenBlock
-        ctx.templateScopeManager.closeScope()
+        ctx.scriptLet.closeScope()
     }
     if (!node.catch.skip) {
         const catchStart =
@@ -261,25 +251,27 @@ export function convertAwaitBlock(
                 end: node.catch.end,
             }),
         }
-        ctx.templateScopeManager.nestBlockScope(catchBlock, "catch")
 
-        const error = convertESNode(node.error, catchBlock, ctx)!
-        analyzePatternScope(error, ctx)
-        catchBlock.error = error
+        ctx.scriptLet.nestBlock(catchBlock, [node.error], ([error]) => {
+            catchBlock.error = error
+        })
         catchBlock.children.push(
             ...convertChildren(node.catch, catchBlock, ctx),
         )
         if (awaitBlock.pending || awaitBlock.then) {
             extractMustacheBlockTokens(catchBlock, ctx, { startOnly: true })
         } else {
-            const catchIndex = ctx.code.indexOf("catch", expression.range![1])
+            const catchIndex = ctx.code.indexOf(
+                "catch",
+                getWithLoc(node.expression).end,
+            )
             ctx.addToken("MustacheKeyword", {
                 start: catchIndex,
                 end: catchIndex + 5,
             })
         }
         awaitBlock.catch = catchBlock
-        ctx.templateScopeManager.closeScope()
+        ctx.scriptLet.closeScope()
     }
 
     extractMustacheBlockTokens(awaitBlock, ctx)
@@ -301,13 +293,13 @@ export function convertKeyBlock(
         ...ctx.getConvertLocation(node),
     }
 
-    const expression = convertESNode(node.expression, keyBlock, ctx)!
-    analyzeExpressionScope(expression, ctx)
-    keyBlock.expression = expression
+    ctx.scriptLet.addExpression(node.expression, keyBlock, (expression) => {
+        keyBlock.expression = expression
+    })
 
-    ctx.templateScopeManager.nestBlockScope(keyBlock, "block")
+    ctx.scriptLet.nestBlock(keyBlock)
     keyBlock.children.push(...convertChildren(node, keyBlock, ctx))
-    ctx.templateScopeManager.closeScope()
+    ctx.scriptLet.closeScope()
 
     extractMustacheBlockTokens(keyBlock, ctx)
 
