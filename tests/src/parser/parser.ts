@@ -3,13 +3,18 @@ import fs from "fs"
 
 import { traverseNodes } from "../../../src/traverse"
 import { parseForESLint } from "../../../src"
-import { listupFixtures, nodeReplacer, scopeToJSON } from "./test-utils"
+import {
+    BASIC_PARSER_OPTIONS,
+    listupFixtures,
+    nodeReplacer,
+    scopeToJSON,
+} from "./test-utils"
 import type { Comment, SvelteProgram, Token } from "../../../src/ast"
 
 function parse(code: string, filePath: string) {
     return parseForESLint(code, {
+        ...BASIC_PARSER_OPTIONS!,
         filePath,
-        parser: { ts: "@typescript-eslint/parser" },
     })
 }
 

@@ -1,6 +1,7 @@
 import { Linter } from "eslint"
 import assert from "assert"
 import * as parser from "../../../src/index"
+import { BASIC_PARSER_OPTIONS } from "./test-utils"
 
 function createLinter() {
     const linter = new Linter()
@@ -223,10 +224,7 @@ describe("eslint custom parser", () => {
                 const linter = createLinter()
                 const result = linter.verifyAndFix(code, {
                     parser: "svelte-eslint-parser",
-                    parserOptions: {
-                        ecmaVersion: 2020,
-                        parser: { ts: "@typescript-eslint/parser" },
-                    },
+                    parserOptions: BASIC_PARSER_OPTIONS,
                     rules: {
                         "no-unused-labels": "error",
                         "no-extra-label": "error",

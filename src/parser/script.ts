@@ -1,9 +1,8 @@
 import type { ESLintExtendedProgram } from "."
-import type { ESLintCustomParser } from "./espree"
-import { getEspree } from "./espree"
 import { analyzeReactiveScope, analyzeScope } from "./analyze-scope"
 import { traverseNodes } from "../traverse"
 import type { ScriptsSourceCode } from "../context"
+import { getParser } from "./resolve-parser"
 
 /**
  * Parse for script
@@ -47,7 +46,7 @@ function parseScriptWithoutAnalyzeScope(
     { vcode, attrs }: ScriptsSourceCode,
     options: any,
 ): ESLintExtendedProgram {
-    const parser: ESLintCustomParser = getParser(attrs, options.parser)
+    const parser = getParser(attrs, options.parser)
 
     const result =
         parser.parseForESLint?.(vcode, options) ??
@@ -57,23 +56,4 @@ function parseScriptWithoutAnalyzeScope(
         return result
     }
     return { ast: result } as ESLintExtendedProgram
-}
-
-/** Get parser */
-function getParser(
-    attrs: Record<string, string | undefined>,
-    parser: any,
-): ESLintCustomParser {
-    if (parser) {
-        if (typeof parser === "string" && parser !== "espree") {
-            // eslint-disable-next-line @typescript-eslint/no-require-imports -- ignore
-            return require(parser)
-        } else if (typeof parser === "object") {
-            const name = parser[attrs.lang || "js"]
-            if (typeof name === "string") {
-                return getParser(attrs, name)
-            }
-        }
-    }
-    return getEspree()
 }

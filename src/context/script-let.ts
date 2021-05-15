@@ -22,6 +22,7 @@ export type ScriptLetCallbackOption = {
     getScope: (node: ESTree.Node) => Scope
     getInnermostScope: (node: ESTree.Node) => Scope
     registerNodeToScope: (node: any, scope: Scope) => void
+    scopeManager: ScopeManager
     visitorKeys?: { [type: string]: string[] }
 }
 export type ScriptLetRestoreCallback = (
@@ -34,6 +35,7 @@ type ScriptLetRestoreCallbackOption = {
     getScope: (node: ESTree.Node) => Scope
     getInnermostScope: (node: ESTree.Node) => Scope
     registerNodeToScope: (node: any, scope: Scope) => void
+    scopeManager: ScopeManager
     visitorKeys?: { [type: string]: string[] }
 }
 
@@ -98,16 +100,20 @@ export class ScriptLetContext {
     public addExpression<E extends ESTree.Expression>(
         expression: E,
         parent: SvelteNode,
+        typing?: string | null,
         ...callbacks: ScriptLetCallback<E>[]
     ): ScriptLetCallback<E>[] {
         const range = getNodeRange(expression)
         const part = this.ctx.code.slice(...range)
+        const isTS = typing && this.ctx.isTypeScript()
         this.appendScript(
-            `(${part});`,
+            `(${part})${isTS ? `as (${typing})` : ""};`,
             range[0] - 1,
-            (st, tokens, _comments, result) => {
+            (st, tokens, comments, result) => {
                 const exprSt = st as ESTree.ExpressionStatement
-                const node = exprSt.expression
+                const node: ESTree.Expression = isTS
+                    ? (exprSt.expression as any).expression
+                    : exprSt.expression
                 // Process for nodes
                 for (const callback of callbacks) {
                     callback(node as E, result)
@@ -117,6 +123,28 @@ export class ScriptLetContext {
                 tokens.shift() // (
                 tokens.pop() // )
                 tokens.pop() // ;
+
+                if (isTS) {
+                    removeScope(
+                        result.scopeManager,
+                        result.getScope(
+                            (exprSt.expression as any).typeAnnotation
+                                .typeAnnotation,
+                        ),
+                    )
+                    this.remapNodes(
+                        [
+                            {
+                                offset: range[0] - 1,
+                                range,
+                                newNode: node,
+                            },
+                        ],
+                        tokens,
+                        comments,
+                        result.visitorKeys,
+                    )
+                }
 
                 // Disconnect the tree structure.
                 exprSt.expression = null as never
@@ -277,6 +305,7 @@ export class ScriptLetContext {
             nodes: ESTree.Pattern[],
             options: ScriptLetCallbackOption,
         ) => void,
+        typings: string[],
     ): void
 
     public nestBlock(
@@ -286,6 +315,7 @@ export class ScriptLetContext {
             nodes: ESTree.Pattern[],
             options: ScriptLetCallbackOption,
         ) => void,
+        typings?: string[],
     ): void {
         if (!params) {
             const restore = this.appendScript(
@@ -315,7 +345,8 @@ export class ScriptLetContext {
             }[] = []
 
             let source = ""
-            for (const range of ranges) {
+            for (let index = 0; index < ranges.length; index++) {
+                const range = ranges[index]
                 if (source) {
                     source += ","
                 }
@@ -326,6 +357,9 @@ export class ScriptLetContext {
                     offset,
                     range,
                 })
+                if (this.ctx.isTypeScript()) {
+                    source += ` as (${typings![index]})`
+                }
             }
             const restore = this.appendScript(
                 `(${source})=>{`,
@@ -525,6 +559,7 @@ export class ScriptLetContext {
                     getScope: getScopeFromNode,
                     getInnermostScope: getInnermostScopeFromNode,
                     registerNodeToScope,
+                    scopeManager: result.scopeManager!,
                     visitorKeys: result.visitorKeys,
                 })
 
@@ -615,6 +650,7 @@ export class ScriptLetContext {
                 visitorKeys,
             )
         }
+        tokens.splice(tokenIndex)
     }
 
     /** Fix locations */
@@ -745,6 +781,24 @@ function removeReference(reference: Reference, baseScope: Scope) {
             scope.through.splice(throughIndex, 1)
         }
         scope = scope.upper
+    }
+}
+
+/** Remove scope */
+function removeScope(scopeManager: ScopeManager, scope: Scope) {
+    while (scope.references[0]) {
+        removeReference(scope.references[0], scope)
+    }
+    const upper = scope.upper
+    if (upper) {
+        const index = upper.childScopes.indexOf(scope)
+        if (index >= 0) {
+            upper.childScopes.splice(index, 1)
+        }
+    }
+    const index = scopeManager.scopes.indexOf(scope)
+    if (index >= 0) {
+        scopeManager.scopes.splice(index, 1)
     }
 }
 

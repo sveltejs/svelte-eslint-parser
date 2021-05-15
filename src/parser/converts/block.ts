@@ -136,7 +136,7 @@ export function convertEachBlock(
     })
 
     if (node.key) {
-        ctx.scriptLet.addExpression(node.key, eachBlock, (key) => {
+        ctx.scriptLet.addExpression(node.key, eachBlock, null, (key) => {
             eachBlock.key = key
         })
     }
@@ -186,9 +186,14 @@ export function convertAwaitBlock(
         ...ctx.getConvertLocation(node),
     }
 
-    ctx.scriptLet.addExpression(node.expression, awaitBlock, (expression) => {
-        awaitBlock.expression = expression
-    })
+    ctx.scriptLet.addExpression(
+        node.expression,
+        awaitBlock,
+        null,
+        (expression) => {
+            awaitBlock.expression = expression
+        },
+    )
 
     if (!node.pending.skip) {
         const pendingBlock: SvelteAwaitPendingBlock = {
@@ -216,10 +221,14 @@ export function convertAwaitBlock(
                 end: node.then.end,
             }),
         }
-
-        ctx.scriptLet.nestBlock(thenBlock, [node.value], ([value]) => {
-            thenBlock.value = value
-        })
+        ctx.scriptLet.nestBlock(
+            thenBlock,
+            [node.value],
+            ([value]) => {
+                thenBlock.value = value
+            },
+            [`typeof ${ctx.getText(node.expression)}`],
+        )
         thenBlock.children.push(...convertChildren(node.then, thenBlock, ctx))
         if (awaitBlock.pending) {
             extractMustacheBlockTokens(thenBlock, ctx, { startOnly: true })
@@ -252,9 +261,14 @@ export function convertAwaitBlock(
             }),
         }
 
-        ctx.scriptLet.nestBlock(catchBlock, [node.error], ([error]) => {
-            catchBlock.error = error
-        })
+        ctx.scriptLet.nestBlock(
+            catchBlock,
+            [node.error],
+            ([error]) => {
+                catchBlock.error = error
+            },
+            ["Error"],
+        )
         catchBlock.children.push(
             ...convertChildren(node.catch, catchBlock, ctx),
         )
@@ -293,9 +307,14 @@ export function convertKeyBlock(
         ...ctx.getConvertLocation(node),
     }
 
-    ctx.scriptLet.addExpression(node.expression, keyBlock, (expression) => {
-        keyBlock.expression = expression
-    })
+    ctx.scriptLet.addExpression(
+        node.expression,
+        keyBlock,
+        null,
+        (expression) => {
+            keyBlock.expression = expression
+        },
+    )
 
     ctx.scriptLet.nestBlock(keyBlock)
     keyBlock.children.push(...convertChildren(node, keyBlock, ctx))

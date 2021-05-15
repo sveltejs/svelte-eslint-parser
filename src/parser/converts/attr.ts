@@ -123,7 +123,7 @@ function convertAttribute(
                 loc: attribute.loc,
                 range: attribute.range,
             }
-            ctx.scriptLet.addExpression(key, sAttr, (es) => {
+            ctx.scriptLet.addExpression(key, sAttr, null, (es) => {
                 sAttr.key = es
                 sAttr.value = es
             })
@@ -177,7 +177,7 @@ function convertSpreadAttribute(
         end: spreadStart + 3,
     })
 
-    ctx.scriptLet.addExpression(node.expression, attribute, (es) => {
+    ctx.scriptLet.addExpression(node.expression, attribute, null, (es) => {
         attribute.argument = es
     })
 
@@ -203,6 +203,7 @@ function convertBindingDirective(
         return ctx.scriptLet.addExpression(
             expression,
             directive,
+            null,
             (es, { getInnermostScope }) => {
                 directive.expression = es
                 const scope = getInnermostScope(es)
@@ -238,11 +239,20 @@ function convertEventHandlerDirective(
         parent,
         ...ctx.getConvertLocation(node),
     }
+    const isCustomEvent =
+        parent.parent.type === "SvelteElement" &&
+        (parent.parent.kind === "component" || parent.parent.kind === "special")
     processDirective(
         node,
         directive,
         ctx,
-        buildProcessExpressionForExpression(directive, ctx),
+        buildProcessExpressionForExpression(
+            directive,
+            ctx,
+            isCustomEvent
+                ? "(e:CustomEvent<any>)=>void"
+                : `(e:HTMLElementEventMap['${node.name}'])=>void`,
+        ),
     )
     return directive
 }
@@ -266,7 +276,7 @@ function convertClassDirective(
         node,
         directive,
         ctx,
-        buildProcessExpressionForExpression(directive, ctx),
+        buildProcessExpressionForExpression(directive, ctx, null),
     )
     return directive
 }
@@ -292,7 +302,7 @@ function convertTransitionDirective(
         node,
         directive,
         ctx,
-        buildProcessExpressionForExpression(directive, ctx),
+        buildProcessExpressionForExpression(directive, ctx, null),
         (name) => ctx.scriptLet.addExpression(name, directive),
     )
     return directive
@@ -317,7 +327,7 @@ function convertAnimationDirective(
         node,
         directive,
         ctx,
-        buildProcessExpressionForExpression(directive, ctx),
+        buildProcessExpressionForExpression(directive, ctx, null),
         (name) => ctx.scriptLet.addExpression(name, directive),
     )
     return directive
@@ -342,7 +352,7 @@ function convertActionDirective(
         node,
         directive,
         ctx,
-        buildProcessExpressionForExpression(directive, ctx),
+        buildProcessExpressionForExpression(directive, ctx, null),
         (name) => ctx.scriptLet.addExpression(name, directive),
     )
     return directive
@@ -370,7 +380,7 @@ function convertLetDirective(
         (pattern) => {
             return ctx.letDirCollections
                 .getCollection()
-                .addPattern(pattern, directive)
+                .addPattern(pattern, directive, "any")
         },
         node.expression
             ? undefined
@@ -378,7 +388,7 @@ function convertLetDirective(
                   // shorthand
                   return ctx.letDirCollections
                       .getCollection()
-                      .addPattern(name, directive, (es) => {
+                      .addPattern(name, directive, "any", (es) => {
                           directive.expression = es
                       })
               },
@@ -463,9 +473,6 @@ function processDirective<
             })
         } else {
             ctx.addToken("HTMLIdentifier", nameRange)
-            // ctx.scriptLet.addExpression(directive.name, directive, (es) => {
-            //     directive.name = es
-            // })
         }
     }
 }
@@ -474,8 +481,9 @@ function processDirective<
 function buildProcessExpressionForExpression(
     directive: SvelteDirective & { expression: null | ESTree.Expression },
     ctx: Context,
+    typing: string | null,
 ): (expression: ESTree.Expression) => ScriptLetCallback<ESTree.Expression>[] {
     return (expression) => {
-        return ctx.scriptLet.addExpression(expression, directive)
+        return ctx.scriptLet.addExpression(expression, directive, typing)
     }
 }

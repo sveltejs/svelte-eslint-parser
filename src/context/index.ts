@@ -1,8 +1,11 @@
+import fs from "fs"
+import path from "path"
 import type { Comment, Locations, Position, Token } from "../ast"
 import lodash from "lodash"
 import type ESTree from "estree"
 import { ScriptLetContext } from "./script-let"
 import { LetDirectiveCollections } from "./let-directive-collection"
+import { getParserName } from "../parser/resolve-parser"
 
 export class ScriptsSourceCode {
     private readonly raw
@@ -67,6 +70,8 @@ export class Context {
     public readonly scriptLet: ScriptLetContext
 
     public readonly letDirCollections = new LetDirectiveCollections()
+
+    private state: { isTypeScript?: boolean } = {}
 
     public constructor(code: string, parserOptions: any) {
         this.code = code
@@ -154,8 +159,49 @@ export class Context {
     /**
      * get text
      */
-    public getText(range: { start: number; end: number }): string {
-        return this.code.slice(range.start, range.end)
+    public getText(
+        range: { start: number; end: number } | ESTree.Node,
+    ): string {
+        return this.code.slice((range as any).start, (range as any).end)
+    }
+
+    public isTypeScript(): boolean {
+        if (this.state.isTypeScript != null) {
+            return this.state.isTypeScript
+        }
+        const lang = this.sourceCode.scripts.attrs.lang
+        if (!lang) {
+            return (this.state.isTypeScript = false)
+        }
+        const parserName = getParserName(
+            this.sourceCode.scripts.attrs,
+            this.parserOptions?.parser,
+        )
+        if (parserName === "@typescript-eslint/parser") {
+            return (this.state.isTypeScript = true)
+        }
+        if (parserName.includes("@typescript-eslint/parser")) {
+            let targetPath = parserName
+            while (targetPath) {
+                const pkgPath = path.join(targetPath, "package.json")
+                if (fs.existsSync(pkgPath)) {
+                    try {
+                        return (this.state.isTypeScript =
+                            JSON.parse(fs.readFileSync(pkgPath, "utf-8"))
+                                ?.name === "@typescript-eslint/parser")
+                    } catch {
+                        return (this.state.isTypeScript = false)
+                    }
+                }
+                const parent = path.dirname(targetPath)
+                if (targetPath === parent) {
+                    break
+                }
+                targetPath = parent
+            }
+        }
+
+        return (this.state.isTypeScript = false)
     }
 }
 

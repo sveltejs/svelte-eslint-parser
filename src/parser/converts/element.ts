@@ -198,6 +198,7 @@ function convertHTMLElement(
         parent,
         ...locs,
     }
+    element.startTag.parent = element
 
     ctx.letDirCollections.beginExtract()
     element.startTag.attributes.push(
@@ -211,6 +212,7 @@ function convertHTMLElement(
             element,
             lets.getLetParams(),
             lets.getCallback(),
+            lets.getTypes(),
         )
         element.children.push(...convertChildren(node, element, ctx))
         ctx.scriptLet.closeScope()
@@ -268,6 +270,8 @@ function convertSpecialElement(
         parent,
         ...locs,
     }
+    element.startTag.parent = element
+
     ctx.letDirCollections.beginExtract()
     element.startTag.attributes.push(
         ...convertAttributes(node.attributes, element.startTag, ctx),
@@ -280,6 +284,7 @@ function convertSpecialElement(
             element,
             lets.getLetParams(),
             lets.getCallback(),
+            lets.getTypes(),
         )
         element.children.push(...convertChildren(node, element, ctx))
         ctx.scriptLet.closeScope()
@@ -315,7 +320,7 @@ function convertSpecialElement(
             start: startIndex,
             end: eqIndex,
         })
-        ctx.scriptLet.addExpression(node.expression, thisAttr, (es) => {
+        ctx.scriptLet.addExpression(node.expression, thisAttr, null, (es) => {
             thisAttr.expression = es
         })
         element.startTag.attributes.push(thisAttr)
@@ -367,6 +372,8 @@ function convertComponentElement(
         parent,
         ...locs,
     }
+    element.startTag.parent = element
+
     ctx.letDirCollections.beginExtract()
     element.startTag.attributes.push(
         ...convertAttributes(node.attributes, element.startTag, ctx),
@@ -379,6 +386,7 @@ function convertComponentElement(
             element,
             lets.getLetParams(),
             lets.getCallback(),
+            lets.getTypes(),
         )
         element.children.push(...convertChildren(node, element, ctx))
         ctx.scriptLet.closeScope()
@@ -441,6 +449,7 @@ function convertComponentElement(
             ctx.scriptLet.addExpression(
                 identifier,
                 (identifier as any).parent,
+                null,
                 esCallback,
             )
 

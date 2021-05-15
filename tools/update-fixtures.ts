@@ -3,6 +3,7 @@ import { Linter } from "eslint"
 import * as parser from "../src/index"
 import { parseForESLint } from "../src/parser"
 import {
+    BASIC_PARSER_OPTIONS,
     getMessageData,
     listupFixtures,
     nodeReplacer,
@@ -29,8 +30,8 @@ const RULES = [
  */
 function parse(code: string, filePath: string) {
     return parseForESLint(code, {
+        ...BASIC_PARSER_OPTIONS!,
         filePath,
-        parser: { ts: "@typescript-eslint/parser" },
     })
 }
 
@@ -62,10 +63,7 @@ for (const {
             input,
             {
                 parser: "svelte-eslint-parser",
-                parserOptions: {
-                    ecmaVersion: 2020,
-                    parser: { ts: "@typescript-eslint/parser" },
-                },
+                parserOptions: BASIC_PARSER_OPTIONS,
                 rules: {
                     [rule]: "error",
                 },
