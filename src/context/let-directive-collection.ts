@@ -7,6 +7,7 @@ export class LetDirectiveCollection {
     private readonly list: {
         pattern: ESTree.Pattern
         directive: SvelteLetDirective
+        typing: string
         callbacks: ScriptLetCallback<ESTree.Pattern>[]
     }[] = []
 
@@ -32,14 +33,20 @@ export class LetDirectiveCollection {
         }
     }
 
+    public getTypes(): string[] {
+        return this.list.map((d) => d.typing)
+    }
+
     public addPattern(
         pattern: ESTree.Pattern,
         directive: SvelteLetDirective,
+        typing: string,
         ...callbacks: ScriptLetCallback<ESTree.Pattern>[]
     ): ScriptLetCallback<ESTree.Pattern>[] {
         this.list.push({
             pattern,
             directive,
+            typing,
             callbacks,
         })
         return callbacks

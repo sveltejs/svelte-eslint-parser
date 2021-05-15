@@ -1,19 +1,6 @@
 import Module from "module"
 import path from "path"
-import type { ESLintExtendedProgram, ESLintProgram } from "."
-
-/**
- * The interface of a result of ESLint custom parser.
- */
-export type ESLintCustomParserResult = ESLintProgram | ESLintExtendedProgram
-
-/**
- * The interface of ESLint custom parsers.
- */
-export interface ESLintCustomParser {
-    parse(code: string, options: any): ESLintCustomParserResult
-    parseForESLint?(code: string, options: any): ESLintCustomParserResult
-}
+import type { ESLintCustomParser } from "./resolve-parser"
 
 const createRequire: (filename: string) => (modName: string) => any =
     // Added in v12.2.0

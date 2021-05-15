@@ -18,6 +18,7 @@ module.exports = {
         "require-jsdoc": "error",
         "no-warning-comments": "warn",
         "no-lonely-if": "off",
+        "no-shadow": "off",
     },
     overrides: [
         {

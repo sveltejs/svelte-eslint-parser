@@ -2,7 +2,11 @@ import { Linter } from "eslint"
 import assert from "assert"
 import fs from "fs"
 import * as parser from "../../../src/index"
-import { getMessageData, listupFixtures } from "./test-utils"
+import {
+    BASIC_PARSER_OPTIONS,
+    getMessageData,
+    listupFixtures,
+} from "./test-utils"
 
 function createLinter() {
     const linter = new Linter()
@@ -44,10 +48,7 @@ describe("svelte-eslint-parser with ESLint rules", () => {
                     const outputFileName = getRuleOutputFileName(rule)
                     const messages = linter.verify(input, {
                         parser: "svelte-eslint-parser",
-                        parserOptions: {
-                            ecmaVersion: 2020,
-                            parser: { ts: "@typescript-eslint/parser" },
-                        },
+                        parserOptions: BASIC_PARSER_OPTIONS,
                         rules: {
                             [rule]: "error",
                         },

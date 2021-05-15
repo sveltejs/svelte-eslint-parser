@@ -5,7 +5,14 @@ import { LinesAndColumns } from "../../../src/context"
 import type { Reference, Scope, ScopeManager, Variable } from "eslint-scope"
 
 const AST_FIXTURE_ROOT = path.resolve(__dirname, "../../fixtures/parser/ast")
-
+export const BASIC_PARSER_OPTIONS: Linter.BaseConfig<Linter.RulesRecord>["parserOptions"] =
+    {
+        ecmaVersion: 2020,
+        parser: {
+            ts: "@typescript-eslint/parser",
+            typescript: require.resolve("@typescript-eslint/parser"),
+        },
+    }
 export function* listupFixtures(): IterableIterator<{
     input: string
     inputFileName: string

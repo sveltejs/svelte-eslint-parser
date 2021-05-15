@@ -37,7 +37,7 @@ export function convertDebugTag(
         ...ctx.getConvertLocation(node),
     }
     for (const id of node.identifiers) {
-        ctx.scriptLet.addExpression(id, mustache, (es) => {
+        ctx.scriptLet.addExpression(id, mustache, null, (es) => {
             mustache.identifiers.push(es)
         })
     }
@@ -63,7 +63,7 @@ function convertMustacheTag0<K extends SvelteMustacheTag["kind"]>(
         parent,
         ...ctx.getConvertLocation(node),
     }
-    ctx.scriptLet.addExpression(node.expression, mustache, (es) => {
+    ctx.scriptLet.addExpression(node.expression, mustache, null, (es) => {
         mustache.expression = es
     })
     return mustache
