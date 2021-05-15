@@ -3,8 +3,6 @@
 [Svelte] parser for [ESLint].  
 You can check it on [Online DEMO](https://ota-meshi.github.io/svelte-eslint-parser/playground).
 
-::: ***WORKS IN PROGRESS*** :::
-
 ::: ***This Parser is still in an EXPERIMENTAL STATE*** :::
 
 [![NPM license](https://img.shields.io/npm/l/svelte-eslint-parser.svg)](https://www.npmjs.com/package/svelte-eslint-parser)
@@ -107,6 +105,23 @@ For example:
     "parser": "svelte-eslint-parser",
     "parserOptions": {
         "parser": "@typescript-eslint/parser"
+    }
+}
+```
+
+#### Multiple parsers
+
+If you want to switch the parser for each lang, specify the object.
+
+```json
+{
+    "parser": "svelte-eslint-parser",
+    "parserOptions": {
+        "parser": {
+            "ts": "@typescript-eslint/parser",
+            "js": "espree",
+            "typescript": "@typescript-eslint/parser"
+        }
     }
 }
 ```
