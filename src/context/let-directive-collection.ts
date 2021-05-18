@@ -1,4 +1,4 @@
-import type { SvelteLetDirective } from "../ast"
+import type { SvelteLetDirective, SvelteNode } from "../ast"
 import type * as ESTree from "estree"
 import type { ScriptLetCallback, ScriptLetCallbackOption } from "./script-let"
 
@@ -19,6 +19,10 @@ export class LetDirectiveCollection {
         return this.list.map((d) => d.pattern)
     }
 
+    public getParents(): SvelteNode[] {
+        return this.list.map((d) => d.directive)
+    }
+
     public getCallback(): (
         nodes: ESTree.Pattern[],
         options: ScriptLetCallbackOption,
@@ -26,7 +30,8 @@ export class LetDirectiveCollection {
         return (nodes, options) => {
             for (let index = 0; index < nodes.length; index++) {
                 const node = nodes[index]
-                for (const callback of this.list[index].callbacks) {
+                const { callbacks } = this.list[index]
+                for (const callback of callbacks) {
                     callback(node, options)
                 }
             }

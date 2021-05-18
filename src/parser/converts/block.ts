@@ -224,6 +224,7 @@ export function convertAwaitBlock(
         ctx.scriptLet.nestBlock(
             thenBlock,
             [node.value],
+            [thenBlock],
             ([value]) => {
                 thenBlock.value = value
             },
@@ -264,6 +265,7 @@ export function convertAwaitBlock(
         ctx.scriptLet.nestBlock(
             catchBlock,
             [node.error],
+            [catchBlock],
             ([error]) => {
                 catchBlock.error = error
             },
