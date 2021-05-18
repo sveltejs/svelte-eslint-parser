@@ -46,17 +46,21 @@ describe("svelte-eslint-parser with ESLint rules", () => {
             for (const rule of RULES) {
                 it(rule, () => {
                     const outputFileName = getRuleOutputFileName(rule)
-                    const messages = linter.verify(input, {
-                        parser: "svelte-eslint-parser",
-                        parserOptions: BASIC_PARSER_OPTIONS,
-                        rules: {
-                            [rule]: "error",
+                    const messages = linter.verify(
+                        input,
+                        {
+                            parser: "svelte-eslint-parser",
+                            parserOptions: BASIC_PARSER_OPTIONS,
+                            rules: {
+                                [rule]: "error",
+                            },
+                            env: {
+                                browser: true,
+                                es2021: true,
+                            },
                         },
-                        env: {
-                            browser: true,
-                            es2021: true,
-                        },
-                    })
+                        inputFileName,
+                    )
 
                     if (messages.length === 0) {
                         assert.strictEqual(

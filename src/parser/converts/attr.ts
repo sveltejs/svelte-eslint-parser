@@ -123,8 +123,8 @@ function convertAttribute(
                 loc: attribute.loc,
                 range: attribute.range,
             }
+            ;(key as any).parent = sAttr
             ctx.scriptLet.addExpression(key, sAttr, null, (es) => {
-                sAttr.key = es
                 sAttr.value = es
             })
             return sAttr
@@ -386,11 +386,12 @@ function convertLetDirective(
             ? undefined
             : (name) => {
                   // shorthand
-                  return ctx.letDirCollections
+                  ctx.letDirCollections
                       .getCollection()
                       .addPattern(name, directive, "any", (es) => {
                           directive.expression = es
                       })
+                  return []
               },
     )
     return directive
@@ -451,22 +452,18 @@ function processDirective<
             getWithLoc(node.expression).end === nameRange.end
         processExpression(node.expression).push((es) => {
             directive.expression = es
-
-            if (isShorthand) {
-                directive.name = directive.expression as ESTree.Identifier
-            }
         })
     }
 
     // put name
+    directive.name = {
+        type: "Identifier",
+        name: node.name,
+        // @ts-expect-error -- ignore
+        parent: directive,
+        ...ctx.getConvertLocation(nameRange),
+    }
     if (!isShorthand) {
-        directive.name = {
-            type: "Identifier",
-            name: node.name,
-            // @ts-expect-error -- ignore
-            parent: directive,
-            ...ctx.getConvertLocation(nameRange),
-        }
         if (processName) {
             processName(directive.name).push((es) => {
                 directive.name = es

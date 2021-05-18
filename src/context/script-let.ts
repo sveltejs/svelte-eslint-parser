@@ -301,6 +301,7 @@ export class ScriptLetContext {
     public nestBlock(
         block: SvelteNode,
         params: ESTree.Pattern[],
+        parents: SvelteNode[],
         callback: (
             nodes: ESTree.Pattern[],
             options: ScriptLetCallbackOption,
@@ -311,6 +312,7 @@ export class ScriptLetContext {
     public nestBlock(
         block: SvelteNode,
         params?: ESTree.Pattern[],
+        parents?: SvelteNode[],
         callback?: (
             nodes: ESTree.Pattern[],
             options: ScriptLetCallbackOption,
@@ -372,8 +374,9 @@ export class ScriptLetContext {
 
                     // Process for nodes
                     callback!(fn.params, result)
-                    for (const p of fn.params) {
-                        ;(p as any).parent = block
+                    for (let index = 0; index < fn.params.length; index++) {
+                        const p = fn.params[index]
+                        ;(p as any).parent = parents![index]
                     }
 
                     // Process for scope

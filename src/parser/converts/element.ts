@@ -211,6 +211,7 @@ function convertHTMLElement(
         ctx.scriptLet.nestBlock(
             element,
             lets.getLetParams(),
+            lets.getParents(),
             lets.getCallback(),
             lets.getTypes(),
         )
@@ -283,6 +284,7 @@ function convertSpecialElement(
         ctx.scriptLet.nestBlock(
             element,
             lets.getLetParams(),
+            lets.getParents(),
             lets.getCallback(),
             lets.getTypes(),
         )
@@ -385,6 +387,7 @@ function convertComponentElement(
         ctx.scriptLet.nestBlock(
             element,
             lets.getLetParams(),
+            lets.getParents(),
             lets.getCallback(),
             lets.getTypes(),
         )

@@ -105,26 +105,42 @@ function checkLoc(ast: SvelteProgram, fileName: string, code: string) {
             `No range on "${token.type} line:${token.loc.start.line} col:${token.loc.start.column}" in ${fileName}`,
         )
     }
+    const set = new Set<any>()
     traverseNodes(ast, {
         enterNode(node, parent) {
-            // assert.ok(
-            //     node.parent?.type === parent?.type,
-            //     `Parent type mismatch [${node.parent?.type} : ${
-            //         parent?.type
-            //     }] @${JSON.stringify(node, replacer)}`,
-            // )
-            // assert.ok(
-            //     node.parent?.range?.[0] === parent?.range[0],
-            //     `Parent range mismatch [${node.parent?.range?.[0]} : ${
-            //         parent?.range[0]
-            //     }] @${JSON.stringify(node, replacer)}`,
-            // )
-            // assert.ok(
-            //     node.parent?.range?.[1] === parent?.range[1],
-            //     `Parent range mismatch [${node.parent?.range?.[1]} : ${
-            //         parent?.range[1]
-            //     }] @${JSON.stringify(node, replacer)}`,
-            // )
+            if (
+                (node.type.startsWith("Svelte") ||
+                    parent?.type.startsWith("Svelte")) &&
+                set.has(node)
+            ) {
+                assert.fail(
+                    `Duplicate node @parent: ${parent?.type}, ${JSON.stringify(
+                        node,
+                        nodeReplacer,
+                    )}`,
+                )
+            }
+            set.add(node)
+            if (parent?.type.startsWith("Svelte")) {
+                assert.ok(
+                    node.parent?.type === parent?.type,
+                    `Parent type mismatch [${node.parent?.type} : ${
+                        parent?.type
+                    }] @${JSON.stringify(node, nodeReplacer)}`,
+                )
+            }
+            assert.ok(
+                node.parent?.range?.[0] === parent?.range[0],
+                `Parent range mismatch [${node.parent?.range?.[0]} : ${
+                    parent?.range[0]
+                }] @${JSON.stringify(node, nodeReplacer)}`,
+            )
+            assert.ok(
+                node.parent?.range?.[1] === parent?.range[1],
+                `Parent range mismatch [${node.parent?.range?.[1]} : ${
+                    parent?.range[1]
+                }] @${JSON.stringify(node, nodeReplacer)}`,
+            )
             assert.ok(
                 node.range[0] < node.range[1],
                 `No range on "${node.type} line:${node.loc.start.line} col:${node.loc.start.column}" in ${fileName}`,
