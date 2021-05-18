@@ -20,6 +20,7 @@ export declare type TemplateNode =
     | Window
     | Body
     | Head
+    | Title
     | Options
     | SlotTemplate
     | Slot
@@ -126,6 +127,12 @@ export interface Body extends BaseNode {
 export interface Head extends BaseNode {
     type: "Head"
     name: "svelte:head"
+    children: TemplateNode[]
+    attributes: AttributeOrDirective[]
+}
+export interface Title extends BaseNode {
+    type: "Title"
+    name: "title"
     children: TemplateNode[]
     attributes: AttributeOrDirective[]
 }

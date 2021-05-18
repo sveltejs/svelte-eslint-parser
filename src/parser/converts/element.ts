@@ -133,6 +133,10 @@ export function* convertChildren(
             yield convertHeadElement(child, parent, ctx)
             continue
         }
+        if (child.type === "Title") {
+            yield convertTitleElement(child, parent, ctx)
+            continue
+        }
         if (child.type === "Options") {
             yield convertOptionsElement(child, parent, ctx)
             continue
@@ -170,7 +174,7 @@ function convertComment(
 
 /** Convert for HTMLElement */
 function convertHTMLElement(
-    node: SvAST.Element | SvAST.Slot,
+    node: SvAST.Element | SvAST.Slot | SvAST.Title,
     parent: SvelteHTMLElement["parent"],
     ctx: Context,
 ): SvelteHTMLElement {
@@ -497,6 +501,15 @@ function convertHeadElement(
     ctx: Context,
 ): SvelteSpecialElement {
     return convertSpecialElement(node, parent, ctx)
+}
+
+/** Convert for title element. e.g. <title> */
+function convertTitleElement(
+    node: SvAST.Title,
+    parent: SvelteHTMLElement["parent"],
+    ctx: Context,
+): SvelteHTMLElement {
+    return convertHTMLElement(node, parent, ctx)
 }
 
 /** Convert for options element. e.g. <svelte:options> */
