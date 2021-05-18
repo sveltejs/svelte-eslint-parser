@@ -1,0 +1,30 @@
+{
+	"name": "svelte-eslint-parser-ast-explorer",
+	"version": "0.1.0",
+	"private": true,
+	"scripts": {
+		"dev": "svelte-kit dev",
+		"build": "svelte-kit build",
+		"preview": "svelte-kit preview",
+		"lint": "prettier --check --plugin-search-dir=. . && eslint --ignore-path .gitignore .",
+		"format": "prettier --write --plugin-search-dir=. .",
+		"preinstall": "node preinstall.js"
+	},
+	"devDependencies": {
+		"@sveltejs/adapter-static": "^1.0.0-next.9",
+		"@sveltejs/kit": "next",
+		"eslint": "^7.26.0",
+		"prettier": "^2.3.0",
+		"prettier-plugin-svelte": "^2.3.0",
+		"svelte": "^3.34.0"
+	},
+	"type": "module",
+	"dependencies": {
+		"@fontsource/fira-mono": "^4.2.2",
+		"@lukeed/uuid": "^2.0.0",
+		"cookie": "^0.4.1",
+		"eslint4b": "^7.26.0",
+		"pako": "^2.0.3",
+		"svelte-eslint-parser": "file:../svelte-eslint-parser.tgz"
+	}
+}

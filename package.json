@@ -17,7 +17,8 @@
         "debug": "mocha --require ts-node/register/transpile-only \"tests/src/**/*.ts\" --reporter dot",
         "preversion": "npm run lint && npm test",
         "update-fixtures": "ts-node --transpile-only ./tools/update-fixtures.ts",
-        "eslint-playground": "eslint tests/fixtures --ext .svelte --config .eslintrc-for-playground.js --format codeframe"
+        "eslint-playground": "eslint tests/fixtures --ext .svelte --config .eslintrc-for-playground.js --format codeframe",
+        "setup-site-repo": "ts-node --transpile-only tools/setup-site-repo.ts"
     },
     "repository": {
         "type": "git",
@@ -36,6 +37,7 @@
     },
     "homepage": "https://github.com/ota-meshi/svelte-eslint-parser#readme",
     "dependencies": {
+        "eslint-scope": "^5.1.1",
         "eslint-visitor-keys": "^2.0.0",
         "espree": "^7.3.1",
         "lodash": "^4.17.20"
@@ -45,6 +47,7 @@
     },
     "devDependencies": {
         "@ota-meshi/eslint-plugin": "^0.7.0",
+        "@ota-meshi/eslint-plugin-svelte": "0.0.17",
         "@types/eslint": "^7.2.0",
         "@types/eslint-scope": "^3.7.0",
         "@types/eslint-visitor-keys": "^1.0.0",
@@ -70,6 +73,7 @@
         "mocha": "^8.0.0",
         "nyc": "^15.1.0",
         "prettier": "^2.0.5",
+        "prettier-plugin-svelte": "^2.3.0",
         "string-replace-loader": "^3.0.1",
         "svelte": "^3.37.0",
         "ts-node": "^9.0.0",

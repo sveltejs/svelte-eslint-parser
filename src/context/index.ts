@@ -1,7 +1,7 @@
 import fs from "fs"
 import path from "path"
 import type { Comment, Locations, Position, Token } from "../ast"
-import lodash from "lodash"
+import { sortedLastIndex } from "lodash"
 import type ESTree from "estree"
 import { ScriptLetContext } from "./script-let"
 import { LetDirectiveCollections } from "./let-directive-collection"
@@ -272,7 +272,8 @@ export class LinesAndColumns {
     }
 
     public getLocFromIndex(index: number): { line: number; column: number } {
-        const lineNumber = lodash.sortedLastIndex(this.lineStartIndices, index)
+        // console.log(lodash)
+        const lineNumber = sortedLastIndex(this.lineStartIndices, index)
         return {
             line: lineNumber,
             column: index - this.lineStartIndices[lineNumber - 1],

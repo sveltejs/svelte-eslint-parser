@@ -39,7 +39,7 @@ function isLinterPath(p: string): boolean {
 export function getEspree(): ESLintCustomParser {
     if (!espreeCache) {
         // Lookup the loaded eslint
-        const linterPath = Object.keys(require.cache).find(isLinterPath)
+        const linterPath = Object.keys(require.cache || {}).find(isLinterPath)
         if (linterPath) {
             try {
                 espreeCache = createRequire(linterPath)("espree")
