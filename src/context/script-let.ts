@@ -377,6 +377,9 @@ export class ScriptLetContext {
                     for (let index = 0; index < fn.params.length; index++) {
                         const p = fn.params[index]
                         ;(p as any).parent = parents![index]
+                        if (this.ctx.isTypeScript()) {
+                            delete (p as any).typeAnnotation
+                        }
                     }
 
                     // Process for scope
