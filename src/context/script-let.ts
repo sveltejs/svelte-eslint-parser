@@ -360,7 +360,7 @@ export class ScriptLetContext {
                     range,
                 })
                 if (this.ctx.isTypeScript()) {
-                    source += ` as (${typings![index]})`
+                    source += ` : (${typings![index]})`
                 }
             }
             const restore = this.appendScript(
