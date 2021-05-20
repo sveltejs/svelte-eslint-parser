@@ -17,6 +17,8 @@ module.exports = {
 		node: true
 	},
 	rules: {
+		'eslint-comments/no-unused-disable': 'off',
+		'node/no-missing-import': 'off',
 		'node/no-unpublished-require': 'off',
 		'node/no-unpublished-import': 'off',
 		'node/no-unsupported-features/es-syntax': 'off',
@@ -31,5 +33,13 @@ module.exports = {
 		],
 		'no-shadow': 'off',
 		camelcase: 'off'
-	}
+	},
+	overrides: [
+		{
+			files: ['*.d.ts'],
+			rules: {
+				'spaced-comment': 'off'
+			}
+		}
+	]
 };
