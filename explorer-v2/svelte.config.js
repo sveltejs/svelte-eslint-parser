@@ -26,6 +26,14 @@ const config = {
 			},
 			plugins: [
 				stringReplace({
+					test: /eslint-scope|svelte-eslint-parser.js/u,
+					search: 'require\\("assert"\\)',
+					replace: (original) => {
+						return `(()=>{});//${original}`;
+					},
+					flags: ''
+				}),
+				stringReplace({
 					test: /eslint-plugin-svelte3.js/u,
 					search: 'Object\\.keys\\(__require\\.cache\\)',
 					replace: (original) => `[] /* ${original} */`,
@@ -55,10 +63,7 @@ const config = {
 					replace: (original) => ` // ${original}`,
 					flags: ''
 				})
-			],
-			optimizeDeps: {
-				// include: ["assert"],
-			}
+			]
 		}
 	}
 };
