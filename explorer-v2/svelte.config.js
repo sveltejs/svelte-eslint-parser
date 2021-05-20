@@ -21,18 +21,24 @@ const config = {
 				alias: {
 					assert: resolve('./build-system/shim/assert.js'),
 					lodash: resolve('./build-system/shim/lodash.js'),
-					path: resolve('./build-system/shim/path.js') //
+					path: resolve('./build-system/shim/path.js')
+				}
+			},
+			optimizeDeps: {
+				// include: [
+				// 	resolve('./node_modules/eslint-scope/lib/index.js'),
+				// 	resolve('./build-system/shim/assert.js')
+				// ]
+			},
+			build: {
+				minify: false,
+				get commonjsOptions() {
+					return {
+						include: [/node_modules/, resolve('./build-system/shim/assert.js')]
+					};
 				}
 			},
 			plugins: [
-				stringReplace({
-					test: /eslint-scope|svelte-eslint-parser.js/u,
-					search: 'require\\("assert"\\)',
-					replace: (original) => {
-						return `(()=>{});//${original}`;
-					},
-					flags: ''
-				}),
 				stringReplace({
 					test: /eslint-plugin-svelte3.js/u,
 					search: 'Object\\.keys\\(__require\\.cache\\)',
