@@ -16,12 +16,13 @@ jobs:
       run: |+
         npm install
         npm run build
-        cd explorer
+        cd explorer-v2
         npm install
+        npm run pre-build
         npm run build
     - name: Deploy
       uses: peaceiris/actions-gh-pages@v3
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
-        publish_dir: ./explorer/dist
+        publish_dir: ./explorer-v2/build
         force_orphan: true
