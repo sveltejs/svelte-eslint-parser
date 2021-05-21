@@ -1,5 +1,5 @@
 <script>
-	import { categories } from '../scripts/rules.js';
+	import { categories } from './scripts/rules.js';
 
 	export let rules = {};
 	function onAllClick(category, e) {

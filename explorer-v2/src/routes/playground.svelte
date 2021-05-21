@@ -3,7 +3,7 @@
 </script>
 
 <script>
-	import ESLintPlayground from '$lib/ESLintPlayground/index.svelte';
+	import ESLintPlayground from '$lib/ESLintPlayground.svelte';
 </script>
 
 <svelte:head>

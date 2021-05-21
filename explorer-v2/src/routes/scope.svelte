@@ -3,7 +3,7 @@
 </script>
 
 <script>
-	import ScopeExplorer from '$lib/ScopeExplorer/index.svelte';
+	import ScopeExplorer from '$lib/ScopeExplorer.svelte';
 </script>
 
 <svelte:head>

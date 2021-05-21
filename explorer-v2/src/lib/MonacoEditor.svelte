@@ -3,7 +3,7 @@
 
 	const dispatch = createEventDispatcher();
 
-	import { monacoEditorLoad } from './monaco-loader';
+	import { monacoEditorLoad } from './scripts/monaco-loader';
 	export let modelValue = '';
 	export let rightValue = '';
 	export let language = 'json';

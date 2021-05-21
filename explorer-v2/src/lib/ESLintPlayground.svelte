@@ -3,8 +3,8 @@
 
 	import ESLintEditor from './ESLintEditor.svelte';
 	import RulesSettings from './RulesSettings.svelte';
-	import { deserializeState, serializeState } from '../scripts/state';
-	import { DEFAULT_RULES_CONFIG, getURL } from '../scripts/rules.js';
+	import { deserializeState, serializeState } from './scripts/state';
+	import { DEFAULT_RULES_CONFIG, getURL } from './scripts/rules.js';
 
 	const DEFAULT_CODE =
 		`<script>
