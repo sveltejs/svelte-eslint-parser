@@ -21,20 +21,22 @@ const config = {
 				alias: {
 					assert: resolve('./build-system/shim/assert.js'),
 					lodash: resolve('./build-system/shim/lodash.js'),
-					path: resolve('./build-system/shim/path.js')
+					path: resolve('./build-system/shim/path.js'),
+					fs: resolve('./build-system/shim/fs.js'),
+					'eslint-scope': resolve('./build-system/shim/eslint-scope.js'),
+					'svelte-eslint-parser': resolve('./build-system/shim/svelte-eslint-parser.js')
 				}
 			},
-			optimizeDeps: {
-				// include: [
-				// 	resolve('./node_modules/eslint-scope/lib/index.js'),
-				// 	resolve('./build-system/shim/assert.js')
-				// ]
-			},
 			build: {
-				minify: false,
+				// minify: true,
 				get commonjsOptions() {
 					return {
-						include: [/node_modules/, resolve('./build-system/shim/assert.js')]
+						include: [
+							/node_modules/,
+							resolve('./build-system/shim/assert.js'),
+							resolve('./build-system/shim/eslint-scope.js'),
+							resolve('./build-system/shim/svelte-eslint-parser.js')
+						]
 					};
 				}
 			},

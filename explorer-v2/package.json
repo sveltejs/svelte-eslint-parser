@@ -8,14 +8,16 @@
 		"preview": "svelte-kit preview",
 		"lint": "prettier --check --plugin-search-dir=. . && eslint --ignore-path .gitignore .",
 		"format": "prettier --write --plugin-search-dir=. .",
-		"preinstall": "node preinstall.js"
+		"pre-build": "cd build-system/pre-build && webpack && cd .."
 	},
 	"devDependencies": {
 		"@sveltejs/adapter-static": "^1.0.0-next.10",
 		"@sveltejs/kit": "^1.0.0-next.108",
 		"eslint": "^7.26.0",
 		"prettier": "^2.3.0",
-		"prettier-plugin-svelte": "^2.3.0"
+		"prettier-plugin-svelte": "^2.3.0",
+		"webpack": "^5.37.1",
+		"webpack-cli": "^4.7.0"
 	},
 	"type": "module",
 	"dependencies": {
@@ -23,9 +25,10 @@
 		"@lukeed/uuid": "^2.0.0",
 		"cookie": "^0.4.1",
 		"eslint-plugin-svelte3": "^3.2.0",
+		"eslint-scope": "^5.1.1",
 		"eslint4b": "^7.26.0",
 		"pako": "^2.0.3",
 		"svelte": "^3.34.0",
-		"svelte-eslint-parser": "file:../svelte-eslint-parser.tgz"
+		"svelte-eslint-parser": "file:.."
 	}
 }
