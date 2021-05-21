@@ -1,8 +1,8 @@
 <script>
 	import Linter from 'eslint4b';
-	import MonacoEditor from '../MonacoEditor/index.svelte';
+	import MonacoEditor from './MonacoEditor.svelte';
 	import * as svelteEslintParser from 'svelte-eslint-parser';
-	import { monacoEditorLoad } from '../MonacoEditor/monaco-loader';
+	import { monacoEditorLoad } from './scripts/monaco-loader';
 	import { createEventDispatcher, onMount } from 'svelte';
 
 	const dispatch = createEventDispatcher();

@@ -3,7 +3,7 @@
 </script>
 
 <script>
-	import AstExplorer from '$lib/AstExplorer/index.svelte';
+	import AstExplorer from '$lib/AstExplorer.svelte';
 </script>
 
 <svelte:head>

@@ -1,10 +1,10 @@
 <script>
 	// eslint-disable-next-line eslint-comments/disable-enable-pair -- ignore
 	/* eslint-disable no-useless-escape -- ignore */
-	import MonacoEditor from '../MonacoEditor/index.svelte';
+	import MonacoEditor from './MonacoEditor.svelte';
 	import AstOptions from './AstOptions.svelte';
 	import * as svelteEslintParser from 'svelte-eslint-parser';
-	import { processJsonValue } from '../scripts/json';
+	import { processJsonValue } from './scripts/json';
 
 	let options = {
 		showLocations: false
