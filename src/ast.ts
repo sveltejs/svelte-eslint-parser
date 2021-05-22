@@ -335,14 +335,14 @@ export interface SvelteAwaitPendingBlock extends BaseNode {
 /** Node of await then block. e.g. `{:then}` */
 export interface SvelteAwaitThenBlock extends BaseNode {
     type: "SvelteAwaitThenBlock"
-    value: ESTree.Pattern
+    value: ESTree.Pattern | null
     children: Child[]
     parent: SvelteAwaitBlock
 }
 /** Node of await catch block. e.g. `{:catch}` */
 export interface SvelteAwaitCatchBlock extends BaseNode {
     type: "SvelteAwaitCatchBlock"
-    error: ESTree.Pattern
+    error: ESTree.Pattern | null
     children: Child[]
     parent: SvelteAwaitBlock
 }

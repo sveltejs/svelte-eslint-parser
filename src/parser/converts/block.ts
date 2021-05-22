@@ -213,7 +213,7 @@ export function convertAwaitBlock(
         const thenStart = awaitBlock.pending ? node.then.start : node.start
         const thenBlock: SvelteAwaitThenBlock = {
             type: "SvelteAwaitThenBlock",
-            value: null as any,
+            value: null,
             children: [],
             parent: awaitBlock,
             ...ctx.getConvertLocation({
@@ -221,15 +221,23 @@ export function convertAwaitBlock(
                 end: node.then.end,
             }),
         }
-        ctx.scriptLet.nestBlock(
-            thenBlock,
-            [node.value],
-            [thenBlock],
-            ([value]) => {
-                thenBlock.value = value
-            },
-            [`typeof ${ctx.getText(node.expression)}`],
-        )
+        if (node.value) {
+            ctx.scriptLet.nestBlock(
+                thenBlock,
+                [node.value],
+                [thenBlock],
+                ([value]) => {
+                    thenBlock.value = value
+                },
+                [
+                    `Parameters<Parameters<(typeof ${ctx.getText(
+                        node.expression,
+                    )})["then"]>[0]>[0]`,
+                ],
+            )
+        } else {
+            ctx.scriptLet.nestBlock(thenBlock)
+        }
         thenBlock.children.push(...convertChildren(node.then, thenBlock, ctx))
         if (awaitBlock.pending) {
             extractMustacheBlockTokens(thenBlock, ctx, { startOnly: true })
@@ -253,7 +261,7 @@ export function convertAwaitBlock(
                 : node.start
         const catchBlock: SvelteAwaitCatchBlock = {
             type: "SvelteAwaitCatchBlock",
-            error: null as any,
+            error: null,
             children: [],
             parent: awaitBlock,
             ...ctx.getConvertLocation({
@@ -262,15 +270,19 @@ export function convertAwaitBlock(
             }),
         }
 
-        ctx.scriptLet.nestBlock(
-            catchBlock,
-            [node.error],
-            [catchBlock],
-            ([error]) => {
-                catchBlock.error = error
-            },
-            ["Error"],
-        )
+        if (node.error) {
+            ctx.scriptLet.nestBlock(
+                catchBlock,
+                [node.error],
+                [catchBlock],
+                ([error]) => {
+                    catchBlock.error = error
+                },
+                ["Error"],
+            )
+        } else {
+            ctx.scriptLet.nestBlock(catchBlock)
+        }
         catchBlock.children.push(
             ...convertChildren(node.catch, catchBlock, ctx),
         )
