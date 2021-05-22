@@ -74,9 +74,9 @@ export interface AwaitBlock extends BaseNode {
     type: "AwaitBlock"
     expression: ESTree.Expression
     pending: PendingBlock
-    value: ESTree.Pattern
+    value: ESTree.Pattern | null
     then: ThenBlock
-    error: ESTree.Pattern
+    error: ESTree.Pattern | null
     catch: CatchBlock
 }
 export interface PendingBlock extends BaseNode {
