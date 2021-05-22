@@ -378,7 +378,14 @@ export class ScriptLetContext {
                         const p = fn.params[index]
                         ;(p as any).parent = parents![index]
                         if (this.ctx.isTypeScript()) {
+                            const typeAnnotation = (p as any).typeAnnotation
                             delete (p as any).typeAnnotation
+
+                            p.range![1] = typeAnnotation.range[0]
+                            p.loc!.end = {
+                                line: typeAnnotation.loc.start.line,
+                                column: typeAnnotation.loc.start.column,
+                            }
                         }
                     }
 

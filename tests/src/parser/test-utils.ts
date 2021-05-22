@@ -179,6 +179,13 @@ function normalizeObject(value: any) {
             "kind",
             "name",
             "startTag",
+            // SvelteAwaitBlock
+            // "expression",
+            // "pending",
+            // "then",
+            // "catch",
+            // // SvelteAwaitThenBlock
+            // "value",
             // scope
             "identifier",
             "from",
