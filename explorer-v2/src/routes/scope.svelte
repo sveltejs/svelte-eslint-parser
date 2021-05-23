@@ -7,7 +7,7 @@
 </script>
 
 <svelte:head>
-	<title>Scope</title>
+	<title>ScopeManager | svelte-eslint-parser</title>
 </svelte:head>
 
 <ScopeExplorer />

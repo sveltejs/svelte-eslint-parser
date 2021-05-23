@@ -7,7 +7,7 @@
 </script>
 
 <svelte:head>
-	<title>Playground</title>
+	<title>Playground | svelte-eslint-parser</title>
 </svelte:head>
 
 <ESLintPlayground />

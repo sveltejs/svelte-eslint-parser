@@ -7,7 +7,8 @@
 </script>
 
 <svelte:head>
-	<title>Home</title>
+	<title>svelte-eslint-parser</title>
+	<meta name="description" content="Svelte parser for ESLint" />
 </svelte:head>
 
 <AstExplorer />
