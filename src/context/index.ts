@@ -1,7 +1,6 @@
 import fs from "fs"
 import path from "path"
 import type { Comment, Locations, Position, Token } from "../ast"
-import lodash from "lodash"
 import type ESTree from "estree"
 import { ScriptLetContext } from "./script-let"
 import { LetDirectiveCollections } from "./let-directive-collection"
@@ -272,7 +271,7 @@ export class LinesAndColumns {
     }
 
     public getLocFromIndex(index: number): { line: number; column: number } {
-        const lineNumber = lodash.sortedLastIndex(this.lineStartIndices, index)
+        const lineNumber = sortedLastIndex(this.lineStartIndices, index)
         return {
             line: lineNumber,
             column: index - this.lineStartIndices[lineNumber - 1],
@@ -285,4 +284,26 @@ export class LinesAndColumns {
 
         return positionIndex
     }
+}
+
+/**
+ * Uses a binary search to determine the highest index at which value should be inserted into array in order to maintain its sort order.
+ */
+function sortedLastIndex(array: number[], value: number): number {
+    let lower = 0
+    let upper = array.length
+
+    while (lower < upper) {
+        const mid = Math.floor(lower + (upper - lower) / 2)
+        const target = array[mid]
+        if (target < value) {
+            lower = mid + 1
+        } else if (target > value) {
+            upper = mid
+        } else {
+            return mid + 1
+        }
+    }
+
+    return upper
 }

@@ -113,11 +113,5 @@ export default [
 				`
 			})
 		]
-	},
-	{
-		...base,
-		entry: {
-			lodash: resolve('./lodash.js')
-		}
 	}
 ];
