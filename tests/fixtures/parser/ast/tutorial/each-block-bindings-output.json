@@ -1144,6 +1144,24 @@
         },
         {
           "type": "SvelteReactiveStatement",
+          "label": {
+            "type": "Identifier",
+            "name": "$",
+            "range": [
+              301,
+              302
+            ],
+            "loc": {
+              "start": {
+                "line": 16,
+                "column": 1
+              },
+              "end": {
+                "line": 16,
+                "column": 2
+              }
+            }
+          },
           "body": {
             "type": "ExpressionStatement",
             "expression": {
@@ -1421,24 +1439,6 @@
               "end": {
                 "line": 16,
                 "column": 50
-              }
-            }
-          },
-          "label": {
-            "type": "Identifier",
-            "name": "$",
-            "range": [
-              301,
-              302
-            ],
-            "loc": {
-              "start": {
-                "line": 16,
-                "column": 1
-              },
-              "end": {
-                "line": 16,
-                "column": 2
               }
             }
           },
@@ -1729,6 +1729,44 @@
     },
     {
       "type": "SvelteEachBlock",
+      "expression": {
+        "type": "Identifier",
+        "name": "todos",
+        "range": [
+          431,
+          436
+        ],
+        "loc": {
+          "start": {
+            "line": 27,
+            "column": 7
+          },
+          "end": {
+            "line": 27,
+            "column": 12
+          }
+        }
+      },
+      "context": {
+        "type": "Identifier",
+        "name": "todo",
+        "range": [
+          440,
+          444
+        ],
+        "loc": {
+          "start": {
+            "line": 27,
+            "column": 16
+          },
+          "end": {
+            "line": 27,
+            "column": 20
+          }
+        }
+      },
+      "index": null,
+      "key": null,
       "children": [
         {
           "type": "SvelteElement",
@@ -1775,6 +1813,7 @@
                     }
                   }
                 },
+                "modifiers": [],
                 "expression": {
                   "type": "MemberExpression",
                   "computed": false,
@@ -1830,7 +1869,6 @@
                     }
                   }
                 },
-                "modifiers": [],
                 "range": [
                   452,
                   474
@@ -1908,7 +1946,6 @@
                 "attributes": [
                   {
                     "type": "SvelteAttribute",
-                    "boolean": false,
                     "key": {
                       "type": "SvelteName",
                       "name": "type",
@@ -1927,6 +1964,7 @@
                         }
                       }
                     },
+                    "boolean": false,
                     "value": [
                       {
                         "type": "SvelteLiteral",
@@ -1983,6 +2021,7 @@
                         }
                       }
                     },
+                    "modifiers": [],
                     "expression": {
                       "type": "MemberExpression",
                       "computed": false,
@@ -2038,7 +2077,6 @@
                         }
                       }
                     },
-                    "modifiers": [],
                     "range": [
                       505,
                       529
@@ -2132,7 +2170,6 @@
                 "attributes": [
                   {
                     "type": "SvelteAttribute",
-                    "boolean": false,
                     "key": {
                       "type": "SvelteName",
                       "name": "placeholder",
@@ -2151,6 +2188,7 @@
                         }
                       }
                     },
+                    "boolean": false,
                     "value": [
                       {
                         "type": "SvelteLiteral",
@@ -2207,6 +2245,7 @@
                         }
                       }
                     },
+                    "modifiers": [],
                     "expression": {
                       "type": "MemberExpression",
                       "computed": false,
@@ -2262,7 +2301,6 @@
                         }
                       }
                     },
-                    "modifiers": [],
                     "range": [
                       587,
                       609
@@ -2364,45 +2402,7 @@
           }
         }
       ],
-      "context": {
-        "type": "Identifier",
-        "name": "todo",
-        "range": [
-          440,
-          444
-        ],
-        "loc": {
-          "start": {
-            "line": 27,
-            "column": 16
-          },
-          "end": {
-            "line": 27,
-            "column": 20
-          }
-        }
-      },
       "else": null,
-      "expression": {
-        "type": "Identifier",
-        "name": "todos",
-        "range": [
-          431,
-          436
-        ],
-        "loc": {
-          "start": {
-            "line": 27,
-            "column": 7
-          },
-          "end": {
-            "line": 27,
-            "column": 12
-          }
-        }
-      },
-      "index": null,
-      "key": null,
       "range": [
         424,
         629
@@ -2627,6 +2627,7 @@
                 }
               }
             },
+            "modifiers": [],
             "expression": {
               "type": "Identifier",
               "name": "add",
@@ -2645,7 +2646,6 @@
                 }
               }
             },
-            "modifiers": [],
             "range": [
               669,
               683
@@ -2793,6 +2793,7 @@
                 }
               }
             },
+            "modifiers": [],
             "expression": {
               "type": "Identifier",
               "name": "clear",
@@ -2811,7 +2812,6 @@
                 }
               }
             },
-            "modifiers": [],
             "range": [
               713,
               729
@@ -2897,8 +2897,8 @@
       }
     }
   ],
-  "comments": [],
   "sourceType": "module",
+  "comments": [],
   "tokens": [
     {
       "type": "Punctuator",

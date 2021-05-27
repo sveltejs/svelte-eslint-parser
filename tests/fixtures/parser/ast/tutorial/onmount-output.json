@@ -893,7 +893,6 @@
         "attributes": [
           {
             "type": "SvelteAttribute",
-            "boolean": false,
             "key": {
               "type": "SvelteName",
               "name": "class",
@@ -912,6 +911,7 @@
                 }
               }
             },
+            "boolean": false,
             "value": [
               {
                 "type": "SvelteLiteral",
@@ -985,6 +985,44 @@
         },
         {
           "type": "SvelteEachBlock",
+          "expression": {
+            "type": "Identifier",
+            "name": "photos",
+            "range": [
+              436,
+              442
+            ],
+            "loc": {
+              "start": {
+                "line": 29,
+                "column": 8
+              },
+              "end": {
+                "line": 29,
+                "column": 14
+              }
+            }
+          },
+          "context": {
+            "type": "Identifier",
+            "name": "photo",
+            "range": [
+              446,
+              451
+            ],
+            "loc": {
+              "start": {
+                "line": 29,
+                "column": 18
+              },
+              "end": {
+                "line": 29,
+                "column": 23
+              }
+            }
+          },
+          "index": null,
+          "key": null,
           "children": [
             {
               "type": "SvelteElement",
@@ -1071,7 +1109,6 @@
                     "attributes": [
                       {
                         "type": "SvelteAttribute",
-                        "boolean": false,
                         "key": {
                           "type": "SvelteName",
                           "name": "src",
@@ -1090,6 +1127,7 @@
                             }
                           }
                         },
+                        "boolean": false,
                         "value": [
                           {
                             "type": "SvelteMustacheTag",
@@ -1182,7 +1220,6 @@
                       },
                       {
                         "type": "SvelteAttribute",
-                        "boolean": false,
                         "key": {
                           "type": "SvelteName",
                           "name": "alt",
@@ -1201,6 +1238,7 @@
                             }
                           }
                         },
+                        "boolean": false,
                         "value": [
                           {
                             "type": "SvelteMustacheTag",
@@ -1542,24 +1580,6 @@
               }
             }
           ],
-          "context": {
-            "type": "Identifier",
-            "name": "photo",
-            "range": [
-              446,
-              451
-            ],
-            "loc": {
-              "start": {
-                "line": 29,
-                "column": 18
-              },
-              "end": {
-                "line": 29,
-                "column": 23
-              }
-            }
-          },
           "else": {
             "type": "SvelteElseBlock",
             "children": [
@@ -1707,26 +1727,6 @@
               }
             }
           },
-          "expression": {
-            "type": "Identifier",
-            "name": "photos",
-            "range": [
-              436,
-              442
-            ],
-            "loc": {
-              "start": {
-                "line": 29,
-                "column": 8
-              },
-              "end": {
-                "line": 29,
-                "column": 14
-              }
-            }
-          },
-          "index": null,
-          "key": null,
           "range": [
             429,
             662
@@ -1794,8 +1794,8 @@
       }
     }
   ],
-  "comments": [],
   "sourceType": "module",
+  "comments": [],
   "tokens": [
     {
       "type": "Punctuator",

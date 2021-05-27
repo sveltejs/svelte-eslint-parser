@@ -1384,6 +1384,9 @@
                 }
               }
             },
+            "modifiers": [
+              "preventDefault"
+            ],
             "expression": {
               "type": "Identifier",
               "name": "handleSubmit",
@@ -1402,9 +1405,6 @@
                 }
               }
             },
-            "modifiers": [
-              "preventDefault"
-            ],
             "range": [
               502,
               541
@@ -1501,6 +1501,7 @@
                     }
                   }
                 },
+                "modifiers": [],
                 "expression": {
                   "type": "Identifier",
                   "name": "selected",
@@ -1519,7 +1520,6 @@
                     }
                   }
                 },
-                "modifiers": [],
                 "range": [
                   552,
                   573
@@ -1556,6 +1556,7 @@
                     }
                   }
                 },
+                "modifiers": [],
                 "expression": {
                   "type": "ArrowFunctionExpression",
                   "async": false,
@@ -1633,7 +1634,6 @@
                     }
                   }
                 },
-                "modifiers": [],
                 "range": [
                   574,
                   605
@@ -1687,6 +1687,44 @@
             },
             {
               "type": "SvelteEachBlock",
+              "expression": {
+                "type": "Identifier",
+                "name": "questions",
+                "range": [
+                  616,
+                  625
+                ],
+                "loc": {
+                  "start": {
+                    "line": 25,
+                    "column": 9
+                  },
+                  "end": {
+                    "line": 25,
+                    "column": 18
+                  }
+                }
+              },
+              "context": {
+                "type": "Identifier",
+                "name": "question",
+                "range": [
+                  629,
+                  637
+                ],
+                "loc": {
+                  "start": {
+                    "line": 25,
+                    "column": 22
+                  },
+                  "end": {
+                    "line": 25,
+                    "column": 30
+                  }
+                }
+              },
+              "index": null,
+              "key": null,
               "children": [
                 {
                   "type": "SvelteElement",
@@ -1714,7 +1752,6 @@
                     "attributes": [
                       {
                         "type": "SvelteAttribute",
-                        "boolean": false,
                         "key": {
                           "type": "SvelteName",
                           "name": "value",
@@ -1733,6 +1770,7 @@
                             }
                           }
                         },
+                        "boolean": false,
                         "value": [
                           {
                             "type": "SvelteMustacheTag",
@@ -1947,45 +1985,7 @@
                   }
                 }
               ],
-              "context": {
-                "type": "Identifier",
-                "name": "question",
-                "range": [
-                  629,
-                  637
-                ],
-                "loc": {
-                  "start": {
-                    "line": 25,
-                    "column": 22
-                  },
-                  "end": {
-                    "line": 25,
-                    "column": 30
-                  }
-                }
-              },
               "else": null,
-              "expression": {
-                "type": "Identifier",
-                "name": "questions",
-                "range": [
-                  616,
-                  625
-                ],
-                "loc": {
-                  "start": {
-                    "line": 25,
-                    "column": 9
-                  },
-                  "end": {
-                    "line": 25,
-                    "column": 18
-                  }
-                }
-              },
-              "index": null,
-              "key": null,
               "range": [
                 609,
                 710
@@ -2115,6 +2115,7 @@
                     }
                   }
                 },
+                "modifiers": [],
                 "expression": {
                   "type": "Identifier",
                   "name": "answer",
@@ -2133,7 +2134,6 @@
                     }
                   }
                 },
-                "modifiers": [],
                 "range": [
                   731,
                   750
@@ -2227,7 +2227,6 @@
             "attributes": [
               {
                 "type": "SvelteAttribute",
-                "boolean": false,
                 "key": {
                   "type": "SvelteName",
                   "name": "disabled",
@@ -2246,6 +2245,7 @@
                     }
                   }
                 },
+                "boolean": false,
                 "value": [
                   {
                     "type": "SvelteMustacheTag",
@@ -2320,7 +2320,6 @@
               },
               {
                 "type": "SvelteAttribute",
-                "boolean": false,
                 "key": {
                   "type": "SvelteName",
                   "name": "type",
@@ -2339,6 +2338,7 @@
                     }
                   }
                 },
+                "boolean": false,
                 "value": [
                   {
                     "type": "SvelteLiteral",
@@ -2732,8 +2732,8 @@
       }
     }
   ],
-  "comments": [],
   "sourceType": "module",
+  "comments": [],
   "tokens": [
     {
       "type": "Punctuator",

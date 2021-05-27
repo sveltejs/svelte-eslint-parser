@@ -3,9 +3,47 @@
   "body": [
     {
       "type": "SvelteIfBlock",
+      "elseif": false,
+      "expression": {
+        "type": "Identifier",
+        "name": "x",
+        "range": [
+          5,
+          6
+        ],
+        "loc": {
+          "start": {
+            "line": 1,
+            "column": 5
+          },
+          "end": {
+            "line": 1,
+            "column": 6
+          }
+        }
+      },
       "children": [
         {
           "type": "SvelteIfBlock",
+          "elseif": false,
+          "expression": {
+            "type": "Identifier",
+            "name": "y",
+            "range": [
+              14,
+              15
+            ],
+            "loc": {
+              "start": {
+                "line": 2,
+                "column": 6
+              },
+              "end": {
+                "line": 2,
+                "column": 7
+              }
+            }
+          },
           "children": [
             {
               "type": "SvelteElement",
@@ -52,10 +90,10 @@
                         }
                       }
                     },
-                    "expression": null,
-                    "intro": true,
                     "modifiers": [],
+                    "intro": true,
                     "outro": true,
+                    "expression": null,
                     "range": [
                       22,
                       37
@@ -203,12 +241,12 @@
                         }
                       }
                     },
-                    "expression": null,
-                    "intro": true,
                     "modifiers": [
                       "local"
                     ],
+                    "intro": true,
                     "outro": true,
+                    "expression": null,
                     "range": [
                       91,
                       112
@@ -295,25 +333,6 @@
             }
           ],
           "else": null,
-          "elseif": false,
-          "expression": {
-            "type": "Identifier",
-            "name": "y",
-            "range": [
-              14,
-              15
-            ],
-            "loc": {
-              "start": {
-                "line": 2,
-                "column": 6
-              },
-              "end": {
-                "line": 2,
-                "column": 7
-              }
-            }
-          },
           "range": [
             9,
             167
@@ -331,25 +350,6 @@
         }
       ],
       "else": null,
-      "elseif": false,
-      "expression": {
-        "type": "Identifier",
-        "name": "x",
-        "range": [
-          5,
-          6
-        ],
-        "loc": {
-          "start": {
-            "line": 1,
-            "column": 5
-          },
-          "end": {
-            "line": 1,
-            "column": 6
-          }
-        }
-      },
       "range": [
         0,
         173
@@ -366,8 +366,8 @@
       }
     }
   ],
-  "comments": [],
   "sourceType": "module",
+  "comments": [],
   "tokens": [
     {
       "type": "Punctuator",

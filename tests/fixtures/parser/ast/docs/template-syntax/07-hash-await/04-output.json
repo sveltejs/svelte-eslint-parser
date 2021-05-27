@@ -3,7 +3,6 @@
   "body": [
     {
       "type": "SvelteAwaitBlock",
-      "catch": null,
       "expression": {
         "type": "Identifier",
         "name": "promise",
@@ -25,6 +24,24 @@
       "pending": null,
       "then": {
         "type": "SvelteAwaitThenBlock",
+        "value": {
+          "type": "Identifier",
+          "name": "value",
+          "range": [
+            21,
+            26
+          ],
+          "loc": {
+            "start": {
+              "line": 1,
+              "column": 21
+            },
+            "end": {
+              "line": 1,
+              "column": 26
+            }
+          }
+        },
         "children": [
           {
             "type": "SvelteText",
@@ -191,24 +208,6 @@
             }
           }
         ],
-        "value": {
-          "type": "Identifier",
-          "name": "value",
-          "range": [
-            21,
-            26
-          ],
-          "loc": {
-            "start": {
-              "line": 1,
-              "column": 21
-            },
-            "end": {
-              "line": 1,
-              "column": 26
-            }
-          }
-        },
         "range": [
           0,
           57
@@ -224,6 +223,7 @@
           }
         }
       },
+      "catch": null,
       "range": [
         0,
         65
@@ -240,8 +240,8 @@
       }
     }
   ],
-  "comments": [],
   "sourceType": "module",
+  "comments": [],
   "tokens": [
     {
       "type": "Punctuator",

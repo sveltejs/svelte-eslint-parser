@@ -448,6 +448,62 @@
     },
     {
       "type": "SvelteIfBlock",
+      "elseif": false,
+      "expression": {
+        "type": "MemberExpression",
+        "computed": false,
+        "object": {
+          "type": "Identifier",
+          "name": "user",
+          "range": [
+            117,
+            121
+          ],
+          "loc": {
+            "start": {
+              "line": 9,
+              "column": 5
+            },
+            "end": {
+              "line": 9,
+              "column": 9
+            }
+          }
+        },
+        "optional": false,
+        "property": {
+          "type": "Identifier",
+          "name": "loggedIn",
+          "range": [
+            122,
+            130
+          ],
+          "loc": {
+            "start": {
+              "line": 9,
+              "column": 10
+            },
+            "end": {
+              "line": 9,
+              "column": 18
+            }
+          }
+        },
+        "range": [
+          117,
+          130
+        ],
+        "loc": {
+          "start": {
+            "line": 9,
+            "column": 5
+          },
+          "end": {
+            "line": 9,
+            "column": 18
+          }
+        }
+      },
       "children": [
         {
           "type": "SvelteElement",
@@ -494,6 +550,7 @@
                     }
                   }
                 },
+                "modifiers": [],
                 "expression": {
                   "type": "Identifier",
                   "name": "toggle",
@@ -512,7 +569,6 @@
                     }
                   }
                 },
-                "modifiers": [],
                 "range": [
                   141,
                   158
@@ -599,62 +655,6 @@
         }
       ],
       "else": null,
-      "elseif": false,
-      "expression": {
-        "type": "MemberExpression",
-        "computed": false,
-        "object": {
-          "type": "Identifier",
-          "name": "user",
-          "range": [
-            117,
-            121
-          ],
-          "loc": {
-            "start": {
-              "line": 9,
-              "column": 5
-            },
-            "end": {
-              "line": 9,
-              "column": 9
-            }
-          }
-        },
-        "optional": false,
-        "property": {
-          "type": "Identifier",
-          "name": "loggedIn",
-          "range": [
-            122,
-            130
-          ],
-          "loc": {
-            "start": {
-              "line": 9,
-              "column": 10
-            },
-            "end": {
-              "line": 9,
-              "column": 18
-            }
-          }
-        },
-        "range": [
-          117,
-          130
-        ],
-        "loc": {
-          "start": {
-            "line": 9,
-            "column": 5
-          },
-          "end": {
-            "line": 9,
-            "column": 18
-          }
-        }
-      },
       "range": [
         112,
         186
@@ -690,6 +690,81 @@
     },
     {
       "type": "SvelteIfBlock",
+      "elseif": false,
+      "expression": {
+        "type": "UnaryExpression",
+        "argument": {
+          "type": "MemberExpression",
+          "computed": false,
+          "object": {
+            "type": "Identifier",
+            "name": "user",
+            "range": [
+              194,
+              198
+            ],
+            "loc": {
+              "start": {
+                "line": 15,
+                "column": 6
+              },
+              "end": {
+                "line": 15,
+                "column": 10
+              }
+            }
+          },
+          "optional": false,
+          "property": {
+            "type": "Identifier",
+            "name": "loggedIn",
+            "range": [
+              199,
+              207
+            ],
+            "loc": {
+              "start": {
+                "line": 15,
+                "column": 11
+              },
+              "end": {
+                "line": 15,
+                "column": 19
+              }
+            }
+          },
+          "range": [
+            194,
+            207
+          ],
+          "loc": {
+            "start": {
+              "line": 15,
+              "column": 6
+            },
+            "end": {
+              "line": 15,
+              "column": 19
+            }
+          }
+        },
+        "operator": "!",
+        "prefix": true,
+        "range": [
+          193,
+          207
+        ],
+        "loc": {
+          "start": {
+            "line": 15,
+            "column": 5
+          },
+          "end": {
+            "line": 15,
+            "column": 19
+          }
+        }
+      },
       "children": [
         {
           "type": "SvelteElement",
@@ -736,6 +811,7 @@
                     }
                   }
                 },
+                "modifiers": [],
                 "expression": {
                   "type": "Identifier",
                   "name": "toggle",
@@ -754,7 +830,6 @@
                     }
                   }
                 },
-                "modifiers": [],
                 "range": [
                   218,
                   235
@@ -841,81 +916,6 @@
         }
       ],
       "else": null,
-      "elseif": false,
-      "expression": {
-        "type": "UnaryExpression",
-        "argument": {
-          "type": "MemberExpression",
-          "computed": false,
-          "object": {
-            "type": "Identifier",
-            "name": "user",
-            "range": [
-              194,
-              198
-            ],
-            "loc": {
-              "start": {
-                "line": 15,
-                "column": 6
-              },
-              "end": {
-                "line": 15,
-                "column": 10
-              }
-            }
-          },
-          "optional": false,
-          "property": {
-            "type": "Identifier",
-            "name": "loggedIn",
-            "range": [
-              199,
-              207
-            ],
-            "loc": {
-              "start": {
-                "line": 15,
-                "column": 11
-              },
-              "end": {
-                "line": 15,
-                "column": 19
-              }
-            }
-          },
-          "range": [
-            194,
-            207
-          ],
-          "loc": {
-            "start": {
-              "line": 15,
-              "column": 6
-            },
-            "end": {
-              "line": 15,
-              "column": 19
-            }
-          }
-        },
-        "operator": "!",
-        "prefix": true,
-        "range": [
-          193,
-          207
-        ],
-        "loc": {
-          "start": {
-            "line": 15,
-            "column": 5
-          },
-          "end": {
-            "line": 15,
-            "column": 19
-          }
-        }
-      },
       "range": [
         188,
         262
@@ -932,8 +932,8 @@
       }
     }
   ],
-  "comments": [],
   "sourceType": "module",
+  "comments": [],
   "tokens": [
     {
       "type": "Punctuator",

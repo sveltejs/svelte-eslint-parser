@@ -185,44 +185,6 @@
     },
     {
       "type": "SvelteAwaitBlock",
-      "catch": {
-        "type": "SvelteAwaitCatchBlock",
-        "children": [
-          {
-            "type": "SvelteText",
-            "value": "\n",
-            "range": [
-              87,
-              88
-            ],
-            "loc": {
-              "start": {
-                "line": 7,
-                "column": 8
-              },
-              "end": {
-                "line": 8,
-                "column": 0
-              }
-            }
-          }
-        ],
-        "error": null,
-        "range": [
-          79,
-          88
-        ],
-        "loc": {
-          "start": {
-            "line": 7,
-            "column": 0
-          },
-          "end": {
-            "line": 8,
-            "column": 0
-          }
-        }
-      },
       "expression": {
         "type": "Identifier",
         "name": "expression",
@@ -280,6 +242,7 @@
       },
       "then": {
         "type": "SvelteAwaitThenBlock",
+        "value": null,
         "children": [
           {
             "type": "SvelteText",
@@ -300,7 +263,6 @@
             }
           }
         ],
-        "value": null,
         "range": [
           71,
           79
@@ -312,6 +274,44 @@
           },
           "end": {
             "line": 7,
+            "column": 0
+          }
+        }
+      },
+      "catch": {
+        "type": "SvelteAwaitCatchBlock",
+        "error": null,
+        "children": [
+          {
+            "type": "SvelteText",
+            "value": "\n",
+            "range": [
+              87,
+              88
+            ],
+            "loc": {
+              "start": {
+                "line": 7,
+                "column": 8
+              },
+              "end": {
+                "line": 8,
+                "column": 0
+              }
+            }
+          }
+        ],
+        "range": [
+          79,
+          88
+        ],
+        "loc": {
+          "start": {
+            "line": 7,
+            "column": 0
+          },
+          "end": {
+            "line": 8,
             "column": 0
           }
         }
@@ -351,7 +351,6 @@
     },
     {
       "type": "SvelteAwaitBlock",
-      "catch": null,
       "expression": {
         "type": "Identifier",
         "name": "expression",
@@ -409,6 +408,7 @@
       },
       "then": {
         "type": "SvelteAwaitThenBlock",
+        "value": null,
         "children": [
           {
             "type": "SvelteText",
@@ -429,7 +429,6 @@
             }
           }
         ],
-        "value": null,
         "range": [
           118,
           126
@@ -445,6 +444,7 @@
           }
         }
       },
+      "catch": null,
       "range": [
         98,
         134
@@ -480,7 +480,6 @@
     },
     {
       "type": "SvelteAwaitBlock",
-      "catch": null,
       "expression": {
         "type": "Identifier",
         "name": "expression",
@@ -502,6 +501,24 @@
       "pending": null,
       "then": {
         "type": "SvelteAwaitThenBlock",
+        "value": {
+          "type": "Identifier",
+          "name": "name",
+          "range": [
+            160,
+            164
+          ],
+          "loc": {
+            "start": {
+              "line": 14,
+              "column": 24
+            },
+            "end": {
+              "line": 14,
+              "column": 28
+            }
+          }
+        },
         "children": [
           {
             "type": "SvelteText",
@@ -522,24 +539,6 @@
             }
           }
         ],
-        "value": {
-          "type": "Identifier",
-          "name": "name",
-          "range": [
-            160,
-            164
-          ],
-          "loc": {
-            "start": {
-              "line": 14,
-              "column": 24
-            },
-            "end": {
-              "line": 14,
-              "column": 28
-            }
-          }
-        },
         "range": [
           136,
           166
@@ -555,6 +554,7 @@
           }
         }
       },
+      "catch": null,
       "range": [
         136,
         174
@@ -590,61 +590,6 @@
     },
     {
       "type": "SvelteAwaitBlock",
-      "catch": {
-        "type": "SvelteAwaitCatchBlock",
-        "children": [
-          {
-            "type": "SvelteText",
-            "value": "\n",
-            "range": [
-              206,
-              207
-            ],
-            "loc": {
-              "start": {
-                "line": 17,
-                "column": 30
-              },
-              "end": {
-                "line": 18,
-                "column": 0
-              }
-            }
-          }
-        ],
-        "error": {
-          "type": "Identifier",
-          "name": "name",
-          "range": [
-            201,
-            205
-          ],
-          "loc": {
-            "start": {
-              "line": 17,
-              "column": 25
-            },
-            "end": {
-              "line": 17,
-              "column": 29
-            }
-          }
-        },
-        "range": [
-          176,
-          207
-        ],
-        "loc": {
-          "start": {
-            "line": 17,
-            "column": 0
-          },
-          "end": {
-            "line": 18,
-            "column": 0
-          }
-        }
-      },
       "expression": {
         "type": "Identifier",
         "name": "expression",
@@ -665,6 +610,61 @@
       },
       "pending": null,
       "then": null,
+      "catch": {
+        "type": "SvelteAwaitCatchBlock",
+        "error": {
+          "type": "Identifier",
+          "name": "name",
+          "range": [
+            201,
+            205
+          ],
+          "loc": {
+            "start": {
+              "line": 17,
+              "column": 25
+            },
+            "end": {
+              "line": 17,
+              "column": 29
+            }
+          }
+        },
+        "children": [
+          {
+            "type": "SvelteText",
+            "value": "\n",
+            "range": [
+              206,
+              207
+            ],
+            "loc": {
+              "start": {
+                "line": 17,
+                "column": 30
+              },
+              "end": {
+                "line": 18,
+                "column": 0
+              }
+            }
+          }
+        ],
+        "range": [
+          176,
+          207
+        ],
+        "loc": {
+          "start": {
+            "line": 17,
+            "column": 0
+          },
+          "end": {
+            "line": 18,
+            "column": 0
+          }
+        }
+      },
       "range": [
         176,
         215
@@ -681,8 +681,8 @@
       }
     }
   ],
-  "comments": [],
   "sourceType": "module",
+  "comments": [],
   "tokens": [
     {
       "type": "Punctuator",

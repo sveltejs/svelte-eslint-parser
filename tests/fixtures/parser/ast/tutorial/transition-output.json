@@ -342,7 +342,6 @@
             "attributes": [
               {
                 "type": "SvelteAttribute",
-                "boolean": false,
                 "key": {
                   "type": "SvelteName",
                   "name": "type",
@@ -361,6 +360,7 @@
                     }
                   }
                 },
+                "boolean": false,
                 "value": [
                   {
                     "type": "SvelteLiteral",
@@ -417,6 +417,7 @@
                     }
                   }
                 },
+                "modifiers": [],
                 "expression": {
                   "type": "Identifier",
                   "name": "visible",
@@ -435,7 +436,6 @@
                     }
                   }
                 },
-                "modifiers": [],
                 "range": [
                   116,
                   138
@@ -556,6 +556,25 @@
     },
     {
       "type": "SvelteIfBlock",
+      "elseif": false,
+      "expression": {
+        "type": "Identifier",
+        "name": "visible",
+        "range": [
+          164,
+          171
+        ],
+        "loc": {
+          "start": {
+            "line": 11,
+            "column": 5
+          },
+          "end": {
+            "line": 11,
+            "column": 12
+          }
+        }
+      },
       "children": [
         {
           "type": "SvelteElement",
@@ -602,10 +621,10 @@
                     }
                   }
                 },
-                "expression": null,
-                "intro": true,
                 "modifiers": [],
+                "intro": true,
                 "outro": true,
+                "expression": null,
                 "range": [
                   177,
                   192
@@ -692,25 +711,6 @@
         }
       ],
       "else": null,
-      "elseif": false,
-      "expression": {
-        "type": "Identifier",
-        "name": "visible",
-        "range": [
-          164,
-          171
-        ],
-        "loc": {
-          "start": {
-            "line": 11,
-            "column": 5
-          },
-          "end": {
-            "line": 11,
-            "column": 12
-          }
-        }
-      },
       "range": [
         159,
         224
@@ -727,8 +727,8 @@
       }
     }
   ],
-  "comments": [],
   "sourceType": "module",
+  "comments": [],
   "tokens": [
     {
       "type": "Punctuator",

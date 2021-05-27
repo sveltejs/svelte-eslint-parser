@@ -1706,7 +1706,6 @@
             "attributes": [
               {
                 "type": "SvelteAttribute",
-                "boolean": false,
                 "key": {
                   "type": "SvelteName",
                   "name": "type",
@@ -1725,6 +1724,7 @@
                     }
                   }
                 },
+                "boolean": false,
                 "value": [
                   {
                     "type": "SvelteLiteral",
@@ -1781,6 +1781,7 @@
                     }
                   }
                 },
+                "modifiers": [],
                 "expression": {
                   "type": "Identifier",
                   "name": "visible",
@@ -1799,7 +1800,6 @@
                     }
                   }
                 },
-                "modifiers": [],
                 "range": [
                   690,
                   712
@@ -1920,6 +1920,25 @@
     },
     {
       "type": "SvelteIfBlock",
+      "elseif": false,
+      "expression": {
+        "type": "Identifier",
+        "name": "visible",
+        "range": [
+          738,
+          745
+        ],
+        "loc": {
+          "start": {
+            "line": 45,
+            "column": 5
+          },
+          "end": {
+            "line": 45,
+            "column": 12
+          }
+        }
+      },
       "children": [
         {
           "type": "SvelteElement",
@@ -1947,7 +1966,6 @@
             "attributes": [
               {
                 "type": "SvelteAttribute",
-                "boolean": false,
                 "key": {
                   "type": "SvelteName",
                   "name": "class",
@@ -1966,6 +1984,7 @@
                     }
                   }
                 },
+                "boolean": false,
                 "value": [
                   {
                     "type": "SvelteLiteral",
@@ -2022,6 +2041,9 @@
                     }
                   }
                 },
+                "modifiers": [],
+                "intro": true,
+                "outro": false,
                 "expression": {
                   "type": "ObjectExpression",
                   "properties": [
@@ -2099,9 +2121,6 @@
                     }
                   }
                 },
-                "intro": true,
-                "modifiers": [],
-                "outro": false,
                 "range": [
                   770,
                   798
@@ -2138,10 +2157,10 @@
                     }
                   }
                 },
-                "expression": null,
-                "intro": false,
                 "modifiers": [],
+                "intro": false,
                 "outro": true,
+                "expression": null,
                 "range": [
                   799,
                   807
@@ -2338,25 +2357,6 @@
         }
       ],
       "else": null,
-      "elseif": false,
-      "expression": {
-        "type": "Identifier",
-        "name": "visible",
-        "range": [
-          738,
-          745
-        ],
-        "loc": {
-          "start": {
-            "line": 45,
-            "column": 5
-          },
-          "end": {
-            "line": 45,
-            "column": 12
-          }
-        }
-      },
       "range": [
         733,
         850
@@ -2373,8 +2373,8 @@
       }
     }
   ],
-  "comments": [],
   "sourceType": "module",
+  "comments": [],
   "tokens": [
     {
       "type": "Punctuator",

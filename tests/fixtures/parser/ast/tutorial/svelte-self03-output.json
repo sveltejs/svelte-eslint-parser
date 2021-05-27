@@ -710,6 +710,7 @@
                 }
               }
             },
+            "modifiers": [],
             "expression": {
               "type": "Identifier",
               "name": "expanded",
@@ -728,7 +729,6 @@
                 }
               }
             },
-            "modifiers": [],
             "range": [
               579,
               593
@@ -765,6 +765,7 @@
                 }
               }
             },
+            "modifiers": [],
             "expression": {
               "type": "Identifier",
               "name": "toggle",
@@ -783,7 +784,6 @@
                 }
               }
             },
-            "modifiers": [],
             "range": [
               594,
               611
@@ -906,6 +906,25 @@
     },
     {
       "type": "SvelteIfBlock",
+      "elseif": false,
+      "expression": {
+        "type": "Identifier",
+        "name": "expanded",
+        "range": [
+          632,
+          640
+        ],
+        "loc": {
+          "start": {
+            "line": 40,
+            "column": 5
+          },
+          "end": {
+            "line": 40,
+            "column": 13
+          }
+        }
+      },
       "children": [
         {
           "type": "SvelteElement",
@@ -968,6 +987,44 @@
             },
             {
               "type": "SvelteEachBlock",
+              "expression": {
+                "type": "Identifier",
+                "name": "files",
+                "range": [
+                  657,
+                  662
+                ],
+                "loc": {
+                  "start": {
+                    "line": 42,
+                    "column": 9
+                  },
+                  "end": {
+                    "line": 42,
+                    "column": 14
+                  }
+                }
+              },
+              "context": {
+                "type": "Identifier",
+                "name": "file",
+                "range": [
+                  666,
+                  670
+                ],
+                "loc": {
+                  "start": {
+                    "line": 42,
+                    "column": 18
+                  },
+                  "end": {
+                    "line": 42,
+                    "column": 22
+                  }
+                }
+              },
+              "index": null,
+              "key": null,
               "children": [
                 {
                   "type": "SvelteElement",
@@ -1030,6 +1087,99 @@
                     },
                     {
                       "type": "SvelteIfBlock",
+                      "elseif": false,
+                      "expression": {
+                        "type": "BinaryExpression",
+                        "left": {
+                          "type": "MemberExpression",
+                          "computed": false,
+                          "object": {
+                            "type": "Identifier",
+                            "name": "file",
+                            "range": [
+                              689,
+                              693
+                            ],
+                            "loc": {
+                              "start": {
+                                "line": 44,
+                                "column": 9
+                              },
+                              "end": {
+                                "line": 44,
+                                "column": 13
+                              }
+                            }
+                          },
+                          "optional": false,
+                          "property": {
+                            "type": "Identifier",
+                            "name": "type",
+                            "range": [
+                              694,
+                              698
+                            ],
+                            "loc": {
+                              "start": {
+                                "line": 44,
+                                "column": 14
+                              },
+                              "end": {
+                                "line": 44,
+                                "column": 18
+                              }
+                            }
+                          },
+                          "range": [
+                            689,
+                            698
+                          ],
+                          "loc": {
+                            "start": {
+                              "line": 44,
+                              "column": 9
+                            },
+                            "end": {
+                              "line": 44,
+                              "column": 18
+                            }
+                          }
+                        },
+                        "operator": "===",
+                        "right": {
+                          "type": "Literal",
+                          "raw": "'folder'",
+                          "value": "folder",
+                          "range": [
+                            703,
+                            711
+                          ],
+                          "loc": {
+                            "start": {
+                              "line": 44,
+                              "column": 23
+                            },
+                            "end": {
+                              "line": 44,
+                              "column": 31
+                            }
+                          }
+                        },
+                        "range": [
+                          689,
+                          711
+                        ],
+                        "loc": {
+                          "start": {
+                            "line": 44,
+                            "column": 9
+                          },
+                          "end": {
+                            "line": 44,
+                            "column": 31
+                          }
+                        }
+                      },
                       "children": [
                         {
                           "type": "SvelteElement",
@@ -1237,99 +1387,6 @@
                           }
                         }
                       },
-                      "elseif": false,
-                      "expression": {
-                        "type": "BinaryExpression",
-                        "left": {
-                          "type": "MemberExpression",
-                          "computed": false,
-                          "object": {
-                            "type": "Identifier",
-                            "name": "file",
-                            "range": [
-                              689,
-                              693
-                            ],
-                            "loc": {
-                              "start": {
-                                "line": 44,
-                                "column": 9
-                              },
-                              "end": {
-                                "line": 44,
-                                "column": 13
-                              }
-                            }
-                          },
-                          "optional": false,
-                          "property": {
-                            "type": "Identifier",
-                            "name": "type",
-                            "range": [
-                              694,
-                              698
-                            ],
-                            "loc": {
-                              "start": {
-                                "line": 44,
-                                "column": 14
-                              },
-                              "end": {
-                                "line": 44,
-                                "column": 18
-                              }
-                            }
-                          },
-                          "range": [
-                            689,
-                            698
-                          ],
-                          "loc": {
-                            "start": {
-                              "line": 44,
-                              "column": 9
-                            },
-                            "end": {
-                              "line": 44,
-                              "column": 18
-                            }
-                          }
-                        },
-                        "operator": "===",
-                        "right": {
-                          "type": "Literal",
-                          "raw": "'folder'",
-                          "value": "folder",
-                          "range": [
-                            703,
-                            711
-                          ],
-                          "loc": {
-                            "start": {
-                              "line": 44,
-                              "column": 23
-                            },
-                            "end": {
-                              "line": 44,
-                              "column": 31
-                            }
-                          }
-                        },
-                        "range": [
-                          689,
-                          711
-                        ],
-                        "loc": {
-                          "start": {
-                            "line": 44,
-                            "column": 9
-                          },
-                          "end": {
-                            "line": 44,
-                            "column": 31
-                          }
-                        }
-                      },
                       "range": [
                         684,
                         787
@@ -1397,45 +1454,7 @@
                   }
                 }
               ],
-              "context": {
-                "type": "Identifier",
-                "name": "file",
-                "range": [
-                  666,
-                  670
-                ],
-                "loc": {
-                  "start": {
-                    "line": 42,
-                    "column": 18
-                  },
-                  "end": {
-                    "line": 42,
-                    "column": 22
-                  }
-                }
-              },
               "else": null,
-              "expression": {
-                "type": "Identifier",
-                "name": "files",
-                "range": [
-                  657,
-                  662
-                ],
-                "loc": {
-                  "start": {
-                    "line": 42,
-                    "column": 9
-                  },
-                  "end": {
-                    "line": 42,
-                    "column": 14
-                  }
-                }
-              },
-              "index": null,
-              "key": null,
               "range": [
                 650,
                 806
@@ -1504,25 +1523,6 @@
         }
       ],
       "else": null,
-      "elseif": false,
-      "expression": {
-        "type": "Identifier",
-        "name": "expanded",
-        "range": [
-          632,
-          640
-        ],
-        "loc": {
-          "start": {
-            "line": 40,
-            "column": 5
-          },
-          "end": {
-            "line": 40,
-            "column": 13
-          }
-        }
-      },
       "range": [
         627,
         819
@@ -1539,8 +1539,8 @@
       }
     }
   ],
-  "comments": [],
   "sourceType": "module",
+  "comments": [],
   "tokens": [
     {
       "type": "Punctuator",

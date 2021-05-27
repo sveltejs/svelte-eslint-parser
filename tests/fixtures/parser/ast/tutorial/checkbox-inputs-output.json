@@ -251,7 +251,6 @@
             "attributes": [
               {
                 "type": "SvelteAttribute",
-                "boolean": false,
                 "key": {
                   "type": "SvelteName",
                   "name": "type",
@@ -270,6 +269,7 @@
                     }
                   }
                 },
+                "boolean": false,
                 "value": [
                   {
                     "type": "SvelteLiteral",
@@ -326,6 +326,7 @@
                     }
                   }
                 },
+                "modifiers": [],
                 "expression": {
                   "type": "Identifier",
                   "name": "yes",
@@ -344,7 +345,6 @@
                     }
                   }
                 },
-                "modifiers": [],
                 "range": [
                   68,
                   86
@@ -465,6 +465,25 @@
     },
     {
       "type": "SvelteIfBlock",
+      "elseif": false,
+      "expression": {
+        "type": "Identifier",
+        "name": "yes",
+        "range": [
+          136,
+          139
+        ],
+        "loc": {
+          "start": {
+            "line": 10,
+            "column": 5
+          },
+          "end": {
+            "line": 10,
+            "column": 8
+          }
+        }
+      },
       "children": [
         {
           "type": "SvelteElement",
@@ -670,25 +689,6 @@
           }
         }
       },
-      "elseif": false,
-      "expression": {
-        "type": "Identifier",
-        "name": "yes",
-        "range": [
-          136,
-          139
-        ],
-        "loc": {
-          "start": {
-            "line": 10,
-            "column": 5
-          },
-          "end": {
-            "line": 10,
-            "column": 8
-          }
-        }
-      },
       "range": [
         131,
         311
@@ -748,7 +748,6 @@
         "attributes": [
           {
             "type": "SvelteAttribute",
-            "boolean": false,
             "key": {
               "type": "SvelteName",
               "name": "disabled",
@@ -767,6 +766,7 @@
                 }
               }
             },
+            "boolean": false,
             "value": [
               {
                 "type": "SvelteMustacheTag",
@@ -909,8 +909,8 @@
       }
     }
   ],
-  "comments": [],
   "sourceType": "module",
+  "comments": [],
   "tokens": [
     {
       "type": "Punctuator",

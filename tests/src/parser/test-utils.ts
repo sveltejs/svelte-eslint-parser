@@ -3,6 +3,7 @@ import fs from "fs"
 import type { Linter, Scope as ESLintScope } from "eslint"
 import { LinesAndColumns } from "../../../src/context"
 import type { Reference, Scope, ScopeManager, Variable } from "eslint-scope"
+import type { SvelteNode } from "../../../src/ast"
 
 const AST_FIXTURE_ROOT = path.resolve(__dirname, "../../fixtures/parser/ast")
 export const BASIC_PARSER_OPTIONS: Linter.BaseConfig<Linter.RulesRecord>["parserOptions"] =
@@ -164,6 +165,48 @@ export function nodeReplacer(key: string, value: any): any {
     return normalizeObject(value)
 }
 
+type SvelteKeysType<T extends SvelteNode = SvelteNode> = {
+    [key in SvelteNode["type"]]: T extends { type: key }
+        ? KeyofObject<T>[]
+        : never
+}
+type KeyofObject<T> = { [key in keyof T]: key }[keyof T]
+const nodeToKeys: SvelteKeysType = {
+    Program: ["body", "sourceType", "comments", "tokens"],
+    SvelteAttribute: ["key", "boolean", "value"],
+    SvelteAwaitBlock: ["expression", "pending", "then", "catch"],
+    SvelteAwaitCatchBlock: ["error", "children"],
+    SvelteAwaitPendingBlock: ["children"],
+    SvelteAwaitThenBlock: ["value", "children"],
+    SvelteDebugTag: ["identifiers"],
+    SvelteDirective: ["name", "modifiers", "intro", "outro", "expression"],
+    SvelteEachBlock: [
+        "expression",
+        "context",
+        "index",
+        "key",
+        "children",
+        "else",
+    ],
+    SvelteElement: ["kind", "name", "startTag", "children", "endTag"],
+    SvelteElseBlock: ["children"],
+    SvelteEndTag: [],
+    SvelteHTMLComment: ["value"],
+    SvelteIfBlock: ["elseif", "expression", "children", "else"],
+    SvelteKeyBlock: ["expression", "children"],
+    SvelteLiteral: ["value"],
+    SvelteMustacheTag: ["kind", "expression"],
+    SvelteName: ["name"],
+    SvelteReactiveStatement: ["label", "body"],
+    SvelteScriptElement: ["name", "startTag", "body", "endTag"],
+    SvelteShorthandAttribute: ["key", "value"],
+    SvelteSpecialDirective: ["kind", "expression"],
+    SvelteSpreadAttribute: ["argument"],
+    SvelteStartTag: ["attributes", "selfClosing"],
+    SvelteStyleElement: ["name", "startTag", "children", "endTag"],
+    SvelteText: ["value"],
+}
+
 function normalizeObject(value: any) {
     if (!value || typeof value !== "object" || Array.isArray(value)) {
         return value
@@ -173,19 +216,14 @@ function normalizeObject(value: any) {
         (typeof value.start === "number" ||
             typeof value.range?.[0] === "number")
 
-    function firsts(k: string) {
+    function firsts(k: string, nodeType: string | null) {
         const o = [
             "type",
             "kind",
             "name",
-            "startTag",
-            // SvelteAwaitBlock
-            // "expression",
-            // "pending",
-            // "then",
-            // "catch",
-            // // SvelteAwaitThenBlock
-            // "value",
+            ...((nodeType != null &&
+                nodeToKeys[nodeType as keyof SvelteKeysType]) ||
+                []),
             // scope
             "identifier",
             "from",
@@ -194,18 +232,22 @@ function normalizeObject(value: any) {
             "defs",
             "references",
             "childScopes",
-            // locs
-            "start",
-            "end",
-            "line",
-            "column",
         ].indexOf(k)
 
         return o === -1 ? Infinity : o
     }
 
-    function lasts(k: string) {
-        return ["range", "loc"].indexOf(k)
+    function lasts(k: string, _nodeType: string | null) {
+        return [
+            // locs
+            "start",
+            "end",
+            "line",
+            "column",
+            //
+            "range",
+            "loc",
+        ].indexOf(k)
     }
 
     let entries = Object.entries(value)
@@ -214,10 +256,13 @@ function normalizeObject(value: any) {
             ([k]) => k !== "parent" && k !== "start" && k !== "end",
         )
     }
+    const nodeType: string | null = isNode ? value.type : null
 
     return Object.fromEntries(
         entries.sort(([a], [b]) => {
-            const c = firsts(a) - firsts(b) || lasts(a) - lasts(b)
+            const c =
+                firsts(a, nodeType) - firsts(b, nodeType) ||
+                lasts(a, nodeType) - lasts(b, nodeType)
             if (c) {
                 return c
             }

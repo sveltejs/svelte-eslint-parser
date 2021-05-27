@@ -562,7 +562,6 @@
             "attributes": [
               {
                 "type": "SvelteAttribute",
-                "boolean": false,
                 "key": {
                   "type": "SvelteName",
                   "name": "type",
@@ -581,6 +580,7 @@
                     }
                   }
                 },
+                "boolean": false,
                 "value": [
                   {
                     "type": "SvelteLiteral",
@@ -637,6 +637,7 @@
                     }
                   }
                 },
+                "modifiers": [],
                 "expression": {
                   "type": "Identifier",
                   "name": "visible",
@@ -655,7 +656,6 @@
                     }
                   }
                 },
-                "modifiers": [],
                 "range": [
                   169,
                   191
@@ -776,6 +776,25 @@
     },
     {
       "type": "SvelteIfBlock",
+      "elseif": false,
+      "expression": {
+        "type": "Identifier",
+        "name": "visible",
+        "range": [
+          217,
+          224
+        ],
+        "loc": {
+          "start": {
+            "line": 15,
+            "column": 5
+          },
+          "end": {
+            "line": 15,
+            "column": 12
+          }
+        }
+      },
       "children": [
         {
           "type": "SvelteElement",
@@ -822,6 +841,9 @@
                     }
                   }
                 },
+                "modifiers": [],
+                "intro": true,
+                "outro": true,
                 "expression": {
                   "type": "ObjectExpression",
                   "properties": [
@@ -957,9 +979,6 @@
                     }
                   }
                 },
-                "intro": true,
-                "modifiers": [],
-                "outro": true,
                 "range": [
                   232,
                   277
@@ -996,6 +1015,7 @@
                     }
                   }
                 },
+                "modifiers": [],
                 "expression": {
                   "type": "ArrowFunctionExpression",
                   "async": false,
@@ -1073,7 +1093,6 @@
                     }
                   }
                 },
-                "modifiers": [],
                 "range": [
                   280,
                   328
@@ -1110,6 +1129,7 @@
                     }
                   }
                 },
+                "modifiers": [],
                 "expression": {
                   "type": "ArrowFunctionExpression",
                   "async": false,
@@ -1187,7 +1207,6 @@
                     }
                   }
                 },
-                "modifiers": [],
                 "range": [
                   331,
                   379
@@ -1224,6 +1243,7 @@
                     }
                   }
                 },
+                "modifiers": [],
                 "expression": {
                   "type": "ArrowFunctionExpression",
                   "async": false,
@@ -1301,7 +1321,6 @@
                     }
                   }
                 },
-                "modifiers": [],
                 "range": [
                   382,
                   426
@@ -1338,6 +1357,7 @@
                     }
                   }
                 },
+                "modifiers": [],
                 "expression": {
                   "type": "ArrowFunctionExpression",
                   "async": false,
@@ -1415,7 +1435,6 @@
                     }
                   }
                 },
-                "modifiers": [],
                 "range": [
                   429,
                   473
@@ -1502,25 +1521,6 @@
         }
       ],
       "else": null,
-      "elseif": false,
-      "expression": {
-        "type": "Identifier",
-        "name": "visible",
-        "range": [
-          217,
-          224
-        ],
-        "loc": {
-          "start": {
-            "line": 15,
-            "column": 5
-          },
-          "end": {
-            "line": 15,
-            "column": 12
-          }
-        }
-      },
       "range": [
         212,
         507
@@ -1537,8 +1537,8 @@
       }
     }
   ],
-  "comments": [],
   "sourceType": "module",
+  "comments": [],
   "tokens": [
     {
       "type": "Punctuator",

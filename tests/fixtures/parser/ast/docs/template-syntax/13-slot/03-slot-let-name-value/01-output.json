@@ -98,6 +98,44 @@
         },
         {
           "type": "SvelteEachBlock",
+          "expression": {
+            "type": "Identifier",
+            "name": "items",
+            "range": [
+              39,
+              44
+            ],
+            "loc": {
+              "start": {
+                "line": 3,
+                "column": 8
+              },
+              "end": {
+                "line": 3,
+                "column": 13
+              }
+            }
+          },
+          "context": {
+            "type": "Identifier",
+            "name": "item",
+            "range": [
+              48,
+              52
+            ],
+            "loc": {
+              "start": {
+                "line": 3,
+                "column": 17
+              },
+              "end": {
+                "line": 3,
+                "column": 21
+              }
+            }
+          },
+          "index": null,
+          "key": null,
           "children": [
             {
               "type": "SvelteElement",
@@ -125,7 +163,6 @@
                 "attributes": [
                   {
                     "type": "SvelteAttribute",
-                    "boolean": false,
                     "key": {
                       "type": "SvelteName",
                       "name": "class",
@@ -144,6 +181,7 @@
                         }
                       }
                     },
+                    "boolean": false,
                     "value": [
                       {
                         "type": "SvelteLiteral",
@@ -241,7 +279,6 @@
                     "attributes": [
                       {
                         "type": "SvelteAttribute",
-                        "boolean": false,
                         "key": {
                           "type": "SvelteName",
                           "name": "prop",
@@ -260,6 +297,7 @@
                             }
                           }
                         },
+                        "boolean": false,
                         "value": [
                           {
                             "type": "SvelteMustacheTag",
@@ -415,45 +453,7 @@
               }
             }
           ],
-          "context": {
-            "type": "Identifier",
-            "name": "item",
-            "range": [
-              48,
-              52
-            ],
-            "loc": {
-              "start": {
-                "line": 3,
-                "column": 17
-              },
-              "end": {
-                "line": 3,
-                "column": 21
-              }
-            }
-          },
           "else": null,
-          "expression": {
-            "type": "Identifier",
-            "name": "items",
-            "range": [
-              39,
-              44
-            ],
-            "loc": {
-              "start": {
-                "line": 3,
-                "column": 8
-              },
-              "end": {
-                "line": 3,
-                "column": 13
-              }
-            }
-          },
-          "index": null,
-          "key": null,
           "range": [
             32,
             120
@@ -672,6 +672,7 @@
                 }
               }
             },
+            "modifiers": [],
             "expression": {
               "type": "Identifier",
               "name": "thing",
@@ -690,7 +691,6 @@
                 }
               }
             },
-            "modifiers": [],
             "range": [
               167,
               183
@@ -941,8 +941,8 @@
       }
     }
   ],
-  "comments": [],
   "sourceType": "module",
+  "comments": [],
   "tokens": [
     {
       "type": "HTMLComment",

@@ -395,7 +395,6 @@
             "attributes": [
               {
                 "type": "SvelteAttribute",
-                "boolean": false,
                 "key": {
                   "type": "SvelteName",
                   "name": "type",
@@ -414,6 +413,7 @@
                     }
                   }
                 },
+                "boolean": false,
                 "value": [
                   {
                     "type": "SvelteLiteral",
@@ -470,6 +470,7 @@
                     }
                   }
                 },
+                "modifiers": [],
                 "expression": {
                   "type": "Identifier",
                   "name": "visible",
@@ -488,7 +489,6 @@
                     }
                   }
                 },
-                "modifiers": [],
                 "range": [
                   121,
                   143
@@ -609,6 +609,25 @@
     },
     {
       "type": "SvelteIfBlock",
+      "elseif": false,
+      "expression": {
+        "type": "Identifier",
+        "name": "visible",
+        "range": [
+          169,
+          176
+        ],
+        "loc": {
+          "start": {
+            "line": 11,
+            "column": 5
+          },
+          "end": {
+            "line": 11,
+            "column": 12
+          }
+        }
+      },
       "children": [
         {
           "type": "SvelteElement",
@@ -655,6 +674,9 @@
                     }
                   }
                 },
+                "modifiers": [],
+                "intro": true,
+                "outro": false,
                 "expression": {
                   "type": "ObjectExpression",
                   "properties": [
@@ -790,9 +812,6 @@
                     }
                   }
                 },
-                "intro": true,
-                "modifiers": [],
-                "outro": false,
                 "range": [
                   182,
                   219
@@ -829,10 +848,10 @@
                     }
                   }
                 },
-                "expression": null,
-                "intro": false,
                 "modifiers": [],
+                "intro": false,
                 "outro": true,
+                "expression": null,
                 "range": [
                   220,
                   228
@@ -919,25 +938,6 @@
         }
       ],
       "else": null,
-      "elseif": false,
-      "expression": {
-        "type": "Identifier",
-        "name": "visible",
-        "range": [
-          169,
-          176
-        ],
-        "loc": {
-          "start": {
-            "line": 11,
-            "column": 5
-          },
-          "end": {
-            "line": 11,
-            "column": 12
-          }
-        }
-      },
       "range": [
         164,
         260
@@ -954,8 +954,8 @@
       }
     }
   ],
-  "comments": [],
   "sourceType": "module",
+  "comments": [],
   "tokens": [
     {
       "type": "Punctuator",

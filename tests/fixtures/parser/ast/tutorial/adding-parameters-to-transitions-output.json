@@ -342,7 +342,6 @@
             "attributes": [
               {
                 "type": "SvelteAttribute",
-                "boolean": false,
                 "key": {
                   "type": "SvelteName",
                   "name": "type",
@@ -361,6 +360,7 @@
                     }
                   }
                 },
+                "boolean": false,
                 "value": [
                   {
                     "type": "SvelteLiteral",
@@ -417,6 +417,7 @@
                     }
                   }
                 },
+                "modifiers": [],
                 "expression": {
                   "type": "Identifier",
                   "name": "visible",
@@ -435,7 +436,6 @@
                     }
                   }
                 },
-                "modifiers": [],
                 "range": [
                   115,
                   137
@@ -556,6 +556,25 @@
     },
     {
       "type": "SvelteIfBlock",
+      "elseif": false,
+      "expression": {
+        "type": "Identifier",
+        "name": "visible",
+        "range": [
+          163,
+          170
+        ],
+        "loc": {
+          "start": {
+            "line": 11,
+            "column": 5
+          },
+          "end": {
+            "line": 11,
+            "column": 12
+          }
+        }
+      },
       "children": [
         {
           "type": "SvelteElement",
@@ -602,6 +621,9 @@
                     }
                   }
                 },
+                "modifiers": [],
+                "intro": true,
+                "outro": true,
                 "expression": {
                   "type": "ObjectExpression",
                   "properties": [
@@ -737,9 +759,6 @@
                     }
                   }
                 },
-                "intro": true,
-                "modifiers": [],
-                "outro": true,
                 "range": [
                   176,
                   221
@@ -826,25 +845,6 @@
         }
       ],
       "else": null,
-      "elseif": false,
-      "expression": {
-        "type": "Identifier",
-        "name": "visible",
-        "range": [
-          163,
-          170
-        ],
-        "loc": {
-          "start": {
-            "line": 11,
-            "column": 5
-          },
-          "end": {
-            "line": 11,
-            "column": 12
-          }
-        }
-      },
       "range": [
         158,
         253
@@ -861,8 +861,8 @@
       }
     }
   ],
-  "comments": [],
   "sourceType": "module",
+  "comments": [],
   "tokens": [
     {
       "type": "Punctuator",

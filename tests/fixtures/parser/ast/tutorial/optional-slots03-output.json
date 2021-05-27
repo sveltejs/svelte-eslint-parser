@@ -507,6 +507,7 @@
                 }
               }
             },
+            "modifiers": [],
             "expression": {
               "type": "MemberExpression",
               "computed": false,
@@ -562,7 +563,6 @@
                 }
               }
             },
-            "modifiers": [],
             "range": [
               736,
               775
@@ -1054,6 +1054,62 @@
         },
         {
           "type": "SvelteIfBlock",
+          "elseif": false,
+          "expression": {
+            "type": "MemberExpression",
+            "computed": false,
+            "object": {
+              "type": "Identifier",
+              "name": "$$slots",
+              "range": [
+                872,
+                879
+              ],
+              "loc": {
+                "start": {
+                  "line": 58,
+                  "column": 6
+                },
+                "end": {
+                  "line": 58,
+                  "column": 13
+                }
+              }
+            },
+            "optional": false,
+            "property": {
+              "type": "Identifier",
+              "name": "comments",
+              "range": [
+                880,
+                888
+              ],
+              "loc": {
+                "start": {
+                  "line": 58,
+                  "column": 14
+                },
+                "end": {
+                  "line": 58,
+                  "column": 22
+                }
+              }
+            },
+            "range": [
+              872,
+              888
+            ],
+            "loc": {
+              "start": {
+                "line": 58,
+                "column": 6
+              },
+              "end": {
+                "line": 58,
+                "column": 22
+              }
+            }
+          },
           "children": [
             {
               "type": "SvelteElement",
@@ -1081,7 +1137,6 @@
                 "attributes": [
                   {
                     "type": "SvelteAttribute",
-                    "boolean": false,
                     "key": {
                       "type": "SvelteName",
                       "name": "class",
@@ -1100,6 +1155,7 @@
                         }
                       }
                     },
+                    "boolean": false,
                     "value": [
                       {
                         "type": "SvelteLiteral",
@@ -1307,7 +1363,6 @@
                     "attributes": [
                       {
                         "type": "SvelteAttribute",
-                        "boolean": false,
                         "key": {
                           "type": "SvelteName",
                           "name": "name",
@@ -1326,6 +1381,7 @@
                             }
                           }
                         },
+                        "boolean": false,
                         "value": [
                           {
                             "type": "SvelteLiteral",
@@ -1464,62 +1520,6 @@
             }
           ],
           "else": null,
-          "elseif": false,
-          "expression": {
-            "type": "MemberExpression",
-            "computed": false,
-            "object": {
-              "type": "Identifier",
-              "name": "$$slots",
-              "range": [
-                872,
-                879
-              ],
-              "loc": {
-                "start": {
-                  "line": 58,
-                  "column": 6
-                },
-                "end": {
-                  "line": 58,
-                  "column": 13
-                }
-              }
-            },
-            "optional": false,
-            "property": {
-              "type": "Identifier",
-              "name": "comments",
-              "range": [
-                880,
-                888
-              ],
-              "loc": {
-                "start": {
-                  "line": 58,
-                  "column": 14
-                },
-                "end": {
-                  "line": 58,
-                  "column": 22
-                }
-              }
-            },
-            "range": [
-              872,
-              888
-            ],
-            "loc": {
-              "start": {
-                "line": 58,
-                "column": 6
-              },
-              "end": {
-                "line": 58,
-                "column": 22
-              }
-            }
-          },
           "range": [
             867,
             986
@@ -1587,8 +1587,8 @@
       }
     }
   ],
-  "comments": [],
   "sourceType": "module",
+  "comments": [],
   "tokens": [
     {
       "type": "Punctuator",
