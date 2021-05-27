@@ -19,7 +19,6 @@ const config = {
 			resolve: {
 				alias: {
 					assert: resolve('./build-system/shim/assert.js'),
-					lodash: resolve('./build-system/shim/lodash.js'),
 					path: resolve('./build-system/shim/path.js'),
 					fs: resolve('./build-system/shim/fs.js'),
 					'eslint-scope': resolve('./build-system/shim/eslint-scope.js'),

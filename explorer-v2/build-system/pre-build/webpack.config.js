@@ -48,7 +48,6 @@ export default [
 		},
 		externals: {
 			'svelte/compiler': '$$inject_svelte_compiler$$',
-			lodash: '$$inject_lodash$$',
 			espree: '$$inject_espree$$',
 			'eslint-scope': '$$inject_eslint_scope$$'
 		},
@@ -57,7 +56,6 @@ export default [
 				test: /svelte-eslint-parser\.js/,
 				header: `
 				import * as $$inject_svelte_compiler$$ from 'svelte/compiler';
-				import $$inject_lodash$$ from 'lodash';
 				import $$inject_espree$$ from 'espree';
 				import $$inject_eslint_scope$$ from 'eslint-scope';
 				`
@@ -113,11 +111,5 @@ export default [
 				`
 			})
 		]
-	},
-	{
-		...base,
-		entry: {
-			lodash: resolve('./lodash.js')
-		}
 	}
 ];
