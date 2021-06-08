@@ -24,9 +24,9 @@
 
 	let jsonEditor, sourceEditor;
 	$: {
-		refresh();
+		refresh(options, svelteValue);
 	}
-	function refresh() {
+	function refresh(options, svelteValue) {
 		let scopeManager;
 		const start = Date.now();
 		try {
