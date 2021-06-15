@@ -151,13 +151,6 @@
 		min-width: 1px;
 	}
 
-	.playground-content > .editor-content > .eslint-playground {
-		height: 100%;
-		width: 100%;
-		box-sizing: border-box;
-		padding: 3px;
-	}
-
 	.playground-content > .editor-content > .messages {
 		height: 30%;
 		width: 100%;
