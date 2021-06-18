@@ -502,17 +502,35 @@
           {
             "type": "SvelteDirective",
             "kind": "Action",
-            "name": {
-              "type": "Identifier",
-              "name": "foo",
+            "key": {
+              "type": "SvelteDirectiveKey",
+              "name": {
+                "type": "Identifier",
+                "name": "foo",
+                "range": [
+                  264,
+                  267
+                ],
+                "loc": {
+                  "start": {
+                    "line": 19,
+                    "column": 9
+                  },
+                  "end": {
+                    "line": 19,
+                    "column": 12
+                  }
+                }
+              },
+              "modifiers": [],
               "range": [
-                264,
+                260,
                 267
               ],
               "loc": {
                 "start": {
                   "line": 19,
-                  "column": 9
+                  "column": 5
                 },
                 "end": {
                   "line": 19,
@@ -520,7 +538,6 @@
                 }
               }
             },
-            "modifiers": [],
             "expression": {
               "type": "Identifier",
               "name": "bar",

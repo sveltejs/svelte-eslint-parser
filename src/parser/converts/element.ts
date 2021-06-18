@@ -318,9 +318,15 @@ function convertSpecialElement(
         const thisAttr: SvelteSpecialDirective = {
             type: "SvelteSpecialDirective",
             kind: "this",
+            key: null as any,
             expression: null as any,
             parent: element.startTag,
             ...ctx.getConvertLocation({ start: startIndex, end: endIndex }),
+        }
+        thisAttr.key = {
+            type: "SvelteSpecialDirectiveKey",
+            parent: thisAttr,
+            ...ctx.getConvertLocation({ start: startIndex, end: eqIndex }),
         }
         ctx.addToken("HTMLIdentifier", {
             start: startIndex,

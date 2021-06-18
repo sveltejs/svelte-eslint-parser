@@ -633,17 +633,35 @@
           {
             "type": "SvelteDirective",
             "kind": "EventHandler",
-            "name": {
-              "type": "Identifier",
-              "name": "keydown",
+            "key": {
+              "type": "SvelteDirectiveKey",
+              "name": {
+                "type": "Identifier",
+                "name": "keydown",
+                "range": [
+                  580,
+                  587
+                ],
+                "loc": {
+                  "start": {
+                    "line": 33,
+                    "column": 18
+                  },
+                  "end": {
+                    "line": 33,
+                    "column": 25
+                  }
+                }
+              },
+              "modifiers": [],
               "range": [
-                580,
+                577,
                 587
               ],
               "loc": {
                 "start": {
                   "line": 33,
-                  "column": 18
+                  "column": 15
                 },
                 "end": {
                   "line": 33,
@@ -651,7 +669,6 @@
                 }
               }
             },
-            "modifiers": [],
             "expression": {
               "type": "Identifier",
               "name": "handleKeydown",
