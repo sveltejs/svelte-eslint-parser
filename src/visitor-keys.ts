@@ -17,6 +17,7 @@ const svelteKeys: SvelteKeysType = {
     SvelteStartTag: ["attributes"],
     SvelteEndTag: [],
     SvelteName: [],
+    SvelteMemberExpressionName: ["object", "property"],
     SvelteLiteral: [],
     SvelteMustacheTag: ["expression"],
     SvelteDebugTag: ["identifiers"],
