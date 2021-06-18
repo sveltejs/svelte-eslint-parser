@@ -299,7 +299,7 @@ function convertTransitionDirective(
         directive,
         ctx,
         buildProcessExpressionForExpression(directive, ctx, null),
-        (name) => ctx.scriptLet.addExpression(name, directive),
+        (name) => ctx.scriptLet.addExpression(name, directive.key),
     )
     return directive
 }
@@ -323,7 +323,7 @@ function convertAnimationDirective(
         directive,
         ctx,
         buildProcessExpressionForExpression(directive, ctx, null),
-        (name) => ctx.scriptLet.addExpression(name, directive),
+        (name) => ctx.scriptLet.addExpression(name, directive.key),
     )
     return directive
 }
@@ -347,7 +347,7 @@ function convertActionDirective(
         directive,
         ctx,
         buildProcessExpressionForExpression(directive, ctx, null),
-        (name) => ctx.scriptLet.addExpression(name, directive),
+        (name) => ctx.scriptLet.addExpression(name, directive.key),
     )
     return directive
 }
@@ -422,7 +422,8 @@ function processDirective<
         let nextStart = nameRange.end + 1
         let nextEnd = indexOf(
             ctx.code,
-            (c) => c === "=" || c === ">" || c === "|" || !c.trim(),
+            (c) =>
+                c === "=" || c === ">" || c === "/" || c === "|" || !c.trim(),
             nextStart,
         )
         ctx.addToken("HTMLIdentifier", { start: nextStart, end: nextEnd })
@@ -430,7 +431,12 @@ function processDirective<
             nextStart = nextEnd + 1
             nextEnd = indexOf(
                 ctx.code,
-                (c) => c === "=" || c === ">" || c === "|" || !c.trim(),
+                (c) =>
+                    c === "=" ||
+                    c === ">" ||
+                    c === "/" ||
+                    c === "|" ||
+                    !c.trim(),
                 nextStart,
             )
             ctx.addToken("HTMLIdentifier", { start: nextStart, end: nextEnd })
