@@ -28,27 +28,44 @@
           {
             "type": "SvelteDirective",
             "kind": "EventHandler",
-            "name": {
-              "type": "Identifier",
-              "name": "submit",
+            "key": {
+              "type": "SvelteDirectiveKey",
+              "name": {
+                "type": "Identifier",
+                "name": "submit",
+                "range": [
+                  9,
+                  15
+                ],
+                "loc": {
+                  "start": {
+                    "line": 1,
+                    "column": 9
+                  },
+                  "end": {
+                    "line": 1,
+                    "column": 15
+                  }
+                }
+              },
+              "modifiers": [
+                "preventDefault"
+              ],
               "range": [
-                9,
-                15
+                6,
+                30
               ],
               "loc": {
                 "start": {
                   "line": 1,
-                  "column": 9
+                  "column": 6
                 },
                 "end": {
                   "line": 1,
-                  "column": 15
+                  "column": 30
                 }
               }
             },
-            "modifiers": [
-              "preventDefault"
-            ],
             "expression": {
               "type": "Identifier",
               "name": "handleSubmit",

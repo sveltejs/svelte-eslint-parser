@@ -193,8 +193,7 @@ function convertBindingDirective(
     const directive: SvelteBindingDirective = {
         type: "SvelteDirective",
         kind: "Binding",
-        name: null as any,
-        modifiers: node.modifiers,
+        key: null as any,
         expression: null,
         parent,
         ...ctx.getConvertLocation(node),
@@ -233,8 +232,7 @@ function convertEventHandlerDirective(
     const directive: SvelteEventHandlerDirective = {
         type: "SvelteDirective",
         kind: "EventHandler",
-        name: null as any,
-        modifiers: node.modifiers,
+        key: null as any,
         expression: null,
         parent,
         ...ctx.getConvertLocation(node),
@@ -266,8 +264,7 @@ function convertClassDirective(
     const directive: SvelteClassDirective = {
         type: "SvelteDirective",
         kind: "Class",
-        name: null as any,
-        modifiers: node.modifiers,
+        key: null as any,
         expression: null,
         parent,
         ...ctx.getConvertLocation(node),
@@ -292,8 +289,7 @@ function convertTransitionDirective(
         kind: "Transition",
         intro: node.intro,
         outro: node.outro,
-        name: null as any,
-        modifiers: node.modifiers,
+        key: null as any,
         expression: null,
         parent,
         ...ctx.getConvertLocation(node),
@@ -317,8 +313,7 @@ function convertAnimationDirective(
     const directive: SvelteAnimationDirective = {
         type: "SvelteDirective",
         kind: "Animation",
-        name: null as any,
-        modifiers: node.modifiers,
+        key: null as any,
         expression: null,
         parent,
         ...ctx.getConvertLocation(node),
@@ -342,8 +337,7 @@ function convertActionDirective(
     const directive: SvelteActionDirective = {
         type: "SvelteDirective",
         kind: "Action",
-        name: null as any,
-        modifiers: node.modifiers,
+        key: null as any,
         expression: null,
         parent,
         ...ctx.getConvertLocation(node),
@@ -367,8 +361,7 @@ function convertLetDirective(
     const directive: SvelteLetDirective = {
         type: "SvelteDirective",
         kind: "Let",
-        name: null as any,
-        modifiers: node.modifiers,
+        key: null as any,
         expression: null,
         parent,
         ...ctx.getConvertLocation(node),
@@ -422,6 +415,8 @@ function processDirective<
         end: nameIndex + node.name.length,
     }
 
+    let keyEndIndex = nameRange.end
+
     // modifiers
     if (ctx.code[nameRange.end] === "|") {
         let nextStart = nameRange.end + 1
@@ -440,6 +435,7 @@ function processDirective<
             )
             ctx.addToken("HTMLIdentifier", { start: nextStart, end: nextEnd })
         }
+        keyEndIndex = nextEnd
     }
 
     let isShorthand = false
@@ -455,18 +451,25 @@ function processDirective<
         })
     }
 
+    const key = (directive.key = {
+        type: "SvelteDirectiveKey",
+        name: null as any,
+        modifiers: node.modifiers,
+        parent: directive,
+        ...ctx.getConvertLocation({ start: node.start, end: keyEndIndex }),
+    })
+
     // put name
-    directive.name = {
+    key.name = {
         type: "Identifier",
         name: node.name,
-        // @ts-expect-error -- ignore
-        parent: directive,
+        parent: key,
         ...ctx.getConvertLocation(nameRange),
     }
     if (!isShorthand) {
         if (processName) {
-            processName(directive.name).push((es) => {
-                directive.name = es
+            processName(key.name).push((es) => {
+                key.name = es
             })
         } else {
             ctx.addToken("HTMLIdentifier", nameRange)

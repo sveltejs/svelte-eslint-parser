@@ -72,6 +72,8 @@ export type SvelteNode =
     | SvelteSpreadAttribute
     | SvelteDirective
     | SvelteSpecialDirective
+    | SvelteDirectiveKey
+    | SvelteSpecialDirectiveKey
     | SvelteHTMLComment
     | SvelteReactiveStatement
 
@@ -409,10 +411,16 @@ export type SvelteDirective =
     | SvelteLetDirective
     | SvelteRefDirective
     | SvelteTransitionDirective
-interface BaseSvelteDirective extends BaseNode {
-    type: "SvelteDirective"
+export interface SvelteDirectiveKey extends BaseNode {
+    type: "SvelteDirectiveKey"
     name: ESTree.Identifier
     modifiers: string[]
+    parent: SvelteDirective
+}
+
+interface BaseSvelteDirective extends BaseNode {
+    type: "SvelteDirective"
+    key: SvelteDirectiveKey
     parent: SvelteStartTag
 }
 
@@ -450,9 +458,14 @@ export interface SvelteTransitionDirective extends BaseSvelteDirective {
     outro: boolean
     expression: null | ESTree.Expression
 }
+export interface SvelteSpecialDirectiveKey extends BaseNode {
+    type: "SvelteSpecialDirectiveKey"
+    parent: SvelteSpecialDirective
+}
 export interface SvelteSpecialDirective extends BaseNode {
     type: "SvelteSpecialDirective"
     kind: "this"
+    key: SvelteSpecialDirectiveKey
     expression: ESTree.Expression
     parent: SvelteStartTag /* & { parent: SvelteSpecialElement } */
 }

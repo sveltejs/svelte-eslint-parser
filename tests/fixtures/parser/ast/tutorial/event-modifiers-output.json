@@ -251,27 +251,44 @@
           {
             "type": "SvelteDirective",
             "kind": "EventHandler",
-            "name": {
-              "type": "Identifier",
-              "name": "click",
+            "key": {
+              "type": "SvelteDirectiveKey",
+              "name": {
+                "type": "Identifier",
+                "name": "click",
+                "range": [
+                  86,
+                  91
+                ],
+                "loc": {
+                  "start": {
+                    "line": 7,
+                    "column": 11
+                  },
+                  "end": {
+                    "line": 7,
+                    "column": 16
+                  }
+                }
+              },
+              "modifiers": [
+                "once"
+              ],
               "range": [
-                86,
-                91
+                83,
+                96
               ],
               "loc": {
                 "start": {
                   "line": 7,
-                  "column": 11
+                  "column": 8
                 },
                 "end": {
                   "line": 7,
-                  "column": 16
+                  "column": 21
                 }
               }
             },
-            "modifiers": [
-              "once"
-            ],
             "expression": {
               "type": "Identifier",
               "name": "handleClick",
