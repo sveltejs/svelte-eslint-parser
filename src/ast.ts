@@ -55,6 +55,7 @@ export type SvelteNode =
     | SvelteStartTag
     | SvelteEndTag
     | SvelteName
+    | SvelteMemberExpressionName
     | SvelteText
     | SvelteLiteral
     | SvelteMustacheTag

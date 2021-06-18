@@ -198,6 +198,7 @@ const nodeToKeys: SvelteKeysType = {
     SvelteLiteral: ["value"],
     SvelteMustacheTag: ["kind", "expression"],
     SvelteName: ["name"],
+    SvelteMemberExpressionName: ["object", "property"],
     SvelteReactiveStatement: ["label", "body"],
     SvelteScriptElement: ["name", "startTag", "body", "endTag"],
     SvelteShorthandAttribute: ["key", "value"],
