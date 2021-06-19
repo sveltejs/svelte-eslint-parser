@@ -13,7 +13,20 @@ export function convertText(
         parent,
         ...ctx.getConvertLocation(node),
     }
-    ctx.addToken("HTMLText", node)
+    let start = node.start
+    let word = false
+    for (let index = node.start; index < node.end; index++) {
+        if (word !== Boolean(ctx.code[index].trim())) {
+            if (start < index) {
+                ctx.addToken("HTMLText", { start, end: index })
+            }
+            word = !word
+            start = index
+        }
+    }
+    if (start < node.end) {
+        ctx.addToken("HTMLText", { start, end: node.end })
+    }
     return text
 }
 
@@ -29,6 +42,19 @@ export function convertTextToLiteral(
         parent,
         ...ctx.getConvertLocation(node),
     }
-    ctx.addToken("HTMLText", node)
+    let start = node.start
+    let word = false
+    for (let index = node.start; index < node.end; index++) {
+        if (word !== Boolean(ctx.code[index].trim())) {
+            if (start < index) {
+                ctx.addToken("HTMLText", { start, end: index })
+            }
+            word = !word
+            start = index
+        }
+    }
+    if (start < node.end) {
+        ctx.addToken("HTMLText", { start, end: node.end })
+    }
     return text
 }
