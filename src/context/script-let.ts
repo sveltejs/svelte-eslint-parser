@@ -805,6 +805,10 @@ function removeReference(reference: Reference, baseScope: Scope) {
 
 /** Remove scope */
 function removeScope(scopeManager: ScopeManager, scope: Scope) {
+    for (const childScope of scope.childScopes) {
+        removeScope(scopeManager, childScope)
+    }
+
     while (scope.references[0]) {
         removeReference(scope.references[0], scope)
     }
