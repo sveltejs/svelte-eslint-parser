@@ -6,6 +6,7 @@ import type {
     Locations,
     SvelteEachBlock,
     SvelteIfBlock,
+    SvelteName,
     SvelteNode,
     Token,
 } from "../ast"
@@ -48,6 +49,11 @@ function getNodeRange(
         | {
               start: number
               end: number
+              leadingComments?: Comment[]
+              trailingComments?: Comment[]
+          }
+        | {
+              range: [number, number]
               leadingComments?: Comment[]
               trailingComments?: Comment[]
           },
@@ -98,7 +104,7 @@ export class ScriptLetContext {
     }
 
     public addExpression<E extends ESTree.Expression>(
-        expression: E,
+        expression: E | SvelteName,
         parent: SvelteNode,
         typing?: string | null,
         ...callbacks: ScriptLetCallback<E>[]
@@ -300,7 +306,7 @@ export class ScriptLetContext {
 
     public nestBlock(
         block: SvelteNode,
-        params: ESTree.Pattern[],
+        params: (ESTree.Pattern | SvelteName)[],
         parents: SvelteNode[],
         callback: (
             nodes: ESTree.Pattern[],
@@ -311,7 +317,7 @@ export class ScriptLetContext {
 
     public nestBlock(
         block: SvelteNode,
-        params?: ESTree.Pattern[],
+        params?: (ESTree.Pattern | SvelteName)[],
         parents?: SvelteNode[],
         callback?: (
             nodes: ESTree.Pattern[],

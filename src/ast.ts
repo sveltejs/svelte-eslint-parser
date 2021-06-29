@@ -199,6 +199,7 @@ export interface SvelteName extends BaseNode {
         | SvelteStyleElement
         | SvelteAttribute
         | SvelteMemberExpressionName
+        | SvelteDirectiveKey
 }
 
 /** Nodes that may be used in component names. The component names separated by dots. */
@@ -414,7 +415,7 @@ export type SvelteDirective =
     | SvelteTransitionDirective
 export interface SvelteDirectiveKey extends BaseNode {
     type: "SvelteDirectiveKey"
-    name: ESTree.Identifier
+    name: ESTree.Identifier | SvelteName
     modifiers: string[]
     parent: SvelteDirective
 }

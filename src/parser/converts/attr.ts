@@ -11,6 +11,7 @@ import type {
     SvelteSpreadAttribute,
     SvelteTransitionDirective,
     SvelteStartTag,
+    SvelteName,
 } from "../../ast"
 import type ESTree from "estree"
 import type { Context } from "../../context"
@@ -399,9 +400,12 @@ function processDirective<
     node: D & { expression: null | E },
     directive: S,
     ctx: Context,
-    processExpression: (expression: E) => ScriptLetCallback<NonNullable<E>>[],
+    processExpression: (
+        expression: E,
+        shorthand: boolean,
+    ) => ScriptLetCallback<NonNullable<E>>[],
     processName?: (
-        expression: ESTree.Identifier,
+        expression: SvelteName,
     ) => ScriptLetCallback<ESTree.Identifier>[],
 ) {
     const colonIndex = ctx.code.indexOf(":", directive.range[0])
@@ -444,15 +448,22 @@ function processDirective<
         keyEndIndex = nextEnd
     }
 
-    let isShorthand = false
+    let isShorthandExpression = false
 
     if (node.expression) {
-        isShorthand =
+        isShorthandExpression =
             node.expression.type === "Identifier" &&
             node.expression.name === node.name &&
-            getWithLoc(node.expression).start === nameRange.start &&
-            getWithLoc(node.expression).end === nameRange.end
-        processExpression(node.expression).push((es) => {
+            getWithLoc(node.expression).start === nameRange.start
+        if (
+            isShorthandExpression &&
+            getWithLoc(node.expression).end !== nameRange.end
+        ) {
+            // The identifier location may be incorrect in some edge cases.
+            // e.g. bind:value=""
+            getWithLoc(node.expression).end = nameRange.end
+        }
+        processExpression(node.expression, isShorthandExpression).push((es) => {
             directive.expression = es
         })
     }
@@ -467,12 +478,12 @@ function processDirective<
 
     // put name
     key.name = {
-        type: "Identifier",
+        type: "SvelteName",
         name: node.name,
         parent: key,
         ...ctx.getConvertLocation(nameRange),
     }
-    if (!isShorthand) {
+    if (!isShorthandExpression) {
         if (processName) {
             processName(key.name).push((es) => {
                 key.name = es
