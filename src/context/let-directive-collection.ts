@@ -1,11 +1,11 @@
-import type { SvelteLetDirective, SvelteNode } from "../ast"
+import type { SvelteLetDirective, SvelteName, SvelteNode } from "../ast"
 import type * as ESTree from "estree"
 import type { ScriptLetCallback, ScriptLetCallbackOption } from "./script-let"
 
 /** A class that collects pattern nodes for Let directives. */
 export class LetDirectiveCollection {
     private readonly list: {
-        pattern: ESTree.Pattern
+        pattern: ESTree.Pattern | SvelteName
         directive: SvelteLetDirective
         typing: string
         callbacks: ScriptLetCallback<ESTree.Pattern>[]
@@ -15,7 +15,7 @@ export class LetDirectiveCollection {
         return this.list.length === 0
     }
 
-    public getLetParams(): ESTree.Pattern[] {
+    public getLetParams(): (ESTree.Pattern | SvelteName)[] {
         return this.list.map((d) => d.pattern)
     }
 
@@ -43,7 +43,7 @@ export class LetDirectiveCollection {
     }
 
     public addPattern(
-        pattern: ESTree.Pattern,
+        pattern: ESTree.Pattern | SvelteName,
         directive: SvelteLetDirective,
         typing: string,
         ...callbacks: ScriptLetCallback<ESTree.Pattern>[]
