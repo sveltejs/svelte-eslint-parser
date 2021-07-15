@@ -7,11 +7,13 @@ import { LetDirectiveCollections } from "./let-directive-collection"
 import { getParserName } from "../parser/resolve-parser"
 
 export class ScriptsSourceCode {
-    private readonly raw
+    private raw: string
+
+    private trimmedRaw: string
 
     public readonly attrs: Record<string, string | undefined>
 
-    private _vcode: string | null = null
+    private _appendScriptLets: string | null = null
 
     public separateSemiIndex: number
 
@@ -20,31 +22,43 @@ export class ScriptsSourceCode {
         attrs: Record<string, string | undefined>,
     ) {
         this.raw = script
+        this.trimmedRaw = script.trimEnd()
         this.attrs = attrs
         this.separateSemiIndex = script.length
     }
 
     public get vcode(): string {
-        if (this._vcode == null) {
+        if (this._appendScriptLets == null) {
             return this.raw
         }
-        return this._vcode
+        return this.trimmedRaw + this._appendScriptLets
     }
 
     public addLet(letCode: string): { start: number; end: number } {
-        if (this._vcode == null) {
-            this._vcode = this.raw.trimEnd()
-            this.separateSemiIndex = this._vcode.length
-            this._vcode += ";"
-            const after = this.raw.slice(this._vcode.length)
-            this._vcode += after
+        if (this._appendScriptLets == null) {
+            this._appendScriptLets = ""
+            this.separateSemiIndex = this.vcode.length
+            this._appendScriptLets += ";"
+            const after = this.raw.slice(this.vcode.length)
+            this._appendScriptLets += after
         }
-        const start = this._vcode.length
-        this._vcode += letCode
+        const start = this.vcode.length
+        this._appendScriptLets += letCode
         return {
             start,
-            end: this._vcode.length,
+            end: this.vcode.length,
         }
+    }
+
+    public stripCode(start: number, end: number): void {
+        this.raw =
+            this.raw.slice(0, start) +
+            this.raw.slice(start, end).replace(/[^\n\r ]/g, " ") +
+            this.raw.slice(end)
+        this.trimmedRaw =
+            this.trimmedRaw.slice(0, start) +
+            this.trimmedRaw.slice(start, end).replace(/[^\n\r ]/g, " ") +
+            this.trimmedRaw.slice(end)
     }
 }
 export type ContextSourceCode = {
@@ -201,6 +215,10 @@ export class Context {
         }
 
         return (this.state.isTypeScript = false)
+    }
+
+    public stripScriptCode(start: number, end: number): void {
+        this.sourceCode.scripts.stripCode(start, end)
     }
 }
 
