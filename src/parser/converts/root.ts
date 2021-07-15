@@ -109,7 +109,7 @@ export function convertSvelteRoot(
             },
         })
 
-        if (style.endTag) {
+        if (style.endTag && style.startTag.range[1] < style.endTag.range[0]) {
             const contentRange = {
                 start: style.startTag.range[1],
                 end: style.endTag.range[0],
