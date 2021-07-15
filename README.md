@@ -39,6 +39,18 @@ The [`@ota-meshi/eslint-plugin-svelte`] is an ESLint plugin that uses the [svelt
   - [unicode-bom](https://eslint.org/docs/rules/unicode-bom) rule
   - [eslint-plugin-prettier](https://github.com/prettier/eslint-plugin-prettier)
 
+### ESLint Plugins Using svelte-eslint-parser
+
+#### [@intlify/eslint-plugin-svelte](https://github.com/intlify/eslint-plugin-svelte)
+
+ESLint plugin for internationalization (i18n) with Svelte.  
+It provides rules to help internationalization your application created with Svelte.
+
+#### [@ota-meshi/eslint-plugin-svelte](https://ota-meshi.github.io/eslint-plugin-svelte/)
+
+ESLint plugin for Svelte.  
+It provides many unique check rules by using the template AST.
+
 ## ❗ Attention
 
 The [svelte-eslint-parser] can not be used with the [eslint-plugin-svelte3].
