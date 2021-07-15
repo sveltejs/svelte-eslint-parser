@@ -236,6 +236,20 @@ function convertHTMLElement(
         },
     })
 
+    if (element.name.name === "script" || element.name.name === "style") {
+        for (const child of element.children) {
+            if (child.type === "SvelteText") {
+                child.value = ctx.code.slice(...child.range)
+            }
+        }
+        if (element.name.name === "script") {
+            ctx.stripScriptCode(
+                element.startTag.range[1],
+                element.endTag?.range[0] ?? element.range[1],
+            )
+        }
+    }
+
     return element
 }
 
