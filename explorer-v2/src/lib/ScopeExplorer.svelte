@@ -275,7 +275,7 @@
 		processJsonValue(options, ctx, reference.from.type);
 		ctx.appendText(',\n');
 		ctx.appendIndent().appendText(`"resolved": `);
-		processJsonValue(options, ctx, reference.resolved?.defs[0].name ?? null);
+		processJsonValue(options, ctx, reference.resolved?.defs[0]?.name ?? null);
 		ctx.appendText(',\n');
 		ctx.appendIndent().appendText(`"init": `);
 		processJsonValue(options, ctx, reference.init ?? null);
