@@ -18,7 +18,7 @@
 <input type="number" bind:value={b}>
 <input type="number" bind:value={c}>
 
-<p>{a} + {b} = {a + b + c}</p>`;
+<p>{a} + {b} + {c} = {a + b + c}</p>`;
 
 	const state = deserializeState(
 		(typeof window !== 'undefined' && window.location.hash.slice(1)) || ''
