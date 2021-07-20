@@ -131,6 +131,11 @@ function convertAttribute(
             return sAttr
         }
         if (v.type === "Text") {
+            if (v.start === v.end) {
+                // Empty
+                // https://github.com/sveltejs/svelte/pull/6539
+                continue
+            }
             const next = node.value[index + 1]
             if (next && next.start < v.end) {
                 // Maybe bug in Svelte can cause the completion index to shift.
