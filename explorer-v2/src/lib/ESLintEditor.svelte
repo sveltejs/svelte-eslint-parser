@@ -1,53 +1,37 @@
 <script>
-	import Linter from 'eslint4b';
 	import MonacoEditor from './MonacoEditor.svelte';
-	import * as svelteEslintParser from 'svelte-eslint-parser';
 	import { monacoEditorLoad } from './scripts/monaco-loader';
 	import { createEventDispatcher, onMount } from 'svelte';
 
 	const dispatch = createEventDispatcher();
 
-	const linter = new Linter();
-	linter.defineParser('svelte-eslint-parser', svelteEslintParser);
+	export let linter = null;
+	export let code = '';
+	export let config = {};
+	export let options = {};
 
-	export let modelValue = '';
-	export let rules = {};
-	export let useEslintPluginSvelte3 = false;
-
-	let fixedValue = modelValue;
+	let fixedValue = code;
 	let leftMarkers = [];
 	let rightMarkers = [];
 
 	$: {
-		lint(modelValue, useEslintPluginSvelte3, rules);
+		lint(linter, code, config, options);
 	}
 
 	onMount(() => {
-		lint(modelValue, useEslintPluginSvelte3, rules);
+		lint(linter, code, config, options);
 	});
 
-	async function getEslintPluginSvelte3Options() {
-		const pluginSvelte3 = await import('eslint-plugin-svelte3');
-		return {
-			preprocess: pluginSvelte3.processors.svelte3.preprocess,
-			postprocess: pluginSvelte3.processors.svelte3.postprocess
-		};
-	}
-
-	async function lint(code, useEslintPluginSvelte3, rules) {
-		const config = {
-			parser: useEslintPluginSvelte3 ? undefined : 'svelte-eslint-parser',
-			parserOptions: {
-				ecmaVersion: 2020,
-				sourceType: 'module'
-			},
-			rules,
-			env: {
-				browser: true,
-				es2021: true
-			}
-		};
-		const options = useEslintPluginSvelte3 ? await getEslintPluginSvelte3Options() : {};
+	async function lint(linter, code, config, options) {
+		/* eslint-disable no-param-reassign -- ignore */
+		linter = await linter;
+		if (!linter) {
+			return;
+		}
+		code = await code;
+		config = await config;
+		options = await options;
+		/* eslint-enable no-param-reassign -- ignore */
 
 		const start = Date.now();
 		const messages = linter.verify(code, config, options);
@@ -55,10 +39,15 @@
 
 		dispatch('time', time);
 
-		dispatch('updateMessages', messages);
-
 		const fixResult = linter.verifyAndFix(code, config, options);
 		fixedValue = fixResult.output;
+
+		dispatch('result', {
+			messages,
+			time,
+			output: fixResult.output,
+			fixedMessages: fixResult.messages
+		});
 
 		leftMarkers = await Promise.all(messages.map(messageToMarker));
 		rightMarkers = await Promise.all(fixResult.messages.map(messageToMarker));
@@ -100,8 +89,8 @@
 </script>
 
 <MonacoEditor
-	bind:modelValue
-	bind:rightValue={fixedValue}
+	bind:code
+	bind:rightCode={fixedValue}
 	language="html"
 	diffEditor
 	markers={leftMarkers}

@@ -1,8 +1,8 @@
 <script>
-	export let modelValue = {};
+	export let options = {};
 	function updateShowLocations(newValue) {
-		modelValue = {
-			...modelValue,
+		options = {
+			...options,
 			showLocations: newValue
 		};
 	}
@@ -11,7 +11,7 @@
 <label class="ast-options"
 	><input
 		type="checkbox"
-		checked={modelValue.showLocations}
+		checked={options.showLocations}
 		on:change={(e) => updateShowLocations(e.target.checked)}
 	/>Locations</label
 >

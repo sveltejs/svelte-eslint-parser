@@ -4,8 +4,8 @@
 	const dispatch = createEventDispatcher();
 
 	import { monacoEditorLoad } from './scripts/monaco-loader';
-	export let modelValue = '';
-	export let rightValue = '';
+	export let code = '';
+	export let rightCode = '';
 	export let language = 'json';
 	export let readOnly = false;
 	export let diffEditor = false;
@@ -15,12 +15,12 @@
 	let rootElement, editor, setLeftValue, setRightValue, setLeftMarkers, setRightMarkers;
 	$: {
 		if (setLeftValue) {
-			setLeftValue(modelValue);
+			setLeftValue(code);
 		}
 	}
 	$: {
 		if (setRightValue) {
-			setRightValue(rightValue);
+			setRightValue(rightCode);
 		}
 	}
 	$: {
@@ -37,7 +37,7 @@
 	onMount(async () => {
 		const monaco = await monacoEditorLoad;
 		const options = {
-			value: modelValue,
+			value: code,
 			readOnly,
 			theme: 'vs-dark',
 			language,
@@ -59,27 +59,27 @@
 				originalEditable: true,
 				...options
 			});
-			const original = monaco.editor.createModel(modelValue, language);
-			const modified = monaco.editor.createModel(rightValue, language);
+			const original = monaco.editor.createModel(code, language);
+			const modified = monaco.editor.createModel(rightCode, language);
 			const leftEditor = editor.getOriginalEditor();
 			const rightEditor = editor.getModifiedEditor();
 			rightEditor.updateOptions({ readOnly: true });
 			editor.setModel({ original, modified });
 			original.onDidChangeContent(() => {
 				const value = original.getValue();
-				modelValue = value;
+				code = value;
 			});
 
-			setLeftValue = (modelValue) => {
+			setLeftValue = (code) => {
 				const value = original.getValue();
-				if (modelValue !== value) {
-					original.setValue(modelValue);
+				if (code !== value) {
+					original.setValue(code);
 				}
 			};
-			setRightValue = (modelValue) => {
+			setRightValue = (code) => {
 				const value = modified.getValue();
-				if (modelValue !== value) {
-					modified.setValue(modelValue);
+				if (code !== value) {
+					modified.setValue(code);
 				}
 			};
 			setLeftMarkers = (markers) => {
@@ -95,7 +95,7 @@
 			editor = monaco.editor.create(rootElement, options);
 			editor.onDidChangeModelContent(() => {
 				const value = editor.getValue();
-				modelValue = value;
+				code = value;
 			});
 			editor.onDidChangeCursorPosition((evt) => {
 				dispatch('changeCursorPosition', evt);
@@ -103,10 +103,10 @@
 			editor.onDidFocusEditorText((evt) => {
 				dispatch('focusEditorText', evt);
 			});
-			setLeftValue = (modelValue) => {
+			setLeftValue = (code) => {
 				const value = editor.getValue();
-				if (modelValue !== value) {
-					editor.setValue(modelValue);
+				if (code !== value) {
+					editor.setValue(code);
 				}
 			};
 			setRightValue = () => {

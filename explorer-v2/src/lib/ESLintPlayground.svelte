@@ -1,10 +1,14 @@
 <script>
 	import { onDestroy, onMount } from 'svelte';
-
+	import Linter from 'eslint4b';
+	import * as svelteEslintParser from 'svelte-eslint-parser';
 	import ESLintEditor from './ESLintEditor.svelte';
 	import RulesSettings from './RulesSettings.svelte';
 	import { deserializeState, serializeState } from './scripts/state';
 	import { DEFAULT_RULES_CONFIG, getURL } from './scripts/rules.js';
+
+	const linter = new Linter();
+	linter.defineParser('svelte-eslint-parser', svelteEslintParser);
 
 	const DEFAULT_CODE =
 		`<script>
@@ -28,6 +32,18 @@
 	let messages = [];
 	let useEslintPluginSvelte3 = Boolean(state.useEslintPluginSvelte3);
 	let time = '';
+	let options = {};
+
+	$: {
+		options = useEslintPluginSvelte3 ? getEslintPluginSvelte3Options() : {};
+	}
+	async function getEslintPluginSvelte3Options() {
+		const pluginSvelte3 = await import('eslint-plugin-svelte3');
+		return {
+			preprocess: pluginSvelte3.processors.svelte3.preprocess,
+			postprocess: pluginSvelte3.processors.svelte3.postprocess
+		};
+	}
 
 	// eslint-disable-next-line no-use-before-define -- false positive
 	$: serializedString = (() => {
@@ -56,8 +72,9 @@
 			window.removeEventListener('hashchange', onUrlHashChange);
 		}
 	});
-	function onUpdateMessages(msgs) {
-		messages = msgs.detail;
+	function onLintedResult(evt) {
+		messages = evt.detail.messages;
+		time = `${evt.detail.time}ms`;
 	}
 	function onUrlHashChange() {
 		const newSerializedString =
@@ -103,12 +120,23 @@
 		<RulesSettings bind:rules class="rules-settings" />
 		<div class="editor-content">
 			<ESLintEditor
-				bind:modelValue={code}
-				bind:rules
-				bind:useEslintPluginSvelte3
+				{linter}
+				bind:code
+				config={{
+					parser: useEslintPluginSvelte3 ? undefined : 'svelte-eslint-parser',
+					parserOptions: {
+						ecmaVersion: 2020,
+						sourceType: 'module'
+					},
+					rules,
+					env: {
+						browser: true,
+						es2021: true
+					}
+				}}
+				{options}
 				class="eslint-playground"
-				on:updateMessages={onUpdateMessages}
-				on:time={(t) => (time = `${t.detail}ms`)}
+				on:result={onLintedResult}
 			/>
 			<div class="messages">
 				<ol>

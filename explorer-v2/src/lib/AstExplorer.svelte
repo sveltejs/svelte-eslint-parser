@@ -173,18 +173,18 @@
 </script>
 
 <div class="ast-explorer-root">
-	<div class="ast-tools">{time}<AstOptions bind:modelValue={options} /></div>
+	<div class="ast-tools">{time}<AstOptions bind:options /></div>
 	<div class="ast-explorer">
 		<MonacoEditor
 			bind:this={sourceEditor}
-			bind:modelValue={svelteValue}
+			bind:code={svelteValue}
 			language="html"
 			on:focusEditorText={() => handleFocus('source')}
 			on:changeCursorPosition={(e) => handleCursor(e.detail, 'source')}
 		/>
 		<MonacoEditor
 			bind:this={jsonEditor}
-			modelValue={astJson.json}
+			code={astJson.json}
 			language="json"
 			readOnly
 			on:focusEditorText={() => handleFocus('json')}
