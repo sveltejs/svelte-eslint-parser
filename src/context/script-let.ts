@@ -482,7 +482,7 @@ export class ScriptLetContext {
         if (!orderedRestoreCallback) {
             return
         }
-        const separateSemiIndex = this.script.separateSemiIndex
+        const separateIndexes = this.script.separateIndexes
         const tokens = result.ast.tokens
         const processedTokens = []
         const comments = result.ast.comments
@@ -491,7 +491,7 @@ export class ScriptLetContext {
 
         let tok
         while ((tok = tokens.shift())) {
-            if (separateSemiIndex === tok.range[0] && tok.value === ";") {
+            if (separateIndexes.includes(tok.range[0]) && tok.value === ";") {
                 break
             }
             if (orderedRestoreCallback.start <= tok.range[0]) {
@@ -514,13 +514,19 @@ export class ScriptLetContext {
         traverseNodes(result.ast, {
             visitorKeys: result.visitorKeys,
             enterNode: (node) => {
-                if (node.range?.[1] === separateSemiIndex + 1) {
+                while (
+                    node.range &&
+                    separateIndexes.includes(node.range[1] - 1)
+                ) {
                     node.range[1]--
                     node.loc!.end.column--
                 }
+                if (node.loc!.end.column < 0) {
+                    node.loc!.end = this.ctx.getLocFromIndex(node.range![1])
+                }
                 if (
                     (node as any).parent === result.ast &&
-                    separateSemiIndex <= node.range![0]
+                    separateIndexes[0] <= node.range![0]
                 ) {
                     removeStatements.push(node as any)
                 }
