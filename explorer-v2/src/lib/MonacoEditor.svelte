@@ -3,16 +3,24 @@
 
 	const dispatch = createEventDispatcher();
 
-	import { monacoEditorLoad } from './scripts/monaco-loader';
+	import { loadMonacoEditor } from './scripts/monaco-loader';
 	export let code = '';
 	export let rightCode = '';
-	export let language = 'json';
+	export let language = 'javascript';
 	export let readOnly = false;
 	export let diffEditor = false;
 	export let markers = [];
 	export let rightMarkers = [];
+	export let provideCodeActions = null;
 
-	let rootElement, editor, setLeftValue, setRightValue, setLeftMarkers, setRightMarkers;
+	let rootElement,
+		editor,
+		setLeftValue,
+		setRightValue,
+		setLeftMarkers,
+		setRightMarkers,
+		getLeftEditor,
+		codeActionProviderDisposable;
 	$: {
 		if (setLeftValue) {
 			setLeftValue(code);
@@ -33,9 +41,30 @@
 			setRightMarkers(rightMarkers);
 		}
 	}
+	$: {
+		disposeCodeActionProvider();
+		if (provideCodeActions) {
+			loadMonacoEditor().then((monaco) => {
+				codeActionProviderDisposable = monaco.languages.registerCodeActionProvider(language, {
+					provideCodeActions(model, range, context) {
+						const editor = getLeftEditor?.();
+						if (editor?.getModel().url !== model.url) {
+							return {
+								actions: [],
+								dispose() {
+									/* nop */
+								}
+							};
+						}
+						return provideCodeActions(model, range, context);
+					}
+				});
+			});
+		}
+	}
 
 	onMount(async () => {
-		const monaco = await monacoEditorLoad;
+		const monaco = await loadMonacoEditor();
 		const options = {
 			value: code,
 			readOnly,
@@ -88,6 +117,7 @@
 			setRightMarkers = (markers) => {
 				updateMarkers(rightEditor, markers);
 			};
+			getLeftEditor = () => leftEditor;
 
 			setLeftMarkers(markers);
 			setRightMarkers(rightMarkers);
@@ -118,11 +148,13 @@
 			setRightMarkers = () => {
 				/* noop */
 			};
+			getLeftEditor = () => editor;
 
 			setLeftMarkers(markers);
 		}
 	});
 	onDestroy(() => {
+		disposeCodeActionProvider();
 		dispose(editor);
 		// rootElement.innerHTML = ""
 		editor = null;
@@ -140,7 +172,7 @@
 		}
 	}
 	async function updateMarkers(editor, markers) {
-		const monaco = await monacoEditorLoad;
+		const monaco = await loadMonacoEditor();
 		const model = editor.getModel();
 		const id = editor.getId();
 		monaco.editor.setModelMarkers(model, id, JSON.parse(JSON.stringify(markers)));
@@ -166,6 +198,12 @@
 		}
 		if (x.dispose) {
 			x.dispose();
+		}
+	}
+
+	function disposeCodeActionProvider() {
+		if (codeActionProviderDisposable) {
+			codeActionProviderDisposable.dispose();
 		}
 	}
 </script>

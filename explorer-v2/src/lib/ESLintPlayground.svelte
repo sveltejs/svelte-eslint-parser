@@ -111,9 +111,9 @@
 			See result of
 			<a href="https://github.com/sveltejs/eslint-plugin-svelte3">eslint-plugin-svelte3</a>.
 		</label>
-		<template v-if="useEslintPluginSvelte3">
+		{#if useEslintPluginSvelte3}
 			<span style="color: red">svelte-eslint-parser is not used.</span>
-		</template>
+		{/if}
 		<span style="margin-left: 16px">{time}</span>
 	</div>
 	<div class="playground-content">
