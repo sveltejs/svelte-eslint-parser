@@ -15,7 +15,7 @@ export class ScriptsSourceCode {
 
     private _appendScriptLets: string | null = null
 
-    public separateSemiIndex: number
+    public separateIndexes: number[] = []
 
     public constructor(
         script: string,
@@ -24,7 +24,7 @@ export class ScriptsSourceCode {
         this.raw = script
         this.trimmedRaw = script.trimEnd()
         this.attrs = attrs
-        this.separateSemiIndex = script.length
+        this.separateIndexes = [script.length]
     }
 
     public get vcode(): string {
@@ -37,8 +37,8 @@ export class ScriptsSourceCode {
     public addLet(letCode: string): { start: number; end: number } {
         if (this._appendScriptLets == null) {
             this._appendScriptLets = ""
-            this.separateSemiIndex = this.vcode.length
-            this._appendScriptLets += ";"
+            this.separateIndexes = [this.vcode.length, this.vcode.length + 1]
+            this._appendScriptLets += "\n;"
             const after = this.raw.slice(this.vcode.length)
             this._appendScriptLets += after
         }
