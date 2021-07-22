@@ -13,6 +13,7 @@
 	export let rightMarkers = [];
 	export let provideCodeActions = null;
 
+	export let waiting = null;
 	let rootElement,
 		editor,
 		setLeftValue,
@@ -21,6 +22,9 @@
 		setRightMarkers,
 		getLeftEditor,
 		codeActionProviderDisposable;
+	const loadingMonaco = loadMonacoEditor();
+	// eslint-disable-next-line no-use-before-define -- TODO
+	$: loading = Promise.all([waiting, loadingMonaco]);
 	$: {
 		if (setLeftValue) {
 			setLeftValue(code);
@@ -44,7 +48,7 @@
 	$: {
 		disposeCodeActionProvider();
 		if (provideCodeActions) {
-			loadMonacoEditor().then((monaco) => {
+			loadingMonaco.then((monaco) => {
 				codeActionProviderDisposable = monaco.languages.registerCodeActionProvider(language, {
 					provideCodeActions(model, range, context) {
 						const editor = getLeftEditor?.();
@@ -63,8 +67,11 @@
 		}
 	}
 
+	let started = false;
 	onMount(async () => {
-		const monaco = await loadMonacoEditor();
+		started = true;
+		await loading;
+		const monaco = await loadingMonaco;
 		const options = {
 			value: code,
 			readOnly,
@@ -172,7 +179,7 @@
 		}
 	}
 	async function updateMarkers(editor, markers) {
-		const monaco = await loadMonacoEditor();
+		const monaco = await loadingMonaco;
 		const model = editor.getModel();
 		const id = editor.getId();
 		monaco.editor.setModelMarkers(model, id, JSON.parse(JSON.stringify(markers)));
@@ -206,13 +213,68 @@
 			codeActionProviderDisposable.dispose();
 		}
 	}
+
+	function typewriter(node, { speed = 50 }) {
+		const valid =
+			node.childNodes.length === 0 ||
+			(node.childNodes.length === 1 && node.childNodes[0].nodeType === Node.TEXT_NODE);
+
+		if (!valid) {
+			throw new Error(`This transition only works on elements with a single text node child`);
+		}
+
+		const texts = node.textContent.split(/(?=\S)/);
+		const duration = texts.length * speed;
+
+		return {
+			duration,
+			tick: (t) => {
+				const i = ~~(texts.length * t);
+				node.textContent = texts.slice(0, i).join('');
+			}
+		};
+	}
 </script>
 
-<div bind:this={rootElement} class="root" />
+{#await loading}
+	{#if started}
+		{#if diffEditor}
+			<div
+				class="eslint-editor-monaco-root eslint-editor-monaco-root--wait eslint-editor-monaco-root__flex"
+			>
+				<pre in:typewriter>Loading...</pre>
+				<pre in:typewriter>Loading...</pre>
+			</div>
+		{:else}
+			<pre
+				class="eslint-editor-monaco-root eslint-editor-monaco-root--wait"
+				in:typewriter>Loading...</pre>
+		{/if}
+	{/if}
+{:then _}
+	<div bind:this={rootElement} class="eslint-editor-monaco-root" />
+{/await}
 
 <style>
-	.root {
+	.eslint-editor-monaco-root {
 		width: 100%;
 		height: 100%;
+	}
+
+	.eslint-editor-monaco-root--wait {
+		color: #9cdcfe;
+		border: 1px solid #cfd4db;
+		background-color: #282c34;
+		font-family: Menlo, Monaco, 'Courier New', monospace;
+		font-size: 14px;
+		line-height: 21px;
+		padding-left: 52px;
+	}
+	.eslint-editor-monaco-root__flex {
+		display: flex;
+	}
+	.eslint-editor-monaco-root__flex > * {
+		height: 100%;
+		width: 50%;
 	}
 </style>

@@ -9,6 +9,7 @@
 	export let code = '';
 	export let config = {};
 	export let options = {};
+	export let fix = true;
 
 	let fixedValue = code;
 	let leftMarkers = [];
@@ -16,6 +17,8 @@
 
 	let messageMap = new Map();
 
+	// eslint-disable-next-line no-use-before-define -- TODO
+	$: showApplyFix = fix && fixedValue !== code;
 	$: {
 		lint(linter, code, config, options);
 	}
@@ -56,6 +59,9 @@
 		rightMarkers = await Promise.all(fixResult.messages.map((m) => messageToMarker(m)));
 	}
 
+	function applyFix() {
+		code = fixedValue;
+	}
 	/** message to marker */
 	async function messageToMarker(message, messageMap) {
 		const monaco = await loadMonacoEditor();
@@ -186,14 +192,47 @@
 	}
 </script>
 
-<MonacoEditor
-	bind:code
-	bind:rightCode={fixedValue}
-	language="html"
-	diffEditor
-	markers={leftMarkers}
-	{rightMarkers}
-	{provideCodeActions}
-/>
+<div class="eslint-editor">
+	<MonacoEditor
+		bind:code
+		bind:rightCode={fixedValue}
+		language="html"
+		diffEditor={fix}
+		markers={leftMarkers}
+		{rightMarkers}
+		{provideCodeActions}
+	/>
+	<div class="eslint-editor__tools">
+		{#if showApplyFix}
+			<button on:click={applyFix}>Apply Fix</button>
+		{/if}
+	</div>
+</div>
 
-<style></style>
+<style>
+	.eslint-editor {
+		height: 100%;
+		position: relative;
+	}
+	.eslint-editor__tools {
+		display: flex;
+		height: 42px;
+		position: absolute;
+		right: 16px;
+		bottom: 16px;
+		padding: 8px;
+	}
+	.eslint-editor__tools > button {
+		cursor: pointer;
+		background-color: transparent;
+		color: #ddd;
+		border: solid #ddd 1px;
+		border-radius: 4px;
+		outline: none;
+		padding: 0 16px;
+		appearance: none;
+	}
+	.eslint-editor__tools > button:hover {
+		background-color: rgba(255, 255, 255, 0.2);
+	}
+</style>
