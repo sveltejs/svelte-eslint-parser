@@ -1,3 +1,7 @@
+<script context="module">
+	const appStarting = new Promise((resolve) => setTimeout(resolve, 300));
+</script>
+
 <script>
 	import { onDestroy, onMount, createEventDispatcher } from 'svelte';
 
@@ -23,8 +27,9 @@
 		getLeftEditor,
 		codeActionProviderDisposable;
 	const loadingMonaco = loadMonacoEditor();
+	const starting = appStarting;
 	// eslint-disable-next-line no-use-before-define -- TODO
-	$: loading = Promise.all([waiting, loadingMonaco]);
+	$: loading = Promise.all([waiting, loadingMonaco, starting]);
 	$: {
 		if (setLeftValue) {
 			setLeftValue(code);
@@ -214,23 +219,15 @@
 		}
 	}
 
-	function typewriter(node, { speed = 50 }) {
-		const valid =
-			node.childNodes.length === 0 ||
-			(node.childNodes.length === 1 && node.childNodes[0].nodeType === Node.TEXT_NODE);
-
-		if (!valid) {
-			throw new Error(`This transition only works on elements with a single text node child`);
-		}
-
-		const texts = node.textContent.split(/(?=\S)/);
-		const duration = texts.length * speed;
+	function loadingTypewriter(node) {
+		const text = 'Loading...';
+		const duration = 300;
 
 		return {
 			duration,
 			tick: (t) => {
-				const i = ~~(texts.length * t);
-				node.textContent = texts.slice(0, i).join('');
+				const i = ~~(text.length * t);
+				node.textContent = text.slice(0, i);
 			}
 		};
 	}
@@ -238,18 +235,7 @@
 
 {#await loading}
 	{#if started}
-		{#if diffEditor}
-			<div
-				class="eslint-editor-monaco-root eslint-editor-monaco-root--wait eslint-editor-monaco-root__flex"
-			>
-				<pre in:typewriter>Loading...</pre>
-				<pre in:typewriter>Loading...</pre>
-			</div>
-		{:else}
-			<pre
-				class="eslint-editor-monaco-root eslint-editor-monaco-root--wait"
-				in:typewriter>Loading...</pre>
-		{/if}
+		<pre class="eslint-editor-monaco-root eslint-editor-monaco-root--wait" in:loadingTypewriter />
 	{/if}
 {:then _}
 	<div bind:this={rootElement} class="eslint-editor-monaco-root" />
@@ -269,12 +255,5 @@
 		font-size: 14px;
 		line-height: 21px;
 		padding-left: 52px;
-	}
-	.eslint-editor-monaco-root__flex {
-		display: flex;
-	}
-	.eslint-editor-monaco-root__flex > * {
-		height: 100%;
-		width: 50%;
 	}
 </style>
