@@ -235,7 +235,7 @@
 
 {#await loading}
 	{#if started}
-		<pre class="eslint-editor-monaco-root eslint-editor-monaco-root--wait" in:loadingTypewriter />
+		<div class="eslint-editor-monaco-root eslint-editor-monaco-root--wait" in:loadingTypewriter />
 	{/if}
 {:then _}
 	<div bind:this={rootElement} class="eslint-editor-monaco-root" />
@@ -255,5 +255,6 @@
 		font-size: 14px;
 		line-height: 21px;
 		padding-left: 52px;
+		box-sizing: border-box;
 	}
 </style>
