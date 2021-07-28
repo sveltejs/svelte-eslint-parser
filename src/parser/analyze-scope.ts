@@ -1,7 +1,6 @@
 import type ESTree from "estree"
 import type { Scope, ScopeManager } from "eslint-scope"
-import { Variable, Reference } from "eslint-scope"
-import eslintScope from "eslint-scope"
+import { Variable, Reference, analyze } from "eslint-scope"
 import { getFallbackKeys } from "../traverse"
 import type { SvelteReactiveStatement, SvelteScriptElement } from "../ast"
 /**
@@ -24,7 +23,7 @@ export function analyzeScope(
                   sourceType,
               }
 
-    return eslintScope.analyze(root, {
+    return analyze(root, {
         ignoreEval: true,
         nodejsScope: false,
         impliedStrict: ecmaFeatures.impliedStrict,
