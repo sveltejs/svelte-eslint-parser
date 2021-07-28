@@ -13,12 +13,15 @@ export const BASIC_PARSER_OPTIONS: Linter.BaseConfig<Linter.RulesRecord>["parser
             ts: "@typescript-eslint/parser",
             typescript: require.resolve("@typescript-eslint/parser"),
         },
+        project: require.resolve("../../fixtures/parser/tsconfig.test.json"),
+        extraFileExtensions: [".svelte"],
     }
 export function* listupFixtures(): IterableIterator<{
     input: string
     inputFileName: string
     outputFileName: string
     scopeFileName: string
+    typeFileName: string | null
     getRuleOutputFileName: (ruleName: string) => string
 }> {
     yield* listupFixturesImpl(AST_FIXTURE_ROOT)
@@ -29,6 +32,7 @@ function* listupFixturesImpl(dir: string): IterableIterator<{
     inputFileName: string
     outputFileName: string
     scopeFileName: string
+    typeFileName: string | null
     getRuleOutputFileName: (ruleName: string) => string
 }> {
     for (const filename of fs.readdirSync(dir)) {
@@ -42,6 +46,10 @@ function* listupFixturesImpl(dir: string): IterableIterator<{
                 /input\.svelte$/u,
                 "scope-output.json",
             )
+            const typeFileName = inputFileName.replace(
+                /input\.svelte$/u,
+                "type-output.svelte",
+            )
 
             const input = fs.readFileSync(inputFileName, "utf8")
             yield {
@@ -49,6 +57,7 @@ function* listupFixturesImpl(dir: string): IterableIterator<{
                 inputFileName,
                 outputFileName,
                 scopeFileName,
+                typeFileName: fs.existsSync(typeFileName) ? typeFileName : null,
                 getRuleOutputFileName: (ruleName) => {
                     return inputFileName.replace(
                         /input\.svelte$/u,

@@ -109,7 +109,7 @@ export interface Visitor<N> {
 
 export function traverseNodes(
     node: SvelteNode,
-    visitor: Visitor<SvelteNode>,
+    visitor: Visitor<SvelteNode | ESTree.Node>,
 ): void
 export function traverseNodes(
     node: ESTree.Node,

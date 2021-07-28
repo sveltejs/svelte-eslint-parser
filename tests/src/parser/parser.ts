@@ -123,58 +123,86 @@ function checkLoc(ast: SvelteProgram, fileName: string, code: string) {
             set.add(node)
             if (parent?.type.startsWith("Svelte")) {
                 assert.ok(
-                    node.parent?.type === parent?.type,
-                    `Parent type mismatch [${node.parent?.type} : ${
+                    (node as any).parent?.type === parent?.type,
+                    `Parent type mismatch [${(node as any).parent?.type} : ${
                         parent?.type
                     }] @${JSON.stringify(node, nodeReplacer)}`,
                 )
             }
             assert.ok(
-                node.parent?.range?.[0] === parent?.range[0],
-                `Parent range mismatch [${node.parent?.range?.[0]} : ${
-                    parent?.range[0]
+                (node as any).parent?.range?.[0] === parent?.range![0],
+                `Parent range mismatch [${(node as any).parent?.range?.[0]} : ${
+                    parent?.range![0]
                 }] @${JSON.stringify(node, nodeReplacer)}`,
             )
             assert.ok(
-                node.parent?.range?.[1] === parent?.range[1],
-                `Parent range mismatch [${node.parent?.range?.[1]} : ${
-                    parent?.range[1]
+                (node as any).parent?.range?.[1] === parent?.range![1],
+                `Parent range mismatch [${(node as any).parent?.range?.[1]} : ${
+                    parent?.range![1]
                 }] @${JSON.stringify(node, nodeReplacer)}`,
             )
             assert.ok(
-                node.range[0] < node.range[1],
-                `No range on "${node.type} line:${node.loc.start.line} col:${node.loc.start.column}" in ${fileName}`,
+                node.range![0] < node.range![1],
+                `No range on "${node.type} line:${node.loc!.start.line} col:${
+                    node.loc!.start.column
+                }" in ${fileName}`,
             )
 
             if (parent) {
                 assert.ok(
-                    parent.range[0] <= node.range[0],
-                    `overlap range[0] on "${parent.type} line:${parent.loc.start.line} col:${parent.loc.start.column}" > "${node.type} line:${node.loc.start.line} col:${node.loc.start.column}" in ${fileName}`,
+                    parent.range![0] <= node.range![0],
+                    `overlap range[0] on "${parent.type} line:${
+                        parent.loc!.start.line
+                    } col:${parent.loc!.start.column}" > "${node.type} line:${
+                        node.loc!.start.line
+                    } col:${node.loc!.start.column}" in ${fileName}`,
                 )
                 assert.ok(
-                    node.range[1] <= parent.range[1],
-                    `overlap range[1] on "${parent.type} line:${parent.loc.end.line} col:${parent.loc.end.column}" > "${node.type} line:${node.loc.end.line} col:${node.loc.end.column}" in ${fileName}`,
+                    node.range![1] <= parent.range![1],
+                    `overlap range[1] on "${parent.type} line:${
+                        parent.loc!.end.line
+                    } col:${parent.loc!.end.column}" > "${node.type} line:${
+                        node.loc!.end.line
+                    } col:${node.loc!.end.column}" in ${fileName}`,
                 )
 
                 assert.ok(
-                    parent.loc.start.line <= node.loc.start.line,
-                    `overlap loc.start.line on "${parent.type} line:${parent.loc.start.line} col:${parent.loc.start.column}" > "${node.type} line:${node.loc.start.line} col:${node.loc.start.column}" in ${fileName}`,
+                    parent.loc!.start.line <= node.loc!.start.line,
+                    `overlap loc.start.line on "${parent.type} line:${
+                        parent.loc!.start.line
+                    } col:${parent.loc!.start.column}" > "${node.type} line:${
+                        node.loc!.start.line
+                    } col:${node.loc!.start.column}" in ${fileName}`,
                 )
-                if (parent.loc.start.line === node.loc.start.line) {
+                if (parent.loc!.start.line === node.loc!.start.line) {
                     assert.ok(
-                        parent.loc.start.column <= node.loc.start.column,
-                        `overlap loc.start.column on "${parent.type} line:${parent.loc.start.line} col:${parent.loc.start.column}" > "${node.type} line:${node.loc.start.line} col:${node.loc.start.column}" in ${fileName}`,
+                        parent.loc!.start.column <= node.loc!.start.column,
+                        `overlap loc.start.column on "${parent.type} line:${
+                            parent.loc!.start.line
+                        } col:${parent.loc!.start.column}" > "${
+                            node.type
+                        } line:${node.loc!.start.line} col:${
+                            node.loc!.start.column
+                        }" in ${fileName}`,
                     )
                 }
 
                 assert.ok(
-                    node.loc.end.line <= parent.loc.end.line,
-                    `overlap loc.end.line on "${parent.type} line:${parent.loc.end.line} col:${parent.loc.end.column}" > "${node.type} line:${node.loc.end.line} col:${node.loc.end.column}" in ${fileName}`,
+                    node.loc!.end.line <= parent.loc!.end.line,
+                    `overlap loc.end.line on "${parent.type} line:${
+                        parent.loc!.end.line
+                    } col:${parent.loc!.end.column}" > "${node.type} line:${
+                        node.loc!.end.line
+                    } col:${node.loc!.end.column}" in ${fileName}`,
                 )
-                if (parent.loc.end.line === node.loc.end.line) {
+                if (parent.loc!.end.line === node.loc!.end.line) {
                     assert.ok(
-                        node.loc.end.column <= parent.loc.end.column,
-                        `overlap loc.end.column on "${parent.type} line:${parent.loc.end.line} col:${parent.loc.end.column}" > "${node.type} line:${node.loc.end.line} col:${node.loc.end.column}" in ${fileName}`,
+                        node.loc!.end.column <= parent.loc!.end.column,
+                        `overlap loc.end.column on "${parent.type} line:${
+                            parent.loc!.end.line
+                        } col:${parent.loc!.end.column}" > "${node.type} line:${
+                            node.loc!.end.line
+                        } col:${node.loc!.end.column}" in ${fileName}`,
                     )
                 }
             }

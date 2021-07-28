@@ -9,6 +9,8 @@ import {
     nodeReplacer,
     scopeToJSON,
 } from "../tests/src/parser/test-utils"
+import type ts from "typescript"
+import type ESTree from "estree"
 
 const RULES = [
     "no-unused-labels",
@@ -40,6 +42,7 @@ for (const {
     inputFileName,
     outputFileName,
     scopeFileName,
+    typeFileName,
     getRuleOutputFileName,
 } of listupFixtures()) {
     try {
@@ -50,6 +53,10 @@ for (const {
         fs.writeFileSync(outputFileName, astJson, "utf8")
         const scopeJson = scopeToJSON(result.scopeManager)
         fs.writeFileSync(scopeFileName, scopeJson, "utf8")
+
+        if (typeFileName) {
+            fs.writeFileSync(typeFileName, buildTypes(input, result), "utf8")
+        }
     } catch (e) {
         // eslint-disable-next-line no-console -- ignore
         console.error(e)
@@ -98,4 +105,80 @@ function createLinter() {
     linter.defineParser("svelte-eslint-parser", parser as any)
 
     return linter
+}
+
+// eslint-disable-next-line require-jsdoc -- X
+function buildTypes(
+    input: string,
+    result: {
+        ast: parser.AST.SvelteProgram
+        services: Record<string, any>
+        visitorKeys: { [type: string]: string[] }
+    },
+): string {
+    const scriptLineRange: [number, number][] = []
+    for (const body of result.ast.body) {
+        if (body.type === "SvelteScriptElement" && body.body.length) {
+            scriptLineRange.push([
+                body.body[0].loc!.start.line - 1,
+                body.body[body.body.length - 1].loc!.end.line - 1,
+            ])
+        }
+    }
+
+    const tsNodeMap: ReadonlyMap<any, ts.Node> =
+        result.services.esTreeNodeToTSNodeMap
+    const checker: ts.TypeChecker =
+        result.services.program && result.services.program.getTypeChecker()
+
+    const checked = new Set()
+
+    const lines = input.split(/\r?\n/)
+    const types: string[][] = []
+
+    // eslint-disable-next-line require-jsdoc -- X
+    function addType(node: ESTree.Expression) {
+        const tsNode = tsNodeMap.get(node)!
+        const type = checker.getTypeAtLocation(tsNode)
+        const typeText = checker.typeToString(type)
+        const lineTypes = (types[node.loc!.start.line - 1] ??= [])
+        if (node.type === "Identifier") {
+            lineTypes.push(`${node.name}: ${typeText}`)
+        } else {
+            lineTypes.push(`${input.slice(...node.range!)}: ${typeText}`)
+        }
+    }
+
+    parser.traverseNodes(result.ast, {
+        visitorKeys: result.visitorKeys,
+        enterNode(node, parent) {
+            if (checked.has(parent)) {
+                checked.add(node)
+                return
+            }
+
+            if (
+                node.type === "CallExpression" ||
+                node.type === "Identifier" ||
+                node.type === "MemberExpression"
+            ) {
+                addType(node)
+                checked.add(node)
+            }
+        },
+        leaveNode() {
+            // noop
+        },
+    })
+    return lines
+        .map((l, i) => {
+            if (!types[i]) {
+                return l
+            }
+            if (scriptLineRange.some(([s, e]) => s <= i && i <= e)) {
+                return `${l} // ${types[i].join(", ")}`
+            }
+            return `${l} <!-- ${types[i].join(", ")} -->`
+        })
+        .join("\n")
 }
