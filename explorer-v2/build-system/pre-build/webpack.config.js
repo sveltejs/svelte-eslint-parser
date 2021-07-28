@@ -38,18 +38,11 @@ export default [
 	{
 		...base,
 		entry: {
-			'eslint-scope': resolve('./eslint-scope.js')
-		}
-	},
-	{
-		...base,
-		entry: {
 			'svelte-eslint-parser': resolve('./svelte-eslint-parser.js')
 		},
 		externals: {
 			'svelte/compiler': '$$inject_svelte_compiler$$',
-			espree: '$$inject_espree$$',
-			'eslint-scope': '$$inject_eslint_scope$$'
+			espree: '$$inject_espree$$'
 		},
 		plugins: [
 			new WrapperPlugin({
@@ -57,7 +50,6 @@ export default [
 				header: `
 				import * as $$inject_svelte_compiler$$ from 'svelte/compiler';
 				import $$inject_espree$$ from 'espree';
-				import $$inject_eslint_scope$$ from 'eslint-scope';
 				`
 			})
 		]
