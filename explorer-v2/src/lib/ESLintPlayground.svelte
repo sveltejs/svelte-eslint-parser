@@ -47,14 +47,12 @@
 
 	// eslint-disable-next-line no-use-before-define -- false positive
 	$: serializedString = (() => {
-		const defaultCode = DEFAULT_CODE;
-		const defaultRules = DEFAULT_RULES_CONFIG;
-		const serializeCode = defaultCode === code ? undefined : code;
-		const serializeRules = equalsRules(defaultRules, rules) ? undefined : rules;
+		const serializeCode = DEFAULT_CODE === code ? undefined : code;
+		const serializeRules = equalsRules(DEFAULT_RULES_CONFIG, rules) ? undefined : rules;
 		return serializeState({
 			code: serializeCode,
 			rules: serializeRules,
-			useEslintPluginSvelte3
+			useEslintPluginSvelte3: useEslintPluginSvelte3 ? true : undefined
 		});
 	})();
 	$: {

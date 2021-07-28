@@ -11,6 +11,3 @@
 </svelte:head>
 
 <ESLintPlayground />
-
-<style>
-</style>

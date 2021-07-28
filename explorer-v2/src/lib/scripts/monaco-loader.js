@@ -46,10 +46,12 @@ export async function loadMonacoEditor() {
 	return (
 		editorLoaded ||
 		(editorLoaded = new Promise((resolve) => {
-			// eslint-disable-next-line node/no-missing-require -- ignore
-			window.require(['vs/editor/editor.main'], (r) => {
-				resolve(r);
-			});
+			if (typeof window !== 'undefined') {
+				// eslint-disable-next-line node/no-missing-require -- ignore
+				window.require(['vs/editor/editor.main'], (r) => {
+					resolve(r);
+				});
+			}
 		}))
 	);
 }

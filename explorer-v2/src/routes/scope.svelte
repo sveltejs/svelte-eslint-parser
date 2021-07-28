@@ -11,6 +11,3 @@
 </svelte:head>
 
 <ScopeExplorer />
-
-<style>
-</style>
