@@ -246,7 +246,7 @@ function* extractBlocks(code: string): IterableIterator<{
             const codeRange: [number, number] = [startTagEnd, endTagStart]
 
             const attrRe =
-                /(?<key>[^\s=]+)(?:=(?:"(?<val1>[^"]*)"|'(?<val2>[^"]*)'|(?<val3>[^\s=]+)))?/giu
+                /(?<key>[^\s=]+)(?:=(?:"(?<val1>[^"]*)"|'(?<val2>[^"]*)'|(?<val3>[^\s=]+)))?/gu
             const attrs: Record<string, string | undefined> = {}
             let attrRes
             while ((attrRes = attrRe.exec(attributes))) {
