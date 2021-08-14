@@ -137,19 +137,31 @@ function extractAttributes(
     ctx: Context,
 ) {
     const script = element.type === "SvelteScriptElement"
-    const code =
-        " ".repeat(element.range[0]) +
-        ctx.sourceCode.template
-            .slice(...element.range)
-            .replace(
-                script
-                    ? /<script(\s[\s\S]*?)?>([\s\S]*?)<\/script>/giu
-                    : /<style(\s[\s\S]*?)?>([\s\S]*?)<\/style>/giu,
-                (_tag, attributes: string | undefined, context: string) =>
-                    `${script ? "<div   " : "<div  "}${
-                        attributes || ""
-                    }>${" ".repeat(context.length)}</div>`,
-            )
+
+    let code = " ".repeat(element.range[0])
+
+    const elementCode = ctx.sourceCode.template.slice(...element.range)
+    const startRegex = script
+        ? /<script(\s[\s\S]*?)?>/giu
+        : /<style(\s[\s\S]*?)?>/giu
+    const endTag = script ? "</script>" : "</style>"
+    let re
+    let index = 0
+    while ((re = startRegex.exec(elementCode))) {
+        const [, attributes] = re
+
+        const endTagIndex = elementCode.indexOf(endTag, startRegex.lastIndex)
+        if (endTagIndex >= 0) {
+            const contextLength = endTagIndex - startRegex.lastIndex
+            code += elementCode.slice(index, re.index)
+            code += `${script ? "<div   " : "<div  "}${attributes || ""}>`
+            code += `${" ".repeat(contextLength)}</div>`
+            startRegex.lastIndex = index = endTagIndex + endTag.length
+        } else {
+            break
+        }
+    }
+    code += elementCode.slice(index)
     const svelteAst = parse(code) as SvAST.Ast
 
     const fakeElement = svelteAst.html.children.find(
