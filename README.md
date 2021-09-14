@@ -55,7 +55,7 @@ It provides many unique check rules by using the template AST.
 
 The [svelte-eslint-parser] can not be used with the [eslint-plugin-svelte3].
 
-[svelte-eslint-parser]: https://www.npmjs.com/package/svelte-eslint-parser
+[svelte-eslint-parser]: https://github.com/ota-meshi/svelte-eslint-parser
 
 ## 💿 Installation
 
