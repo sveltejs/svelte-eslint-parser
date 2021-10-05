@@ -1,5 +1,5 @@
 import type { ESLintExtendedProgram } from "."
-import { analyzeReactiveScope, analyzeScope } from "./analyze-scope"
+import { analyzeScope } from "./analyze-scope"
 import { traverseNodes } from "../traverse"
 import type { ScriptsSourceCode } from "../context"
 import { getParser } from "./resolve-parser"
@@ -34,7 +34,6 @@ export function parseScript(
             //
         },
     })
-    analyzeReactiveScope(result.scopeManager)
 
     return result
 }

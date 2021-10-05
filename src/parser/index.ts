@@ -8,7 +8,11 @@ import { parseScript } from "./script"
 import type * as SvAST from "./svelte-ast-types"
 import { sort } from "./sort"
 import { parseTemplate } from "./template"
-import { analyzePropsScope, analyzeStoreScope } from "./analyze-scope"
+import {
+    analyzePropsScope,
+    analyzeReactiveScope,
+    analyzeStoreScope,
+} from "./analyze-scope"
 import { ParseError } from "../errors"
 
 export interface ESLintProgram extends Program {
@@ -71,6 +75,7 @@ export function parseForESLint(
     sort(ctx.tokens)
     extractTokens(ctx)
     analyzeStoreScope(resultScript.scopeManager!)
+    analyzeReactiveScope(resultScript.scopeManager!)
 
     // Add $$xxx variable
     for (const $$name of ["$$slots", "$$props", "$$restProps"]) {
