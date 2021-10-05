@@ -12,6 +12,7 @@ module.exports = {
         "plugin:@ota-meshi/+node",
         "plugin:@ota-meshi/+typescript",
         "plugin:@ota-meshi/+prettier",
+        "plugin:@ota-meshi/+package-json",
         "plugin:@ota-meshi/+json",
     ],
     rules: {
