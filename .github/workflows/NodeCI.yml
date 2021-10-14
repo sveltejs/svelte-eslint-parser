@@ -22,7 +22,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        node-version: [12.x, 13.x, 14.x]
+        node-version: [12.x, 14.x, 16.x]
     steps:
     - uses: actions/checkout@v2
     - name: Use Node.js ${{ matrix.node-version }}
@@ -47,6 +47,25 @@ jobs:
     - name: Install @typescript-eslint v4
       run: |+
         npm i -D @typescript-eslint/parser@4 @typescript-eslint/eslint-plugin@4 --legacy-peer-deps
+        npx rimraf node_modules
+    - name: Install Packages
+      run: npm install
+    - name: Test
+      run: npm test
+  test-for-eslint-v7:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [13.x, 14.x]
+    steps:
+    - uses: actions/checkout@v2
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v2
+      with:
+        node-version: ${{ matrix.node-version }}
+    - name: Install eslint v7
+      run: |+
+        npm i -D eslint@7 --legacy-peer-deps
         npx rimraf node_modules
     - name: Install Packages
       run: npm install
