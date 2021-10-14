@@ -1,6 +1,6 @@
 <script>
 	import { onDestroy, onMount } from 'svelte';
-	import Linter from 'eslint4b';
+	import { Linter } from 'eslint';
 	import * as svelteEslintParser from 'svelte-eslint-parser';
 	import ESLintEditor from './ESLintEditor.svelte';
 	import RulesSettings from './RulesSettings.svelte';

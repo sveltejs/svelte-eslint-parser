@@ -38,6 +38,36 @@ export default [
 	{
 		...base,
 		entry: {
+			eslint: resolve('./eslint.js')
+		},
+		externals: {
+			espree: '$$inject_espree$$',
+			esquery: '$$inject_esquery$$'
+		},
+		plugins: [
+			new WrapperPlugin({
+				test: /eslint\.js/,
+				header: `
+				if (typeof window !== "undefined") {
+					if (typeof window.global === "undefined") {
+						window.global = {}
+					}
+					if (typeof window.process === "undefined") {
+						window.process = {
+							env: {},
+							cwd: () => undefined,
+						}
+					}
+				}
+				import * as $$inject_espree$$ from 'espree';
+				import $$inject_esquery$$ from 'esquery';
+				`
+			})
+		]
+	},
+	{
+		...base,
+		entry: {
 			'svelte-eslint-parser': resolve('./svelte-eslint-parser.js')
 		},
 		externals: {
@@ -49,7 +79,7 @@ export default [
 				test: /svelte-eslint-parser\.js/,
 				header: `
 				import * as $$inject_svelte_compiler$$ from 'svelte/compiler';
-				import $$inject_espree$$ from 'espree';
+				import * as $$inject_espree$$ from 'espree';
 				`
 			})
 		]
@@ -75,7 +105,7 @@ export default [
 					loader: 'string-replace-loader',
 					options: {
 						search: 'require\\(linter_path\\)',
-						replace: (original) => `{Linter:require('eslint4b')}; // ${original}`,
+						replace: (original) => `require('eslint'); // ${original}`,
 						flags: ''
 					}
 				},
@@ -92,14 +122,14 @@ export default [
 		},
 		externals: {
 			'svelte/compiler': '$$inject_svelte_compiler$$',
-			eslint4b: '$$inject_eslint4b$$'
+			eslint: '$$inject_eslint$$'
 		},
 		plugins: [
 			new WrapperPlugin({
 				test: /eslint-plugin-svelte3\.js/,
 				header: `
 				import * as $$inject_svelte_compiler$$ from 'svelte/compiler';
-				import $$inject_eslint4b$$ from 'eslint4b';
+				import * as $$inject_eslint$$ from 'eslint';
 				`
 			})
 		]

@@ -21,6 +21,8 @@ const config = {
 					assert: resolve('./build-system/shim/assert.js'),
 					path: resolve('./build-system/shim/path.js'),
 					fs: resolve('./build-system/shim/fs.js'),
+					module: resolve('./build-system/shim/module.js'),
+					eslint: resolve('./build-system/shim/eslint.js'),
 					'svelte-eslint-parser': resolve('./build-system/shim/svelte-eslint-parser.js'),
 					'eslint-plugin-svelte3': resolve('./build-system/shim/eslint-plugin-svelte3.js')
 				}

@@ -1,5 +1,7 @@
 export default {
-	extname(p) {
-		return /\.[^.]*$/.exec(p)?.[0];
-	}
+	extname
 };
+
+export function extname(p) {
+	return /\.[^.]*$/.exec(p)?.[0];
+}

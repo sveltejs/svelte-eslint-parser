@@ -1,30 +1,21 @@
-import Linter from 'eslint4b';
+import { Linter } from 'eslint';
 
 const linter = new Linter();
 
 export const categories = [
 	{
+		type: 'problem',
 		title: 'Possible Errors',
 		rules: []
 	},
 	{
-		title: 'Best Practices',
+		type: 'suggestion',
+		title: 'Suggestions',
 		rules: []
 	},
 	{
-		title: 'Strict Mode',
-		rules: []
-	},
-	{
-		title: 'Variables',
-		rules: []
-	},
-	{
-		title: 'Stylistic Issues',
-		rules: []
-	},
-	{
-		title: 'ECMAScript 6',
+		type: 'layout',
+		title: 'Layout & Formatting',
 		rules: []
 	}
 ];
@@ -41,8 +32,8 @@ for (const [ruleId, rule] of linter.getRules()) {
 		url: rule.meta.docs.url
 	};
 	rules.push(data);
-	const category = rule.meta.docs.category;
-	categories.find((c) => c.title === category).rules.push(data);
+	const type = rule.meta.type;
+	categories.find((c) => c.type === type).rules.push(data);
 
 	if (rule.meta.docs.recommended) {
 		DEFAULT_RULES_CONFIG[ruleId] = 'error';
