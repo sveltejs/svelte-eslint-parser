@@ -14,6 +14,18 @@ import type { ESLintExtendedProgram } from "../parser"
 import { getWithLoc } from "../parser/converts/common"
 import { traverseNodes } from "../traverse"
 
+type TSAsExpression = {
+    type: "TSAsExpression"
+    expression: ESTree.Expression
+    typeAnnotation: TSParenthesizedType | ESTree.Node
+}
+
+// TS ESLint v4 Node
+type TSParenthesizedType = {
+    type: "TSParenthesizedType"
+    typeAnnotation: ESTree.Node
+}
+
 export type ScriptLetCallback<E extends ESTree.Node> = (
     es: E,
     options: ScriptLetCallbackOption,
@@ -117,9 +129,11 @@ export class ScriptLetContext {
             range[0] - 1,
             (st, tokens, comments, result) => {
                 const exprSt = st as ESTree.ExpressionStatement
-                const node: ESTree.Expression = isTS
-                    ? (exprSt.expression as any).expression
-                    : exprSt.expression
+                const tsAs: TSAsExpression | null = isTS
+                    ? (exprSt.expression as any)
+                    : null
+                const node: ESTree.Expression =
+                    tsAs?.expression || exprSt.expression
                 // Process for nodes
                 for (const callback of callbacks) {
                     callback(node as E, result)
@@ -134,8 +148,9 @@ export class ScriptLetContext {
                     removeScope(
                         result.scopeManager,
                         result.getScope(
-                            (exprSt.expression as any).typeAnnotation
-                                .typeAnnotation,
+                            tsAs!.typeAnnotation.type === "TSParenthesizedType"
+                                ? tsAs!.typeAnnotation.typeAnnotation
+                                : tsAs!.typeAnnotation,
                         ),
                     )
                     this.remapNodes(
