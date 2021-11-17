@@ -164,6 +164,9 @@ export function nodeReplacer(key: string, value: any): any {
     if (key === "parent") {
         return undefined
     }
+    if (key === "assertions" && Array.isArray(value) && value.length === 0) {
+        return undefined
+    }
     if (value instanceof RegExp) {
         return String(value)
     }
