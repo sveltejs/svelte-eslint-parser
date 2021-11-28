@@ -17,12 +17,12 @@ export function indexOf(
 /** lastIndexOf */
 export function lastIndexOf(
     str: string,
-    search: (c: string) => boolean,
+    search: (c: string, index: number) => boolean,
     end: number,
 ): number {
     for (let index = end; index >= 0; index--) {
         const c = str[index]
-        if (search(c)) {
+        if (search(c, index)) {
             return index
         }
     }

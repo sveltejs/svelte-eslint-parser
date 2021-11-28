@@ -13,6 +13,30 @@ import type { Context } from "../../context"
 import { convertChildren } from "./element"
 import { getWithLoc, indexOf, lastIndexOf } from "./common"
 
+/** Get start index of block */
+function startBlockIndex(code: string, endIndex: number): number {
+    return lastIndexOf(
+        code,
+        (c, index) => {
+            if (c !== "{") {
+                return false
+            }
+            for (let next = index + 1; next < code.length; next++) {
+                const nextC = code[next]
+                if (!nextC.trim()) {
+                    continue
+                }
+                return (
+                    code.startsWith("#if", next) ||
+                    code.startsWith(":else", next)
+                )
+            }
+            return false
+        },
+        endIndex,
+    )
+}
+
 /** Convert for IfBlock */
 export function convertIfBlock(
     node: SvAST.IfBlock,
@@ -22,7 +46,7 @@ export function convertIfBlock(
     // {#if expr} {:else} {/if}
     // {:else if expr} {/if}
     const nodeStart = node.elseif
-        ? ctx.code.lastIndexOf("{", node.start)
+        ? startBlockIndex(ctx.code, node.start - 1)
         : node.start
     const ifBlock: SvelteIfBlock = {
         type: "SvelteIfBlock",
@@ -49,7 +73,7 @@ export function convertIfBlock(
         return ifBlock
     }
 
-    const elseStart = ctx.code.lastIndexOf("{", node.else.start - 1)
+    const elseStart = startBlockIndex(ctx.code, node.else.start - 1)
 
     const elseBlock: SvelteElseBlock = {
         type: "SvelteElseBlock",
@@ -149,7 +173,7 @@ export function convertEachBlock(
         return eachBlock
     }
 
-    const elseStart = ctx.code.lastIndexOf("{", node.else.start)
+    const elseStart = startBlockIndex(ctx.code, node.else.start - 1)
 
     const elseBlock: SvelteElseBlock = {
         type: "SvelteElseBlock",
