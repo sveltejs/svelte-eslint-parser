@@ -224,7 +224,10 @@ export function convertAwaitBlock(
             type: "SvelteAwaitPendingBlock",
             children: [],
             parent: awaitBlock,
-            ...ctx.getConvertLocation(node.pending),
+            ...ctx.getConvertLocation({
+                start: awaitBlock.range[0],
+                end: node.pending.end,
+            }),
         }
         ctx.scriptLet.nestBlock(pendingBlock)
         pendingBlock.children.push(
