@@ -49,7 +49,7 @@ export function convertIfBlock(
         return ifBlock
     }
 
-    const elseStart = ctx.code.lastIndexOf("{", node.else.start)
+    const elseStart = ctx.code.lastIndexOf("{", node.else.start - 1)
 
     const elseBlock: SvelteElseBlock = {
         type: "SvelteElseBlock",
