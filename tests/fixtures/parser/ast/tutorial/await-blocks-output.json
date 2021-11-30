@@ -1126,6 +1126,7 @@
     },
     {
       "type": "SvelteAwaitBlock",
+      "kind": "await",
       "expression": {
         "type": "Identifier",
         "name": "promise",
@@ -1293,6 +1294,7 @@
       },
       "then": {
         "type": "SvelteAwaitThenBlock",
+        "awaitThen": false,
         "value": {
           "type": "Identifier",
           "name": "number",
@@ -1494,6 +1496,7 @@
       },
       "catch": {
         "type": "SvelteAwaitCatchBlock",
+        "awaitCatch": false,
         "error": {
           "type": "Identifier",
           "name": "error",
@@ -1804,6 +1807,7 @@
     },
     {
       "type": "SvelteAwaitBlock",
+      "kind": "await-then",
       "expression": {
         "type": "Identifier",
         "name": "promise",
@@ -1825,6 +1829,7 @@
       "pending": null,
       "then": {
         "type": "SvelteAwaitThenBlock",
+        "awaitThen": true,
         "value": {
           "type": "Identifier",
           "name": "value",
@@ -2060,6 +2065,7 @@
     },
     {
       "type": "SvelteAwaitBlock",
+      "kind": "await-catch",
       "expression": {
         "type": "Identifier",
         "name": "promise",
@@ -2082,6 +2088,7 @@
       "then": null,
       "catch": {
         "type": "SvelteAwaitCatchBlock",
+        "awaitCatch": true,
         "error": {
           "type": "Identifier",
           "name": "error",
@@ -2392,6 +2399,7 @@
     },
     {
       "type": "SvelteAwaitBlock",
+      "kind": "await-then",
       "expression": {
         "type": "Identifier",
         "name": "promise",
@@ -2413,6 +2421,7 @@
       "pending": null,
       "then": {
         "type": "SvelteAwaitThenBlock",
+        "awaitThen": true,
         "value": {
           "type": "Identifier",
           "name": "value",
@@ -2614,6 +2623,7 @@
       },
       "catch": {
         "type": "SvelteAwaitCatchBlock",
+        "awaitCatch": false,
         "error": {
           "type": "Identifier",
           "name": "error",

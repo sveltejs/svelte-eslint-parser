@@ -1,12 +1,18 @@
 import type * as SvAST from "../svelte-ast-types"
 import type {
     SvelteAwaitBlock,
+    SvelteAwaitBlockAwaitCatch,
+    SvelteAwaitBlockAwaitThen,
     SvelteAwaitCatchBlock,
     SvelteAwaitPendingBlock,
     SvelteAwaitThenBlock,
     SvelteEachBlock,
     SvelteElseBlock,
+    SvelteElseBlockAlone,
+    SvelteElseBlockElseIf,
     SvelteIfBlock,
+    SvelteIfBlockAlone,
+    SvelteIfBlockElseIf,
     SvelteKeyBlock,
 } from "../../ast"
 import type { Context } from "../../context"
@@ -37,37 +43,49 @@ function startBlockIndex(code: string, endIndex: number): number {
     )
 }
 
+export function convertIfBlock(
+    node: SvAST.IfBlock,
+    parent: SvelteIfBlock["parent"],
+    ctx: Context,
+): SvelteIfBlockAlone
+export function convertIfBlock(
+    node: SvAST.IfBlock,
+    parent: SvelteIfBlock["parent"],
+    ctx: Context,
+    elseif: true,
+): SvelteIfBlockElseIf
 /** Convert for IfBlock */
 export function convertIfBlock(
     node: SvAST.IfBlock,
     parent: SvelteIfBlock["parent"],
     ctx: Context,
+    elseif?: true,
 ): SvelteIfBlock {
     // {#if expr} {:else} {/if}
     // {:else if expr} {/if}
-    const nodeStart = node.elseif
+    const nodeStart = elseif
         ? startBlockIndex(ctx.code, node.start - 1)
         : node.start
     const ifBlock: SvelteIfBlock = {
         type: "SvelteIfBlock",
-        elseif: Boolean(node.elseif),
+        elseif: Boolean(elseif),
         expression: null as any,
         children: [],
         else: null,
         parent,
         ...ctx.getConvertLocation({ start: nodeStart, end: node.end }),
-    }
+    } as SvelteIfBlock
 
     ctx.scriptLet.nestIfBlock(node.expression, ifBlock, (es) => {
         ifBlock.expression = es
     })
     ifBlock.children.push(...convertChildren(node, ifBlock, ctx))
     ctx.scriptLet.closeScope()
-    if (node.elseif) {
+    if (elseif) {
         const index = ctx.code.indexOf("if", nodeStart)
         ctx.addToken("MustacheKeyword", { start: index, end: index + 2 })
     }
-    extractMustacheBlockTokens(ifBlock, ctx, { startOnly: node.elseif })
+    extractMustacheBlockTokens(ifBlock, ctx, { startOnly: elseif })
 
     if (!node.else) {
         return ifBlock
@@ -75,8 +93,35 @@ export function convertIfBlock(
 
     const elseStart = startBlockIndex(ctx.code, node.else.start - 1)
 
-    const elseBlock: SvelteElseBlock = {
+    if (node.else.children.length === 1) {
+        const c = node.else.children[0]
+        if (c.type === "IfBlock" && c.elseif) {
+            const elseBlock: SvelteElseBlockElseIf = {
+                type: "SvelteElseBlock",
+                elseif: true,
+                children: [] as any,
+                parent: ifBlock,
+                ...ctx.getConvertLocation({
+                    start: elseStart,
+                    end: node.else.end,
+                }),
+            }
+            ifBlock.else = elseBlock
+
+            const elseIfBlock = convertIfBlock(c, elseBlock, ctx, true)
+            // adjust loc
+            elseBlock.range[1] = elseIfBlock.range[1]
+            elseBlock.loc.end = {
+                line: elseIfBlock.loc.end.line,
+                column: elseIfBlock.loc.end.column,
+            }
+            elseBlock.children = [elseIfBlock]
+            return ifBlock
+        }
+    }
+    const elseBlock: SvelteElseBlockAlone = {
         type: "SvelteElseBlock",
+        elseif: false,
         children: [],
         parent: ifBlock,
         ...ctx.getConvertLocation({
@@ -86,28 +131,10 @@ export function convertIfBlock(
     }
     ifBlock.else = elseBlock
 
-    let elseIfBlock: SvelteIfBlock | null = null
-    if (node.else.children.length === 1) {
-        const c = node.else.children[0]
-        if (c.type === "IfBlock" && c.elseif) {
-            elseIfBlock = convertIfBlock(c, elseBlock, ctx)
-            // adjust loc
-            elseBlock.range[1] = elseIfBlock.range[1]
-            elseBlock.loc.end = {
-                line: elseIfBlock.loc.end.line,
-                column: elseIfBlock.loc.end.column,
-            }
-        }
-    }
-
-    if (elseIfBlock) {
-        elseBlock.children.push(elseIfBlock)
-    } else {
-        ctx.scriptLet.nestBlock(elseBlock)
-        elseBlock.children.push(...convertChildren(node.else, elseBlock, ctx))
-        ctx.scriptLet.closeScope()
-        extractMustacheBlockTokens(elseBlock, ctx, { startOnly: true })
-    }
+    ctx.scriptLet.nestBlock(elseBlock)
+    elseBlock.children.push(...convertChildren(node.else, elseBlock, ctx))
+    ctx.scriptLet.closeScope()
+    extractMustacheBlockTokens(elseBlock, ctx, { startOnly: true })
 
     return ifBlock
 }
@@ -175,8 +202,9 @@ export function convertEachBlock(
 
     const elseStart = startBlockIndex(ctx.code, node.else.start - 1)
 
-    const elseBlock: SvelteElseBlock = {
+    const elseBlock: SvelteElseBlockAlone = {
         type: "SvelteElseBlock",
+        elseif: false,
         children: [],
         parent: eachBlock,
         ...ctx.getConvertLocation({
@@ -200,15 +228,16 @@ export function convertAwaitBlock(
     parent: SvelteAwaitBlock["parent"],
     ctx: Context,
 ): SvelteAwaitBlock {
-    const awaitBlock: SvelteAwaitBlock = {
+    const awaitBlock = {
         type: "SvelteAwaitBlock",
         expression: null as any,
-        pending: null,
-        then: null,
-        catch: null,
+        kind: "await",
+        pending: null as any,
+        then: null as any,
+        catch: null as any,
         parent,
         ...ctx.getConvertLocation(node),
-    }
+    } as SvelteAwaitBlock
 
     ctx.scriptLet.addExpression(
         node.expression,
@@ -237,12 +266,18 @@ export function convertAwaitBlock(
         ctx.scriptLet.closeScope()
     }
     if (!node.then.skip) {
+        const awaitThen = Boolean(node.pending.skip)
+        if (awaitThen) {
+            ;(awaitBlock as SvelteAwaitBlockAwaitThen).kind = "await-then"
+        }
+
         const thenStart = awaitBlock.pending ? node.then.start : node.start
         const thenBlock: SvelteAwaitThenBlock = {
             type: "SvelteAwaitThenBlock",
+            awaitThen,
             value: null,
             children: [],
-            parent: awaitBlock,
+            parent: awaitBlock as any,
             ...ctx.getConvertLocation({
                 start: thenStart,
                 end: node.then.end,
@@ -282,12 +317,17 @@ export function convertAwaitBlock(
         ctx.scriptLet.closeScope()
     }
     if (!node.catch.skip) {
+        const awaitCatch = Boolean(node.pending.skip && node.then.skip)
+        if (awaitCatch) {
+            ;(awaitBlock as SvelteAwaitBlockAwaitCatch).kind = "await-catch"
+        }
         const catchStart =
             awaitBlock.pending || awaitBlock.then
                 ? node.catch.start
                 : node.start
-        const catchBlock: SvelteAwaitCatchBlock = {
+        const catchBlock = {
             type: "SvelteAwaitCatchBlock",
+            awaitCatch,
             error: null,
             children: [],
             parent: awaitBlock,
@@ -295,7 +335,7 @@ export function convertAwaitBlock(
                 start: catchStart,
                 end: node.catch.end,
             }),
-        }
+        } as SvelteAwaitCatchBlock
 
         if (node.error) {
             ctx.scriptLet.nestBlock(

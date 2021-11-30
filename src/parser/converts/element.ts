@@ -7,10 +7,11 @@ import type {
     SvelteDebugTag,
     SvelteEachBlock,
     SvelteElement,
-    SvelteElseBlock,
+    SvelteElseBlockAlone,
     SvelteHTMLComment,
     SvelteHTMLElement,
     SvelteIfBlock,
+    SvelteIfBlockAlone,
     SvelteKeyBlock,
     SvelteMemberExpressionName,
     SvelteMustacheTag,
@@ -50,7 +51,7 @@ export function* convertChildren(
         | SvelteProgram
         | SvelteElement
         | SvelteIfBlock
-        | SvelteElseBlock
+        | SvelteElseBlockAlone
         | SvelteEachBlock
         | SvelteAwaitPendingBlock
         | SvelteAwaitThenBlock
@@ -62,7 +63,7 @@ export function* convertChildren(
     | SvelteElement
     | SvelteMustacheTag
     | SvelteDebugTag
-    | SvelteIfBlock
+    | SvelteIfBlockAlone
     | SvelteEachBlock
     | SvelteAwaitBlock
     | SvelteKeyBlock

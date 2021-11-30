@@ -3,6 +3,7 @@
   "body": [
     {
       "type": "SvelteAwaitBlock",
+      "kind": "await",
       "expression": {
         "type": "Identifier",
         "name": "promise",
@@ -206,6 +207,7 @@
       },
       "then": {
         "type": "SvelteAwaitThenBlock",
+        "awaitThen": false,
         "value": {
           "type": "Identifier",
           "name": "value",
@@ -443,6 +445,7 @@
       },
       "catch": {
         "type": "SvelteAwaitCatchBlock",
+        "awaitCatch": false,
         "error": {
           "type": "Identifier",
           "name": "error",
