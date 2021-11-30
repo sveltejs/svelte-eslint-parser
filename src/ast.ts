@@ -163,7 +163,7 @@ export interface SvelteSpecialElement extends BaseSvelteElement {
         | SvelteProgram
         | SvelteElement
         | SvelteIfBlock
-        | SvelteElseBlock
+        | SvelteElseBlockAlone
         | SvelteEachBlock
         | SvelteAwaitPendingBlock
         | SvelteAwaitThenBlock
@@ -230,7 +230,7 @@ export interface SvelteText extends BaseNode {
         | SvelteElement
         | SvelteStyleElement
         | SvelteIfBlock
-        | SvelteElseBlock
+        | SvelteElseBlockAlone
         | SvelteEachBlock
         | SvelteAwaitPendingBlock
         | SvelteAwaitThenBlock
@@ -254,7 +254,7 @@ interface BaseSvelteMustacheTag extends BaseNode {
         | SvelteProgram
         | SvelteElement
         | SvelteIfBlock
-        | SvelteElseBlock
+        | SvelteElseBlockAlone
         | SvelteEachBlock
         | SvelteAwaitPendingBlock
         | SvelteAwaitThenBlock
@@ -308,6 +308,7 @@ interface BaseSvelteIfBlock extends BaseNode {
 /** Node of if block. e.g. `{#if}` */
 export interface SvelteIfBlockAlone extends BaseSvelteIfBlock {
     elseif: false
+    parent: Exclude<BaseSvelteIfBlock["parent"], SvelteElseBlockElseIf>
 }
 /** Node of if block. e.g. `{:else #if}` */
 export interface SvelteIfBlockElseIf extends BaseSvelteIfBlock {
