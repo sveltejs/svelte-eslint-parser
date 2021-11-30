@@ -1,4 +1,9 @@
-import type { SvelteDebugTag, SvelteMustacheTag } from "../../ast"
+import type {
+    SvelteDebugTag,
+    SvelteMustacheTag,
+    SvelteMustacheTagRaw,
+    SvelteMustacheTagText,
+} from "../../ast"
 import type { Context } from "../../context"
 import type * as SvAST from "../svelte-ast-types"
 /** Convert for MustacheTag */
@@ -6,7 +11,7 @@ export function convertMustacheTag(
     node: SvAST.MustacheTag,
     parent: SvelteMustacheTag["parent"],
     ctx: Context,
-): SvelteMustacheTag & { kind: "text" } {
+): SvelteMustacheTagText {
     return convertMustacheTag0(node, "text", parent, ctx)
 }
 /** Convert for MustacheTag */
@@ -14,8 +19,13 @@ export function convertRawMustacheTag(
     node: SvAST.RawMustacheTag,
     parent: SvelteMustacheTag["parent"],
     ctx: Context,
-): SvelteMustacheTag & { kind: "raw" } {
-    const mustache = convertMustacheTag0(node, "raw", parent, ctx)
+): SvelteMustacheTagRaw {
+    const mustache: SvelteMustacheTagRaw = convertMustacheTag0(
+        node,
+        "raw",
+        parent,
+        ctx,
+    )
     const atHtmlStart = ctx.code.indexOf("@html", mustache.range[0])
     ctx.addToken("MustacheKeyword", {
         start: atHtmlStart,
@@ -27,7 +37,7 @@ export function convertRawMustacheTag(
 /** Convert for DebugTag */
 export function convertDebugTag(
     node: SvAST.DebugTag,
-    parent: SvelteMustacheTag["parent"],
+    parent: SvelteDebugTag["parent"],
     ctx: Context,
 ): SvelteDebugTag {
     const mustache: SvelteDebugTag = {
@@ -50,19 +60,19 @@ export function convertDebugTag(
 }
 
 /** Convert to MustacheTag */
-function convertMustacheTag0<K extends SvelteMustacheTag["kind"]>(
+function convertMustacheTag0<T extends SvelteMustacheTag>(
     node: SvAST.MustacheTag | SvAST.RawMustacheTag,
-    kind: K,
-    parent: SvelteMustacheTag["parent"],
+    kind: T["kind"],
+    parent: T["parent"],
     ctx: Context,
-): SvelteMustacheTag & { kind: K } {
-    const mustache: SvelteMustacheTag & { kind: K } = {
+): T {
+    const mustache = {
         type: "SvelteMustacheTag",
         kind,
         expression: null as any,
         parent,
         ...ctx.getConvertLocation(node),
-    }
+    } as T
     ctx.scriptLet.addExpression(node.expression, mustache, null, (es) => {
         mustache.expression = es
     })

@@ -125,7 +125,7 @@ export interface SvelteHTMLElement extends BaseSvelteElement {
         | SvelteProgram
         | SvelteElement
         | SvelteIfBlock
-        | SvelteElseBlock
+        | SvelteElseBlockAlone
         | SvelteEachBlock
         | SvelteAwaitPendingBlock
         | SvelteAwaitThenBlock
@@ -144,7 +144,7 @@ export interface SvelteComponentElement extends BaseSvelteElement {
         | SvelteProgram
         | SvelteElement
         | SvelteIfBlock
-        | SvelteElseBlock
+        | SvelteElseBlockAlone
         | SvelteEachBlock
         | SvelteAwaitPendingBlock
         | SvelteAwaitThenBlock
@@ -215,7 +215,7 @@ type Child =
     | SvelteText
     | SvelteMustacheTag
     | SvelteDebugTag
-    | SvelteIfBlock
+    | SvelteIfBlockAlone
     | SvelteEachBlock
     | SvelteAwaitBlock
     | SvelteKeyBlock
@@ -244,7 +244,12 @@ export interface SvelteLiteral extends BaseNode {
     parent: SvelteAttribute
 }
 
+/** Node of mustache tag. e.g. `{...}`, `{@html ...}`. Like JSXExpressionContainer */
+export type SvelteMustacheTag = SvelteMustacheTagText | SvelteMustacheTagRaw
 interface BaseSvelteMustacheTag extends BaseNode {
+    type: "SvelteMustacheTag"
+    kind: "text" | "raw"
+    expression: ESTree.Expression
     parent:
         | SvelteProgram
         | SvelteElement
@@ -257,19 +262,33 @@ interface BaseSvelteMustacheTag extends BaseNode {
         | SvelteKeyBlock
         | SvelteAttribute
 }
-/** Node of mustache tag. e.g. `{...}`, `{@html ...}`. Like JSXExpressionContainer */
-export interface SvelteMustacheTag extends BaseSvelteMustacheTag {
-    type: "SvelteMustacheTag"
-    kind: "text" | "raw"
-    expression: ESTree.Expression
+/** Node of mustache tag. e.g. `{...}``. Like JSXExpressionContainer */
+export interface SvelteMustacheTagText extends BaseSvelteMustacheTag {
+    kind: "text"
+}
+/** Node of mustache tag. e.g. `{@html ...}`. Like JSXExpressionContainer */
+export interface SvelteMustacheTagRaw extends BaseSvelteMustacheTag {
+    kind: "raw"
 }
 /** Node of debug mustache tag. e.g. `{@debug}` */
-export interface SvelteDebugTag extends BaseSvelteMustacheTag {
+export interface SvelteDebugTag extends BaseNode {
     type: "SvelteDebugTag"
     identifiers: ESTree.Identifier[]
+    parent:
+        | SvelteProgram
+        | SvelteElement
+        | SvelteIfBlock
+        | SvelteElseBlockAlone
+        | SvelteEachBlock
+        | SvelteAwaitPendingBlock
+        | SvelteAwaitThenBlock
+        | SvelteAwaitCatchBlock
+        | SvelteKeyBlock
+        | SvelteAttribute
 }
 /** Node of if block. e.g. `{#if}` */
-export interface SvelteIfBlock extends BaseNode {
+export type SvelteIfBlock = SvelteIfBlockAlone | SvelteIfBlockElseIf
+interface BaseSvelteIfBlock extends BaseNode {
     type: "SvelteIfBlock"
     elseif: boolean
     expression: ESTree.Expression
@@ -286,11 +305,33 @@ export interface SvelteIfBlock extends BaseNode {
         | SvelteAwaitCatchBlock
         | SvelteKeyBlock
 }
+/** Node of if block. e.g. `{#if}` */
+export interface SvelteIfBlockAlone extends BaseSvelteIfBlock {
+    elseif: false
+}
+/** Node of if block. e.g. `{:else #if}` */
+export interface SvelteIfBlockElseIf extends BaseSvelteIfBlock {
+    elseif: true
+    parent: SvelteElseBlockElseIf
+}
+
 /** Node of else block. e.g. `{:else}` */
-export interface SvelteElseBlock extends BaseNode {
+export type SvelteElseBlock = SvelteElseBlockAlone | SvelteElseBlockElseIf
+interface BaseSvelteElseBlock extends BaseNode {
     type: "SvelteElseBlock"
-    children: Child[]
+    elseif: boolean
+    children: (Child | SvelteIfBlockElseIf)[]
     parent: SvelteIfBlock | SvelteEachBlock
+}
+/** Node of else block. e.g. `{:else}` */
+export interface SvelteElseBlockAlone extends BaseSvelteElseBlock {
+    elseif: false
+    children: Child[]
+}
+/** Node of else block. e.g. `{:else if ...}` */
+export interface SvelteElseBlockElseIf extends BaseSvelteElseBlock {
+    elseif: true
+    children: [SvelteIfBlockElseIf]
 }
 /** Node of each block. e.g. `{#each}` */
 export interface SvelteEachBlock extends BaseNode {
@@ -300,22 +341,27 @@ export interface SvelteEachBlock extends BaseNode {
     index: ESTree.Identifier | null
     key: ESTree.Expression | null
     children: Child[]
-    else: SvelteElseBlock | null
+    else: SvelteElseBlockAlone | null
     parent:
         | SvelteProgram
         | SvelteElement
         | SvelteIfBlock
-        | SvelteElseBlock
+        | SvelteElseBlockAlone
         | SvelteEachBlock
         | SvelteAwaitPendingBlock
         | SvelteAwaitThenBlock
         | SvelteAwaitCatchBlock
         | SvelteKeyBlock
 }
-/** Node of await block. e.g. `{#await}` */
-export interface SvelteAwaitBlock extends BaseNode {
+/** Node of await block. e.g. `{#await}`, `{#await ... then ... }`, `{#await ... catch ... }` */
+export type SvelteAwaitBlock =
+    | SvelteAwaitBlockAwaitPending
+    | SvelteAwaitBlockAwaitThen
+    | SvelteAwaitBlockAwaitCatch
+interface BaseSvelteAwaitBlock extends BaseNode {
     type: "SvelteAwaitBlock"
     expression: ESTree.Expression
+    kind: "await" | "await-then" | "await-catch"
     pending: SvelteAwaitPendingBlock | null
     then: SvelteAwaitThenBlock | null
     catch: SvelteAwaitCatchBlock | null
@@ -323,32 +369,87 @@ export interface SvelteAwaitBlock extends BaseNode {
         | SvelteProgram
         | SvelteElement
         | SvelteIfBlock
-        | SvelteElseBlock
+        | SvelteElseBlockAlone
         | SvelteEachBlock
         | SvelteAwaitPendingBlock
         | SvelteAwaitThenBlock
         | SvelteAwaitCatchBlock
         | SvelteKeyBlock
 }
+/** Node of await block. e.g. `{#await}` */
+export interface SvelteAwaitBlockAwaitPending extends BaseSvelteAwaitBlock {
+    kind: "await"
+    pending: SvelteAwaitPendingBlock
+    then: SvelteAwaitThenBlockAlone | null
+    catch: SvelteAwaitCatchBlockAlone | null
+}
+/** Node of await block. e.g. `{#await ... then ... }` */
+export interface SvelteAwaitBlockAwaitThen extends BaseSvelteAwaitBlock {
+    kind: "await-then"
+    pending: null
+    then: SvelteAwaitThenBlockAwaitThen
+    catch: SvelteAwaitCatchBlockAlone | null
+}
+/** Node of await block. e.g. `{#await ... catch ... }` */
+export interface SvelteAwaitBlockAwaitCatch extends BaseSvelteAwaitBlock {
+    kind: "await-catch"
+    pending: null
+    then: null
+    catch: SvelteAwaitCatchBlockAwaitCatch
+}
+
 /** Node of await pending block. e.g. `{#await expr} ... {:then}` */
 export interface SvelteAwaitPendingBlock extends BaseNode {
     type: "SvelteAwaitPendingBlock"
     children: Child[]
     parent: SvelteAwaitBlock
 }
-/** Node of await then block. e.g. `{:then}` */
-export interface SvelteAwaitThenBlock extends BaseNode {
+/** Node of await then block. e.g. `{:then}`, `{#await ... then ...}` */
+export type SvelteAwaitThenBlock =
+    | SvelteAwaitThenBlockAlone
+    | SvelteAwaitThenBlockAwaitThen
+interface BaseSvelteAwaitThenBlock extends BaseNode {
     type: "SvelteAwaitThenBlock"
+    awaitThen: boolean
     value: ESTree.Pattern | null
     children: Child[]
     parent: SvelteAwaitBlock
 }
-/** Node of await catch block. e.g. `{:catch}` */
-export interface SvelteAwaitCatchBlock extends BaseNode {
+/** Node of await then block. e.g. `{:then}` */
+export interface SvelteAwaitThenBlockAlone extends BaseSvelteAwaitThenBlock {
+    awaitThen: false
+    parent: SvelteAwaitBlockAwaitPending
+}
+/** Node of await then block. e.g. `{#await ... then ...}` */
+export interface SvelteAwaitThenBlockAwaitThen
+    extends BaseSvelteAwaitThenBlock {
+    awaitThen: true
+    parent: SvelteAwaitBlockAwaitThen
+}
+
+/** Node of await catch block. e.g. `{:catch}`, `{#await ... catch ... }` */
+export type SvelteAwaitCatchBlock =
+    | SvelteAwaitCatchBlockAlone
+    | SvelteAwaitCatchBlockAwaitCatch
+interface BaseSvelteAwaitCatchBlock extends BaseNode {
     type: "SvelteAwaitCatchBlock"
+    awaitCatch: boolean
     error: ESTree.Pattern | null
     children: Child[]
     parent: SvelteAwaitBlock
+}
+/** Node of await catch block. e.g. `{:catch}` */
+export interface SvelteAwaitCatchBlockAlone extends BaseSvelteAwaitCatchBlock {
+    awaitCatch: false
+    parent: SvelteAwaitBlockAwaitPending | SvelteAwaitBlockAwaitThen
+}
+/** Node of await catch block. e.g. `{#await ... catch ... }` */
+export interface SvelteAwaitCatchBlockAwaitCatch
+    extends BaseSvelteAwaitCatchBlock {
+    awaitCatch: true
+    error: ESTree.Pattern | null
+    children: Child[]
+    parent: SvelteAwaitBlockAwaitCatch
 }
 /** Node of key block. e.g. `{#key}` */
 export interface SvelteKeyBlock extends BaseNode {
@@ -359,7 +460,7 @@ export interface SvelteKeyBlock extends BaseNode {
         | SvelteProgram
         | SvelteElement
         | SvelteIfBlock
-        | SvelteElseBlock
+        | SvelteElseBlockAlone
         | SvelteEachBlock
         | SvelteAwaitPendingBlock
         | SvelteAwaitThenBlock
@@ -374,7 +475,7 @@ export interface SvelteHTMLComment extends BaseNode {
         | SvelteProgram
         | SvelteElement
         | SvelteIfBlock
-        | SvelteElseBlock
+        | SvelteElseBlockAlone
         | SvelteEachBlock
         | SvelteAwaitPendingBlock
         | SvelteAwaitThenBlock
