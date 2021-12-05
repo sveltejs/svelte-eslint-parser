@@ -1,5 +1,6 @@
 import staticAdapter from '@sveltejs/adapter-static';
 import { resolve } from 'path';
+
 /** @type {import('@sveltejs/kit').Config} */
 const config = {
 	kit: {
@@ -16,6 +17,9 @@ const config = {
 			fallback: null
 		}),
 		vite: {
+			server: {
+				fs: { strict: false }
+			},
 			resolve: {
 				alias: {
 					assert: resolve('./build-system/shim/assert.js'),
