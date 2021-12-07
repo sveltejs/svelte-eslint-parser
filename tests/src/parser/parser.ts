@@ -1,5 +1,7 @@
+/* global require -- node */
 import assert from "assert"
 import fs from "fs"
+import semver from "semver"
 
 import { traverseNodes } from "../../../src/traverse"
 import { parseForESLint } from "../../../src"
@@ -24,6 +26,7 @@ describe("Check for AST.", () => {
         inputFileName,
         outputFileName,
         scopeFileName,
+        requirements,
     } of listupFixtures()) {
         describe(inputFileName, () => {
             let result: any
@@ -34,11 +37,26 @@ describe("Check for AST.", () => {
                 const output = fs.readFileSync(outputFileName, "utf8")
                 assert.strictEqual(astJson, output)
             })
-            it("most to generate the expected scope.", () => {
-                const json = scopeToJSON(result.scopeManager)
-                const output = fs.readFileSync(scopeFileName, "utf8")
-                assert.strictEqual(json, output)
-            })
+            if (canTest(requirements, "scope"))
+                it("most to generate the expected scope.", () => {
+                    let json: any = scopeToJSON(result.scopeManager)
+                    let output: any = fs.readFileSync(scopeFileName, "utf8")
+
+                    if (
+                        result.services?.program // use ts parser
+                    ) {
+                        // eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-var-requires -- ignore
+                        const pkg = require("@typescript-eslint/parser/package.json")
+                        if (!semver.satisfies(pkg.version, "^5.6.0")) {
+                            // adjust global scope
+                            json = JSON.parse(json)
+                            output = JSON.parse(output)
+                            json.variables = output.variables
+                        }
+                    }
+
+                    assert.deepStrictEqual(json, output)
+                })
 
             it("location must be correct.", () => {
                 // check tokens
@@ -57,6 +75,25 @@ describe("Check for AST.", () => {
         })
     }
 })
+
+function canTest(
+    requirements: { scope?: Record<string, string> },
+    key: "scope",
+) {
+    const obj = requirements[key]
+    if (obj) {
+        if (
+            Object.entries(obj).some(([pkgName, pkgVersion]) => {
+                // eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-var-requires -- ignore
+                const pkg = require(`${pkgName}/package.json`)
+                return !semver.satisfies(pkg.version, pkgVersion)
+            })
+        ) {
+            return false
+        }
+    }
+    return true
+}
 
 function checkTokens(ast: SvelteProgram, input: string) {
     const allTokens = [...ast.tokens, ...ast.comments].sort(
