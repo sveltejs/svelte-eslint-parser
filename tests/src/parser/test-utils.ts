@@ -22,6 +22,9 @@ export function* listupFixtures(): IterableIterator<{
     outputFileName: string
     scopeFileName: string
     typeFileName: string | null
+    requirements: {
+        scope?: Record<string, string>
+    }
     getRuleOutputFileName: (ruleName: string) => string
 }> {
     yield* listupFixturesImpl(AST_FIXTURE_ROOT)
@@ -33,6 +36,9 @@ function* listupFixturesImpl(dir: string): IterableIterator<{
     outputFileName: string
     scopeFileName: string
     typeFileName: string | null
+    requirements: {
+        scope?: Record<string, string>
+    }
     getRuleOutputFileName: (ruleName: string) => string
 }> {
     for (const filename of fs.readdirSync(dir)) {
@@ -50,6 +56,10 @@ function* listupFixturesImpl(dir: string): IterableIterator<{
                 /input\.svelte$/u,
                 "type-output.svelte",
             )
+            const requirementsFileName = inputFileName.replace(
+                /input\.svelte$/u,
+                "requirements.json",
+            )
 
             const input = fs.readFileSync(inputFileName, "utf8")
             yield {
@@ -58,6 +68,9 @@ function* listupFixturesImpl(dir: string): IterableIterator<{
                 outputFileName,
                 scopeFileName,
                 typeFileName: fs.existsSync(typeFileName) ? typeFileName : null,
+                requirements: fs.existsSync(requirementsFileName)
+                    ? JSON.parse(fs.readFileSync(requirementsFileName, "utf-8"))
+                    : {},
                 getRuleOutputFileName: (ruleName) => {
                     return inputFileName.replace(
                         /input\.svelte$/u,
