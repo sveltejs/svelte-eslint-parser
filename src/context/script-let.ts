@@ -97,6 +97,8 @@ type RestoreCallback = {
     callback: ScriptLetRestoreCallback
 }
 
+type TypeGenHelper = { generateUniqueId: (base: string) => string }
+
 /**
  * A class that handles script fragments.
  * The script fragment AST node remaps and connects to the original directive AST node.
@@ -109,6 +111,10 @@ export class ScriptLetContext {
     private readonly restoreCallbacks: RestoreCallback[] = []
 
     private readonly closeScopeCallbacks: (() => void)[] = []
+
+    private uniqueIdSeq = 1
+
+    private readonly usedUniqueIds = new Set<string>()
 
     public constructor(ctx: Context) {
         this.script = ctx.sourceCode.scripts
@@ -327,7 +333,12 @@ export class ScriptLetContext {
             nodes: ESTree.Pattern[],
             options: ScriptLetCallbackOption,
         ) => void,
-        typings: string[],
+        typings:
+            | string[]
+            | ((helper: TypeGenHelper) => {
+                  typings: string[]
+                  preparationScript?: string
+              }),
     ): void
 
     public nestBlock(
@@ -338,8 +349,34 @@ export class ScriptLetContext {
             nodes: ESTree.Pattern[],
             options: ScriptLetCallbackOption,
         ) => void,
-        typings?: string[],
+        typings?:
+            | string[]
+            | ((helper: TypeGenHelper) => {
+                  typings: string[]
+                  preparationScript?: string
+              }),
     ): void {
+        let arrayTypings: string[] = []
+        if (typings && this.ctx.isTypeScript()) {
+            if (Array.isArray(typings)) {
+                arrayTypings = typings
+            } else {
+                const generatedTypes = typings({
+                    generateUniqueId: (base) => this.generateUniqueId(base),
+                })
+                arrayTypings = generatedTypes.typings
+                if (generatedTypes.preparationScript) {
+                    this.appendScriptWithoutOffset(
+                        generatedTypes.preparationScript,
+                        (node, tokens, comments, result) => {
+                            tokens.length = 0
+                            comments.length = 0
+                            removeAllReference(node, result)
+                        },
+                    )
+                }
+            }
+        }
         if (!params) {
             const restore = this.appendScript(
                 `{`,
@@ -381,7 +418,7 @@ export class ScriptLetContext {
                     range,
                 })
                 if (this.ctx.isTypeScript()) {
-                    source += ` : (${typings![index]})`
+                    source += ` : (${arrayTypings[index]})`
                 }
             }
             const restore = this.appendScript(
@@ -407,6 +444,8 @@ export class ScriptLetContext {
                                 line: typeAnnotation.loc.start.line,
                                 column: typeAnnotation.loc.start.column,
                             }
+
+                            removeAllReference(typeAnnotation, result)
                         }
                     }
 
@@ -462,21 +501,37 @@ export class ScriptLetContext {
             options: ScriptLetCallbackOption,
         ) => void,
     ) {
+        const resultCallback = this.appendScriptWithoutOffset(
+            text,
+            (node, tokens, comments, result) => {
+                this.fixLocations(
+                    node,
+                    tokens,
+                    comments,
+                    offset - resultCallback.start,
+                    result.visitorKeys,
+                )
+                callback(node, tokens, comments, result)
+            },
+        )
+        return resultCallback
+    }
+
+    private appendScriptWithoutOffset(
+        text: string,
+        callback: (
+            node: ESTree.Node,
+            tokens: Token[],
+            comments: Comment[],
+            options: ScriptLetCallbackOption,
+        ) => void,
+    ) {
         const { start: startOffset, end: endOffset } = this.script.addLet(text)
 
         const restoreCallback: RestoreCallback = {
             start: startOffset,
             end: endOffset,
-            callback: (node, tokens, comments, result) => {
-                this.fixLocations(
-                    node,
-                    tokens,
-                    comments,
-                    offset - startOffset,
-                    result.visitorKeys,
-                )
-                callback(node, tokens, comments, result)
-            },
+            callback,
         }
         this.restoreCallbacks.push(restoreCallback)
         return restoreCallback
@@ -746,6 +801,19 @@ export class ScriptLetContext {
             applyLocs(t, locs)
         }
     }
+
+    private generateUniqueId(base: string) {
+        let candidate = `$_${base.replace(/\W/g, "_")}${this.uniqueIdSeq++}`
+        while (
+            this.usedUniqueIds.has(candidate) ||
+            this.ctx.code.includes(candidate) ||
+            this.script.vcode.includes(candidate)
+        ) {
+            candidate = `$_${base.replace(/\W/g, "_")}${this.uniqueIdSeq++}`
+        }
+        this.usedUniqueIds.add(candidate)
+        return candidate
+    }
 }
 
 /**
@@ -775,22 +843,15 @@ function getScope(scopeManager: ScopeManager, currentNode: ESTree.Node): Scope {
 function getInnermostScope(initialScope: Scope, node: ESTree.Node): Scope {
     const location = node.range![0]
 
-    let scope = initialScope
-    let found = false
-    do {
-        found = false
-        for (const childScope of scope.childScopes) {
-            const range = childScope.block.range!
+    for (const childScope of initialScope.childScopes) {
+        const range = childScope.block.range!
 
-            if (range[0] <= location && location < range[1]) {
-                scope = childScope
-                found = true
-                break
-            }
+        if (range[0] <= location && location < range[1]) {
+            return getInnermostScope(childScope, node)
         }
-    } while (found)
+    }
 
-    return scope
+    return initialScope
 }
 
 /**
@@ -807,10 +868,76 @@ function applyLocs(target: Locations | ESTree.Node, locs: Locations) {
     }
 }
 
+/** Remove all reference */
+function removeAllReference(
+    target: ESTree.Node,
+    result: ScriptLetCallbackOption,
+) {
+    traverseNodes(target, {
+        visitorKeys: result.visitorKeys,
+        enterNode(node) {
+            if (node.type === "Identifier") {
+                const scope = result.getScope(node)
+
+                removeIdentifierReference(node, scope)
+            }
+        },
+        leaveNode() {
+            // noop
+        },
+    })
+}
+
+/** Remove reference */
+function removeIdentifierReference(
+    node: ESTree.Identifier,
+    scope: Scope,
+): boolean {
+    const reference = scope.references.find((ref) => ref.identifier === node)
+    if (reference) {
+        removeReference(reference, scope)
+        return true
+    }
+    const location = node.range![0]
+
+    const pendingScopes = []
+    for (const childScope of scope.childScopes) {
+        const range = childScope.block.range!
+
+        if (range[0] <= location && location < range[1]) {
+            if (removeIdentifierReference(node, childScope)) {
+                return true
+            }
+        } else {
+            pendingScopes.push(childScope)
+        }
+    }
+    for (const childScope of pendingScopes) {
+        if (removeIdentifierReference(node, childScope)) {
+            return true
+        }
+    }
+    return false
+}
+
 /** Remove reference */
 function removeReference(reference: Reference, baseScope: Scope) {
-    let scope: Scope | null = baseScope
+    if (
+        reference.resolved &&
+        reference.resolved.defs.some((d) => d.name === reference.identifier)
+    ) {
+        // remove var
+        const varIndex = baseScope.variables.indexOf(reference.resolved)
+        if (varIndex >= 0) {
+            baseScope.variables.splice(varIndex, 1)
+        }
+        const name = reference.identifier.name
+        if (reference.resolved === baseScope.set.get(name)) {
+            baseScope.set.delete(name)
+        }
+    }
 
+    let scope: Scope | null = baseScope
     while (scope) {
         const refIndex = scope.references.indexOf(reference)
         if (refIndex >= 0) {
