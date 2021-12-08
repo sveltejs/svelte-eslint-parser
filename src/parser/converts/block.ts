@@ -291,11 +291,26 @@ export function convertAwaitBlock(
                 ([value]) => {
                     thenBlock.value = value
                 },
-                [
-                    `Parameters<Parameters<(typeof ${ctx.getText(
-                        node.expression,
-                    )})["then"]>[0]>[0]`,
-                ],
+                ({ generateUniqueId }) => {
+                    const expression = ctx.getText(node.expression)
+                    if (
+                        node.expression.type === "Identifier" ||
+                        node.expression.type === "Literal"
+                    ) {
+                        return {
+                            typings: [
+                                `Parameters<Parameters<(typeof ${expression})["then"]>[0]>[0]`,
+                            ],
+                        }
+                    }
+                    const id = generateUniqueId(expression)
+                    return {
+                        preparationScript: `const ${id} = ${expression};`,
+                        typings: [
+                            `Parameters<Parameters<(typeof ${id})["then"]>[0]>[0]`,
+                        ],
+                    }
+                },
             )
         } else {
             ctx.scriptLet.nestBlock(thenBlock)
