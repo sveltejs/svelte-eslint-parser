@@ -272,7 +272,6 @@ export class ScriptLetContext {
                         }
                     }
                 }
-                if (this.ctx.isTypeScript()) debugger
                 // remove Array reference
                 const arrayId = (
                     callArrayFrom.callee as ESTree.MemberExpression
