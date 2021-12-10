@@ -922,18 +922,24 @@ function removeIdentifierReference(
 
 /** Remove reference */
 function removeReference(reference: Reference, baseScope: Scope) {
-    if (
-        reference.resolved &&
-        reference.resolved.defs.some((d) => d.name === reference.identifier)
-    ) {
-        // remove var
-        const varIndex = baseScope.variables.indexOf(reference.resolved)
-        if (varIndex >= 0) {
-            baseScope.variables.splice(varIndex, 1)
-        }
-        const name = reference.identifier.name
-        if (reference.resolved === baseScope.set.get(name)) {
-            baseScope.set.delete(name)
+    if (reference.resolved) {
+        if (
+            reference.resolved.defs.some((d) => d.name === reference.identifier)
+        ) {
+            // remove var
+            const varIndex = baseScope.variables.indexOf(reference.resolved)
+            if (varIndex >= 0) {
+                baseScope.variables.splice(varIndex, 1)
+            }
+            const name = reference.identifier.name
+            if (reference.resolved === baseScope.set.get(name)) {
+                baseScope.set.delete(name)
+            }
+        } else {
+            const refIndex = reference.resolved.references.indexOf(reference)
+            if (refIndex >= 0) {
+                reference.resolved.references.splice(refIndex, 1)
+            }
         }
     }
 
