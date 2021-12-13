@@ -61,6 +61,7 @@ export class ScriptsSourceCode {
             this.trimmedRaw.slice(end)
     }
 }
+
 export type ContextSourceCode = {
     template: string
     scripts: ScriptsSourceCode
@@ -91,26 +92,28 @@ export class Context {
         this.parserOptions = parserOptions
         this.locs = new LinesAndColumns(code)
 
+        const spaces = code.replace(/[^\n\r ]/g, " ")
+
         let templateCode = ""
         let scriptCode = ""
         let scriptAttrs: Record<string, string | undefined> = {}
 
         let start = 0
         for (const block of extractBlocks(code)) {
-            const before = code.slice(start, block.codeRange[0])
-            const blankCode = block.code.replace(/[^\n\r ]/g, " ")
-            templateCode += before + blankCode
+            templateCode +=
+                code.slice(start, block.codeRange[0]) +
+                spaces.slice(block.codeRange[0], block.codeRange[1])
             if (block.tag === "script") {
-                scriptCode += before.replace(/[^\n\r ]/g, " ") + block.code
+                scriptCode +=
+                    spaces.slice(start, block.codeRange[0]) + block.code
                 scriptAttrs = Object.assign(scriptAttrs, block.attrs)
             } else {
-                scriptCode += before.replace(/[^\n\r ]/g, " ") + blankCode
+                scriptCode += spaces.slice(start, block.codeRange[1])
             }
             start = block.codeRange[1]
         }
-        const after = code.slice(start)
-        templateCode += after
-        scriptCode += after.replace(/[^\n\r ]/g, " ")
+        templateCode += code.slice(start)
+        scriptCode += spaces.slice(start)
 
         this.sourceCode = {
             template: templateCode,
