@@ -293,22 +293,29 @@ export function convertAwaitBlock(
                 },
                 ({ generateUniqueId }) => {
                     const expression = ctx.getText(node.expression)
-                    if (
-                        node.expression.type === "Identifier" ||
-                        node.expression.type === "Literal"
-                    ) {
+                    if (node.expression.type === "Literal") {
                         return {
+                            typings: [expression],
+                        }
+                    }
+                    const idAwaitThenValue = generateUniqueId("AwaitThenValue")
+                    if (node.expression.type === "Identifier") {
+                        return {
+                            preparationScript: [
+                                generateAwaitThenValueType(idAwaitThenValue),
+                            ],
                             typings: [
-                                `Parameters<Parameters<(typeof ${expression})["then"]>[0]>[0]`,
+                                `${idAwaitThenValue}<(typeof ${expression})>`,
                             ],
                         }
                     }
                     const id = generateUniqueId(expression)
                     return {
-                        preparationScript: `const ${id} = ${expression};`,
-                        typings: [
-                            `Parameters<Parameters<(typeof ${id})["then"]>[0]>[0]`,
+                        preparationScript: [
+                            `const ${id} = ${expression};`,
+                            generateAwaitThenValueType(idAwaitThenValue),
                         ],
+                        typings: [`${idAwaitThenValue}<(typeof ${id})>`],
                     }
                 },
             )
@@ -464,4 +471,15 @@ function extractMustacheBlockTokens(
         start: endSectionNameStart,
         end: endSectionNameEnd,
     })
+}
+
+/** Generate Awaited like type code */
+function generateAwaitThenValueType(id: string) {
+    return `type ${id}<T> = T extends null | undefined
+    ? T
+    : T extends { then(value: infer F): any }
+    ? F extends (value: infer V, ...args: any) => any
+        ? ${id}<V>
+        : never
+        : T;`
 }

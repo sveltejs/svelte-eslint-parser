@@ -337,7 +337,7 @@ export class ScriptLetContext {
             | string[]
             | ((helper: TypeGenHelper) => {
                   typings: string[]
-                  preparationScript?: string
+                  preparationScript?: string[]
               }),
     ): void
 
@@ -353,7 +353,7 @@ export class ScriptLetContext {
             | string[]
             | ((helper: TypeGenHelper) => {
                   typings: string[]
-                  preparationScript?: string
+                  preparationScript?: string[]
               }),
     ): void {
         let arrayTypings: string[] = []
@@ -366,14 +366,16 @@ export class ScriptLetContext {
                 })
                 arrayTypings = generatedTypes.typings
                 if (generatedTypes.preparationScript) {
-                    this.appendScriptWithoutOffset(
-                        generatedTypes.preparationScript,
-                        (node, tokens, comments, result) => {
-                            tokens.length = 0
-                            comments.length = 0
-                            removeAllReference(node, result)
-                        },
-                    )
+                    for (const preparationScript of generatedTypes.preparationScript) {
+                        this.appendScriptWithoutOffset(
+                            preparationScript,
+                            (node, tokens, comments, result) => {
+                                tokens.length = 0
+                                comments.length = 0
+                                removeAllScope(node, result)
+                            },
+                        )
+                    }
                 }
             }
         }
@@ -445,7 +447,7 @@ export class ScriptLetContext {
                                 column: typeAnnotation.loc.start.column,
                             }
 
-                            removeAllReference(typeAnnotation, result)
+                            removeAllScope(typeAnnotation, result)
                         }
                     }
 
@@ -869,16 +871,29 @@ function applyLocs(target: Locations | ESTree.Node, locs: Locations) {
 }
 
 /** Remove all reference */
-function removeAllReference(
-    target: ESTree.Node,
-    result: ScriptLetCallbackOption,
-) {
+function removeAllScope(target: ESTree.Node, result: ScriptLetCallbackOption) {
+    const targetScopes = new Set<Scope>()
     traverseNodes(target, {
         visitorKeys: result.visitorKeys,
         enterNode(node) {
+            const scope = result.scopeManager.acquire(node)
+            if (scope) {
+                targetScopes.add(scope)
+                return
+            }
             if (node.type === "Identifier") {
-                const scope = result.getScope(node)
+                let scope = result.getScope(node)
+                if (
+                    (scope.block as any).type === "TSTypeAliasDeclaration" &&
+                    (scope.block as any).id === node
+                ) {
+                    scope = scope.upper!
+                }
+                if (targetScopes.has(scope)) {
+                    return
+                }
 
+                removeIdentifierVariable(node, scope)
                 removeIdentifierReference(node, scope)
             }
         },
@@ -886,6 +901,25 @@ function removeAllReference(
             // noop
         },
     })
+
+    for (const scope of targetScopes) {
+        removeScope(result.scopeManager, scope)
+    }
+}
+
+/** Remove variable */
+function removeIdentifierVariable(node: ESTree.Identifier, scope: Scope): void {
+    const varIndex = scope.variables.findIndex((v) =>
+        v.defs.some((def) => def.name === node),
+    )
+    if (varIndex >= 0) {
+        const variable = scope.variables[varIndex]
+        scope.variables.splice(varIndex, 1)
+        const name = node.name
+        if (variable === scope.set.get(name)) {
+            scope.set.delete(name)
+        }
+    }
 }
 
 /** Remove reference */
