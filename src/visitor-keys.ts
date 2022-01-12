@@ -21,6 +21,7 @@ const svelteKeys: SvelteKeysType = {
     SvelteLiteral: [],
     SvelteMustacheTag: ["expression"],
     SvelteDebugTag: ["identifiers"],
+    SvelteConstTag: ["declaration"],
     SvelteIfBlock: ["expression", "children", "else"],
     SvelteElseBlock: ["children"],
     SvelteEachBlock: [

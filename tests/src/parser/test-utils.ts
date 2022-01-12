@@ -204,6 +204,7 @@ const nodeToKeys: SvelteKeysType = {
     SvelteAwaitPendingBlock: ["children"],
     SvelteAwaitThenBlock: ["awaitThen", "value", "children"],
     SvelteDebugTag: ["identifiers"],
+    SvelteConstTag: ["declaration"],
     SvelteDirective: ["key", "intro", "outro", "expression"],
     SvelteDirectiveKey: ["name", "modifiers"],
     SvelteEachBlock: [
