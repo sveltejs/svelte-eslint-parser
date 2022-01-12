@@ -6,15 +6,23 @@
 
 <header class="header">
 	<span class="title">svelte-eslint-parser</span>
-	<a class="menu" class:active={$page.path === '/'} sveltekit:prefetch href="{baseUrl}/">AST</a>
 	<a
 		class="menu"
-		class:active={$page.path === '/playground'}
+		class:active={$page.url.pathname === `${baseUrl}/`}
+		sveltekit:prefetch
+		href="{baseUrl}/">AST</a
+	>
+	<a
+		class="menu"
+		class:active={$page.url.pathname === `${baseUrl}/playground`}
 		sveltekit:prefetch
 		href="{baseUrl}/playground">Playgroud</a
 	>
-	<a class="menu" class:active={$page.path === '/scope'} sveltekit:prefetch href="{baseUrl}/scope"
-		>Scope</a
+	<a
+		class="menu"
+		class:active={$page.url.pathname === `${baseUrl}/scope`}
+		sveltekit:prefetch
+		href="{baseUrl}/scope">Scope</a
 	>
 	<SnsBar />
 	<a href="https://github.com/ota-meshi/svelte-eslint-parser" class="github-link">View on GitHub</a>
