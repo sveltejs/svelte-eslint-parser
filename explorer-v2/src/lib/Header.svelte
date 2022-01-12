@@ -2,25 +2,29 @@
 	import SnsBar from './SnsBar.svelte';
 	import { page } from '$app/stores';
 	import { base as baseUrl } from '$app/paths';
+
+	function isActive(pathname, path) {
+		return pathname === path || pathname === `${baseUrl}${path}`;
+	}
 </script>
 
 <header class="header">
 	<span class="title">svelte-eslint-parser</span>
 	<a
 		class="menu"
-		class:active={$page.url.pathname === `${baseUrl}/`}
+		class:active={isActive($page.url.pathname, `/`)}
 		sveltekit:prefetch
 		href="{baseUrl}/">AST</a
 	>
 	<a
 		class="menu"
-		class:active={$page.url.pathname === `${baseUrl}/playground`}
+		class:active={isActive($page.url.pathname, `/playground`)}
 		sveltekit:prefetch
 		href="{baseUrl}/playground">Playgroud</a
 	>
 	<a
 		class="menu"
-		class:active={$page.url.pathname === `${baseUrl}/scope`}
+		class:active={isActive($page.url.pathname, `/scope`)}
 		sveltekit:prefetch
 		href="{baseUrl}/scope">Scope</a
 	>
