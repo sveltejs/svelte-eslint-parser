@@ -24,6 +24,10 @@
 		sveltekit:prefetch
 		href="{baseUrl}/scope">Scope</a
 	>
+	<div class="debug">
+		$page.url.pathname: {$page.url.pathname}
+		baseUrl: {baseUrl}
+	</div>
 	<SnsBar />
 	<a href="https://github.com/ota-meshi/svelte-eslint-parser" class="github-link">View on GitHub</a>
 </header>
@@ -54,5 +58,8 @@
 	.github-link {
 		display: flex;
 		align-items: center;
+	}
+	.debug {
+		display: none;
 	}
 </style>
