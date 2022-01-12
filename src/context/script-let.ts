@@ -180,6 +180,44 @@ export class ScriptLetContext {
         return callbacks
     }
 
+    public addVariableDeclarator(
+        expression: ESTree.AssignmentExpression,
+        parent: SvelteNode,
+        ...callbacks: ScriptLetCallback<ESTree.VariableDeclarator>[]
+    ): ScriptLetCallback<ESTree.VariableDeclarator>[] {
+        const range = getNodeRange(expression)
+        const part = this.ctx.code.slice(...range)
+        this.appendScript(
+            `const ${part};`,
+            range[0] - 6,
+            (st, tokens, _comments, result) => {
+                const decl = st as ESTree.VariableDeclaration
+                const node = decl.declarations[0]
+                // Process for nodes
+                for (const callback of callbacks) {
+                    callback(node, result)
+                }
+                ;(node as any).parent = parent
+
+                const scope = result.getScope(decl)
+                for (const variable of scope.variables) {
+                    for (const def of variable.defs) {
+                        if (def.parent === decl) {
+                            ;(def as any).parent = parent
+                        }
+                    }
+                }
+
+                tokens.shift() // const
+                tokens.pop() // ;
+
+                // Disconnect the tree structure.
+                decl.declarations = []
+            },
+        )
+        return callbacks
+    }
+
     public nestIfBlock(
         expression: ESTree.Expression,
         ifBlock: SvelteIfBlock,

@@ -14,6 +14,7 @@ export declare type TemplateNode =
     | MustacheTag
     | RawMustacheTag
     | DebugTag
+    | ConstTag
     | Directive
     | Element
     | InlineComponent
@@ -48,6 +49,10 @@ export interface RawMustacheTag extends BaseNode {
 export interface DebugTag extends BaseNode {
     type: "DebugTag"
     identifiers: ESTree.Identifier[]
+}
+export interface ConstTag extends BaseNode {
+    type: "ConstTag"
+    expression: ESTree.AssignmentExpression
 }
 export interface IfBlock extends BaseNode {
     type: "IfBlock"

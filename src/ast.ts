@@ -60,6 +60,7 @@ export type SvelteNode =
     | SvelteLiteral
     | SvelteMustacheTag
     | SvelteDebugTag
+    | SvelteConstTag
     | SvelteIfBlock
     | SvelteElseBlock
     | SvelteEachBlock
@@ -215,6 +216,7 @@ type Child =
     | SvelteText
     | SvelteMustacheTag
     | SvelteDebugTag
+    | SvelteConstTag
     | SvelteIfBlockAlone
     | SvelteEachBlock
     | SvelteAwaitBlock
@@ -274,6 +276,22 @@ export interface SvelteMustacheTagRaw extends BaseSvelteMustacheTag {
 export interface SvelteDebugTag extends BaseNode {
     type: "SvelteDebugTag"
     identifiers: ESTree.Identifier[]
+    parent:
+        | SvelteProgram
+        | SvelteElement
+        | SvelteIfBlock
+        | SvelteElseBlockAlone
+        | SvelteEachBlock
+        | SvelteAwaitPendingBlock
+        | SvelteAwaitThenBlock
+        | SvelteAwaitCatchBlock
+        | SvelteKeyBlock
+        | SvelteAttribute
+}
+/** Node of const tag. e.g. `{@const}` */
+export interface SvelteConstTag extends BaseNode {
+    type: "SvelteConstTag"
+    declaration: ESTree.VariableDeclarator
     parent:
         | SvelteProgram
         | SvelteElement
