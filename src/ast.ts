@@ -243,7 +243,7 @@ export interface SvelteText extends BaseNode {
 export interface SvelteLiteral extends BaseNode {
     type: "SvelteLiteral"
     value: string
-    parent: SvelteAttribute
+    parent: SvelteAttribute | SvelteStyleDirective
 }
 
 /** Node of mustache tag. e.g. `{...}`, `{@html ...}`. Like JSXExpressionContainer */
@@ -529,6 +529,7 @@ export type SvelteDirective =
     | SvelteAnimationDirective
     | SvelteBindingDirective
     | SvelteClassDirective
+    | SvelteStyleDirective
     | SvelteEventHandlerDirective
     | SvelteLetDirective
     | SvelteRefDirective
@@ -561,6 +562,10 @@ export interface SvelteBindingDirective extends BaseSvelteDirective {
 export interface SvelteClassDirective extends BaseSvelteDirective {
     kind: "Class"
     expression: null | ESTree.Expression
+}
+export interface SvelteStyleDirective extends BaseSvelteDirective {
+    kind: "Style"
+    expression: null | ESTree.Expression | SvelteLiteral
 }
 export interface SvelteEventHandlerDirective extends BaseSvelteDirective {
     kind: "EventHandler"

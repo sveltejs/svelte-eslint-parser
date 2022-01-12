@@ -12,13 +12,14 @@ import type {
     SvelteTransitionDirective,
     SvelteStartTag,
     SvelteName,
+    SvelteStyleDirective,
 } from "../../ast"
 import type ESTree from "estree"
 import type { Context } from "../../context"
 import type * as SvAST from "../svelte-ast-types"
 import { getWithLoc, indexOf } from "./common"
 import { convertMustacheTag } from "./mustache"
-import { convertTextToLiteral } from "./text"
+import { convertTemplateLiteralToLiteral, convertTextToLiteral } from "./text"
 import { ParseError } from "../../errors"
 import type { ScriptLetCallback } from "../../context/script-let"
 
@@ -52,6 +53,10 @@ export function* convertAttributes(
         }
         if (attr.type === "Class") {
             yield convertClassDirective(attr, parent, ctx)
+            continue
+        }
+        if (attr.type === "Style") {
+            yield convertStyleDirective(attr, parent, ctx)
             continue
         }
         if (attr.type === "Transition") {
@@ -282,6 +287,79 @@ function convertClassDirective(
         buildProcessExpressionForExpression(directive, ctx, null),
     )
     return directive
+}
+
+/** Convert for Style Directive */
+function convertStyleDirective(
+    node: SvAST.DirectiveForExpression,
+    parent: SvelteDirective["parent"],
+    ctx: Context,
+): SvelteStyleDirective {
+    const directive: SvelteStyleDirective = {
+        type: "SvelteDirective",
+        kind: "Style",
+        key: null as any,
+        expression: null,
+        parent,
+        ...ctx.getConvertLocation(node),
+    }
+    if (processStyleDirectiveValue(node, ctx)) {
+        processDirective(node, directive, ctx, (expression) => {
+            directive.expression = convertTemplateLiteralToLiteral(
+                expression,
+                directive,
+                ctx,
+            )
+            return []
+        })
+    } else {
+        processDirective(node, directive, ctx, (expression) => {
+            return ctx.scriptLet.addExpression(expression, directive)
+        })
+    }
+
+    return directive
+}
+
+/** Process plain value */
+function processStyleDirectiveValue(
+    node: SvAST.DirectiveForExpression,
+    ctx: Context,
+): node is SvAST.DirectiveForExpression & {
+    expression: ESTree.TemplateLiteral
+} {
+    const { expression } = node
+    if (
+        !expression ||
+        expression.type !== "TemplateLiteral" ||
+        expression.expressions.length !== 0
+    ) {
+        return false
+    }
+    const quasi = expression.quasis[0]
+    if (quasi.value.cooked != null) {
+        return false
+    }
+    const eqIndex = ctx.code.indexOf("=", node.start)
+    if (eqIndex < 0 || eqIndex >= node.end) {
+        return false
+    }
+    const valueIndex = ctx.code.indexOf(quasi.value.raw, eqIndex + 1)
+    if (valueIndex < 0 || valueIndex >= node.end) {
+        return false
+    }
+    const maybeEnd = valueIndex + quasi.value.raw.length
+    const maybeOpenQuote = ctx.code.slice(eqIndex + 1, valueIndex).trimStart()
+    if (maybeOpenQuote && maybeOpenQuote !== '"' && maybeOpenQuote !== "'") {
+        return false
+    }
+    const maybeCloseQuote = ctx.code.slice(maybeEnd, node.end).trimEnd()
+    if (maybeCloseQuote !== maybeOpenQuote) {
+        return false
+    }
+    getWithLoc(expression).start = valueIndex
+    getWithLoc(expression).end = maybeEnd
+    return true
 }
 
 /** Convert for Transition Directive */
