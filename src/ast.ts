@@ -60,6 +60,7 @@ export type SvelteNode =
     | SvelteLiteral
     | SvelteMustacheTag
     | SvelteDebugTag
+    | SvelteConstTag
     | SvelteIfBlock
     | SvelteElseBlock
     | SvelteEachBlock
@@ -215,6 +216,7 @@ type Child =
     | SvelteText
     | SvelteMustacheTag
     | SvelteDebugTag
+    | SvelteConstTag
     | SvelteIfBlockAlone
     | SvelteEachBlock
     | SvelteAwaitBlock
@@ -241,7 +243,7 @@ export interface SvelteText extends BaseNode {
 export interface SvelteLiteral extends BaseNode {
     type: "SvelteLiteral"
     value: string
-    parent: SvelteAttribute
+    parent: SvelteAttribute | SvelteStyleDirective
 }
 
 /** Node of mustache tag. e.g. `{...}`, `{@html ...}`. Like JSXExpressionContainer */
@@ -274,6 +276,22 @@ export interface SvelteMustacheTagRaw extends BaseSvelteMustacheTag {
 export interface SvelteDebugTag extends BaseNode {
     type: "SvelteDebugTag"
     identifiers: ESTree.Identifier[]
+    parent:
+        | SvelteProgram
+        | SvelteElement
+        | SvelteIfBlock
+        | SvelteElseBlockAlone
+        | SvelteEachBlock
+        | SvelteAwaitPendingBlock
+        | SvelteAwaitThenBlock
+        | SvelteAwaitCatchBlock
+        | SvelteKeyBlock
+        | SvelteAttribute
+}
+/** Node of const tag. e.g. `{@const}` */
+export interface SvelteConstTag extends BaseNode {
+    type: "SvelteConstTag"
+    declaration: ESTree.VariableDeclarator
     parent:
         | SvelteProgram
         | SvelteElement
@@ -511,6 +529,7 @@ export type SvelteDirective =
     | SvelteAnimationDirective
     | SvelteBindingDirective
     | SvelteClassDirective
+    | SvelteStyleDirective
     | SvelteEventHandlerDirective
     | SvelteLetDirective
     | SvelteRefDirective
@@ -543,6 +562,10 @@ export interface SvelteBindingDirective extends BaseSvelteDirective {
 export interface SvelteClassDirective extends BaseSvelteDirective {
     kind: "Class"
     expression: null | ESTree.Expression
+}
+export interface SvelteStyleDirective extends BaseSvelteDirective {
+    kind: "Style"
+    expression: null | ESTree.Expression | SvelteLiteral
 }
 export interface SvelteEventHandlerDirective extends BaseSvelteDirective {
     kind: "EventHandler"

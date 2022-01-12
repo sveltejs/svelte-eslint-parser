@@ -4,6 +4,7 @@ import type {
     SvelteAwaitPendingBlock,
     SvelteAwaitThenBlock,
     SvelteComponentElement,
+    SvelteConstTag,
     SvelteDebugTag,
     SvelteEachBlock,
     SvelteElement,
@@ -41,6 +42,7 @@ import {
 } from "./mustache"
 import { convertText } from "./text"
 import { convertAttributes } from "./attr"
+import { convertConstTag } from "./const"
 
 /* eslint-disable complexity -- X */
 /** Convert for Fragment or Element or ... */
@@ -63,6 +65,7 @@ export function* convertChildren(
     | SvelteElement
     | SvelteMustacheTag
     | SvelteDebugTag
+    | SvelteConstTag
     | SvelteIfBlockAlone
     | SvelteEachBlock
     | SvelteAwaitBlock
@@ -150,9 +153,25 @@ export function* convertChildren(
             yield convertDebugTag(child, parent, ctx)
             continue
         }
+        if (child.type === "ConstTag") {
+            yield convertConstTag(child, parent, ctx)
+            continue
+        }
 
         throw new Error(`Unknown type:${(child as any).type}`)
     }
+}
+
+/** Check if children needs a scope. */
+function needScopeByChildren(fragment: {
+    children: SvAST.TemplateNode[]
+}): boolean {
+    for (const child of fragment.children) {
+        if (child.type === "ConstTag") {
+            return true
+        }
+    }
+    return false
 }
 
 /** Convert for HTML Comment */
@@ -210,7 +229,7 @@ function convertHTMLElement(
         ...convertAttributes(node.attributes, element.startTag, ctx),
     )
     const lets = ctx.letDirCollections.extract()
-    if (lets.isEmpty()) {
+    if (lets.isEmpty() && !needScopeByChildren(node)) {
         element.children.push(...convertChildren(node, element, ctx))
     } else {
         ctx.scriptLet.nestBlock(
@@ -297,7 +316,7 @@ function convertSpecialElement(
         ...convertAttributes(node.attributes, element.startTag, ctx),
     )
     const lets = ctx.letDirCollections.extract()
-    if (lets.isEmpty()) {
+    if (lets.isEmpty() && !needScopeByChildren(node)) {
         element.children.push(...convertChildren(node, element, ctx))
     } else {
         ctx.scriptLet.nestBlock(
@@ -406,7 +425,7 @@ function convertComponentElement(
         ...convertAttributes(node.attributes, element.startTag, ctx),
     )
     const lets = ctx.letDirCollections.extract()
-    if (lets.isEmpty()) {
+    if (lets.isEmpty() && !needScopeByChildren(node)) {
         element.children.push(...convertChildren(node, element, ctx))
     } else {
         ctx.scriptLet.nestBlock(

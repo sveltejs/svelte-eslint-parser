@@ -14,6 +14,7 @@ export declare type TemplateNode =
     | MustacheTag
     | RawMustacheTag
     | DebugTag
+    | ConstTag
     | Directive
     | Element
     | InlineComponent
@@ -48,6 +49,10 @@ export interface RawMustacheTag extends BaseNode {
 export interface DebugTag extends BaseNode {
     type: "DebugTag"
     identifiers: ESTree.Identifier[]
+}
+export interface ConstTag extends BaseNode {
+    type: "ConstTag"
+    expression: ESTree.AssignmentExpression
 }
 export interface IfBlock extends BaseNode {
     type: "IfBlock"
@@ -188,7 +193,14 @@ interface BaseDirective extends BaseNode {
     modifiers: string[]
 }
 export interface DirectiveForExpression extends BaseDirective {
-    type: "Action" | "Animation" | "Binding" | "Class" | "EventHandler" | "Ref"
+    type:
+        | "Action"
+        | "Animation"
+        | "Binding"
+        | "Class"
+        | "Style"
+        | "EventHandler"
+        | "Ref"
     expression: null | ESTree.Expression
 }
 export interface LetDirective extends BaseDirective {
