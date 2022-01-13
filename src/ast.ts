@@ -73,6 +73,7 @@ export type SvelteNode =
     | SvelteShorthandAttribute
     | SvelteSpreadAttribute
     | SvelteDirective
+    | SvelteStyleDirective
     | SvelteSpecialDirective
     | SvelteDirectiveKey
     | SvelteSpecialDirectiveKey
@@ -179,6 +180,7 @@ export interface SvelteStartTag extends BaseNode {
         | SvelteShorthandAttribute
         | SvelteSpreadAttribute
         | SvelteDirective
+        | SvelteStyleDirective
         | SvelteSpecialDirective
     )[]
     selfClosing: boolean
@@ -263,6 +265,7 @@ interface BaseSvelteMustacheTag extends BaseNode {
         | SvelteAwaitCatchBlock
         | SvelteKeyBlock
         | SvelteAttribute
+        | SvelteStyleDirective
 }
 /** Node of mustache tag. e.g. `{...}``. Like JSXExpressionContainer */
 export interface SvelteMustacheTagText extends BaseSvelteMustacheTag {
@@ -506,7 +509,7 @@ export interface SvelteAttribute extends BaseNode {
     type: "SvelteAttribute"
     key: SvelteName
     boolean: boolean
-    value: (SvelteLiteral | (SvelteMustacheTag & { kind: "text" }))[]
+    value: (SvelteLiteral | SvelteMustacheTagText)[]
     parent: SvelteStartTag
 }
 /** Node of shorthand attribute. e.g. `<img {src}>` */
@@ -529,7 +532,6 @@ export type SvelteDirective =
     | SvelteAnimationDirective
     | SvelteBindingDirective
     | SvelteClassDirective
-    | SvelteStyleDirective
     | SvelteEventHandlerDirective
     | SvelteLetDirective
     | SvelteRefDirective
@@ -538,7 +540,7 @@ export interface SvelteDirectiveKey extends BaseNode {
     type: "SvelteDirectiveKey"
     name: ESTree.Identifier | SvelteName
     modifiers: string[]
-    parent: SvelteDirective
+    parent: SvelteDirective | SvelteStyleDirective
 }
 
 interface BaseSvelteDirective extends BaseNode {
@@ -563,10 +565,6 @@ export interface SvelteClassDirective extends BaseSvelteDirective {
     kind: "Class"
     expression: null | ESTree.Expression
 }
-export interface SvelteStyleDirective extends BaseSvelteDirective {
-    kind: "Style"
-    expression: null | ESTree.Expression | SvelteLiteral
-}
 export interface SvelteEventHandlerDirective extends BaseSvelteDirective {
     kind: "EventHandler"
     expression: null | ESTree.Expression
@@ -584,6 +582,26 @@ export interface SvelteTransitionDirective extends BaseSvelteDirective {
     intro: boolean
     outro: boolean
     expression: null | ESTree.Expression
+}
+
+/** Node of style directive. e.g. `<input style:color />` */
+export type SvelteStyleDirective =
+    | SvelteStyleDirectiveShorthand
+    | SvelteStyleDirectiveLongform
+interface BaseSvelteStyleDirective extends BaseNode {
+    type: "SvelteStyleDirective"
+    key: SvelteDirectiveKey
+    value: (SvelteLiteral | SvelteMustacheTagText)[]
+    parent: SvelteStartTag
+}
+export interface SvelteStyleDirectiveShorthand
+    extends BaseSvelteStyleDirective {
+    shorthand: true
+    value: []
+}
+export interface SvelteStyleDirectiveLongform extends BaseSvelteStyleDirective {
+    shorthand: false
+    value: (SvelteLiteral | SvelteMustacheTagText)[]
 }
 export interface SvelteSpecialDirectiveKey extends BaseNode {
     type: "SvelteSpecialDirectiveKey"

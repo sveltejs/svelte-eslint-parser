@@ -13,6 +13,9 @@ import type {
     SvelteStartTag,
     SvelteName,
     SvelteStyleDirective,
+    SvelteMustacheTagText,
+    SvelteStyleDirectiveLongform,
+    SvelteStyleDirectiveShorthand,
 } from "../../ast"
 import type ESTree from "estree"
 import type { Context } from "../../context"
@@ -33,6 +36,7 @@ export function* convertAttributes(
     | SvelteShorthandAttribute
     | SvelteSpreadAttribute
     | SvelteDirective
+    | SvelteStyleDirective
 > {
     for (const attr of attributes) {
         if (attr.type === "Attribute") {
@@ -55,7 +59,7 @@ export function* convertAttributes(
             yield convertClassDirective(attr, parent, ctx)
             continue
         }
-        if (attr.type === "Style") {
+        if (attr.type === "StyleDirective") {
             yield convertStyleDirective(attr, parent, ctx)
             continue
         }
@@ -73,6 +77,10 @@ export function* convertAttributes(
         }
         if (attr.type === "Let") {
             yield convertLetDirective(attr, parent, ctx)
+            continue
+        }
+        if (attr.type === "Style") {
+            yield convertOldStyleDirective(attr, parent, ctx)
             continue
         }
         if (attr.type === "Ref") {
@@ -108,40 +116,60 @@ function convertAttribute(
         parent: attribute,
         ...ctx.getConvertLocation(keyRange),
     }
+
     if (node.value === true) {
         // Boolean attribute
         attribute.boolean = true
         ctx.addToken("HTMLIdentifier", keyRange)
         return attribute
     }
-    for (let index = 0; index < node.value.length; index++) {
-        const v = node.value[index]
-        if (v.type === "AttributeShorthand") {
-            const key: ESTree.Identifier = {
-                ...attribute.key,
-                type: "Identifier",
-            }
-            const sAttr: SvelteShorthandAttribute = {
-                type: "SvelteShorthandAttribute",
-                key,
-                value: key,
-                parent,
-                loc: attribute.loc,
-                range: attribute.range,
-            }
-            ;(key as any).parent = sAttr
-            ctx.scriptLet.addExpression(key, sAttr, null, (es) => {
-                sAttr.value = es
-            })
-            return sAttr
+    const shorthand = node.value.find((v) => v.type === "AttributeShorthand")
+    if (shorthand) {
+        const key: ESTree.Identifier = {
+            ...attribute.key,
+            type: "Identifier",
         }
+        const sAttr: SvelteShorthandAttribute = {
+            type: "SvelteShorthandAttribute",
+            key,
+            value: key,
+            parent,
+            loc: attribute.loc,
+            range: attribute.range,
+        }
+        ;(key as any).parent = sAttr
+        ctx.scriptLet.addExpression(key, sAttr, null, (es) => {
+            sAttr.value = es
+        })
+        return sAttr
+    }
+    processAttributeValue(
+        node.value as (SvAST.Text | SvAST.MustacheTag)[],
+        attribute,
+        ctx,
+    )
+
+    // Not required for shorthands. Therefore, register the token here.
+    ctx.addToken("HTMLIdentifier", keyRange)
+
+    return attribute
+}
+
+/** Common process attribute value */
+function processAttributeValue(
+    nodeValue: (SvAST.Text | SvAST.MustacheTag)[],
+    attribute: SvelteAttribute | SvelteStyleDirectiveLongform,
+    ctx: Context,
+) {
+    for (let index = 0; index < nodeValue.length; index++) {
+        const v = nodeValue[index]
         if (v.type === "Text") {
             if (v.start === v.end) {
                 // Empty
                 // https://github.com/sveltejs/svelte/pull/6539
                 continue
             }
-            const next = node.value[index + 1]
+            const next = nodeValue[index + 1]
             if (next && next.start < v.end) {
                 // Maybe bug in Svelte can cause the completion index to shift.
                 // console.log(ctx.getText(v), v.data)
@@ -162,11 +190,6 @@ function convertAttribute(
             ctx,
         )
     }
-
-    // Not required for shorthands. Therefore, register the token here.
-    ctx.addToken("HTMLIdentifier", keyRange)
-
-    return attribute
 }
 
 /** Convert for Spread */
@@ -291,31 +314,88 @@ function convertClassDirective(
 
 /** Convert for Style Directive */
 function convertStyleDirective(
-    node: SvAST.DirectiveForExpression,
-    parent: SvelteDirective["parent"],
+    node: SvAST.StyleDirective,
+    parent: SvelteStyleDirective["parent"],
     ctx: Context,
 ): SvelteStyleDirective {
     const directive: SvelteStyleDirective = {
-        type: "SvelteDirective",
-        kind: "Style",
+        type: "SvelteStyleDirective",
         key: null as any,
-        expression: null,
+        shorthand: false,
+        value: [],
         parent,
         ...ctx.getConvertLocation(node),
     }
+    processDirectiveKey(node, directive, ctx)
+
+    const keyName = directive.key.name as SvelteName
+    if (node.value === true) {
+        ;(directive as unknown as SvelteStyleDirectiveShorthand).shorthand =
+            true
+        ctx.scriptLet.addExpression(keyName, directive, null, (expression) => {
+            directive.key.name = expression as ESTree.Identifier
+        })
+        return directive
+    }
+    ctx.addToken("HTMLIdentifier", {
+        start: keyName.range[0],
+        end: keyName.range[1],
+    })
+
+    processAttributeValue(node.value, directive, ctx)
+
+    return directive
+}
+
+/** Convert for Style Directive for svelte v3.46.0 */
+function convertOldStyleDirective(
+    node: SvAST.DirectiveForExpression,
+    parent: SvelteStyleDirective["parent"],
+    ctx: Context,
+): SvelteStyleDirective {
+    const directive: SvelteStyleDirective = {
+        type: "SvelteStyleDirective",
+        key: null as any,
+        shorthand: false,
+        value: [],
+        parent,
+        ...ctx.getConvertLocation(node),
+    }
+    processDirectiveKey(node, directive, ctx)
     if (processStyleDirectiveValue(node, ctx)) {
-        processDirective(node, directive, ctx, (expression) => {
-            directive.expression = convertTemplateLiteralToLiteral(
-                expression,
-                directive,
-                ctx,
+        processDirectiveExpression(node, directive, ctx, (expression) => {
+            directive.value.push(
+                convertTemplateLiteralToLiteral(expression, directive, ctx),
             )
             return []
         })
     } else {
-        processDirective(node, directive, ctx, (expression) => {
-            return ctx.scriptLet.addExpression(expression, directive)
-        })
+        processDirectiveExpression(
+            node,
+            directive,
+            ctx,
+            (expression, shorthand) => {
+                ;(directive as any).shorthand = shorthand
+                return ctx.scriptLet.addExpression(
+                    expression,
+                    directive,
+                    null,
+                    (e) => {
+                        const mustache: SvelteMustacheTagText = {
+                            type: "SvelteMustacheTag",
+                            kind: "text",
+                            expression: e,
+                            parent: directive,
+                            ...ctx.getConvertLocation({
+                                start: ctx.code.lastIndexOf("{", e.range![0]),
+                                end: ctx.code.indexOf("}", e.range![0]) + 1,
+                            }),
+                        }
+                        directive.value.push(mustache)
+                    },
+                )
+            },
+        )
     }
 
     return directive
@@ -491,6 +571,21 @@ function processDirective<
         expression: SvelteName,
     ) => ScriptLetCallback<ESTree.Identifier>[],
 ) {
+    processDirectiveKey(node, directive, ctx)
+    processDirectiveExpression<D, S, E>(
+        node,
+        directive,
+        ctx,
+        processExpression,
+        processName,
+    )
+}
+
+/** Common process for directive key */
+function processDirectiveKey<
+    D extends SvAST.Directive | SvAST.StyleDirective,
+    S extends SvelteDirective | SvelteStyleDirective,
+>(node: D, directive: S, ctx: Context) {
     const colonIndex = ctx.code.indexOf(":", directive.range[0])
     ctx.addToken("HTMLIdentifier", {
         start: directive.range[0],
@@ -531,26 +626,6 @@ function processDirective<
         keyEndIndex = nextEnd
     }
 
-    let isShorthandExpression = false
-
-    if (node.expression) {
-        isShorthandExpression =
-            node.expression.type === "Identifier" &&
-            node.expression.name === node.name &&
-            getWithLoc(node.expression).start === nameRange.start
-        if (
-            isShorthandExpression &&
-            getWithLoc(node.expression).end !== nameRange.end
-        ) {
-            // The identifier location may be incorrect in some edge cases.
-            // e.g. bind:value=""
-            getWithLoc(node.expression).end = nameRange.end
-        }
-        processExpression(node.expression, isShorthandExpression).push((es) => {
-            directive.expression = es
-        })
-    }
-
     const key = (directive.key = {
         type: "SvelteDirectiveKey",
         name: null as any,
@@ -566,13 +641,55 @@ function processDirective<
         parent: key,
         ...ctx.getConvertLocation(nameRange),
     }
-    if (!isShorthandExpression) {
+}
+
+/** Common process for directive expression */
+function processDirectiveExpression<
+    D extends SvAST.Directive,
+    S extends SvelteDirective | SvelteStyleDirective,
+    E extends D["expression"],
+>(
+    node: D & { expression: null | E },
+    directive: S,
+    ctx: Context,
+    processExpression: (
+        expression: E,
+        shorthand: boolean,
+    ) => ScriptLetCallback<NonNullable<E>>[],
+    processName?: (
+        expression: SvelteName,
+    ) => ScriptLetCallback<ESTree.Identifier>[],
+) {
+    const key = directive.key
+    const keyName = key.name as SvelteName
+    let shorthand = false
+
+    if (node.expression) {
+        shorthand =
+            node.expression.type === "Identifier" &&
+            node.expression.name === node.name &&
+            getWithLoc(node.expression).start === keyName.range[0]
+        if (shorthand && getWithLoc(node.expression).end !== keyName.range[1]) {
+            // The identifier location may be incorrect in some edge cases.
+            // e.g. bind:value=""
+            getWithLoc(node.expression).end = keyName.range[1]
+        }
+        processExpression(node.expression, shorthand).push((es) => {
+            if (directive.type === "SvelteDirective") {
+                directive.expression = es
+            }
+        })
+    }
+    if (!shorthand) {
         if (processName) {
-            processName(key.name).push((es) => {
+            processName(keyName).push((es) => {
                 key.name = es
             })
         } else {
-            ctx.addToken("HTMLIdentifier", nameRange)
+            ctx.addToken("HTMLIdentifier", {
+                start: keyName.range[0],
+                end: keyName.range[1],
+            })
         }
     }
 }
