@@ -332,9 +332,14 @@ function convertStyleDirective(
     if (node.value === true) {
         ;(directive as unknown as SvelteStyleDirectiveShorthand).shorthand =
             true
-        ctx.scriptLet.addExpression(keyName, directive, null, (expression) => {
-            directive.key.name = expression as ESTree.Identifier
-        })
+        ctx.scriptLet.addExpression(
+            keyName,
+            directive.key,
+            null,
+            (expression) => {
+                directive.key.name = expression as ESTree.Identifier
+            },
+        )
         return directive
     }
     ctx.addToken("HTMLIdentifier", {
