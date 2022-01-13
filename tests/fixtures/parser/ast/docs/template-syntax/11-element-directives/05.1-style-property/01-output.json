@@ -26,8 +26,7 @@
         "type": "SvelteStartTag",
         "attributes": [
           {
-            "type": "SvelteDirective",
-            "kind": "Style",
+            "type": "SvelteStyleDirective",
             "key": {
               "type": "SvelteDirectiveKey",
               "name": {
@@ -48,7 +47,6 @@
                   }
                 }
               },
-              "modifiers": [],
               "range": [
                 5,
                 19
@@ -64,24 +62,45 @@
                 }
               }
             },
-            "expression": {
-              "type": "Identifier",
-              "name": "value",
-              "range": [
-                21,
-                26
-              ],
-              "loc": {
-                "start": {
-                  "line": 1,
-                  "column": 21
+            "shorthand": false,
+            "value": [
+              {
+                "type": "SvelteMustacheTag",
+                "kind": "text",
+                "expression": {
+                  "type": "Identifier",
+                  "name": "value",
+                  "range": [
+                    21,
+                    26
+                  ],
+                  "loc": {
+                    "start": {
+                      "line": 1,
+                      "column": 21
+                    },
+                    "end": {
+                      "line": 1,
+                      "column": 26
+                    }
+                  }
                 },
-                "end": {
-                  "line": 1,
-                  "column": 26
+                "range": [
+                  20,
+                  27
+                ],
+                "loc": {
+                  "start": {
+                    "line": 1,
+                    "column": 20
+                  },
+                  "end": {
+                    "line": 1,
+                    "column": 27
+                  }
                 }
               }
-            },
+            ],
             "range": [
               5,
               27
@@ -174,8 +193,7 @@
         "type": "SvelteStartTag",
         "attributes": [
           {
-            "type": "SvelteDirective",
-            "kind": "Style",
+            "type": "SvelteStyleDirective",
             "key": {
               "type": "SvelteDirectiveKey",
               "name": {
@@ -196,7 +214,6 @@
                   }
                 }
               },
-              "modifiers": [],
               "range": [
                 36,
                 50
@@ -212,24 +229,27 @@
                 }
               }
             },
-            "expression": {
-              "type": "SvelteLiteral",
-              "value": "value",
-              "range": [
-                52,
-                57
-              ],
-              "loc": {
-                "start": {
-                  "line": 2,
-                  "column": 21
-                },
-                "end": {
-                  "line": 2,
-                  "column": 26
+            "shorthand": false,
+            "value": [
+              {
+                "type": "SvelteLiteral",
+                "value": "value",
+                "range": [
+                  52,
+                  57
+                ],
+                "loc": {
+                  "start": {
+                    "line": 2,
+                    "column": 21
+                  },
+                  "end": {
+                    "line": 2,
+                    "column": 26
+                  }
                 }
               }
-            },
+            ],
             "range": [
               36,
               58
@@ -322,12 +342,11 @@
         "type": "SvelteStartTag",
         "attributes": [
           {
-            "type": "SvelteDirective",
-            "kind": "Style",
+            "type": "SvelteStyleDirective",
             "key": {
               "type": "SvelteDirectiveKey",
               "name": {
-                "type": "SvelteName",
+                "type": "Identifier",
                 "name": "property",
                 "range": [
                   73,
@@ -344,7 +363,6 @@
                   }
                 }
               },
-              "modifiers": [],
               "range": [
                 67,
                 81
@@ -360,24 +378,8 @@
                 }
               }
             },
-            "expression": {
-              "type": "Identifier",
-              "name": "property",
-              "range": [
-                73,
-                81
-              ],
-              "loc": {
-                "start": {
-                  "line": 3,
-                  "column": 11
-                },
-                "end": {
-                  "line": 3,
-                  "column": 19
-                }
-              }
-            },
+            "shorthand": true,
+            "value": [],
             "range": [
               67,
               81

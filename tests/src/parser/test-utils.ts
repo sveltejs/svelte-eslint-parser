@@ -206,6 +206,7 @@ const nodeToKeys: SvelteKeysType = {
     SvelteDebugTag: ["identifiers"],
     SvelteConstTag: ["declaration"],
     SvelteDirective: ["key", "intro", "outro", "expression"],
+    SvelteStyleDirective: ["key", "shorthand", "value"],
     SvelteDirectiveKey: ["name", "modifiers"],
     SvelteEachBlock: [
         "expression",

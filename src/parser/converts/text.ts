@@ -34,7 +34,7 @@ export function convertTextToLiteral(
     extractTextTokens(node, ctx)
     return text
 }
-/** Convert for StyleDir's TemplateLiteral to Literal */
+/** Convert for Old StyleDir's TemplateLiteral to Literal for svelte v3.46.0 */
 export function convertTemplateLiteralToLiteral(
     node: ESTree.TemplateLiteral,
     parent: SvelteLiteral["parent"],

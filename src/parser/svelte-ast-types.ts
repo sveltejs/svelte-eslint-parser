@@ -16,6 +16,7 @@ export declare type TemplateNode =
     | DebugTag
     | ConstTag
     | Directive
+    | StyleDirective
     | Element
     | InlineComponent
     | Window
@@ -186,7 +187,11 @@ export interface AttributeShorthand extends BaseNode {
     type: "AttributeShorthand"
     expression: ESTree.Identifier
 }
-export type AttributeOrDirective = Attribute | Spread | Directive
+export type AttributeOrDirective =
+    | Attribute
+    | Spread
+    | Directive
+    | StyleDirective
 
 interface BaseDirective extends BaseNode {
     name: string
@@ -198,7 +203,7 @@ export interface DirectiveForExpression extends BaseDirective {
         | "Animation"
         | "Binding"
         | "Class"
-        | "Style"
+        | "Style" // For Svelte 3.46.0
         | "EventHandler"
         | "Ref"
     expression: null | ESTree.Expression
@@ -212,6 +217,10 @@ export interface TransitionDirective extends BaseDirective {
     intro: boolean
     outro: boolean
     expression: null | ESTree.Expression
+}
+export interface StyleDirective extends BaseDirective {
+    type: "StyleDirective"
+    value: (Text | MustacheTag)[] | true
 }
 export type Directive =
     | DirectiveForExpression
