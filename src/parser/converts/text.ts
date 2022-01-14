@@ -46,16 +46,16 @@ export function convertTemplateLiteralToLiteral(
         parent,
         ...ctx.getConvertLocation(node),
     }
-    extractTextTokens(node, ctx)
+    extractTextTokens(getWithLoc(node), ctx)
     return text
 }
 
 /** Extract tokens */
-function extractTextTokens(
-    node: SvAST.Text | ESTree.TemplateLiteral,
+export function extractTextTokens(
+    node: { start: number; end: number },
     ctx: Context,
-) {
-    const loc = getWithLoc(node)
+): void {
+    const loc = node
     let start = loc.start
     let word = false
     for (let index = loc.start; index < loc.end; index++) {
