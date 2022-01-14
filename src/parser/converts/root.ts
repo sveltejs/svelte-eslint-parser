@@ -1,6 +1,6 @@
 import type * as SvAST from "../svelte-ast-types"
-import { parse } from "svelte/compiler"
 import type {
+    SvelteAttribute,
     SvelteName,
     SvelteProgram,
     SvelteScriptElement,
@@ -9,7 +9,7 @@ import type {
 import {} from "./common"
 import type { Context } from "../../context"
 import { convertChildren, extractElementTags } from "./element"
-import { convertAttributes } from "./attr"
+import { extractTextTokens } from "./text"
 
 /**
  * Convert root
@@ -136,38 +136,6 @@ function extractAttributes(
     element: SvelteScriptElement | SvelteStyleElement,
     ctx: Context,
 ) {
-    const script = element.type === "SvelteScriptElement"
-
-    let code = " ".repeat(element.range[0])
-
-    const elementCode = ctx.sourceCode.template.slice(...element.range)
-    const startRegex = script
-        ? /<script(\s[\s\S]*?)?>/giu
-        : /<style(\s[\s\S]*?)?>/giu
-    const endTag = script ? "</script>" : "</style>"
-    let re
-    let index = 0
-    while ((re = startRegex.exec(elementCode))) {
-        const [, attributes] = re
-
-        const endTagIndex = elementCode.indexOf(endTag, startRegex.lastIndex)
-        if (endTagIndex >= 0) {
-            const contextLength = endTagIndex - startRegex.lastIndex
-            code += elementCode.slice(index, re.index)
-            code += `${script ? "<div   " : "<div  "}${attributes || ""}>`
-            code += `${" ".repeat(contextLength)}</div>`
-            startRegex.lastIndex = index = endTagIndex + endTag.length
-        } else {
-            break
-        }
-    }
-    code += elementCode.slice(index)
-    const svelteAst = parse(code) as SvAST.Ast
-
-    const fakeElement = svelteAst.html.children.find(
-        (c) => c.type === "Element",
-    ) as SvAST.Element
-
     element.startTag = {
         type: "SvelteStartTag",
         attributes: [],
@@ -182,7 +150,42 @@ function extractAttributes(
             end: null as any,
         },
     }
-    element.startTag.attributes.push(
-        ...convertAttributes(fakeElement.attributes, element.startTag, ctx),
-    )
+    const block = ctx.findBlock(element)
+    if (block) {
+        for (const attr of block.attrs) {
+            const attrNode: SvelteAttribute = {
+                type: "SvelteAttribute",
+                boolean: false,
+                key: null as any,
+                value: [],
+                parent: element.startTag,
+                ...ctx.getConvertLocation({
+                    start: attr.key.start,
+                    end: attr.value?.end ?? attr.key.end,
+                }),
+            }
+            element.startTag.attributes.push(attrNode)
+            attrNode.key = {
+                type: "SvelteName",
+                name: attr.key.name,
+                parent: attrNode,
+                ...ctx.getConvertLocation(attr.key),
+            }
+            ctx.addToken("HTMLIdentifier", attr.key)
+            if (attr.value == null) {
+                attrNode.boolean = true
+            } else {
+                const valueLoc = attr.value.quote
+                    ? { start: attr.value.start + 1, end: attr.value.end - 1 }
+                    : attr.value
+                attrNode.value.push({
+                    type: "SvelteLiteral",
+                    value: attr.value.value,
+                    parent: attrNode,
+                    ...ctx.getConvertLocation(valueLoc),
+                })
+                extractTextTokens(valueLoc, ctx)
+            }
+        }
+    }
 }

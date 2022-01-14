@@ -1,0 +1,145 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`parseAttributes <script lang="ts"> 1`] = `
+Object {
+  "attributes": Array [
+    Object {
+      "key": Object {
+        "end": 12,
+        "name": "lang",
+        "start": 8,
+      },
+      "value": Object {
+        "end": 17,
+        "quote": "\\"",
+        "start": 13,
+        "value": "ts",
+      },
+    },
+  ],
+  "index": 17,
+}
+`;
+
+exports[`parseAttributes <script lang='ts'> 1`] = `
+Object {
+  "attributes": Array [
+    Object {
+      "key": Object {
+        "end": 12,
+        "name": "lang",
+        "start": 8,
+      },
+      "value": Object {
+        "end": 17,
+        "quote": "'",
+        "start": 13,
+        "value": "ts",
+      },
+    },
+  ],
+  "index": 17,
+}
+`;
+
+exports[`parseAttributes <script lang=ts> 1`] = `
+Object {
+  "attributes": Array [
+    Object {
+      "key": Object {
+        "end": 12,
+        "name": "lang",
+        "start": 8,
+      },
+      "value": Object {
+        "end": 15,
+        "quote": null,
+        "start": 13,
+        "value": "ts",
+      },
+    },
+  ],
+  "index": 15,
+}
+`;
+
+exports[`parseAttributes <script lang=ts> 2`] = `
+Object {
+  "attributes": Array [],
+  "index": 0,
+}
+`;
+
+exports[`parseAttributes attr   1`] = `
+Object {
+  "attributes": Array [
+    Object {
+      "key": Object {
+        "end": 4,
+        "name": "attr",
+        "start": 0,
+      },
+      "value": null,
+    },
+  ],
+  "index": 6,
+}
+`;
+
+exports[`parseAttributes attr  =  "value" 1`] = `
+Object {
+  "attributes": Array [
+    Object {
+      "key": Object {
+        "end": 4,
+        "name": "attr",
+        "start": 0,
+      },
+      "value": Object {
+        "end": 16,
+        "quote": "\\"",
+        "start": 9,
+        "value": "value",
+      },
+    },
+  ],
+  "index": 16,
+}
+`;
+
+exports[`parseAttributes attr 1`] = `
+Object {
+  "attributes": Array [
+    Object {
+      "key": Object {
+        "end": 4,
+        "name": "attr",
+        "start": 0,
+      },
+      "value": null,
+    },
+  ],
+  "index": 4,
+}
+`;
+
+exports[`parseAttributes attr="value" 1`] = `
+Object {
+  "attributes": Array [
+    Object {
+      "key": Object {
+        "end": 4,
+        "name": "attr",
+        "start": 0,
+      },
+      "value": Object {
+        "end": 12,
+        "quote": "\\"",
+        "start": 5,
+        "value": "value",
+      },
+    },
+  ],
+  "index": 12,
+}
+`;

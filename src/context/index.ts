@@ -1,10 +1,19 @@
 import fs from "fs"
 import path from "path"
-import type { Comment, Locations, Position, Token } from "../ast"
+import type {
+    Comment,
+    Locations,
+    Position,
+    SvelteScriptElement,
+    SvelteStyleElement,
+    Token,
+} from "../ast"
 import type ESTree from "estree"
 import { ScriptLetContext } from "./script-let"
 import { LetDirectiveCollections } from "./let-directive-collection"
 import { getParserName } from "../parser/resolve-parser"
+import type { AttributeToken } from "../parser/html"
+import { parseAttributes } from "../parser/html"
 
 export class ScriptsSourceCode {
     private raw: string
@@ -87,6 +96,8 @@ export class Context {
 
     private state: { isTypeScript?: boolean } = {}
 
+    private readonly blocks: Block[] = []
+
     public constructor(code: string, parserOptions: any) {
         this.code = code
         this.parserOptions = parserOptions
@@ -96,21 +107,25 @@ export class Context {
 
         let templateCode = ""
         let scriptCode = ""
-        let scriptAttrs: Record<string, string | undefined> = {}
+        const scriptAttrs: Record<string, string | undefined> = {}
 
         let start = 0
         for (const block of extractBlocks(code)) {
+            this.blocks.push(block)
             templateCode +=
-                code.slice(start, block.codeRange[0]) +
-                spaces.slice(block.codeRange[0], block.codeRange[1])
+                code.slice(start, block.contentRange[0]) +
+                spaces.slice(block.contentRange[0], block.contentRange[1])
             if (block.tag === "script") {
                 scriptCode +=
-                    spaces.slice(start, block.codeRange[0]) + block.code
-                scriptAttrs = Object.assign(scriptAttrs, block.attrs)
+                    spaces.slice(start, block.contentRange[0]) +
+                    code.slice(...block.contentRange)
+                for (const attr of block.attrs) {
+                    scriptAttrs[attr.key.name] = attr.value?.value
+                }
             } else {
-                scriptCode += spaces.slice(start, block.codeRange[1])
+                scriptCode += spaces.slice(start, block.contentRange[1])
             }
-            start = block.codeRange[1]
+            start = block.contentRange[1]
         }
         templateCode += code.slice(start)
         scriptCode += spaces.slice(start)
@@ -223,49 +238,63 @@ export class Context {
     public stripScriptCode(start: number, end: number): void {
         this.sourceCode.scripts.stripCode(start, end)
     }
+
+    public findBlock(
+        element: SvelteScriptElement | SvelteStyleElement,
+    ): Block | undefined {
+        const tag = element.type === "SvelteScriptElement" ? "script" : "style"
+        return this.blocks.find(
+            (block) =>
+                block.tag === tag &&
+                element.range[0] <= block.contentRange[0] &&
+                block.contentRange[1] <= element.range[1],
+        )
+    }
+}
+
+type Block = {
+    tag: "script" | "style"
+    attrs: AttributeToken[]
+    contentRange: [number, number]
 }
 
 /** Extract <script> blocks */
-function* extractBlocks(code: string): IterableIterator<{
-    code: string
-    codeRange: [number, number]
-    attrs: Record<string, string | undefined>
-    tag: "script" | "style"
-}> {
-    const startTagRe = /<(script|style)(\s[\s\S]*?)?>/giu
-    const endScriptTagRe = /<\/script(?:\s[\s\S]*?)?>/giu
-    const endStyleTagRe = /<\/style(?:\s[\s\S]*?)?>/giu
-    let startTagRes
-    while ((startTagRes = startTagRe.exec(code))) {
-        const [startTag, tag, attributes = ""] = startTagRes
-        const startTagStart = startTagRes.index
-        const startTagEnd = startTagStart + startTag.length
+function* extractBlocks(code: string): IterableIterator<Block> {
+    const startTagOpenRe = /<(script|style)([\s>])/giu
+    const endScriptTagRe = /<\/script>/giu
+    const endStyleTagRe = /<\/style>/giu
+    let startTagOpenMatch
+    while ((startTagOpenMatch = startTagOpenRe.exec(code))) {
+        const [, tag, nextChar] = startTagOpenMatch
+        let startTagEnd = startTagOpenRe.lastIndex
+
+        let attrs: AttributeToken[] = []
+        if (!nextChar.trim()) {
+            const attrsData = parseAttributes(code, startTagOpenRe.lastIndex)
+            attrs = attrsData.attributes
+            startTagEnd = attrsData.index
+            if (code[startTagEnd] === "/") {
+                startTagEnd++
+            }
+            if (code[startTagEnd] === ">") {
+                startTagEnd++
+            } else {
+                continue
+            }
+        }
         const endTagRe =
             tag.toLowerCase() === "script" ? endScriptTagRe : endStyleTagRe
-        endTagRe.lastIndex = startTagRe.lastIndex
-        const endTagRes = endTagRe.exec(code)
-        if (endTagRes) {
-            const endTagStart = endTagRes.index
-            const codeRange: [number, number] = [startTagEnd, endTagStart]
-
-            const attrRe =
-                /(?<key>[^\s=]+)(?:=(?:"(?<val1>[^"]*)"|'(?<val2>[^"]*)'|(?<val3>[^\s=]+)))?/gu
-            const attrs: Record<string, string | undefined> = {}
-            let attrRes
-            while ((attrRes = attrRe.exec(attributes))) {
-                attrs[attrRes.groups!.key] =
-                    (attrRes.groups!.val1 ||
-                        attrRes.groups!.val2 ||
-                        attrRes.groups!.val3) ??
-                    null
-            }
+        endTagRe.lastIndex = startTagEnd
+        const endTagMatch = endTagRe.exec(code)
+        if (endTagMatch) {
+            const endTagStart = endTagMatch.index
+            const contentRange: [number, number] = [startTagEnd, endTagStart]
             yield {
-                code: code.slice(...codeRange),
-                codeRange,
+                contentRange,
                 attrs,
                 tag: tag as "script" | "style",
             }
-            startTagRe.lastIndex = endTagRe.lastIndex
+            startTagOpenRe.lastIndex = endTagRe.lastIndex
         }
     }
 }
