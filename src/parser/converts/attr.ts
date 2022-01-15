@@ -228,31 +228,35 @@ function convertBindingDirective(
         type: "SvelteDirective",
         kind: "Binding",
         key: null as any,
+        shorthand: false,
         expression: null,
         parent,
         ...ctx.getConvertLocation(node),
     }
-    processDirective(node, directive, ctx, (expression) => {
-        return ctx.scriptLet.addExpression(
-            expression,
-            directive,
-            null,
-            (es, { getInnermostScope }) => {
-                directive.expression = es
-                const scope = getInnermostScope(es)
-                const reference = scope.references.find(
-                    (ref) => ref.identifier === es,
-                )
-                if (reference) {
-                    // The bind directive does read and write.
-                    reference.isWrite = () => true
-                    reference.isWriteOnly = () => false
-                    reference.isReadWrite = () => true
-                    reference.isReadOnly = () => false
-                    reference.isRead = () => true
-                }
-            },
-        )
+    processDirective(node, directive, ctx, {
+        processExpression(expression, shorthand) {
+            directive.shorthand = shorthand
+            return ctx.scriptLet.addExpression(
+                expression,
+                directive,
+                null,
+                (es, { getInnermostScope }) => {
+                    directive.expression = es
+                    const scope = getInnermostScope(es)
+                    const reference = scope.references.find(
+                        (ref) => ref.identifier === es,
+                    )
+                    if (reference) {
+                        // The bind directive does read and write.
+                        reference.isWrite = () => true
+                        reference.isWriteOnly = () => false
+                        reference.isReadWrite = () => true
+                        reference.isReadOnly = () => false
+                        reference.isRead = () => true
+                    }
+                },
+            )
+        },
     })
     return directive
 }
@@ -274,18 +278,15 @@ function convertEventHandlerDirective(
     const isCustomEvent =
         parent.parent.type === "SvelteElement" &&
         (parent.parent.kind === "component" || parent.parent.kind === "special")
-    processDirective(
-        node,
-        directive,
-        ctx,
-        buildProcessExpressionForExpression(
+    processDirective(node, directive, ctx, {
+        processExpression: buildProcessExpressionForExpression(
             directive,
             ctx,
             isCustomEvent
                 ? "(e:CustomEvent<any>)=>void"
                 : `(e:'${node.name}' extends keyof HTMLElementEventMap?HTMLElementEventMap['${node.name}']:CustomEvent<any>)=>void`,
         ),
-    )
+    })
     return directive
 }
 
@@ -299,16 +300,17 @@ function convertClassDirective(
         type: "SvelteDirective",
         kind: "Class",
         key: null as any,
+        shorthand: false,
         expression: null,
         parent,
         ...ctx.getConvertLocation(node),
     }
-    processDirective(
-        node,
-        directive,
-        ctx,
-        buildProcessExpressionForExpression(directive, ctx, null),
-    )
+    processDirective(node, directive, ctx, {
+        processExpression(expression, shorthand) {
+            directive.shorthand = shorthand
+            return ctx.scriptLet.addExpression(expression, directive)
+        },
+    })
     return directive
 }
 
@@ -368,18 +370,17 @@ function convertOldStyleDirective(
     }
     processDirectiveKey(node, directive, ctx)
     if (processStyleDirectiveValue(node, ctx)) {
-        processDirectiveExpression(node, directive, ctx, (expression) => {
-            directive.value.push(
-                convertTemplateLiteralToLiteral(expression, directive, ctx),
-            )
-            return []
+        processDirectiveExpression(node, directive, ctx, {
+            processExpression(expression) {
+                directive.value.push(
+                    convertTemplateLiteralToLiteral(expression, directive, ctx),
+                )
+                return []
+            },
         })
     } else {
-        processDirectiveExpression(
-            node,
-            directive,
-            ctx,
-            (expression, shorthand) => {
+        processDirectiveExpression(node, directive, ctx, {
+            processExpression(expression, shorthand) {
                 ;(directive as any).shorthand = shorthand
                 return ctx.scriptLet.addExpression(
                     expression,
@@ -400,7 +401,7 @@ function convertOldStyleDirective(
                     },
                 )
             },
-        )
+        })
     }
 
     return directive
@@ -463,13 +464,14 @@ function convertTransitionDirective(
         parent,
         ...ctx.getConvertLocation(node),
     }
-    processDirective(
-        node,
-        directive,
-        ctx,
-        buildProcessExpressionForExpression(directive, ctx, null),
-        (name) => ctx.scriptLet.addExpression(name, directive.key),
-    )
+    processDirective(node, directive, ctx, {
+        processExpression: buildProcessExpressionForExpression(
+            directive,
+            ctx,
+            null,
+        ),
+        processName: (name) => ctx.scriptLet.addExpression(name, directive.key),
+    })
     return directive
 }
 
@@ -487,13 +489,14 @@ function convertAnimationDirective(
         parent,
         ...ctx.getConvertLocation(node),
     }
-    processDirective(
-        node,
-        directive,
-        ctx,
-        buildProcessExpressionForExpression(directive, ctx, null),
-        (name) => ctx.scriptLet.addExpression(name, directive.key),
-    )
+    processDirective(node, directive, ctx, {
+        processExpression: buildProcessExpressionForExpression(
+            directive,
+            ctx,
+            null,
+        ),
+        processName: (name) => ctx.scriptLet.addExpression(name, directive.key),
+    })
     return directive
 }
 
@@ -511,13 +514,14 @@ function convertActionDirective(
         parent,
         ...ctx.getConvertLocation(node),
     }
-    processDirective(
-        node,
-        directive,
-        ctx,
-        buildProcessExpressionForExpression(directive, ctx, null),
-        (name) => ctx.scriptLet.addExpression(name, directive.key),
-    )
+    processDirective(node, directive, ctx, {
+        processExpression: buildProcessExpressionForExpression(
+            directive,
+            ctx,
+            null,
+        ),
+        processName: (name) => ctx.scriptLet.addExpression(name, directive.key),
+    })
     return directive
 }
 
@@ -535,16 +539,13 @@ function convertLetDirective(
         parent,
         ...ctx.getConvertLocation(node),
     }
-    processDirective(
-        node,
-        directive,
-        ctx,
-        (pattern) => {
+    processDirective(node, directive, ctx, {
+        processExpression(pattern) {
             return ctx.letDirCollections
                 .getCollection()
                 .addPattern(pattern, directive, "any")
         },
-        node.expression
+        processName: node.expression
             ? undefined
             : (name) => {
                   // shorthand
@@ -555,7 +556,7 @@ function convertLetDirective(
                       })
                   return []
               },
-    )
+    })
     return directive
 }
 
@@ -568,22 +569,18 @@ function processDirective<
     node: D & { expression: null | E },
     directive: S,
     ctx: Context,
-    processExpression: (
-        expression: E,
-        shorthand: boolean,
-    ) => ScriptLetCallback<NonNullable<E>>[],
-    processName?: (
-        expression: SvelteName,
-    ) => ScriptLetCallback<ESTree.Identifier>[],
+    processors: {
+        processExpression: (
+            expression: E,
+            shorthand: boolean,
+        ) => ScriptLetCallback<NonNullable<E>>[]
+        processName?: (
+            expression: SvelteName,
+        ) => ScriptLetCallback<ESTree.Identifier>[]
+    },
 ) {
     processDirectiveKey(node, directive, ctx)
-    processDirectiveExpression<D, S, E>(
-        node,
-        directive,
-        ctx,
-        processExpression,
-        processName,
-    )
+    processDirectiveExpression<D, S, E>(node, directive, ctx, processors)
 }
 
 /** Common process for directive key */
@@ -657,13 +654,15 @@ function processDirectiveExpression<
     node: D & { expression: null | E },
     directive: S,
     ctx: Context,
-    processExpression: (
-        expression: E,
-        shorthand: boolean,
-    ) => ScriptLetCallback<NonNullable<E>>[],
-    processName?: (
-        expression: SvelteName,
-    ) => ScriptLetCallback<ESTree.Identifier>[],
+    processors: {
+        processExpression: (
+            expression: E,
+            shorthand: boolean,
+        ) => ScriptLetCallback<NonNullable<E>>[]
+        processName?: (
+            expression: SvelteName,
+        ) => ScriptLetCallback<ESTree.Identifier>[]
+    },
 ) {
     const key = directive.key
     const keyName = key.name as SvelteName
@@ -679,15 +678,15 @@ function processDirectiveExpression<
             // e.g. bind:value=""
             getWithLoc(node.expression).end = keyName.range[1]
         }
-        processExpression(node.expression, shorthand).push((es) => {
+        processors.processExpression(node.expression, shorthand).push((es) => {
             if (directive.type === "SvelteDirective") {
                 directive.expression = es
             }
         })
     }
     if (!shorthand) {
-        if (processName) {
-            processName(keyName).push((es) => {
+        if (processors.processName) {
+            processors.processName(keyName).push((es) => {
                 key.name = es
             })
         } else {
