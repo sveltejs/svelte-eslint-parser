@@ -559,10 +559,12 @@ export interface SvelteAnimationDirective extends BaseSvelteDirective {
 }
 export interface SvelteBindingDirective extends BaseSvelteDirective {
     kind: "Binding"
+    shorthand: boolean
     expression: null | ESTree.Expression
 }
 export interface SvelteClassDirective extends BaseSvelteDirective {
     kind: "Class"
+    shorthand: boolean
     expression: null | ESTree.Expression
 }
 export interface SvelteEventHandlerDirective extends BaseSvelteDirective {
