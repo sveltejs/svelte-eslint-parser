@@ -59,6 +59,7 @@ export type SvelteNode =
     | SvelteText
     | SvelteLiteral
     | SvelteMustacheTag
+    | SvelteHtmlTag
     | SvelteDebugTag
     | SvelteConstTag
     | SvelteIfBlock
@@ -217,6 +218,7 @@ type Child =
     | SvelteElement
     | SvelteText
     | SvelteMustacheTag
+    | SvelteHtmlTag
     | SvelteDebugTag
     | SvelteConstTag
     | SvelteIfBlockAlone
@@ -248,11 +250,9 @@ export interface SvelteLiteral extends BaseNode {
     parent: SvelteAttribute | SvelteStyleDirective
 }
 
-/** Node of mustache tag. e.g. `{...}`, `{@html ...}`. Like JSXExpressionContainer */
-export type SvelteMustacheTag = SvelteMustacheTagText | SvelteMustacheTagRaw
-interface BaseSvelteMustacheTag extends BaseNode {
+/** Node of mustache tag. e.g. `{...}`. Like JSXExpressionContainer */
+export interface SvelteMustacheTag extends BaseNode {
     type: "SvelteMustacheTag"
-    kind: "text" | "raw"
     expression: ESTree.Expression
     parent:
         | SvelteProgram
@@ -267,13 +267,22 @@ interface BaseSvelteMustacheTag extends BaseNode {
         | SvelteAttribute
         | SvelteStyleDirective
 }
-/** Node of mustache tag. e.g. `{...}``. Like JSXExpressionContainer */
-export interface SvelteMustacheTagText extends BaseSvelteMustacheTag {
-    kind: "text"
-}
-/** Node of mustache tag. e.g. `{@html ...}`. Like JSXExpressionContainer */
-export interface SvelteMustacheTagRaw extends BaseSvelteMustacheTag {
-    kind: "raw"
+/** Node of html mustache tag. e.g. `{@html ...}`. */
+export interface SvelteHtmlTag extends BaseNode {
+    type: "SvelteHtmlTag"
+    expression: ESTree.Expression
+    parent:
+        | SvelteProgram
+        | SvelteElement
+        | SvelteIfBlock
+        | SvelteElseBlockAlone
+        | SvelteEachBlock
+        | SvelteAwaitPendingBlock
+        | SvelteAwaitThenBlock
+        | SvelteAwaitCatchBlock
+        | SvelteKeyBlock
+        | SvelteAttribute
+        | SvelteStyleDirective
 }
 /** Node of debug mustache tag. e.g. `{@debug}` */
 export interface SvelteDebugTag extends BaseNode {
@@ -291,7 +300,7 @@ export interface SvelteDebugTag extends BaseNode {
         | SvelteKeyBlock
         | SvelteAttribute
 }
-/** Node of const tag. e.g. `{@const}` */
+/** Node of const tag. e.g. `{@const ...}` */
 export interface SvelteConstTag extends BaseNode {
     type: "SvelteConstTag"
     declaration: ESTree.VariableDeclarator
@@ -509,7 +518,7 @@ export interface SvelteAttribute extends BaseNode {
     type: "SvelteAttribute"
     key: SvelteName
     boolean: boolean
-    value: (SvelteLiteral | SvelteMustacheTagText)[]
+    value: (SvelteLiteral | SvelteMustacheTag)[]
     parent: SvelteStartTag
 }
 /** Node of shorthand attribute. e.g. `<img {src}>` */
@@ -593,7 +602,7 @@ export type SvelteStyleDirective =
 interface BaseSvelteStyleDirective extends BaseNode {
     type: "SvelteStyleDirective"
     key: SvelteDirectiveKey
-    value: (SvelteLiteral | SvelteMustacheTagText)[]
+    value: (SvelteLiteral | SvelteMustacheTag)[]
     parent: SvelteStartTag
 }
 export interface SvelteStyleDirectiveShorthand
@@ -603,7 +612,7 @@ export interface SvelteStyleDirectiveShorthand
 }
 export interface SvelteStyleDirectiveLongform extends BaseSvelteStyleDirective {
     shorthand: false
-    value: (SvelteLiteral | SvelteMustacheTagText)[]
+    value: (SvelteLiteral | SvelteMustacheTag)[]
 }
 export interface SvelteSpecialDirectiveKey extends BaseNode {
     type: "SvelteSpecialDirectiveKey"

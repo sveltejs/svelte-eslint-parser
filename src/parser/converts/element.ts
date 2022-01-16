@@ -11,6 +11,7 @@ import type {
     SvelteElseBlockAlone,
     SvelteHTMLComment,
     SvelteHTMLElement,
+    SvelteHtmlTag,
     SvelteIfBlock,
     SvelteIfBlockAlone,
     SvelteKeyBlock,
@@ -64,6 +65,7 @@ export function* convertChildren(
     | SvelteText
     | SvelteElement
     | SvelteMustacheTag
+    | SvelteHtmlTag
     | SvelteDebugTag
     | SvelteConstTag
     | SvelteIfBlockAlone

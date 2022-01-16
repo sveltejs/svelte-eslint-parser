@@ -20,6 +20,7 @@ const svelteKeys: SvelteKeysType = {
     SvelteMemberExpressionName: ["object", "property"],
     SvelteLiteral: [],
     SvelteMustacheTag: ["expression"],
+    SvelteHtmlTag: ["expression"],
     SvelteDebugTag: ["identifiers"],
     SvelteConstTag: ["declaration"],
     SvelteIfBlock: ["expression", "children", "else"],
