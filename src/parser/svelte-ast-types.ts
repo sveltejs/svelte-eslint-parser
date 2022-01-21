@@ -198,14 +198,7 @@ interface BaseDirective extends BaseNode {
     modifiers: string[]
 }
 export interface DirectiveForExpression extends BaseDirective {
-    type:
-        | "Action"
-        | "Animation"
-        | "Binding"
-        | "Class"
-        | "Style" // For Svelte 3.46.0
-        | "EventHandler"
-        | "Ref"
+    type: "Action" | "Animation" | "Binding" | "Class" | "EventHandler" | "Ref"
     expression: null | ESTree.Expression
 }
 export interface LetDirective extends BaseDirective {

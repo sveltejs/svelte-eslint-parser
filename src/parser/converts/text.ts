@@ -1,8 +1,7 @@
-import type ESTree from "estree"
 import type { SvelteLiteral, SvelteText } from "../../ast"
 import type { Context } from "../../context"
+import type { AttributeValueToken } from "../html"
 import type * as SvAST from "../svelte-ast-types"
-import { getWithLoc } from "./common"
 /** Convert for Text */
 export function convertText(
     node: SvAST.Text,
@@ -34,24 +33,28 @@ export function convertTextToLiteral(
     extractTextTokens(node, ctx)
     return text
 }
-/** Convert for Old StyleDir's TemplateLiteral to Literal for svelte v3.46.0 */
-export function convertTemplateLiteralToLiteral(
-    node: ESTree.TemplateLiteral,
+
+/** Convert for AttributeValueToken to Literal */
+export function convertAttributeValueTokenToLiteral(
+    node: AttributeValueToken,
     parent: SvelteLiteral["parent"],
     ctx: Context,
 ): SvelteLiteral {
+    const valueLoc = node.quote
+        ? { start: node.start + 1, end: node.end - 1 }
+        : node
     const text: SvelteLiteral = {
         type: "SvelteLiteral",
-        value: node.quasis[0].value.raw,
+        value: node.value,
         parent,
-        ...ctx.getConvertLocation(node),
+        ...ctx.getConvertLocation(valueLoc),
     }
-    extractTextTokens(getWithLoc(node), ctx)
+    extractTextTokens(valueLoc, ctx)
     return text
 }
 
 /** Extract tokens */
-export function extractTextTokens(
+function extractTextTokens(
     node: { start: number; end: number },
     ctx: Context,
 ): void {

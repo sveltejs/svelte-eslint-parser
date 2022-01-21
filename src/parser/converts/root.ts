@@ -1,6 +1,5 @@
 import type * as SvAST from "../svelte-ast-types"
 import type {
-    SvelteAttribute,
     SvelteName,
     SvelteProgram,
     SvelteScriptElement,
@@ -9,7 +8,7 @@ import type {
 import {} from "./common"
 import type { Context } from "../../context"
 import { convertChildren, extractElementTags } from "./element"
-import { extractTextTokens } from "./text"
+import { convertAttributeTokens } from "./attr"
 
 /**
  * Convert root
@@ -152,40 +151,8 @@ function extractAttributes(
     }
     const block = ctx.findBlock(element)
     if (block) {
-        for (const attr of block.attrs) {
-            const attrNode: SvelteAttribute = {
-                type: "SvelteAttribute",
-                boolean: false,
-                key: null as any,
-                value: [],
-                parent: element.startTag,
-                ...ctx.getConvertLocation({
-                    start: attr.key.start,
-                    end: attr.value?.end ?? attr.key.end,
-                }),
-            }
-            element.startTag.attributes.push(attrNode)
-            attrNode.key = {
-                type: "SvelteName",
-                name: attr.key.name,
-                parent: attrNode,
-                ...ctx.getConvertLocation(attr.key),
-            }
-            ctx.addToken("HTMLIdentifier", attr.key)
-            if (attr.value == null) {
-                attrNode.boolean = true
-            } else {
-                const valueLoc = attr.value.quote
-                    ? { start: attr.value.start + 1, end: attr.value.end - 1 }
-                    : attr.value
-                attrNode.value.push({
-                    type: "SvelteLiteral",
-                    value: attr.value.value,
-                    parent: attrNode,
-                    ...ctx.getConvertLocation(valueLoc),
-                })
-                extractTextTokens(valueLoc, ctx)
-            }
-        }
+        element.startTag.attributes.push(
+            ...convertAttributeTokens(block.attrs, element.startTag, ctx),
+        )
     }
 }

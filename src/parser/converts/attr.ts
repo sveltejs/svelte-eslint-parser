@@ -13,7 +13,6 @@ import type {
     SvelteStartTag,
     SvelteName,
     SvelteStyleDirective,
-    SvelteMustacheTagText,
     SvelteStyleDirectiveLongform,
     SvelteStyleDirectiveShorthand,
 } from "../../ast"
@@ -22,9 +21,13 @@ import type { Context } from "../../context"
 import type * as SvAST from "../svelte-ast-types"
 import { getWithLoc, indexOf } from "./common"
 import { convertMustacheTag } from "./mustache"
-import { convertTemplateLiteralToLiteral, convertTextToLiteral } from "./text"
+import {
+    convertAttributeValueTokenToLiteral,
+    convertTextToLiteral,
+} from "./text"
 import { ParseError } from "../../errors"
 import type { ScriptLetCallback } from "../../context/script-let"
+import type { AttributeToken } from "../html"
 
 /** Convert for Attributes */
 export function* convertAttributes(
@@ -79,18 +82,57 @@ export function* convertAttributes(
             yield convertLetDirective(attr, parent, ctx)
             continue
         }
-        if (attr.type === "Style") {
-            yield convertOldStyleDirective(attr, parent, ctx)
-            continue
-        }
         if (attr.type === "Ref") {
             throw new ParseError("Ref are not supported.", attr.start, ctx)
+        }
+        if ((attr as any).type === "Style") {
+            throw new ParseError(
+                `Svelte v3.46.0 is no longer supported. Please use Svelte>=v3.46.1.`,
+                attr.start,
+                ctx,
+            )
         }
         throw new ParseError(
             `Unknown directive or attribute (${attr.type}) are not supported.`,
             attr.start,
             ctx,
         )
+    }
+}
+
+/** Convert for attribute tokens */
+export function* convertAttributeTokens(
+    attributes: AttributeToken[],
+    parent: SvelteStartTag,
+    ctx: Context,
+): IterableIterator<SvelteAttribute> {
+    for (const attr of attributes) {
+        const attribute: SvelteAttribute = {
+            type: "SvelteAttribute",
+            boolean: false,
+            key: null as any,
+            value: [],
+            parent,
+            ...ctx.getConvertLocation({
+                start: attr.key.start,
+                end: attr.value?.end ?? attr.key.end,
+            }),
+        }
+        attribute.key = {
+            type: "SvelteName",
+            name: attr.key.name,
+            parent: attribute,
+            ...ctx.getConvertLocation(attr.key),
+        }
+        ctx.addToken("HTMLIdentifier", attr.key)
+        if (attr.value == null) {
+            attribute.boolean = true
+        } else {
+            attribute.value.push(
+                convertAttributeValueTokenToLiteral(attr.value, attribute, ctx),
+            )
+        }
+        yield attribute
     }
 }
 
@@ -354,100 +396,6 @@ function convertStyleDirective(
     return directive
 }
 
-/** Convert for Style Directive for svelte v3.46.0 */
-function convertOldStyleDirective(
-    node: SvAST.DirectiveForExpression,
-    parent: SvelteStyleDirective["parent"],
-    ctx: Context,
-): SvelteStyleDirective {
-    const directive: SvelteStyleDirective = {
-        type: "SvelteStyleDirective",
-        key: null as any,
-        shorthand: false,
-        value: [],
-        parent,
-        ...ctx.getConvertLocation(node),
-    }
-    processDirectiveKey(node, directive, ctx)
-    if (processStyleDirectiveValue(node, ctx)) {
-        processDirectiveExpression(node, directive, ctx, {
-            processExpression(expression) {
-                directive.value.push(
-                    convertTemplateLiteralToLiteral(expression, directive, ctx),
-                )
-                return []
-            },
-        })
-    } else {
-        processDirectiveExpression(node, directive, ctx, {
-            processExpression(expression, shorthand) {
-                ;(directive as any).shorthand = shorthand
-                return ctx.scriptLet.addExpression(
-                    expression,
-                    directive,
-                    null,
-                    (e) => {
-                        const mustache: SvelteMustacheTagText = {
-                            type: "SvelteMustacheTag",
-                            kind: "text",
-                            expression: e,
-                            parent: directive,
-                            ...ctx.getConvertLocation({
-                                start: ctx.code.lastIndexOf("{", e.range![0]),
-                                end: ctx.code.indexOf("}", e.range![0]) + 1,
-                            }),
-                        }
-                        directive.value.push(mustache)
-                    },
-                )
-            },
-        })
-    }
-
-    return directive
-}
-
-/** Process plain value */
-function processStyleDirectiveValue(
-    node: SvAST.DirectiveForExpression,
-    ctx: Context,
-): node is SvAST.DirectiveForExpression & {
-    expression: ESTree.TemplateLiteral
-} {
-    const { expression } = node
-    if (
-        !expression ||
-        expression.type !== "TemplateLiteral" ||
-        expression.expressions.length !== 0
-    ) {
-        return false
-    }
-    const quasi = expression.quasis[0]
-    if (quasi.value.cooked != null) {
-        return false
-    }
-    const eqIndex = ctx.code.indexOf("=", node.start)
-    if (eqIndex < 0 || eqIndex >= node.end) {
-        return false
-    }
-    const valueIndex = ctx.code.indexOf(quasi.value.raw, eqIndex + 1)
-    if (valueIndex < 0 || valueIndex >= node.end) {
-        return false
-    }
-    const maybeEnd = valueIndex + quasi.value.raw.length
-    const maybeOpenQuote = ctx.code.slice(eqIndex + 1, valueIndex).trimStart()
-    if (maybeOpenQuote && maybeOpenQuote !== '"' && maybeOpenQuote !== "'") {
-        return false
-    }
-    const maybeCloseQuote = ctx.code.slice(maybeEnd, node.end).trimEnd()
-    if (maybeCloseQuote !== maybeOpenQuote) {
-        return false
-    }
-    getWithLoc(expression).start = valueIndex
-    getWithLoc(expression).end = maybeEnd
-    return true
-}
-
 /** Convert for Transition Directive */
 function convertTransitionDirective(
     node: SvAST.TransitionDirective,
@@ -648,7 +596,7 @@ function processDirectiveKey<
 /** Common process for directive expression */
 function processDirectiveExpression<
     D extends SvAST.Directive,
-    S extends SvelteDirective | SvelteStyleDirective,
+    S extends SvelteDirective,
     E extends D["expression"],
 >(
     node: D & { expression: null | E },
@@ -679,9 +627,7 @@ function processDirectiveExpression<
             getWithLoc(node.expression).end = keyName.range[1]
         }
         processors.processExpression(node.expression, shorthand).push((es) => {
-            if (directive.type === "SvelteDirective") {
-                directive.expression = es
-            }
+            directive.expression = es
         })
     }
     if (!shorthand) {
