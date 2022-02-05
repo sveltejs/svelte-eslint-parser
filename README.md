@@ -30,9 +30,9 @@ The [`@ota-meshi/eslint-plugin-svelte`] is an ESLint plugin that uses the [svelt
 
 - We can create rules using the information contained in the AST.  
   e.g.
-  - [@ota-meshi/svelte/no-dupe-else-if-blocks](https://ota-meshi.github.io/eslint-plugin-svelte/rules/no-dupe-else-if-blocks.html) rule
-  - [@ota-meshi/svelte/no-at-html-tags](https://ota-meshi.github.io/eslint-plugin-svelte/rules/no-at-html-tags.html) rule
-  - [@ota-meshi/svelte/no-at-debug-tags](https://ota-meshi.github.io/eslint-plugin-svelte/rules/no-at-debug-tags.html) rule
+  - [@ota-meshi/svelte/no-dupe-else-if-blocks](https://ota-meshi.github.io/eslint-plugin-svelte/rules/no-dupe-else-if-blocks/) rule
+  - [@ota-meshi/svelte/no-at-html-tags](https://ota-meshi.github.io/eslint-plugin-svelte/rules/no-at-html-tags/) rule
+  - [@ota-meshi/svelte/no-at-debug-tags](https://ota-meshi.github.io/eslint-plugin-svelte/rules/no-at-debug-tags/) rule
 - Rules that use text work well.  
   e.g.
   - [eol-last](https://eslint.org/docs/rules/eol-last) rule
