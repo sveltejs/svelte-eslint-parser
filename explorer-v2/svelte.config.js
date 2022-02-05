@@ -7,8 +7,6 @@ const config = {
 		paths: {
 			base: '/svelte-eslint-parser'
 		},
-		// hydrate the <div id="svelte"> element in src/app.html
-		target: '#svelte',
 
 		adapter: staticAdapter({
 			// default options are shown
