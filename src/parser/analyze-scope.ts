@@ -90,29 +90,64 @@ export function analyzeReactiveScope(scopeManager: ScopeManager): void {
  * Analyze store scope. e.g. $count
  */
 export function analyzeStoreScope(scopeManager: ScopeManager): void {
+    const moduleScope = scopeManager.scopes.find(
+        (scope) => scope.type === "module",
+    )
+    if (!moduleScope) {
+        return
+    }
+    const toBeMarkAsUsedReferences: Reference[] = []
+
     for (const reference of [...scopeManager.globalScope.through]) {
         if (reference.identifier.name.startsWith("$")) {
             const realName = reference.identifier.name.slice(1)
-            const moduleScope = scopeManager.scopes.find(
-                (scope) => scope.type === "module",
-            )
-            if (moduleScope) {
-                const variable = moduleScope?.set.get(realName)
-                if (variable) {
-                    // It does not write directly to the original variable.
-                    // Therefore, this variable is always a reference.
-                    reference.isWrite = () => false
-                    reference.isWriteOnly = () => false
-                    reference.isReadWrite = () => false
-                    reference.isReadOnly = () => true
-                    reference.isRead = () => true
-
-                    variable.references.push(reference)
-                    reference.resolved = variable
-                    removeReferenceFromThrough(reference, moduleScope)
+            const variable = moduleScope.set.get(realName)
+            if (variable) {
+                if (reference.isWriteOnly()) {
+                    // Need mark as used
+                    toBeMarkAsUsedReferences.push(reference)
                 }
+
+                // It does not write directly to the original variable.
+                // Therefore, this variable is always a reference.
+                reference.isWrite = () => false
+                reference.isWriteOnly = () => false
+                reference.isReadWrite = () => false
+                reference.isReadOnly = () => true
+                reference.isRead = () => true
+
+                variable.references.push(reference)
+                reference.resolved = variable
+                removeReferenceFromThrough(reference, moduleScope)
             }
         }
+    }
+
+    for (const variable of new Set(
+        toBeMarkAsUsedReferences.map((ref) => ref.resolved!),
+    )) {
+        if (
+            variable.references.some(
+                (ref) =>
+                    !toBeMarkAsUsedReferences.includes(ref) &&
+                    ref.identifier !== variable.identifiers[0],
+            )
+        ) {
+            // It is already used.
+            continue
+        }
+
+        // Add the virtual reference for reading.
+        ;(
+            addVirtualReference(
+                variable.identifiers[0],
+                variable,
+                moduleScope,
+                {
+                    read: true,
+                },
+            ) as any
+        ).svelteMarkAsUsed = true
     }
 }
 
@@ -163,27 +198,25 @@ export function analyzePropsScope(
             }
 
             // Add the virtual reference for writing.
-            const reference = new Reference()
-            ;(reference as any).sveltePropReference = true
-            reference.from = scope
-            reference.identifier = {
-                ...node,
-                // @ts-expect-error -- ignore
-                parent: body,
-                loc: {
-                    start: { ...node.loc!.start },
-                    end: { ...node.loc!.end },
+            const reference = addVirtualReference(
+                {
+                    ...node,
+                    // @ts-expect-error -- ignore
+                    parent: body,
+                    loc: {
+                        start: { ...node.loc!.start },
+                        end: { ...node.loc!.end },
+                    },
+                    range: [...node.range!],
                 },
-                range: [...node.range!],
-            }
-            reference.isWrite = () => true
-            reference.isWriteOnly = () => false
-            reference.isRead = () => true
-            reference.isReadOnly = () => false
-            reference.isReadWrite = () => true
-
-            variable.references.push(reference)
-            reference.resolved = variable
+                variable,
+                scope,
+                {
+                    write: true,
+                    read: true,
+                },
+            )
+            ;(reference as any).sveltePropReference = true
         }
     }
 }
@@ -208,6 +241,31 @@ function removeReferenceFromThrough(reference: Reference, baseScope: Scope) {
         })
         scope = scope.upper
     }
+}
+
+/**
+ * Add the virtual reference.
+ */
+function addVirtualReference(
+    node: ESTree.Identifier,
+    variable: Variable,
+    scope: Scope,
+    readWrite: { read?: boolean; write?: boolean },
+) {
+    const reference = new Reference()
+    ;(reference as any).svelteVirtualReference = true
+    reference.from = scope
+    reference.identifier = node
+    reference.isWrite = () => Boolean(readWrite.write)
+    reference.isWriteOnly = () => Boolean(readWrite.write) && !readWrite.read
+    reference.isRead = () => Boolean(readWrite.read)
+    reference.isReadOnly = () => Boolean(readWrite.read) && !readWrite.write
+    reference.isReadWrite = () => Boolean(readWrite.read && readWrite.write)
+
+    variable.references.push(reference)
+    reference.resolved = variable
+
+    return reference
 }
 
 /** Get parent node */
