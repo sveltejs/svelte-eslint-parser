@@ -26,7 +26,7 @@ describe("Check for AST.", () => {
         inputFileName,
         outputFileName,
         scopeFileName,
-        requirements,
+        meetRequirements,
     } of listupFixtures()) {
         describe(inputFileName, () => {
             let result: any
@@ -37,7 +37,7 @@ describe("Check for AST.", () => {
                 const output = fs.readFileSync(outputFileName, "utf8")
                 assert.strictEqual(astJson, output)
             })
-            if (canTest(requirements, "scope"))
+            if (meetRequirements("scope"))
                 it("most to generate the expected scope.", () => {
                     let json: any = scopeToJSON(result.scopeManager)
                     let output: any = fs.readFileSync(scopeFileName, "utf8")
@@ -75,25 +75,6 @@ describe("Check for AST.", () => {
         })
     }
 })
-
-function canTest(
-    requirements: { scope?: Record<string, string> },
-    key: "scope",
-) {
-    const obj = requirements[key]
-    if (obj) {
-        if (
-            Object.entries(obj).some(([pkgName, pkgVersion]) => {
-                // eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-var-requires -- ignore
-                const pkg = require(`${pkgName}/package.json`)
-                return !semver.satisfies(pkg.version, pkgVersion)
-            })
-        ) {
-            return false
-        }
-    }
-    return true
-}
 
 function checkTokens(ast: SvelteProgram, input: string) {
     const allTokens = [...ast.tokens, ...ast.comments].sort(

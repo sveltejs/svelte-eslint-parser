@@ -381,7 +381,14 @@ function convertStyleDirective(
             directive.key,
             null,
             (expression) => {
-                directive.key.name = expression as ESTree.Identifier
+                if (expression.type !== "Identifier") {
+                    throw new ParseError(
+                        `Expected JS identifier or attribute value.`,
+                        expression.range![0],
+                        ctx,
+                    )
+                }
+                directive.key.name = expression
             },
         )
         return directive
@@ -627,12 +634,26 @@ function processDirectiveExpression<
             getWithLoc(node.expression).end = keyName.range[1]
         }
         processors.processExpression(node.expression, shorthand).push((es) => {
+            if (node.expression && es.type !== node.expression.type) {
+                throw new ParseError(
+                    `Expected ${node.expression.type}, but ${es.type} found.`,
+                    es.range![0],
+                    ctx,
+                )
+            }
             directive.expression = es
         })
     }
     if (!shorthand) {
         if (processors.processName) {
             processors.processName(keyName).push((es) => {
+                if (es.type !== "Identifier") {
+                    throw new ParseError(
+                        `Expected JS identifier.`,
+                        es.range![0],
+                        ctx,
+                    )
+                }
                 key.name = es
             })
         } else {

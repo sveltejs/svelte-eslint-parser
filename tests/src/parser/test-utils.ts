@@ -1,5 +1,7 @@
+/* global require -- node */
 import path from "path"
 import fs from "fs"
+import semver from "semver"
 import type { Linter, Scope as ESLintScope } from "eslint"
 import { LinesAndColumns } from "../../../src/context"
 import type { Reference, Scope, ScopeManager, Variable } from "eslint-scope"
@@ -16,7 +18,7 @@ export const BASIC_PARSER_OPTIONS: Linter.BaseConfig<Linter.RulesRecord>["parser
         project: require.resolve("../../fixtures/parser/tsconfig.test.json"),
         extraFileExtensions: [".svelte"],
     }
-export function* listupFixtures(): IterableIterator<{
+export function* listupFixtures(dir?: string): IterableIterator<{
     input: string
     inputFileName: string
     outputFileName: string
@@ -26,8 +28,9 @@ export function* listupFixtures(): IterableIterator<{
         scope?: Record<string, string>
     }
     getRuleOutputFileName: (ruleName: string) => string
+    meetRequirements: (key: "test" | "scope") => boolean
 }> {
-    yield* listupFixturesImpl(AST_FIXTURE_ROOT)
+    yield* listupFixturesImpl(dir || AST_FIXTURE_ROOT)
 }
 
 function* listupFixturesImpl(dir: string): IterableIterator<{
@@ -40,6 +43,7 @@ function* listupFixturesImpl(dir: string): IterableIterator<{
         scope?: Record<string, string>
     }
     getRuleOutputFileName: (ruleName: string) => string
+    meetRequirements: (key: "test" | "scope") => boolean
 }> {
     for (const filename of fs.readdirSync(dir)) {
         const inputFileName = path.join(dir, filename)
@@ -62,20 +66,41 @@ function* listupFixturesImpl(dir: string): IterableIterator<{
             )
 
             const input = fs.readFileSync(inputFileName, "utf8")
+            const requirements = fs.existsSync(requirementsFileName)
+                ? JSON.parse(fs.readFileSync(requirementsFileName, "utf-8"))
+                : {}
             yield {
                 input,
                 inputFileName,
                 outputFileName,
                 scopeFileName,
                 typeFileName: fs.existsSync(typeFileName) ? typeFileName : null,
-                requirements: fs.existsSync(requirementsFileName)
-                    ? JSON.parse(fs.readFileSync(requirementsFileName, "utf-8"))
-                    : {},
+                requirements,
                 getRuleOutputFileName: (ruleName) => {
                     return inputFileName.replace(
                         /input\.svelte$/u,
                         `${ruleName}-result.json`,
                     )
+                },
+                meetRequirements(key) {
+                    const obj = requirements[key]
+                    if (obj) {
+                        if (
+                            Object.entries(obj).some(
+                                ([pkgName, pkgVersion]) => {
+                                    // eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-var-requires -- ignore
+                                    const pkg = require(`${pkgName}/package.json`)
+                                    return !semver.satisfies(
+                                        pkg.version,
+                                        pkgVersion as string,
+                                    )
+                                },
+                            )
+                        ) {
+                            return false
+                        }
+                    }
+                    return true
                 },
             }
         }
@@ -167,6 +192,15 @@ function normalizeDef(reference: ESLintScope.Definition) {
         type: reference.type,
         node: reference.node,
         name: reference.name,
+    }
+}
+
+export function normalizeError(error: any): any {
+    return {
+        message: error.message,
+        index: error.index,
+        lineNumber: error.lineNumber,
+        column: error.column,
     }
 }
 
