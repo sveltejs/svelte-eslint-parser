@@ -1,4 +1,5 @@
 import fs from "fs"
+import path from "path"
 import { Linter } from "eslint"
 import * as parser from "../src/index"
 import { parseForESLint } from "../src/parser"
@@ -7,10 +8,16 @@ import {
     getMessageData,
     listupFixtures,
     nodeReplacer,
+    normalizeError,
     scopeToJSON,
 } from "../tests/src/parser/test-utils"
 import type ts from "typescript"
 import type ESTree from "estree"
+
+const ERROR_FIXTURE_ROOT = path.resolve(
+    __dirname,
+    "../tests/fixtures/parser/error",
+)
 
 const RULES = [
     "no-unused-labels",
@@ -35,6 +42,19 @@ function parse(code: string, filePath: string) {
         ...BASIC_PARSER_OPTIONS!,
         filePath,
     })
+}
+
+for (const { input, inputFileName, outputFileName } of listupFixtures(
+    ERROR_FIXTURE_ROOT,
+)) {
+    // eslint-disable-next-line no-console -- ignore
+    console.log(inputFileName)
+    try {
+        parse(input, inputFileName)
+    } catch (e) {
+        const errorJson = JSON.stringify(normalizeError(e), nodeReplacer, 2)
+        fs.writeFileSync(outputFileName, errorJson, "utf8")
+    }
 }
 
 for (const {
