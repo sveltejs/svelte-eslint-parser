@@ -82,7 +82,11 @@ export function* convertChildren(
             continue
         }
         if (child.type === "Element") {
-            yield convertHTMLElement(child, parent, ctx)
+            if (child.name.includes(":")) {
+                yield convertSpecialElement(child, parent, ctx)
+            } else {
+                yield convertHTMLElement(child, parent, ctx)
+            }
             continue
         }
         if (child.type === "InlineComponent") {
@@ -277,6 +281,7 @@ function convertHTMLElement(
 function convertSpecialElement(
     node:
         | SvAST.InlineComponent
+        | SvAST.Element
         | SvAST.Window
         | SvAST.Body
         | SvAST.Head
@@ -330,20 +335,18 @@ function convertSpecialElement(
         ctx.scriptLet.closeScope()
     }
 
-    if (
-        node.type === "InlineComponent" &&
-        node.expression &&
-        node.name === "svelte:component"
-    ) {
+    const thisExpression =
+        (node.type === "InlineComponent" &&
+            node.name === "svelte:component" &&
+            node.expression) ||
+        (node.type === "Element" && node.name === "svelte:element" && node.tag)
+    if (thisExpression) {
         const eqIndex = ctx.code.lastIndexOf(
             "=",
-            getWithLoc(node.expression).start,
+            getWithLoc(thisExpression).start,
         )
         const startIndex = ctx.code.lastIndexOf("this", eqIndex)
-        const closeIndex = ctx.code.indexOf(
-            "}",
-            getWithLoc(node.expression).end,
-        )
+        const closeIndex = ctx.code.indexOf("}", getWithLoc(thisExpression).end)
         const endIndex = indexOf(
             ctx.code,
             (c) => c === ">" || !c.trim(),
@@ -366,7 +369,7 @@ function convertSpecialElement(
             start: startIndex,
             end: eqIndex,
         })
-        ctx.scriptLet.addExpression(node.expression, thisAttr, null, (es) => {
+        ctx.scriptLet.addExpression(thisExpression, thisAttr, null, (es) => {
             thisAttr.expression = es
         })
         element.startTag.attributes.push(thisAttr)

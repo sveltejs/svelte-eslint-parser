@@ -106,12 +106,22 @@ export interface KeyBlock extends BaseNode {
     children: TemplateNode[]
 }
 
-export interface Element extends BaseNode {
+export interface BaseElement extends BaseNode {
     type: "Element"
     name: string
     children: TemplateNode[]
     attributes: AttributeOrDirective[]
 }
+
+export interface BasicElement extends BaseElement {
+    tag?: undefined
+}
+export interface SvelteComponent extends BaseElement {
+    name: "svelte:element"
+    tag: ESTree.Expression
+}
+export type Element = BasicElement | SvelteComponent
+
 export interface BaseInlineComponent extends BaseNode {
     type: "InlineComponent"
     name: string
