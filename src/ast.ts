@@ -331,7 +331,7 @@ export interface SvelteIfBlockAlone extends BaseSvelteIfBlock {
     elseif: false
     parent: Exclude<BaseSvelteIfBlock["parent"], SvelteElseBlockElseIf>
 }
-/** Node of if block. e.g. `{:else #if}` */
+/** Node of if block. e.g. `{:else if}` */
 export interface SvelteIfBlockElseIf extends BaseSvelteIfBlock {
     elseif: true
     parent: SvelteElseBlockElseIf

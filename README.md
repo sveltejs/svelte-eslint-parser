@@ -3,8 +3,6 @@
 [Svelte] parser for [ESLint].  
 You can check it on [Online DEMO](https://ota-meshi.github.io/svelte-eslint-parser/playground).
 
-::: ***This Parser is still in an EXPERIMENTAL STATE*** :::
-
 [![NPM license](https://img.shields.io/npm/l/svelte-eslint-parser.svg)](https://www.npmjs.com/package/svelte-eslint-parser)
 [![NPM version](https://img.shields.io/npm/v/svelte-eslint-parser.svg)](https://www.npmjs.com/package/svelte-eslint-parser)
 [![NPM downloads](https://img.shields.io/badge/dynamic/json.svg?label=downloads&colorB=green&suffix=/day&query=$.downloads&uri=https://api.npmjs.org//downloads/point/last-day/svelte-eslint-parser&maxAge=3600)](http://www.npmtrends.com/svelte-eslint-parser)
