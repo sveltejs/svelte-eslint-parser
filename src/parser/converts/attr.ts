@@ -495,7 +495,7 @@ function convertLetDirective(
         ...ctx.getConvertLocation(node),
     }
     processDirective(node, directive, ctx, {
-        processExpression(pattern) {
+        processPattern(pattern) {
             return ctx.letDirCollections
                 .getCollection()
                 .addPattern(pattern, directive, "any")
@@ -515,6 +515,32 @@ function convertLetDirective(
     return directive
 }
 
+type DirectiveProcessors<
+    D extends SvAST.Directive,
+    S extends SvelteDirective,
+    E extends D["expression"] & S["expression"],
+> =
+    | {
+          processExpression: (
+              expression: E,
+              shorthand: boolean,
+          ) => ScriptLetCallback<NonNullable<E>>[]
+          processPattern?: undefined
+          processName?: (
+              expression: SvelteName,
+          ) => ScriptLetCallback<ESTree.Identifier>[]
+      }
+    | {
+          processExpression?: undefined
+          processPattern: (
+              expression: E,
+              shorthand: boolean,
+          ) => ScriptLetCallback<NonNullable<E>>[]
+          processName?: (
+              expression: SvelteName,
+          ) => ScriptLetCallback<ESTree.Identifier>[]
+      }
+
 /** Common process for directive */
 function processDirective<
     D extends SvAST.Directive,
@@ -524,15 +550,7 @@ function processDirective<
     node: D & { expression: null | E },
     directive: S,
     ctx: Context,
-    processors: {
-        processExpression: (
-            expression: E,
-            shorthand: boolean,
-        ) => ScriptLetCallback<NonNullable<E>>[]
-        processName?: (
-            expression: SvelteName,
-        ) => ScriptLetCallback<ESTree.Identifier>[]
-    },
+    processors: DirectiveProcessors<D, S, E>,
 ) {
     processDirectiveKey(node, directive, ctx)
     processDirectiveExpression<D, S, E>(node, directive, ctx, processors)
@@ -609,15 +627,7 @@ function processDirectiveExpression<
     node: D & { expression: null | E },
     directive: S,
     ctx: Context,
-    processors: {
-        processExpression: (
-            expression: E,
-            shorthand: boolean,
-        ) => ScriptLetCallback<NonNullable<E>>[]
-        processName?: (
-            expression: SvelteName,
-        ) => ScriptLetCallback<ESTree.Identifier>[]
-    },
+    processors: DirectiveProcessors<D, S, E>,
 ) {
     const key = directive.key
     const keyName = key.name as SvelteName
@@ -633,16 +643,24 @@ function processDirectiveExpression<
             // e.g. bind:value=""
             getWithLoc(node.expression).end = keyName.range[1]
         }
-        processors.processExpression(node.expression, shorthand).push((es) => {
-            if (node.expression && es.type !== node.expression.type) {
-                throw new ParseError(
-                    `Expected ${node.expression.type}, but ${es.type} found.`,
-                    es.range![0],
-                    ctx,
-                )
-            }
-            directive.expression = es
-        })
+        if (processors.processExpression) {
+            processors
+                .processExpression(node.expression, shorthand)
+                .push((es) => {
+                    if (node.expression && es.type !== node.expression.type) {
+                        throw new ParseError(
+                            `Expected ${node.expression.type}, but ${es.type} found.`,
+                            es.range![0],
+                            ctx,
+                        )
+                    }
+                    directive.expression = es
+                })
+        } else {
+            processors.processPattern(node.expression, shorthand).push((es) => {
+                directive.expression = es
+            })
+        }
     }
     if (!shorthand) {
         if (processors.processName) {
