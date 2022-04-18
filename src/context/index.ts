@@ -260,12 +260,15 @@ type Block = {
 
 /** Extract <script> blocks */
 function* extractBlocks(code: string): IterableIterator<Block> {
-    const startTagOpenRe = /<(script|style)([\s>])/giu
+    const startTagOpenRe = /<!--[\s\S]*?-->|<(script|style)([\s>])/giu
     const endScriptTagRe = /<\/script>/giu
     const endStyleTagRe = /<\/style>/giu
     let startTagOpenMatch
     while ((startTagOpenMatch = startTagOpenRe.exec(code))) {
         const [, tag, nextChar] = startTagOpenMatch
+        if (!tag) {
+            continue
+        }
         let startTagEnd = startTagOpenRe.lastIndex
 
         let attrs: AttributeToken[] = []
