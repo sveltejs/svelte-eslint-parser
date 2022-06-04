@@ -52,6 +52,7 @@ describe("eslint custom parser", () => {
                 line: number
                 column: number
             }[]
+            parserOptions?: any
         }[] = [
             {
                 code: `
@@ -217,14 +218,29 @@ describe("eslint custom parser", () => {
                 output: null,
                 messages: [],
             },
+            {
+                // test for ecmaVersion latest
+                code: `
+                <script>
+                import { count } from './stores.js';
+                </script>
+                <h1>The count is {$count}</h1>
+                `,
+                output: null,
+                parserOptions: { ecmaVersion: "latest" },
+                messages: [],
+            },
         ]
 
-        for (const { code, output, messages } of tests) {
+        for (const { code, output, messages, parserOptions } of tests) {
             it(code, () => {
                 const linter = createLinter()
                 const result = linter.verifyAndFix(code, {
                     parser: "svelte-eslint-parser",
-                    parserOptions: BASIC_PARSER_OPTIONS,
+                    parserOptions: {
+                        ...BASIC_PARSER_OPTIONS,
+                        ...(parserOptions ? parserOptions : {}),
+                    },
                     rules: {
                         "no-unused-labels": "error",
                         "no-extra-label": "error",

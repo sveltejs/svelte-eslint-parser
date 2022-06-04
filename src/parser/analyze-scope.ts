@@ -27,7 +27,7 @@ export function analyzeScope(
         ignoreEval: true,
         nodejsScope: false,
         impliedStrict: ecmaFeatures.impliedStrict,
-        ecmaVersion,
+        ecmaVersion: typeof ecmaVersion === "number" ? ecmaVersion : 2022,
         sourceType,
         fallback: getFallbackKeys,
     })
