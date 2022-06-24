@@ -36,7 +36,7 @@ export function analyzeScope(
 /** Analyze reactive scope */
 export function analyzeReactiveScope(scopeManager: ScopeManager): void {
     for (const reference of [...scopeManager.globalScope.through]) {
-        const parent = getParent(reference.identifier)
+        const parent = reference.writeExpr && getParent(reference.writeExpr)
         if (parent?.type === "AssignmentExpression") {
             const pp = getParent(parent)
             if (pp?.type === "ExpressionStatement") {
