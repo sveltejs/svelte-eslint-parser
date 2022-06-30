@@ -19,18 +19,18 @@ You can check it on [Online DEMO](https://ota-meshi.github.io/svelte-eslint-pars
 
 The [svelte-eslint-parser] aims to make it easy to create your own rules for the [Svelte] by allowing the template AST to be used in the rules.
 
-The [`@ota-meshi/eslint-plugin-svelte`] is an ESLint plugin that uses the [svelte-eslint-parser]. I have already [implemented some rules].
+The [`eslint-plugin-svelte`] is an ESLint plugin that uses the [svelte-eslint-parser]. I have already [implemented some rules].
 
-[`@ota-meshi/eslint-plugin-svelte`]: https://github.com/ota-meshi/eslint-plugin-svelte
+[`eslint-plugin-svelte`]: https://github.com/ota-meshi/eslint-plugin-svelte
 [implemented some rules]: https://ota-meshi.github.io/eslint-plugin-svelte/rules/
 
 ### Benefits of Using AST
 
 - We can create rules using the information contained in the AST.  
   e.g.
-  - [@ota-meshi/svelte/no-dupe-else-if-blocks](https://ota-meshi.github.io/eslint-plugin-svelte/rules/no-dupe-else-if-blocks/) rule
-  - [@ota-meshi/svelte/no-at-html-tags](https://ota-meshi.github.io/eslint-plugin-svelte/rules/no-at-html-tags/) rule
-  - [@ota-meshi/svelte/no-at-debug-tags](https://ota-meshi.github.io/eslint-plugin-svelte/rules/no-at-debug-tags/) rule
+  - [svelte/no-dupe-else-if-blocks](https://ota-meshi.github.io/eslint-plugin-svelte/rules/no-dupe-else-if-blocks/) rule
+  - [svelte/no-at-html-tags](https://ota-meshi.github.io/eslint-plugin-svelte/rules/no-at-html-tags/) rule
+  - [svelte/no-at-debug-tags](https://ota-meshi.github.io/eslint-plugin-svelte/rules/no-at-debug-tags/) rule
 - Rules that use text work well.  
   e.g.
   - [eol-last](https://eslint.org/docs/rules/eol-last) rule
@@ -39,7 +39,7 @@ The [`@ota-meshi/eslint-plugin-svelte`] is an ESLint plugin that uses the [svelt
 
 ### ESLint Plugins Using svelte-eslint-parser
 
-#### [@ota-meshi/eslint-plugin-svelte](https://ota-meshi.github.io/eslint-plugin-svelte/)
+#### [eslint-plugin-svelte](https://ota-meshi.github.io/eslint-plugin-svelte/)
 
 ESLint plugin for Svelte.  
 It provides many unique check rules by using the template AST.
@@ -186,7 +186,7 @@ Example **.vscode/settings.json**:
 
 - [AST.md](./docs/AST.md) is AST specification. You can check it on the [Online DEMO](https://ota-meshi.github.io/svelte-eslint-parser/).
 - The parser will generate its own [ScopeManager](https://eslint.org/docs/developer-guide/scope-manager-interface). You can check it on the [Online DEMO](https://ota-meshi.github.io/svelte-eslint-parser/scope).
-- I have already [implemented some rules] in the [`@ota-meshi/eslint-plugin-svelte`]. The source code for these rules will be helpful to you.
+- I have already [implemented some rules] in the [`eslint-plugin-svelte`]. The source code for these rules will be helpful to you.
 
 ## :beers: Contributing
 
