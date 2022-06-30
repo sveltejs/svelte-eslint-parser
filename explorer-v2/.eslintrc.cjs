@@ -5,7 +5,7 @@ module.exports = {
 		'plugin:@ota-meshi/+node',
 		'plugin:@ota-meshi/+json',
 		'plugin:@ota-meshi/+prettier',
-		'plugin:@ota-meshi/svelte/recommended'
+		'plugin:svelte/recommended'
 	],
 	parserOptions: {
 		sourceType: 'module',
