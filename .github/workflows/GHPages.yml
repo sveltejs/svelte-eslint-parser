@@ -11,16 +11,14 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - uses: actions/setup-node@v3
-      with:
-        node-version: 18
     - name: Install And Build
       run: |+
-        npm install --legacy-peer-deps
-        npm run build
+        yarn install
+        yarn build
         cd explorer-v2
-        npm install --legacy-peer-deps
-        npm run pre-build
-        npm run build
+        yarn install
+        yarn pre-build
+        yarn build
     - name: Deploy
       uses: peaceiris/actions-gh-pages@v3
       with:
