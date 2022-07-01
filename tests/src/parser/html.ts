@@ -1,42 +1,42 @@
-import chai from "chai"
-import { jestSnapshotPlugin } from "mocha-chai-jest-snapshot"
+import chai from "chai";
+import { jestSnapshotPlugin } from "mocha-chai-jest-snapshot";
 
-import { parseAttributes } from "../../../src/parser/html"
+import { parseAttributes } from "../../../src/parser/html";
 
-chai.use(jestSnapshotPlugin())
+chai.use(jestSnapshotPlugin());
 describe("parseAttributes", () => {
-    const testCases = [
-        {
-            input: 'attr="value"',
-        },
-        {
-            input: '<script lang="ts">',
-            index: 7,
-        },
-        {
-            input: "<script lang='ts'>",
-            index: 7,
-        },
-        {
-            input: "<script lang=ts>",
-            index: 7,
-        },
-        {
-            input: "",
-        },
-        {
-            input: 'attr  =  "value"',
-        },
-        {
-            input: "attr",
-        },
-        {
-            input: "attr  ",
-        },
-    ]
-    for (const { input, index } of testCases) {
-        it(input, () => {
-            chai.expect(parseAttributes(input, index || 0)).toMatchSnapshot()
-        })
-    }
-})
+  const testCases = [
+    {
+      input: 'attr="value"',
+    },
+    {
+      input: '<script lang="ts">',
+      index: 7,
+    },
+    {
+      input: "<script lang='ts'>",
+      index: 7,
+    },
+    {
+      input: "<script lang=ts>",
+      index: 7,
+    },
+    {
+      input: "",
+    },
+    {
+      input: 'attr  =  "value"',
+    },
+    {
+      input: "attr",
+    },
+    {
+      input: "attr  ",
+    },
+  ];
+  for (const { input, index } of testCases) {
+    it(input, () => {
+      chai.expect(parseAttributes(input, index || 0)).toMatchSnapshot();
+    });
+  }
+});

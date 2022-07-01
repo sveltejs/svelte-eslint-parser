@@ -1,485 +1,469 @@
-import type * as SvAST from "../svelte-ast-types"
+import type * as SvAST from "../svelte-ast-types";
 import type {
-    SvelteAwaitBlock,
-    SvelteAwaitBlockAwaitCatch,
-    SvelteAwaitBlockAwaitThen,
-    SvelteAwaitCatchBlock,
-    SvelteAwaitPendingBlock,
-    SvelteAwaitThenBlock,
-    SvelteEachBlock,
-    SvelteElseBlock,
-    SvelteElseBlockAlone,
-    SvelteElseBlockElseIf,
-    SvelteIfBlock,
-    SvelteIfBlockAlone,
-    SvelteIfBlockElseIf,
-    SvelteKeyBlock,
-} from "../../ast"
-import type { Context } from "../../context"
-import { convertChildren } from "./element"
-import { getWithLoc, indexOf, lastIndexOf } from "./common"
+  SvelteAwaitBlock,
+  SvelteAwaitBlockAwaitCatch,
+  SvelteAwaitBlockAwaitThen,
+  SvelteAwaitCatchBlock,
+  SvelteAwaitPendingBlock,
+  SvelteAwaitThenBlock,
+  SvelteEachBlock,
+  SvelteElseBlock,
+  SvelteElseBlockAlone,
+  SvelteElseBlockElseIf,
+  SvelteIfBlock,
+  SvelteIfBlockAlone,
+  SvelteIfBlockElseIf,
+  SvelteKeyBlock,
+} from "../../ast";
+import type { Context } from "../../context";
+import { convertChildren } from "./element";
+import { getWithLoc, indexOf, lastIndexOf } from "./common";
 
 /** Get start index of block */
 function startBlockIndex(code: string, endIndex: number): number {
-    return lastIndexOf(
-        code,
-        (c, index) => {
-            if (c !== "{") {
-                return false
-            }
-            for (let next = index + 1; next < code.length; next++) {
-                const nextC = code[next]
-                if (!nextC.trim()) {
-                    continue
-                }
-                return (
-                    code.startsWith("#if", next) ||
-                    code.startsWith(":else", next)
-                )
-            }
-            return false
-        },
-        endIndex,
-    )
+  return lastIndexOf(
+    code,
+    (c, index) => {
+      if (c !== "{") {
+        return false;
+      }
+      for (let next = index + 1; next < code.length; next++) {
+        const nextC = code[next];
+        if (!nextC.trim()) {
+          continue;
+        }
+        return code.startsWith("#if", next) || code.startsWith(":else", next);
+      }
+      return false;
+    },
+    endIndex
+  );
 }
 
 export function convertIfBlock(
-    node: SvAST.IfBlock,
-    parent: SvelteIfBlock["parent"],
-    ctx: Context,
-): SvelteIfBlockAlone
+  node: SvAST.IfBlock,
+  parent: SvelteIfBlock["parent"],
+  ctx: Context
+): SvelteIfBlockAlone;
 export function convertIfBlock(
-    node: SvAST.IfBlock,
-    parent: SvelteIfBlock["parent"],
-    ctx: Context,
-    elseif: true,
-): SvelteIfBlockElseIf
+  node: SvAST.IfBlock,
+  parent: SvelteIfBlock["parent"],
+  ctx: Context,
+  elseif: true
+): SvelteIfBlockElseIf;
 /** Convert for IfBlock */
 export function convertIfBlock(
-    node: SvAST.IfBlock,
-    parent: SvelteIfBlock["parent"],
-    ctx: Context,
-    elseif?: true,
+  node: SvAST.IfBlock,
+  parent: SvelteIfBlock["parent"],
+  ctx: Context,
+  elseif?: true
 ): SvelteIfBlock {
-    // {#if expr} {:else} {/if}
-    // {:else if expr} {/if}
-    const nodeStart = elseif
-        ? startBlockIndex(ctx.code, node.start - 1)
-        : node.start
-    const ifBlock: SvelteIfBlock = {
-        type: "SvelteIfBlock",
-        elseif: Boolean(elseif),
-        expression: null as any,
-        children: [],
-        else: null,
-        parent,
-        ...ctx.getConvertLocation({ start: nodeStart, end: node.end }),
-    } as SvelteIfBlock
+  // {#if expr} {:else} {/if}
+  // {:else if expr} {/if}
+  const nodeStart = elseif
+    ? startBlockIndex(ctx.code, node.start - 1)
+    : node.start;
+  const ifBlock: SvelteIfBlock = {
+    type: "SvelteIfBlock",
+    elseif: Boolean(elseif),
+    expression: null as any,
+    children: [],
+    else: null,
+    parent,
+    ...ctx.getConvertLocation({ start: nodeStart, end: node.end }),
+  } as SvelteIfBlock;
 
-    ctx.scriptLet.nestIfBlock(node.expression, ifBlock, (es) => {
-        ifBlock.expression = es
-    })
-    ifBlock.children.push(...convertChildren(node, ifBlock, ctx))
-    ctx.scriptLet.closeScope()
-    if (elseif) {
-        const index = ctx.code.indexOf("if", nodeStart)
-        ctx.addToken("MustacheKeyword", { start: index, end: index + 2 })
-    }
-    extractMustacheBlockTokens(ifBlock, ctx, { startOnly: elseif })
+  ctx.scriptLet.nestIfBlock(node.expression, ifBlock, (es) => {
+    ifBlock.expression = es;
+  });
+  ifBlock.children.push(...convertChildren(node, ifBlock, ctx));
+  ctx.scriptLet.closeScope();
+  if (elseif) {
+    const index = ctx.code.indexOf("if", nodeStart);
+    ctx.addToken("MustacheKeyword", { start: index, end: index + 2 });
+  }
+  extractMustacheBlockTokens(ifBlock, ctx, { startOnly: elseif });
 
-    if (!node.else) {
-        return ifBlock
-    }
+  if (!node.else) {
+    return ifBlock;
+  }
 
-    const elseStart = startBlockIndex(ctx.code, node.else.start - 1)
+  const elseStart = startBlockIndex(ctx.code, node.else.start - 1);
 
-    if (node.else.children.length === 1) {
-        const c = node.else.children[0]
-        if (c.type === "IfBlock" && c.elseif) {
-            const elseBlock: SvelteElseBlockElseIf = {
-                type: "SvelteElseBlock",
-                elseif: true,
-                children: [] as any,
-                parent: ifBlock,
-                ...ctx.getConvertLocation({
-                    start: elseStart,
-                    end: node.else.end,
-                }),
-            }
-            ifBlock.else = elseBlock
-
-            const elseIfBlock = convertIfBlock(c, elseBlock, ctx, true)
-            // adjust loc
-            elseBlock.range[1] = elseIfBlock.range[1]
-            elseBlock.loc.end = {
-                line: elseIfBlock.loc.end.line,
-                column: elseIfBlock.loc.end.column,
-            }
-            elseBlock.children = [elseIfBlock]
-            return ifBlock
-        }
-    }
-    const elseBlock: SvelteElseBlockAlone = {
+  if (node.else.children.length === 1) {
+    const c = node.else.children[0];
+    if (c.type === "IfBlock" && c.elseif) {
+      const elseBlock: SvelteElseBlockElseIf = {
         type: "SvelteElseBlock",
-        elseif: false,
-        children: [],
+        elseif: true,
+        children: [] as any,
         parent: ifBlock,
         ...ctx.getConvertLocation({
-            start: elseStart,
-            end: node.else.end,
+          start: elseStart,
+          end: node.else.end,
         }),
+      };
+      ifBlock.else = elseBlock;
+
+      const elseIfBlock = convertIfBlock(c, elseBlock, ctx, true);
+      // adjust loc
+      elseBlock.range[1] = elseIfBlock.range[1];
+      elseBlock.loc.end = {
+        line: elseIfBlock.loc.end.line,
+        column: elseIfBlock.loc.end.column,
+      };
+      elseBlock.children = [elseIfBlock];
+      return ifBlock;
     }
-    ifBlock.else = elseBlock
+  }
+  const elseBlock: SvelteElseBlockAlone = {
+    type: "SvelteElseBlock",
+    elseif: false,
+    children: [],
+    parent: ifBlock,
+    ...ctx.getConvertLocation({
+      start: elseStart,
+      end: node.else.end,
+    }),
+  };
+  ifBlock.else = elseBlock;
 
-    ctx.scriptLet.nestBlock(elseBlock)
-    elseBlock.children.push(...convertChildren(node.else, elseBlock, ctx))
-    ctx.scriptLet.closeScope()
-    extractMustacheBlockTokens(elseBlock, ctx, { startOnly: true })
+  ctx.scriptLet.nestBlock(elseBlock);
+  elseBlock.children.push(...convertChildren(node.else, elseBlock, ctx));
+  ctx.scriptLet.closeScope();
+  extractMustacheBlockTokens(elseBlock, ctx, { startOnly: true });
 
-    return ifBlock
+  return ifBlock;
 }
 
 /** Convert for EachBlock */
 export function convertEachBlock(
-    node: SvAST.EachBlock,
-    parent: SvelteEachBlock["parent"],
-    ctx: Context,
+  node: SvAST.EachBlock,
+  parent: SvelteEachBlock["parent"],
+  ctx: Context
 ): SvelteEachBlock {
-    // {#each expr as item, index (key)} {/each}
-    const eachBlock: SvelteEachBlock = {
-        type: "SvelteEachBlock",
-        expression: null as any,
-        context: null as any,
-        index: null,
-        key: null,
-        children: [],
-        else: null,
-        parent,
-        ...ctx.getConvertLocation(node),
+  // {#each expr as item, index (key)} {/each}
+  const eachBlock: SvelteEachBlock = {
+    type: "SvelteEachBlock",
+    expression: null as any,
+    context: null as any,
+    index: null,
+    key: null,
+    children: [],
+    else: null,
+    parent,
+    ...ctx.getConvertLocation(node),
+  };
+
+  let indexRange: null | { start: number; end: number } = null;
+
+  if (node.index) {
+    const start = ctx.code.indexOf(node.index, getWithLoc(node.context).end);
+    indexRange = {
+      start,
+      end: start + node.index.length,
+    };
+  }
+
+  ctx.scriptLet.nestEachBlock(
+    node.expression,
+    node.context,
+    indexRange,
+    eachBlock,
+    (expression, context, index) => {
+      eachBlock.expression = expression;
+      eachBlock.context = context;
+      eachBlock.index = index;
     }
+  );
 
-    let indexRange: null | { start: number; end: number } = null
+  const asStart = ctx.code.indexOf("as", getWithLoc(node.expression).end);
+  ctx.addToken("Keyword", {
+    start: asStart,
+    end: asStart + 2,
+  });
 
-    if (node.index) {
-        const start = ctx.code.indexOf(node.index, getWithLoc(node.context).end)
-        indexRange = {
-            start,
-            end: start + node.index.length,
-        }
-    }
+  if (node.key) {
+    ctx.scriptLet.addExpression(node.key, eachBlock, null, (key) => {
+      eachBlock.key = key;
+    });
+  }
+  eachBlock.children.push(...convertChildren(node, eachBlock, ctx));
 
-    ctx.scriptLet.nestEachBlock(
-        node.expression,
-        node.context,
-        indexRange,
-        eachBlock,
-        (expression, context, index) => {
-            eachBlock.expression = expression
-            eachBlock.context = context
-            eachBlock.index = index
-        },
-    )
+  ctx.scriptLet.closeScope();
+  extractMustacheBlockTokens(eachBlock, ctx);
 
-    const asStart = ctx.code.indexOf("as", getWithLoc(node.expression).end)
-    ctx.addToken("Keyword", {
-        start: asStart,
-        end: asStart + 2,
-    })
+  if (!node.else) {
+    return eachBlock;
+  }
 
-    if (node.key) {
-        ctx.scriptLet.addExpression(node.key, eachBlock, null, (key) => {
-            eachBlock.key = key
-        })
-    }
-    eachBlock.children.push(...convertChildren(node, eachBlock, ctx))
+  const elseStart = startBlockIndex(ctx.code, node.else.start - 1);
 
-    ctx.scriptLet.closeScope()
-    extractMustacheBlockTokens(eachBlock, ctx)
+  const elseBlock: SvelteElseBlockAlone = {
+    type: "SvelteElseBlock",
+    elseif: false,
+    children: [],
+    parent: eachBlock,
+    ...ctx.getConvertLocation({
+      start: elseStart,
+      end: node.else.end,
+    }),
+  };
+  eachBlock.else = elseBlock;
 
-    if (!node.else) {
-        return eachBlock
-    }
+  ctx.scriptLet.nestBlock(elseBlock);
+  elseBlock.children.push(...convertChildren(node.else, elseBlock, ctx));
+  ctx.scriptLet.closeScope();
+  extractMustacheBlockTokens(elseBlock, ctx, { startOnly: true });
 
-    const elseStart = startBlockIndex(ctx.code, node.else.start - 1)
-
-    const elseBlock: SvelteElseBlockAlone = {
-        type: "SvelteElseBlock",
-        elseif: false,
-        children: [],
-        parent: eachBlock,
-        ...ctx.getConvertLocation({
-            start: elseStart,
-            end: node.else.end,
-        }),
-    }
-    eachBlock.else = elseBlock
-
-    ctx.scriptLet.nestBlock(elseBlock)
-    elseBlock.children.push(...convertChildren(node.else, elseBlock, ctx))
-    ctx.scriptLet.closeScope()
-    extractMustacheBlockTokens(elseBlock, ctx, { startOnly: true })
-
-    return eachBlock
+  return eachBlock;
 }
 
 /** Convert for AwaitBlock */
 export function convertAwaitBlock(
-    node: SvAST.AwaitBlock,
-    parent: SvelteAwaitBlock["parent"],
-    ctx: Context,
+  node: SvAST.AwaitBlock,
+  parent: SvelteAwaitBlock["parent"],
+  ctx: Context
 ): SvelteAwaitBlock {
-    const awaitBlock = {
-        type: "SvelteAwaitBlock",
-        expression: null as any,
-        kind: "await",
-        pending: null as any,
-        then: null as any,
-        catch: null as any,
-        parent,
-        ...ctx.getConvertLocation(node),
-    } as SvelteAwaitBlock
+  const awaitBlock = {
+    type: "SvelteAwaitBlock",
+    expression: null as any,
+    kind: "await",
+    pending: null as any,
+    then: null as any,
+    catch: null as any,
+    parent,
+    ...ctx.getConvertLocation(node),
+  } as SvelteAwaitBlock;
 
-    ctx.scriptLet.addExpression(
-        node.expression,
-        awaitBlock,
-        null,
-        (expression) => {
-            awaitBlock.expression = expression
+  ctx.scriptLet.addExpression(
+    node.expression,
+    awaitBlock,
+    null,
+    (expression) => {
+      awaitBlock.expression = expression;
+    }
+  );
+
+  if (!node.pending.skip) {
+    const pendingBlock: SvelteAwaitPendingBlock = {
+      type: "SvelteAwaitPendingBlock",
+      children: [],
+      parent: awaitBlock,
+      ...ctx.getConvertLocation({
+        start: awaitBlock.range[0],
+        end: node.pending.end,
+      }),
+    };
+    ctx.scriptLet.nestBlock(pendingBlock);
+    pendingBlock.children.push(
+      ...convertChildren(node.pending, pendingBlock, ctx)
+    );
+    awaitBlock.pending = pendingBlock;
+    ctx.scriptLet.closeScope();
+  }
+  if (!node.then.skip) {
+    const awaitThen = Boolean(node.pending.skip);
+    if (awaitThen) {
+      (awaitBlock as SvelteAwaitBlockAwaitThen).kind = "await-then";
+    }
+
+    const thenStart = awaitBlock.pending ? node.then.start : node.start;
+    const thenBlock: SvelteAwaitThenBlock = {
+      type: "SvelteAwaitThenBlock",
+      awaitThen,
+      value: null,
+      children: [],
+      parent: awaitBlock as any,
+      ...ctx.getConvertLocation({
+        start: thenStart,
+        end: node.then.end,
+      }),
+    };
+    if (node.value) {
+      ctx.scriptLet.nestBlock(
+        thenBlock,
+        [node.value],
+        [thenBlock],
+        ([value]) => {
+          thenBlock.value = value;
         },
-    )
-
-    if (!node.pending.skip) {
-        const pendingBlock: SvelteAwaitPendingBlock = {
-            type: "SvelteAwaitPendingBlock",
-            children: [],
-            parent: awaitBlock,
-            ...ctx.getConvertLocation({
-                start: awaitBlock.range[0],
-                end: node.pending.end,
-            }),
+        ({ generateUniqueId }) => {
+          const expression = ctx.getText(node.expression);
+          if (node.expression.type === "Literal") {
+            return {
+              typings: [expression],
+            };
+          }
+          const idAwaitThenValue = generateUniqueId("AwaitThenValue");
+          if (node.expression.type === "Identifier") {
+            return {
+              preparationScript: [generateAwaitThenValueType(idAwaitThenValue)],
+              typings: [`${idAwaitThenValue}<(typeof ${expression})>`],
+            };
+          }
+          const id = generateUniqueId(expression);
+          return {
+            preparationScript: [
+              `const ${id} = ${expression};`,
+              generateAwaitThenValueType(idAwaitThenValue),
+            ],
+            typings: [`${idAwaitThenValue}<(typeof ${id})>`],
+          };
         }
-        ctx.scriptLet.nestBlock(pendingBlock)
-        pendingBlock.children.push(
-            ...convertChildren(node.pending, pendingBlock, ctx),
-        )
-        awaitBlock.pending = pendingBlock
-        ctx.scriptLet.closeScope()
+      );
+    } else {
+      ctx.scriptLet.nestBlock(thenBlock);
     }
-    if (!node.then.skip) {
-        const awaitThen = Boolean(node.pending.skip)
-        if (awaitThen) {
-            ;(awaitBlock as SvelteAwaitBlockAwaitThen).kind = "await-then"
-        }
-
-        const thenStart = awaitBlock.pending ? node.then.start : node.start
-        const thenBlock: SvelteAwaitThenBlock = {
-            type: "SvelteAwaitThenBlock",
-            awaitThen,
-            value: null,
-            children: [],
-            parent: awaitBlock as any,
-            ...ctx.getConvertLocation({
-                start: thenStart,
-                end: node.then.end,
-            }),
-        }
-        if (node.value) {
-            ctx.scriptLet.nestBlock(
-                thenBlock,
-                [node.value],
-                [thenBlock],
-                ([value]) => {
-                    thenBlock.value = value
-                },
-                ({ generateUniqueId }) => {
-                    const expression = ctx.getText(node.expression)
-                    if (node.expression.type === "Literal") {
-                        return {
-                            typings: [expression],
-                        }
-                    }
-                    const idAwaitThenValue = generateUniqueId("AwaitThenValue")
-                    if (node.expression.type === "Identifier") {
-                        return {
-                            preparationScript: [
-                                generateAwaitThenValueType(idAwaitThenValue),
-                            ],
-                            typings: [
-                                `${idAwaitThenValue}<(typeof ${expression})>`,
-                            ],
-                        }
-                    }
-                    const id = generateUniqueId(expression)
-                    return {
-                        preparationScript: [
-                            `const ${id} = ${expression};`,
-                            generateAwaitThenValueType(idAwaitThenValue),
-                        ],
-                        typings: [`${idAwaitThenValue}<(typeof ${id})>`],
-                    }
-                },
-            )
-        } else {
-            ctx.scriptLet.nestBlock(thenBlock)
-        }
-        thenBlock.children.push(...convertChildren(node.then, thenBlock, ctx))
-        if (awaitBlock.pending) {
-            extractMustacheBlockTokens(thenBlock, ctx, { startOnly: true })
-        } else {
-            const thenIndex = ctx.code.indexOf(
-                "then",
-                getWithLoc(node.expression).end,
-            )
-            ctx.addToken("MustacheKeyword", {
-                start: thenIndex,
-                end: thenIndex + 4,
-            })
-        }
-        awaitBlock.then = thenBlock
-        ctx.scriptLet.closeScope()
+    thenBlock.children.push(...convertChildren(node.then, thenBlock, ctx));
+    if (awaitBlock.pending) {
+      extractMustacheBlockTokens(thenBlock, ctx, { startOnly: true });
+    } else {
+      const thenIndex = ctx.code.indexOf(
+        "then",
+        getWithLoc(node.expression).end
+      );
+      ctx.addToken("MustacheKeyword", {
+        start: thenIndex,
+        end: thenIndex + 4,
+      });
     }
-    if (!node.catch.skip) {
-        const awaitCatch = Boolean(node.pending.skip && node.then.skip)
-        if (awaitCatch) {
-            ;(awaitBlock as SvelteAwaitBlockAwaitCatch).kind = "await-catch"
-        }
-        const catchStart =
-            awaitBlock.pending || awaitBlock.then
-                ? node.catch.start
-                : node.start
-        const catchBlock = {
-            type: "SvelteAwaitCatchBlock",
-            awaitCatch,
-            error: null,
-            children: [],
-            parent: awaitBlock,
-            ...ctx.getConvertLocation({
-                start: catchStart,
-                end: node.catch.end,
-            }),
-        } as SvelteAwaitCatchBlock
-
-        if (node.error) {
-            ctx.scriptLet.nestBlock(
-                catchBlock,
-                [node.error],
-                [catchBlock],
-                ([error]) => {
-                    catchBlock.error = error
-                },
-                ["Error"],
-            )
-        } else {
-            ctx.scriptLet.nestBlock(catchBlock)
-        }
-        catchBlock.children.push(
-            ...convertChildren(node.catch, catchBlock, ctx),
-        )
-        if (awaitBlock.pending || awaitBlock.then) {
-            extractMustacheBlockTokens(catchBlock, ctx, { startOnly: true })
-        } else {
-            const catchIndex = ctx.code.indexOf(
-                "catch",
-                getWithLoc(node.expression).end,
-            )
-            ctx.addToken("MustacheKeyword", {
-                start: catchIndex,
-                end: catchIndex + 5,
-            })
-        }
-        awaitBlock.catch = catchBlock
-        ctx.scriptLet.closeScope()
+    awaitBlock.then = thenBlock;
+    ctx.scriptLet.closeScope();
+  }
+  if (!node.catch.skip) {
+    const awaitCatch = Boolean(node.pending.skip && node.then.skip);
+    if (awaitCatch) {
+      (awaitBlock as SvelteAwaitBlockAwaitCatch).kind = "await-catch";
     }
+    const catchStart =
+      awaitBlock.pending || awaitBlock.then ? node.catch.start : node.start;
+    const catchBlock = {
+      type: "SvelteAwaitCatchBlock",
+      awaitCatch,
+      error: null,
+      children: [],
+      parent: awaitBlock,
+      ...ctx.getConvertLocation({
+        start: catchStart,
+        end: node.catch.end,
+      }),
+    } as SvelteAwaitCatchBlock;
 
-    extractMustacheBlockTokens(awaitBlock, ctx)
+    if (node.error) {
+      ctx.scriptLet.nestBlock(
+        catchBlock,
+        [node.error],
+        [catchBlock],
+        ([error]) => {
+          catchBlock.error = error;
+        },
+        ["Error"]
+      );
+    } else {
+      ctx.scriptLet.nestBlock(catchBlock);
+    }
+    catchBlock.children.push(...convertChildren(node.catch, catchBlock, ctx));
+    if (awaitBlock.pending || awaitBlock.then) {
+      extractMustacheBlockTokens(catchBlock, ctx, { startOnly: true });
+    } else {
+      const catchIndex = ctx.code.indexOf(
+        "catch",
+        getWithLoc(node.expression).end
+      );
+      ctx.addToken("MustacheKeyword", {
+        start: catchIndex,
+        end: catchIndex + 5,
+      });
+    }
+    awaitBlock.catch = catchBlock;
+    ctx.scriptLet.closeScope();
+  }
 
-    return awaitBlock
+  extractMustacheBlockTokens(awaitBlock, ctx);
+
+  return awaitBlock;
 }
 
 /** Convert for KeyBlock */
 export function convertKeyBlock(
-    node: SvAST.KeyBlock,
-    parent: SvelteKeyBlock["parent"],
-    ctx: Context,
+  node: SvAST.KeyBlock,
+  parent: SvelteKeyBlock["parent"],
+  ctx: Context
 ): SvelteKeyBlock {
-    const keyBlock: SvelteKeyBlock = {
-        type: "SvelteKeyBlock",
-        expression: null as any,
-        children: [],
-        parent,
-        ...ctx.getConvertLocation(node),
-    }
+  const keyBlock: SvelteKeyBlock = {
+    type: "SvelteKeyBlock",
+    expression: null as any,
+    children: [],
+    parent,
+    ...ctx.getConvertLocation(node),
+  };
 
-    ctx.scriptLet.addExpression(
-        node.expression,
-        keyBlock,
-        null,
-        (expression) => {
-            keyBlock.expression = expression
-        },
-    )
+  ctx.scriptLet.addExpression(node.expression, keyBlock, null, (expression) => {
+    keyBlock.expression = expression;
+  });
 
-    ctx.scriptLet.nestBlock(keyBlock)
-    keyBlock.children.push(...convertChildren(node, keyBlock, ctx))
-    ctx.scriptLet.closeScope()
+  ctx.scriptLet.nestBlock(keyBlock);
+  keyBlock.children.push(...convertChildren(node, keyBlock, ctx));
+  ctx.scriptLet.closeScope();
 
-    extractMustacheBlockTokens(keyBlock, ctx)
+  extractMustacheBlockTokens(keyBlock, ctx);
 
-    return keyBlock
+  return keyBlock;
 }
 
 /** Extract mustache block tokens */
 function extractMustacheBlockTokens(
-    node:
-        | SvelteIfBlock
-        | SvelteEachBlock
-        | SvelteElseBlock
-        | SvelteAwaitBlock
-        | SvelteAwaitThenBlock
-        | SvelteAwaitCatchBlock
-        | SvelteKeyBlock,
-    ctx: Context,
-    option?: { startOnly?: true },
+  node:
+    | SvelteIfBlock
+    | SvelteEachBlock
+    | SvelteElseBlock
+    | SvelteAwaitBlock
+    | SvelteAwaitThenBlock
+    | SvelteAwaitCatchBlock
+    | SvelteKeyBlock,
+  ctx: Context,
+  option?: { startOnly?: true }
 ) {
-    const startSectionNameStart = indexOf(
-        ctx.code,
-        (c) => Boolean(c.trim()),
-        node.range[0] + 1,
-    )
-    const startSectionNameEnd = indexOf(
-        ctx.code,
-        (c) => c === "}" || !c.trim(),
-        startSectionNameStart + 1,
-    )
-    ctx.addToken("MustacheKeyword", {
-        start: startSectionNameStart,
-        end: startSectionNameEnd,
-    })
+  const startSectionNameStart = indexOf(
+    ctx.code,
+    (c) => Boolean(c.trim()),
+    node.range[0] + 1
+  );
+  const startSectionNameEnd = indexOf(
+    ctx.code,
+    (c) => c === "}" || !c.trim(),
+    startSectionNameStart + 1
+  );
+  ctx.addToken("MustacheKeyword", {
+    start: startSectionNameStart,
+    end: startSectionNameEnd,
+  });
 
-    if (option?.startOnly) {
-        return
-    }
+  if (option?.startOnly) {
+    return;
+  }
 
-    const endSectionNameEnd =
-        lastIndexOf(ctx.code, (c) => Boolean(c.trim()), node.range[1] - 2) + 1
-    const endSectionNameStart = lastIndexOf(
-        ctx.code,
-        (c) => c === "{" || c === "/" || !c.trim(),
-        endSectionNameEnd - 1,
-    )
-    ctx.addToken("MustacheKeyword", {
-        start: endSectionNameStart,
-        end: endSectionNameEnd,
-    })
+  const endSectionNameEnd =
+    lastIndexOf(ctx.code, (c) => Boolean(c.trim()), node.range[1] - 2) + 1;
+  const endSectionNameStart = lastIndexOf(
+    ctx.code,
+    (c) => c === "{" || c === "/" || !c.trim(),
+    endSectionNameEnd - 1
+  );
+  ctx.addToken("MustacheKeyword", {
+    start: endSectionNameStart,
+    end: endSectionNameEnd,
+  });
 }
 
 /** Generate Awaited like type code */
 function generateAwaitThenValueType(id: string) {
-    return `type ${id}<T> = T extends null | undefined
+  return `type ${id}<T> = T extends null | undefined
     ? T
     : T extends { then(value: infer F): any }
     ? F extends (value: infer V, ...args: any) => any
         ? ${id}<V>
         : never
-        : T;`
+        : T;`;
 }

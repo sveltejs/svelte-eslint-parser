@@ -1,58 +1,57 @@
-import type { ESLintExtendedProgram } from "."
-import { analyzeScope } from "./analyze-scope"
-import { traverseNodes } from "../traverse"
-import type { ScriptsSourceCode } from "../context"
-import { getParser } from "./resolve-parser"
+import type { ESLintExtendedProgram } from ".";
+import { analyzeScope } from "./analyze-scope";
+import { traverseNodes } from "../traverse";
+import type { ScriptsSourceCode } from "../context";
+import { getParser } from "./resolve-parser";
 
 /**
  * Parse for script
  */
 export function parseScript(
-    script: ScriptsSourceCode,
-    parserOptions: any = {},
+  script: ScriptsSourceCode,
+  parserOptions: any = {}
 ): ESLintExtendedProgram {
-    const result = parseScriptWithoutAnalyzeScope(script, parserOptions)
+  const result = parseScriptWithoutAnalyzeScope(script, parserOptions);
 
-    if (!result.scopeManager) {
-        const scopeManager = analyzeScope(result.ast, parserOptions)
-        result.scopeManager = scopeManager
-    }
+  if (!result.scopeManager) {
+    const scopeManager = analyzeScope(result.ast, parserOptions);
+    result.scopeManager = scopeManager;
+  }
 
-    traverseNodes(result.ast, {
-        visitorKeys: result.visitorKeys,
-        enterNode(node, parent) {
-            ;(node as any).parent = parent
+  traverseNodes(result.ast, {
+    visitorKeys: result.visitorKeys,
+    enterNode(node, parent) {
+      (node as any).parent = parent;
 
-            if (node.type === "LabeledStatement" && node.label.name === "$") {
-                if (parent?.type === "Program") {
-                    // Transform node type
-                    node.type = "SvelteReactiveStatement" as any
-                }
-            }
-        },
-        leaveNode() {
-            //
-        },
-    })
+      if (node.type === "LabeledStatement" && node.label.name === "$") {
+        if (parent?.type === "Program") {
+          // Transform node type
+          node.type = "SvelteReactiveStatement" as any;
+        }
+      }
+    },
+    leaveNode() {
+      //
+    },
+  });
 
-    return result
+  return result;
 }
 
 /**
  * Parse for script without analyze scope
  */
 function parseScriptWithoutAnalyzeScope(
-    { vcode, attrs }: ScriptsSourceCode,
-    options: any,
+  { vcode, attrs }: ScriptsSourceCode,
+  options: any
 ): ESLintExtendedProgram {
-    const parser = getParser(attrs, options.parser)
+  const parser = getParser(attrs, options.parser);
 
-    const result =
-        parser.parseForESLint?.(vcode, options) ??
-        parser.parse?.(vcode, options)
+  const result =
+    parser.parseForESLint?.(vcode, options) ?? parser.parse?.(vcode, options);
 
-    if ("ast" in result && result.ast != null) {
-        return result
-    }
-    return { ast: result } as ESLintExtendedProgram
+  if ("ast" in result && result.ast != null) {
+    return result;
+  }
+  return { ast: result } as ESLintExtendedProgram;
 }
