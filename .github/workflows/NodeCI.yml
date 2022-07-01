@@ -66,7 +66,7 @@ jobs:
         yarn add -D eslint@7 --ignore-engines
         rm -rf node_modules
     - name: Install Packages
-      run:yarn install --ignore-engines
+      run: yarn install --ignore-engines
     - name: Test
       run: yarn test
   test-and-coverage:
