@@ -1,626 +1,626 @@
-import type ESTree from "estree"
-export type Range = [number, number]
+import type ESTree from "estree";
+export type Range = [number, number];
 
 export interface SourceLocation {
-    start: Position
-    end: Position
+  start: Position;
+  end: Position;
 }
 export interface Locations {
-    loc: SourceLocation
-    range: Range
+  loc: SourceLocation;
+  range: Range;
 }
 
 interface BaseNode extends Locations {
-    type: string
+  type: string;
 }
 
 export interface Token extends BaseNode {
-    type:
-        | "Boolean"
-        | "Null"
-        | "Identifier"
-        | "Keyword"
-        | "Punctuator"
-        | "JSXIdentifier"
-        | "JSXText"
-        | "Numeric"
-        | "String"
-        | "RegularExpression"
-        | "Template"
-        // HTML
-        | "HTMLText"
-        | "HTMLIdentifier"
-        | "MustacheKeyword"
-        | "HTMLComment"
-    value: string
+  type:
+    | "Boolean"
+    | "Null"
+    | "Identifier"
+    | "Keyword"
+    | "Punctuator"
+    | "JSXIdentifier"
+    | "JSXText"
+    | "Numeric"
+    | "String"
+    | "RegularExpression"
+    | "Template"
+    // HTML
+    | "HTMLText"
+    | "HTMLIdentifier"
+    | "MustacheKeyword"
+    | "HTMLComment";
+  value: string;
 }
 
 export interface Comment extends BaseNode {
-    type: "Line" | "Block"
-    value: string
+  type: "Line" | "Block";
+  value: string;
 }
 
 export interface Position {
-    /** >= 1 */
-    line: number
-    /** >= 0 */
-    column: number
+  /** >= 1 */
+  line: number;
+  /** >= 0 */
+  column: number;
 }
 
 export type SvelteNode =
+  | SvelteProgram
+  | SvelteScriptElement
+  | SvelteStyleElement
+  | SvelteElement
+  | SvelteStartTag
+  | SvelteEndTag
+  | SvelteName
+  | SvelteMemberExpressionName
+  | SvelteText
+  | SvelteLiteral
+  | SvelteMustacheTag
+  | SvelteDebugTag
+  | SvelteConstTag
+  | SvelteIfBlock
+  | SvelteElseBlock
+  | SvelteEachBlock
+  | SvelteAwaitBlock
+  | SvelteAwaitPendingBlock
+  | SvelteAwaitThenBlock
+  | SvelteAwaitCatchBlock
+  | SvelteKeyBlock
+  | SvelteAttribute
+  | SvelteShorthandAttribute
+  | SvelteSpreadAttribute
+  | SvelteDirective
+  | SvelteStyleDirective
+  | SvelteSpecialDirective
+  | SvelteDirectiveKey
+  | SvelteSpecialDirectiveKey
+  | SvelteHTMLComment
+  | SvelteReactiveStatement;
+
+/** Node of Svelte program root */
+export interface SvelteProgram extends BaseNode {
+  type: "Program";
+  body: (SvelteScriptElement | SvelteStyleElement | Child)[];
+  sourceType: "script" | "module";
+  comments: Comment[];
+  tokens: Token[];
+  parent: null;
+}
+
+/** Node of elements like HTML element. */
+export type SvelteElement =
+  | SvelteHTMLElement
+  | SvelteComponentElement
+  | SvelteSpecialElement;
+type BaseSvelteElement = BaseNode;
+
+/** Node of `<script>` element. */
+export interface SvelteScriptElement extends BaseSvelteElement {
+  type: "SvelteScriptElement";
+  name: SvelteName;
+  startTag: SvelteStartTag;
+  body: ESTree.Program["body"];
+  endTag: SvelteEndTag | null;
+  parent: SvelteProgram;
+}
+/** Node of `<style>` element. */
+export interface SvelteStyleElement extends BaseSvelteElement {
+  type: "SvelteStyleElement";
+  name: SvelteName;
+  startTag: SvelteStartTag;
+  children: [SvelteText];
+  endTag: SvelteEndTag | null;
+  parent: SvelteProgram;
+}
+/** Node of HTML element. */
+export interface SvelteHTMLElement extends BaseSvelteElement {
+  type: "SvelteElement";
+  kind: "html";
+  name: SvelteName;
+  startTag: SvelteStartTag;
+  children: Child[];
+  endTag: SvelteEndTag | null;
+  parent:
     | SvelteProgram
-    | SvelteScriptElement
-    | SvelteStyleElement
     | SvelteElement
-    | SvelteStartTag
-    | SvelteEndTag
-    | SvelteName
-    | SvelteMemberExpressionName
-    | SvelteText
-    | SvelteLiteral
-    | SvelteMustacheTag
-    | SvelteDebugTag
-    | SvelteConstTag
     | SvelteIfBlock
-    | SvelteElseBlock
+    | SvelteElseBlockAlone
     | SvelteEachBlock
-    | SvelteAwaitBlock
     | SvelteAwaitPendingBlock
     | SvelteAwaitThenBlock
     | SvelteAwaitCatchBlock
-    | SvelteKeyBlock
+    | SvelteKeyBlock;
+}
+/** Node of Svelte component element. */
+export interface SvelteComponentElement extends BaseSvelteElement {
+  type: "SvelteElement";
+  kind: "component";
+  name: ESTree.Identifier | SvelteMemberExpressionName;
+  startTag: SvelteStartTag;
+  children: Child[];
+  endTag: SvelteEndTag | null;
+  parent:
+    | SvelteProgram
+    | SvelteElement
+    | SvelteIfBlock
+    | SvelteElseBlockAlone
+    | SvelteEachBlock
+    | SvelteAwaitPendingBlock
+    | SvelteAwaitThenBlock
+    | SvelteAwaitCatchBlock
+    | SvelteKeyBlock;
+}
+/** Node of Svelte special component element. e.g. `<svelte:window>` */
+export interface SvelteSpecialElement extends BaseSvelteElement {
+  type: "SvelteElement";
+  kind: "special";
+  name: SvelteName;
+  startTag: SvelteStartTag;
+  children: Child[];
+  endTag: SvelteEndTag | null;
+  parent:
+    | SvelteProgram
+    | SvelteElement
+    | SvelteIfBlock
+    | SvelteElseBlockAlone
+    | SvelteEachBlock
+    | SvelteAwaitPendingBlock
+    | SvelteAwaitThenBlock
+    | SvelteAwaitCatchBlock
+    | SvelteKeyBlock;
+}
+/** Node of start tag. */
+export interface SvelteStartTag extends BaseNode {
+  type: "SvelteStartTag";
+  attributes: (
     | SvelteAttribute
     | SvelteShorthandAttribute
     | SvelteSpreadAttribute
     | SvelteDirective
     | SvelteStyleDirective
     | SvelteSpecialDirective
-    | SvelteDirectiveKey
-    | SvelteSpecialDirectiveKey
-    | SvelteHTMLComment
-    | SvelteReactiveStatement
-
-/** Node of Svelte program root */
-export interface SvelteProgram extends BaseNode {
-    type: "Program"
-    body: (SvelteScriptElement | SvelteStyleElement | Child)[]
-    sourceType: "script" | "module"
-    comments: Comment[]
-    tokens: Token[]
-    parent: null
-}
-
-/** Node of elements like HTML element. */
-export type SvelteElement =
-    | SvelteHTMLElement
-    | SvelteComponentElement
-    | SvelteSpecialElement
-type BaseSvelteElement = BaseNode
-
-/** Node of `<script>` element. */
-export interface SvelteScriptElement extends BaseSvelteElement {
-    type: "SvelteScriptElement"
-    name: SvelteName
-    startTag: SvelteStartTag
-    body: ESTree.Program["body"]
-    endTag: SvelteEndTag | null
-    parent: SvelteProgram
-}
-/** Node of `<style>` element. */
-export interface SvelteStyleElement extends BaseSvelteElement {
-    type: "SvelteStyleElement"
-    name: SvelteName
-    startTag: SvelteStartTag
-    children: [SvelteText]
-    endTag: SvelteEndTag | null
-    parent: SvelteProgram
-}
-/** Node of HTML element. */
-export interface SvelteHTMLElement extends BaseSvelteElement {
-    type: "SvelteElement"
-    kind: "html"
-    name: SvelteName
-    startTag: SvelteStartTag
-    children: Child[]
-    endTag: SvelteEndTag | null
-    parent:
-        | SvelteProgram
-        | SvelteElement
-        | SvelteIfBlock
-        | SvelteElseBlockAlone
-        | SvelteEachBlock
-        | SvelteAwaitPendingBlock
-        | SvelteAwaitThenBlock
-        | SvelteAwaitCatchBlock
-        | SvelteKeyBlock
-}
-/** Node of Svelte component element. */
-export interface SvelteComponentElement extends BaseSvelteElement {
-    type: "SvelteElement"
-    kind: "component"
-    name: ESTree.Identifier | SvelteMemberExpressionName
-    startTag: SvelteStartTag
-    children: Child[]
-    endTag: SvelteEndTag | null
-    parent:
-        | SvelteProgram
-        | SvelteElement
-        | SvelteIfBlock
-        | SvelteElseBlockAlone
-        | SvelteEachBlock
-        | SvelteAwaitPendingBlock
-        | SvelteAwaitThenBlock
-        | SvelteAwaitCatchBlock
-        | SvelteKeyBlock
-}
-/** Node of Svelte special component element. e.g. `<svelte:window>` */
-export interface SvelteSpecialElement extends BaseSvelteElement {
-    type: "SvelteElement"
-    kind: "special"
-    name: SvelteName
-    startTag: SvelteStartTag
-    children: Child[]
-    endTag: SvelteEndTag | null
-    parent:
-        | SvelteProgram
-        | SvelteElement
-        | SvelteIfBlock
-        | SvelteElseBlockAlone
-        | SvelteEachBlock
-        | SvelteAwaitPendingBlock
-        | SvelteAwaitThenBlock
-        | SvelteAwaitCatchBlock
-        | SvelteKeyBlock
-}
-/** Node of start tag. */
-export interface SvelteStartTag extends BaseNode {
-    type: "SvelteStartTag"
-    attributes: (
-        | SvelteAttribute
-        | SvelteShorthandAttribute
-        | SvelteSpreadAttribute
-        | SvelteDirective
-        | SvelteStyleDirective
-        | SvelteSpecialDirective
-    )[]
-    selfClosing: boolean
-    parent: SvelteElement | SvelteScriptElement | SvelteStyleElement
+  )[];
+  selfClosing: boolean;
+  parent: SvelteElement | SvelteScriptElement | SvelteStyleElement;
 }
 /** Node of end tag. */
 export interface SvelteEndTag extends BaseNode {
-    type: "SvelteEndTag"
-    parent: SvelteElement | SvelteScriptElement | SvelteStyleElement
+  type: "SvelteEndTag";
+  parent: SvelteElement | SvelteScriptElement | SvelteStyleElement;
 }
 
 /** Node of names. It is used for element names other than components and normal attribute names. */
 export interface SvelteName extends BaseNode {
-    type: "SvelteName"
-    name: string
-    parent:
-        | SvelteElement
-        | SvelteScriptElement
-        | SvelteStyleElement
-        | SvelteAttribute
-        | SvelteMemberExpressionName
-        | SvelteDirectiveKey
+  type: "SvelteName";
+  name: string;
+  parent:
+    | SvelteElement
+    | SvelteScriptElement
+    | SvelteStyleElement
+    | SvelteAttribute
+    | SvelteMemberExpressionName
+    | SvelteDirectiveKey;
 }
 
 /** Nodes that may be used in component names. The component names separated by dots. */
 export interface SvelteMemberExpressionName extends BaseNode {
-    type: "SvelteMemberExpressionName"
-    object: SvelteMemberExpressionName | ESTree.Identifier
-    property: SvelteName
-    parent: SvelteComponentElement
+  type: "SvelteMemberExpressionName";
+  object: SvelteMemberExpressionName | ESTree.Identifier;
+  property: SvelteName;
+  parent: SvelteComponentElement;
 }
 
 type Child =
-    | SvelteElement
-    | SvelteText
-    | SvelteMustacheTag
-    | SvelteDebugTag
-    | SvelteConstTag
-    | SvelteIfBlockAlone
-    | SvelteEachBlock
-    | SvelteAwaitBlock
-    | SvelteKeyBlock
-    | SvelteHTMLComment
+  | SvelteElement
+  | SvelteText
+  | SvelteMustacheTag
+  | SvelteDebugTag
+  | SvelteConstTag
+  | SvelteIfBlockAlone
+  | SvelteEachBlock
+  | SvelteAwaitBlock
+  | SvelteKeyBlock
+  | SvelteHTMLComment;
 
 /** Node of text. like HTML text. */
 export interface SvelteText extends BaseNode {
-    type: "SvelteText"
-    value: string
-    parent:
-        | SvelteProgram
-        | SvelteElement
-        | SvelteStyleElement
-        | SvelteIfBlock
-        | SvelteElseBlockAlone
-        | SvelteEachBlock
-        | SvelteAwaitPendingBlock
-        | SvelteAwaitThenBlock
-        | SvelteAwaitCatchBlock
-        | SvelteKeyBlock
+  type: "SvelteText";
+  value: string;
+  parent:
+    | SvelteProgram
+    | SvelteElement
+    | SvelteStyleElement
+    | SvelteIfBlock
+    | SvelteElseBlockAlone
+    | SvelteEachBlock
+    | SvelteAwaitPendingBlock
+    | SvelteAwaitThenBlock
+    | SvelteAwaitCatchBlock
+    | SvelteKeyBlock;
 }
 /** Node of literal. */
 export interface SvelteLiteral extends BaseNode {
-    type: "SvelteLiteral"
-    value: string
-    parent: SvelteAttribute | SvelteStyleDirective
+  type: "SvelteLiteral";
+  value: string;
+  parent: SvelteAttribute | SvelteStyleDirective;
 }
 
 /** Node of mustache tag. e.g. `{...}`, `{@html ...}`. Like JSXExpressionContainer */
-export type SvelteMustacheTag = SvelteMustacheTagText | SvelteMustacheTagRaw
+export type SvelteMustacheTag = SvelteMustacheTagText | SvelteMustacheTagRaw;
 interface BaseSvelteMustacheTag extends BaseNode {
-    type: "SvelteMustacheTag"
-    kind: "text" | "raw"
-    expression: ESTree.Expression
-    parent:
-        | SvelteProgram
-        | SvelteElement
-        | SvelteIfBlock
-        | SvelteElseBlockAlone
-        | SvelteEachBlock
-        | SvelteAwaitPendingBlock
-        | SvelteAwaitThenBlock
-        | SvelteAwaitCatchBlock
-        | SvelteKeyBlock
-        | SvelteAttribute
-        | SvelteStyleDirective
+  type: "SvelteMustacheTag";
+  kind: "text" | "raw";
+  expression: ESTree.Expression;
+  parent:
+    | SvelteProgram
+    | SvelteElement
+    | SvelteIfBlock
+    | SvelteElseBlockAlone
+    | SvelteEachBlock
+    | SvelteAwaitPendingBlock
+    | SvelteAwaitThenBlock
+    | SvelteAwaitCatchBlock
+    | SvelteKeyBlock
+    | SvelteAttribute
+    | SvelteStyleDirective;
 }
 /** Node of mustache tag. e.g. `{...}``. Like JSXExpressionContainer */
 export interface SvelteMustacheTagText extends BaseSvelteMustacheTag {
-    kind: "text"
+  kind: "text";
 }
 /** Node of mustache tag. e.g. `{@html ...}`. Like JSXExpressionContainer */
 export interface SvelteMustacheTagRaw extends BaseSvelteMustacheTag {
-    kind: "raw"
+  kind: "raw";
 }
 /** Node of debug mustache tag. e.g. `{@debug}` */
 export interface SvelteDebugTag extends BaseNode {
-    type: "SvelteDebugTag"
-    identifiers: ESTree.Identifier[]
-    parent:
-        | SvelteProgram
-        | SvelteElement
-        | SvelteIfBlock
-        | SvelteElseBlockAlone
-        | SvelteEachBlock
-        | SvelteAwaitPendingBlock
-        | SvelteAwaitThenBlock
-        | SvelteAwaitCatchBlock
-        | SvelteKeyBlock
-        | SvelteAttribute
+  type: "SvelteDebugTag";
+  identifiers: ESTree.Identifier[];
+  parent:
+    | SvelteProgram
+    | SvelteElement
+    | SvelteIfBlock
+    | SvelteElseBlockAlone
+    | SvelteEachBlock
+    | SvelteAwaitPendingBlock
+    | SvelteAwaitThenBlock
+    | SvelteAwaitCatchBlock
+    | SvelteKeyBlock
+    | SvelteAttribute;
 }
 /** Node of const tag. e.g. `{@const}` */
 export interface SvelteConstTag extends BaseNode {
-    type: "SvelteConstTag"
-    declaration: ESTree.VariableDeclarator
-    parent:
-        | SvelteProgram
-        | SvelteElement
-        | SvelteIfBlock
-        | SvelteElseBlockAlone
-        | SvelteEachBlock
-        | SvelteAwaitPendingBlock
-        | SvelteAwaitThenBlock
-        | SvelteAwaitCatchBlock
-        | SvelteKeyBlock
-        | SvelteAttribute
+  type: "SvelteConstTag";
+  declaration: ESTree.VariableDeclarator;
+  parent:
+    | SvelteProgram
+    | SvelteElement
+    | SvelteIfBlock
+    | SvelteElseBlockAlone
+    | SvelteEachBlock
+    | SvelteAwaitPendingBlock
+    | SvelteAwaitThenBlock
+    | SvelteAwaitCatchBlock
+    | SvelteKeyBlock
+    | SvelteAttribute;
 }
 /** Node of if block. e.g. `{#if}` */
-export type SvelteIfBlock = SvelteIfBlockAlone | SvelteIfBlockElseIf
+export type SvelteIfBlock = SvelteIfBlockAlone | SvelteIfBlockElseIf;
 interface BaseSvelteIfBlock extends BaseNode {
-    type: "SvelteIfBlock"
-    elseif: boolean
-    expression: ESTree.Expression
-    children: Child[]
-    else: SvelteElseBlock | null
-    parent:
-        | SvelteProgram
-        | SvelteElement
-        | SvelteIfBlock
-        | SvelteElseBlock
-        | SvelteEachBlock
-        | SvelteAwaitPendingBlock
-        | SvelteAwaitThenBlock
-        | SvelteAwaitCatchBlock
-        | SvelteKeyBlock
+  type: "SvelteIfBlock";
+  elseif: boolean;
+  expression: ESTree.Expression;
+  children: Child[];
+  else: SvelteElseBlock | null;
+  parent:
+    | SvelteProgram
+    | SvelteElement
+    | SvelteIfBlock
+    | SvelteElseBlock
+    | SvelteEachBlock
+    | SvelteAwaitPendingBlock
+    | SvelteAwaitThenBlock
+    | SvelteAwaitCatchBlock
+    | SvelteKeyBlock;
 }
 /** Node of if block. e.g. `{#if}` */
 export interface SvelteIfBlockAlone extends BaseSvelteIfBlock {
-    elseif: false
-    parent: Exclude<BaseSvelteIfBlock["parent"], SvelteElseBlockElseIf>
+  elseif: false;
+  parent: Exclude<BaseSvelteIfBlock["parent"], SvelteElseBlockElseIf>;
 }
 /** Node of if block. e.g. `{:else if}` */
 export interface SvelteIfBlockElseIf extends BaseSvelteIfBlock {
-    elseif: true
-    parent: SvelteElseBlockElseIf
+  elseif: true;
+  parent: SvelteElseBlockElseIf;
 }
 
 /** Node of else block. e.g. `{:else}` */
-export type SvelteElseBlock = SvelteElseBlockAlone | SvelteElseBlockElseIf
+export type SvelteElseBlock = SvelteElseBlockAlone | SvelteElseBlockElseIf;
 interface BaseSvelteElseBlock extends BaseNode {
-    type: "SvelteElseBlock"
-    elseif: boolean
-    children: (Child | SvelteIfBlockElseIf)[]
-    parent: SvelteIfBlock | SvelteEachBlock
+  type: "SvelteElseBlock";
+  elseif: boolean;
+  children: (Child | SvelteIfBlockElseIf)[];
+  parent: SvelteIfBlock | SvelteEachBlock;
 }
 /** Node of else block. e.g. `{:else}` */
 export interface SvelteElseBlockAlone extends BaseSvelteElseBlock {
-    elseif: false
-    children: Child[]
+  elseif: false;
+  children: Child[];
 }
 /** Node of else block. e.g. `{:else if ...}` */
 export interface SvelteElseBlockElseIf extends BaseSvelteElseBlock {
-    elseif: true
-    children: [SvelteIfBlockElseIf]
+  elseif: true;
+  children: [SvelteIfBlockElseIf];
 }
 /** Node of each block. e.g. `{#each}` */
 export interface SvelteEachBlock extends BaseNode {
-    type: "SvelteEachBlock"
-    expression: ESTree.Expression
-    context: ESTree.Pattern
-    index: ESTree.Identifier | null
-    key: ESTree.Expression | null
-    children: Child[]
-    else: SvelteElseBlockAlone | null
-    parent:
-        | SvelteProgram
-        | SvelteElement
-        | SvelteIfBlock
-        | SvelteElseBlockAlone
-        | SvelteEachBlock
-        | SvelteAwaitPendingBlock
-        | SvelteAwaitThenBlock
-        | SvelteAwaitCatchBlock
-        | SvelteKeyBlock
+  type: "SvelteEachBlock";
+  expression: ESTree.Expression;
+  context: ESTree.Pattern;
+  index: ESTree.Identifier | null;
+  key: ESTree.Expression | null;
+  children: Child[];
+  else: SvelteElseBlockAlone | null;
+  parent:
+    | SvelteProgram
+    | SvelteElement
+    | SvelteIfBlock
+    | SvelteElseBlockAlone
+    | SvelteEachBlock
+    | SvelteAwaitPendingBlock
+    | SvelteAwaitThenBlock
+    | SvelteAwaitCatchBlock
+    | SvelteKeyBlock;
 }
 /** Node of await block. e.g. `{#await}`, `{#await ... then ... }`, `{#await ... catch ... }` */
 export type SvelteAwaitBlock =
-    | SvelteAwaitBlockAwaitPending
-    | SvelteAwaitBlockAwaitThen
-    | SvelteAwaitBlockAwaitCatch
+  | SvelteAwaitBlockAwaitPending
+  | SvelteAwaitBlockAwaitThen
+  | SvelteAwaitBlockAwaitCatch;
 interface BaseSvelteAwaitBlock extends BaseNode {
-    type: "SvelteAwaitBlock"
-    expression: ESTree.Expression
-    kind: "await" | "await-then" | "await-catch"
-    pending: SvelteAwaitPendingBlock | null
-    then: SvelteAwaitThenBlock | null
-    catch: SvelteAwaitCatchBlock | null
-    parent:
-        | SvelteProgram
-        | SvelteElement
-        | SvelteIfBlock
-        | SvelteElseBlockAlone
-        | SvelteEachBlock
-        | SvelteAwaitPendingBlock
-        | SvelteAwaitThenBlock
-        | SvelteAwaitCatchBlock
-        | SvelteKeyBlock
+  type: "SvelteAwaitBlock";
+  expression: ESTree.Expression;
+  kind: "await" | "await-then" | "await-catch";
+  pending: SvelteAwaitPendingBlock | null;
+  then: SvelteAwaitThenBlock | null;
+  catch: SvelteAwaitCatchBlock | null;
+  parent:
+    | SvelteProgram
+    | SvelteElement
+    | SvelteIfBlock
+    | SvelteElseBlockAlone
+    | SvelteEachBlock
+    | SvelteAwaitPendingBlock
+    | SvelteAwaitThenBlock
+    | SvelteAwaitCatchBlock
+    | SvelteKeyBlock;
 }
 /** Node of await block. e.g. `{#await}` */
 export interface SvelteAwaitBlockAwaitPending extends BaseSvelteAwaitBlock {
-    kind: "await"
-    pending: SvelteAwaitPendingBlock
-    then: SvelteAwaitThenBlockAlone | null
-    catch: SvelteAwaitCatchBlockAlone | null
+  kind: "await";
+  pending: SvelteAwaitPendingBlock;
+  then: SvelteAwaitThenBlockAlone | null;
+  catch: SvelteAwaitCatchBlockAlone | null;
 }
 /** Node of await block. e.g. `{#await ... then ... }` */
 export interface SvelteAwaitBlockAwaitThen extends BaseSvelteAwaitBlock {
-    kind: "await-then"
-    pending: null
-    then: SvelteAwaitThenBlockAwaitThen
-    catch: SvelteAwaitCatchBlockAlone | null
+  kind: "await-then";
+  pending: null;
+  then: SvelteAwaitThenBlockAwaitThen;
+  catch: SvelteAwaitCatchBlockAlone | null;
 }
 /** Node of await block. e.g. `{#await ... catch ... }` */
 export interface SvelteAwaitBlockAwaitCatch extends BaseSvelteAwaitBlock {
-    kind: "await-catch"
-    pending: null
-    then: null
-    catch: SvelteAwaitCatchBlockAwaitCatch
+  kind: "await-catch";
+  pending: null;
+  then: null;
+  catch: SvelteAwaitCatchBlockAwaitCatch;
 }
 
 /** Node of await pending block. e.g. `{#await expr} ... {:then}` */
 export interface SvelteAwaitPendingBlock extends BaseNode {
-    type: "SvelteAwaitPendingBlock"
-    children: Child[]
-    parent: SvelteAwaitBlock
+  type: "SvelteAwaitPendingBlock";
+  children: Child[];
+  parent: SvelteAwaitBlock;
 }
 /** Node of await then block. e.g. `{:then}`, `{#await ... then ...}` */
 export type SvelteAwaitThenBlock =
-    | SvelteAwaitThenBlockAlone
-    | SvelteAwaitThenBlockAwaitThen
+  | SvelteAwaitThenBlockAlone
+  | SvelteAwaitThenBlockAwaitThen;
 interface BaseSvelteAwaitThenBlock extends BaseNode {
-    type: "SvelteAwaitThenBlock"
-    awaitThen: boolean
-    value: ESTree.Pattern | null
-    children: Child[]
-    parent: SvelteAwaitBlock
+  type: "SvelteAwaitThenBlock";
+  awaitThen: boolean;
+  value: ESTree.Pattern | null;
+  children: Child[];
+  parent: SvelteAwaitBlock;
 }
 /** Node of await then block. e.g. `{:then}` */
 export interface SvelteAwaitThenBlockAlone extends BaseSvelteAwaitThenBlock {
-    awaitThen: false
-    parent: SvelteAwaitBlockAwaitPending
+  awaitThen: false;
+  parent: SvelteAwaitBlockAwaitPending;
 }
 /** Node of await then block. e.g. `{#await ... then ...}` */
 export interface SvelteAwaitThenBlockAwaitThen
-    extends BaseSvelteAwaitThenBlock {
-    awaitThen: true
-    parent: SvelteAwaitBlockAwaitThen
+  extends BaseSvelteAwaitThenBlock {
+  awaitThen: true;
+  parent: SvelteAwaitBlockAwaitThen;
 }
 
 /** Node of await catch block. e.g. `{:catch}`, `{#await ... catch ... }` */
 export type SvelteAwaitCatchBlock =
-    | SvelteAwaitCatchBlockAlone
-    | SvelteAwaitCatchBlockAwaitCatch
+  | SvelteAwaitCatchBlockAlone
+  | SvelteAwaitCatchBlockAwaitCatch;
 interface BaseSvelteAwaitCatchBlock extends BaseNode {
-    type: "SvelteAwaitCatchBlock"
-    awaitCatch: boolean
-    error: ESTree.Pattern | null
-    children: Child[]
-    parent: SvelteAwaitBlock
+  type: "SvelteAwaitCatchBlock";
+  awaitCatch: boolean;
+  error: ESTree.Pattern | null;
+  children: Child[];
+  parent: SvelteAwaitBlock;
 }
 /** Node of await catch block. e.g. `{:catch}` */
 export interface SvelteAwaitCatchBlockAlone extends BaseSvelteAwaitCatchBlock {
-    awaitCatch: false
-    parent: SvelteAwaitBlockAwaitPending | SvelteAwaitBlockAwaitThen
+  awaitCatch: false;
+  parent: SvelteAwaitBlockAwaitPending | SvelteAwaitBlockAwaitThen;
 }
 /** Node of await catch block. e.g. `{#await ... catch ... }` */
 export interface SvelteAwaitCatchBlockAwaitCatch
-    extends BaseSvelteAwaitCatchBlock {
-    awaitCatch: true
-    error: ESTree.Pattern | null
-    children: Child[]
-    parent: SvelteAwaitBlockAwaitCatch
+  extends BaseSvelteAwaitCatchBlock {
+  awaitCatch: true;
+  error: ESTree.Pattern | null;
+  children: Child[];
+  parent: SvelteAwaitBlockAwaitCatch;
 }
 /** Node of key block. e.g. `{#key}` */
 export interface SvelteKeyBlock extends BaseNode {
-    type: "SvelteKeyBlock"
-    expression: ESTree.Expression
-    children: Child[]
-    parent:
-        | SvelteProgram
-        | SvelteElement
-        | SvelteIfBlock
-        | SvelteElseBlockAlone
-        | SvelteEachBlock
-        | SvelteAwaitPendingBlock
-        | SvelteAwaitThenBlock
-        | SvelteAwaitCatchBlock
-        | SvelteKeyBlock
+  type: "SvelteKeyBlock";
+  expression: ESTree.Expression;
+  children: Child[];
+  parent:
+    | SvelteProgram
+    | SvelteElement
+    | SvelteIfBlock
+    | SvelteElseBlockAlone
+    | SvelteEachBlock
+    | SvelteAwaitPendingBlock
+    | SvelteAwaitThenBlock
+    | SvelteAwaitCatchBlock
+    | SvelteKeyBlock;
 }
 /** Node of HTML comment. */
 export interface SvelteHTMLComment extends BaseNode {
-    type: "SvelteHTMLComment"
-    value: string
-    parent:
-        | SvelteProgram
-        | SvelteElement
-        | SvelteIfBlock
-        | SvelteElseBlockAlone
-        | SvelteEachBlock
-        | SvelteAwaitPendingBlock
-        | SvelteAwaitThenBlock
-        | SvelteAwaitCatchBlock
-        | SvelteKeyBlock
+  type: "SvelteHTMLComment";
+  value: string;
+  parent:
+    | SvelteProgram
+    | SvelteElement
+    | SvelteIfBlock
+    | SvelteElseBlockAlone
+    | SvelteEachBlock
+    | SvelteAwaitPendingBlock
+    | SvelteAwaitThenBlock
+    | SvelteAwaitCatchBlock
+    | SvelteKeyBlock;
 }
 /** Node of HTML attribute. */
 export interface SvelteAttribute extends BaseNode {
-    type: "SvelteAttribute"
-    key: SvelteName
-    boolean: boolean
-    value: (SvelteLiteral | SvelteMustacheTagText)[]
-    parent: SvelteStartTag
+  type: "SvelteAttribute";
+  key: SvelteName;
+  boolean: boolean;
+  value: (SvelteLiteral | SvelteMustacheTagText)[];
+  parent: SvelteStartTag;
 }
 /** Node of shorthand attribute. e.g. `<img {src}>` */
 export interface SvelteShorthandAttribute extends BaseNode {
-    type: "SvelteShorthandAttribute"
-    key: ESTree.Identifier
-    value: ESTree.Identifier
-    parent: SvelteStartTag
+  type: "SvelteShorthandAttribute";
+  key: ESTree.Identifier;
+  value: ESTree.Identifier;
+  parent: SvelteStartTag;
 }
 /** Node of spread attribute. e.g. `<Info {...pkg}/>`. Like JSXSpreadAttribute */
 export interface SvelteSpreadAttribute extends BaseNode {
-    type: "SvelteSpreadAttribute"
-    argument: ESTree.Expression
-    parent: SvelteStartTag
+  type: "SvelteSpreadAttribute";
+  argument: ESTree.Expression;
+  parent: SvelteStartTag;
 }
 
 /** Node of directive. e.g. `<input bind:value />` */
 export type SvelteDirective =
-    | SvelteActionDirective
-    | SvelteAnimationDirective
-    | SvelteBindingDirective
-    | SvelteClassDirective
-    | SvelteEventHandlerDirective
-    | SvelteLetDirective
-    | SvelteRefDirective
-    | SvelteTransitionDirective
+  | SvelteActionDirective
+  | SvelteAnimationDirective
+  | SvelteBindingDirective
+  | SvelteClassDirective
+  | SvelteEventHandlerDirective
+  | SvelteLetDirective
+  | SvelteRefDirective
+  | SvelteTransitionDirective;
 export interface SvelteDirectiveKey extends BaseNode {
-    type: "SvelteDirectiveKey"
-    name: ESTree.Identifier | SvelteName
-    modifiers: string[]
-    parent: SvelteDirective | SvelteStyleDirective
+  type: "SvelteDirectiveKey";
+  name: ESTree.Identifier | SvelteName;
+  modifiers: string[];
+  parent: SvelteDirective | SvelteStyleDirective;
 }
 
 interface BaseSvelteDirective extends BaseNode {
-    type: "SvelteDirective"
-    key: SvelteDirectiveKey
-    parent: SvelteStartTag
+  type: "SvelteDirective";
+  key: SvelteDirectiveKey;
+  parent: SvelteStartTag;
 }
 
 export interface SvelteActionDirective extends BaseSvelteDirective {
-    kind: "Action"
-    expression: null | ESTree.Expression
+  kind: "Action";
+  expression: null | ESTree.Expression;
 }
 export interface SvelteAnimationDirective extends BaseSvelteDirective {
-    kind: "Animation"
-    expression: null | ESTree.Expression
+  kind: "Animation";
+  expression: null | ESTree.Expression;
 }
 export interface SvelteBindingDirective extends BaseSvelteDirective {
-    kind: "Binding"
-    shorthand: boolean
-    expression: null | ESTree.Expression
+  kind: "Binding";
+  shorthand: boolean;
+  expression: null | ESTree.Expression;
 }
 export interface SvelteClassDirective extends BaseSvelteDirective {
-    kind: "Class"
-    shorthand: boolean
-    expression: null | ESTree.Expression
+  kind: "Class";
+  shorthand: boolean;
+  expression: null | ESTree.Expression;
 }
 export interface SvelteEventHandlerDirective extends BaseSvelteDirective {
-    kind: "EventHandler"
-    expression: null | ESTree.Expression
+  kind: "EventHandler";
+  expression: null | ESTree.Expression;
 }
 export interface SvelteLetDirective extends BaseSvelteDirective {
-    kind: "Let"
-    expression: null | ESTree.Pattern
+  kind: "Let";
+  expression: null | ESTree.Pattern;
 }
 export interface SvelteRefDirective extends BaseSvelteDirective {
-    kind: "Ref"
-    expression: null | ESTree.Expression
+  kind: "Ref";
+  expression: null | ESTree.Expression;
 }
 export interface SvelteTransitionDirective extends BaseSvelteDirective {
-    kind: "Transition"
-    intro: boolean
-    outro: boolean
-    expression: null | ESTree.Expression
+  kind: "Transition";
+  intro: boolean;
+  outro: boolean;
+  expression: null | ESTree.Expression;
 }
 
 /** Node of style directive. e.g. `<input style:color />` */
 export type SvelteStyleDirective =
-    | SvelteStyleDirectiveShorthand
-    | SvelteStyleDirectiveLongform
+  | SvelteStyleDirectiveShorthand
+  | SvelteStyleDirectiveLongform;
 interface BaseSvelteStyleDirective extends BaseNode {
-    type: "SvelteStyleDirective"
-    key: SvelteDirectiveKey
-    value: (SvelteLiteral | SvelteMustacheTagText)[]
-    parent: SvelteStartTag
+  type: "SvelteStyleDirective";
+  key: SvelteDirectiveKey;
+  value: (SvelteLiteral | SvelteMustacheTagText)[];
+  parent: SvelteStartTag;
 }
 export interface SvelteStyleDirectiveShorthand
-    extends BaseSvelteStyleDirective {
-    shorthand: true
-    value: []
+  extends BaseSvelteStyleDirective {
+  shorthand: true;
+  value: [];
 }
 export interface SvelteStyleDirectiveLongform extends BaseSvelteStyleDirective {
-    shorthand: false
-    value: (SvelteLiteral | SvelteMustacheTagText)[]
+  shorthand: false;
+  value: (SvelteLiteral | SvelteMustacheTagText)[];
 }
 export interface SvelteSpecialDirectiveKey extends BaseNode {
-    type: "SvelteSpecialDirectiveKey"
-    parent: SvelteSpecialDirective
+  type: "SvelteSpecialDirectiveKey";
+  parent: SvelteSpecialDirective;
 }
 export interface SvelteSpecialDirective extends BaseNode {
-    type: "SvelteSpecialDirective"
-    kind: "this"
-    key: SvelteSpecialDirectiveKey
-    expression: ESTree.Expression
-    parent: SvelteStartTag /* & { parent: SvelteSpecialElement } */
+  type: "SvelteSpecialDirective";
+  kind: "this";
+  key: SvelteSpecialDirectiveKey;
+  expression: ESTree.Expression;
+  parent: SvelteStartTag /* & { parent: SvelteSpecialElement } */;
 }
 
 /** Node of `$` statement. */
 export interface SvelteReactiveStatement extends BaseNode {
-    type: "SvelteReactiveStatement"
-    label: ESTree.Identifier & { name: "$" }
-    body: ESTree.Statement
-    parent: ESTree.Node
+  type: "SvelteReactiveStatement";
+  label: ESTree.Identifier & { name: "$" };
+  body: ESTree.Statement;
+  parent: ESTree.Node;
 }

@@ -1,15 +1,15 @@
-import { Linter } from "eslint"
-import assert from "assert"
-import semver from "semver"
-import * as parser from "../../../src/index"
-import { BASIC_PARSER_OPTIONS } from "./test-utils"
+import { Linter } from "eslint";
+import assert from "assert";
+import semver from "semver";
+import * as parser from "../../../src/index";
+import { BASIC_PARSER_OPTIONS } from "./test-utils";
 
 function createLinter() {
-    const linter = new Linter()
+  const linter = new Linter();
 
-    linter.defineParser("svelte-eslint-parser", parser as any)
+  linter.defineParser("svelte-eslint-parser", parser as any);
 
-    return linter
+  return linter;
 }
 
 //------------------------------------------------------------------------------
@@ -17,46 +17,46 @@ function createLinter() {
 //------------------------------------------------------------------------------
 
 describe("eslint custom parser", () => {
-    it("should work with eslint.", () => {
-        const code = `<h1>Hello!</h1>`
+  it("should work with eslint.", () => {
+    const code = `<h1>Hello!</h1>`;
 
-        const linter = createLinter()
-        linter.defineRule("test", {
-            create(context) {
-                return {
-                    SvelteElement(node: any) {
-                        context.report({
-                            node,
-                            message: "test",
-                        })
-                    },
-                }
-            },
-        })
-        const messages = linter.verify(code, {
-            parser: "svelte-eslint-parser",
-            rules: {
-                test: "error",
-            },
-        })
+    const linter = createLinter();
+    linter.defineRule("test", {
+      create(context) {
+        return {
+          SvelteElement(node: any) {
+            context.report({
+              node,
+              message: "test",
+            });
+          },
+        };
+      },
+    });
+    const messages = linter.verify(code, {
+      parser: "svelte-eslint-parser",
+      rules: {
+        test: "error",
+      },
+    });
 
-        assert.strictEqual(messages.length, 1)
-        assert.strictEqual(messages[0].message, "test")
-    })
+    assert.strictEqual(messages.length, 1);
+    assert.strictEqual(messages[0].message, "test");
+  });
 
-    describe("should work with eslint core rule.", () => {
-        const tests: {
-            code: string
-            output: string | null
-            messages: {
-                ruleId: string
-                line: number
-                column: number
-            }[]
-            parserOptions?: any
-        }[] = [
-            {
-                code: `
+  describe("should work with eslint core rule.", () => {
+    const tests: {
+      code: string;
+      output: string | null;
+      messages: {
+        ruleId: string;
+        line: number;
+        column: number;
+      }[];
+      parserOptions?: any;
+    }[] = [
+      {
+        code: `
                 <script>
                 let a=1;
                 let b=2;
@@ -66,7 +66,7 @@ describe("eslint custom parser", () => {
                 <input type="number" bind:value={b}>
                 <p>{a}+{b}={a+b}</p>
                 `,
-                output: `
+        output: `
                 <script>
                 let a = 1;
                 let b = 2;
@@ -76,16 +76,16 @@ describe("eslint custom parser", () => {
                 <input type="number" bind:value={b}>
                 <p>{a}+{b}={a + b}</p>
                 `,
-                messages: [
-                    {
-                        ruleId: "no-unused-vars",
-                        line: 5,
-                        column: 21,
-                    },
-                ],
-            },
-            {
-                code: `
+        messages: [
+          {
+            ruleId: "no-unused-vars",
+            line: 5,
+            column: 21,
+          },
+        ],
+      },
+      {
+        code: `
                 <script>
                 let count = 0;
                 $: doubled = count * 2;
@@ -98,11 +98,11 @@ describe("eslint custom parser", () => {
                 </button>
                 <p>{count} doubled is {doubled}</p>
                 `,
-                output: null,
-                messages: [],
-            },
-            {
-                code: `
+        output: null,
+        messages: [],
+      },
+      {
+        code: `
                 <script>
                 let count = 0;
                 function handleClick() {
@@ -122,11 +122,11 @@ describe("eslint custom parser", () => {
                     Clicked {count} {count === 1 ? 'time' : 'times'}
                 </button>
                 `,
-                output: null,
-                messages: [],
-            },
-            {
-                code: `
+        output: null,
+        messages: [],
+      },
+      {
+        code: `
                 <script>
                 import Thing from './Thing.svelte';
                 let things = [
@@ -147,11 +147,11 @@ describe("eslint custom parser", () => {
                     <Thing current={thing.color}/>
                 {/each}
                 `,
-                output: null,
-                messages: [],
-            },
-            {
-                code: `
+        output: null,
+        messages: [],
+      },
+      {
+        code: `
                 <script>
                 </script>
                 <MyComponent
@@ -165,118 +165,118 @@ describe("eslint custom parser", () => {
                       current={thing.color}/>
                 {/each}
                 `,
-                output: null,
-                messages: [
-                    {
-                        ruleId: "no-undef",
-                        line: 4,
-                        column: 18,
-                    },
-                    {
-                        ruleId: "no-undef",
-                        line: 5,
-                        column: 31,
-                    },
-                    {
-                        ruleId: "no-undef",
-                        line: 6,
-                        column: 29,
-                    },
-                    {
-                        ruleId: "no-undef",
-                        line: 8,
-                        column: 41,
-                    },
-                    {
-                        ruleId: "no-undef",
-                        line: 10,
-                        column: 24,
-                    },
-                    {
-                        ruleId: "no-undef",
-                        line: 11,
-                        column: 22,
-                    },
-                ],
-            },
-            {
-                code: `
+        output: null,
+        messages: [
+          {
+            ruleId: "no-undef",
+            line: 4,
+            column: 18,
+          },
+          {
+            ruleId: "no-undef",
+            line: 5,
+            column: 31,
+          },
+          {
+            ruleId: "no-undef",
+            line: 6,
+            column: 29,
+          },
+          {
+            ruleId: "no-undef",
+            line: 8,
+            column: 41,
+          },
+          {
+            ruleId: "no-undef",
+            line: 10,
+            column: 24,
+          },
+          {
+            ruleId: "no-undef",
+            line: 11,
+            column: 22,
+          },
+        ],
+      },
+      {
+        code: `
                 <script>
                     let value = \`Some words are *italic*, some are **bold**\`;
                 </script>
                 <textarea bind:value></textarea>
                 `,
-                output: null,
-                messages: [],
-            },
+        output: null,
+        messages: [],
+      },
+      {
+        code: `
+                <script>
+                import { count } from './stores.js';
+                </script>
+                <h1>The count is {$count}</h1>
+                `,
+        output: null,
+        messages: [],
+      },
+      ...(semver.satisfies(
+        // eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-var-requires -- ignore
+        require("eslint/package.json").version,
+        ">=8.0.0"
+      )
+        ? [
             {
-                code: `
+              // test for ecmaVersion latest
+              code: `
                 <script>
                 import { count } from './stores.js';
                 </script>
                 <h1>The count is {$count}</h1>
                 `,
-                output: null,
-                messages: [],
+              output: null,
+              parserOptions: { ecmaVersion: "latest" },
+              messages: [],
             },
-            ...(semver.satisfies(
-                // eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-var-requires -- ignore
-                require("eslint/package.json").version,
-                ">=8.0.0",
-            )
-                ? [
-                      {
-                          // test for ecmaVersion latest
-                          code: `
-                <script>
-                import { count } from './stores.js';
-                </script>
-                <h1>The count is {$count}</h1>
-                `,
-                          output: null,
-                          parserOptions: { ecmaVersion: "latest" },
-                          messages: [],
-                      },
-                  ]
-                : []),
-        ]
+          ]
+        : []),
+    ];
 
-        for (const { code, output, messages, parserOptions } of tests) {
-            it(code, () => {
-                const linter = createLinter()
-                const result = linter.verifyAndFix(code, {
-                    parser: "svelte-eslint-parser",
-                    parserOptions: {
-                        ...BASIC_PARSER_OPTIONS,
-                        ...(parserOptions ? parserOptions : {}),
-                    },
-                    rules: {
-                        "no-unused-labels": "error",
-                        "no-extra-label": "error",
-                        "no-undef": "error",
-                        "no-unused-vars": "error",
-                        "no-unused-expressions": "error",
-                        "space-infix-ops": "error",
-                    },
-                    env: {
-                        browser: true,
-                        es2021: true,
-                    },
-                })
+    for (const { code, output, messages, parserOptions } of tests) {
+      it(code, () => {
+        const linter = createLinter();
+        const result = linter.verifyAndFix(code, {
+          parser: "svelte-eslint-parser",
+          parserOptions: {
+            ...BASIC_PARSER_OPTIONS,
+            ...(parserOptions ? parserOptions : {}),
+          },
+          rules: {
+            "no-unused-labels": "error",
+            "no-extra-label": "error",
+            "no-undef": "error",
+            "no-unused-vars": "error",
+            "no-unused-expressions": "error",
+            "space-infix-ops": "error",
+          },
+          env: {
+            browser: true,
+            es2021: true,
+          },
+        });
 
-                assert.deepStrictEqual(
-                    result.messages.map((m) => {
-                        return {
-                            ruleId: m.ruleId,
-                            line: m.line,
-                            column: m.column,
-                        }
-                    }),
-                    messages,
-                )
+        assert.deepStrictEqual(
+          result.messages.map((m) => {
+            return {
+              ruleId: m.ruleId,
+              line: m.line,
+              column: m.column,
+            };
+          }),
+          messages
+        );
 
-                assert.strictEqual(result.output, output ?? code)
-            })
-        }
-    })
-})
+        assert.strictEqual(result.output, output ?? code);
+      });
+    }
+  });
+});
