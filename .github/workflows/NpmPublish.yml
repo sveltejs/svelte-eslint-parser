@@ -15,11 +15,11 @@ jobs:
       with:
         registry-url: 'https://registry.npmjs.org'
     - name: Install Packages
-      run: npm install --legacy-peer-deps
+      run: yarn install
     - name: test and build
       run: |
-        npm run build
-        npm run test
+        yarn build
+        yarn test
     - name: check can npm-publish
       run: npx can-npm-publish
     - name: release
