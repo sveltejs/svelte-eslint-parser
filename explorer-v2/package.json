@@ -1,14 +1,24 @@
 {
 	"name": "svelte-eslint-parser-ast-explorer",
 	"version": "0.1.0",
+	"type": "module",
 	"private": true,
 	"scripts": {
-		"dev": "svelte-kit dev",
 		"build": "svelte-kit build",
-		"preview": "svelte-kit preview",
-		"lint": "prettier --check --plugin-search-dir=. . && eslint --ignore-path .gitignore .",
+		"dev": "svelte-kit dev",
 		"format": "prettier --write --plugin-search-dir=. .",
-		"pre-build": "cd build-system/pre-build && webpack && cd .."
+		"lint": "prettier --check --plugin-search-dir=. . && eslint --ignore-path .gitignore .",
+		"pre-build": "cd build-system/pre-build && webpack && cd ..",
+		"preview": "svelte-kit preview"
+	},
+	"dependencies": {
+		"@fontsource/fira-mono": "^4.2.2",
+		"eslint": "^8.0.0",
+		"eslint-plugin-svelte3": "^4.0.0",
+		"eslint-scope": "^7.0.0",
+		"pako": "^2.0.3",
+		"svelte": "^3.41.0",
+		"svelte-eslint-parser": "file:.."
 	},
 	"devDependencies": {
 		"@sveltejs/adapter-static": "^1.0.0-next.13",
@@ -19,15 +29,5 @@
 		"webpack": "^5.37.1",
 		"webpack-cli": "^4.7.0",
 		"wrapper-webpack-plugin": "^2.1.0"
-	},
-	"type": "module",
-	"dependencies": {
-		"@fontsource/fira-mono": "^4.2.2",
-		"eslint": "^8.0.0",
-		"eslint-plugin-svelte3": "^4.0.0",
-		"eslint-scope": "^7.0.0",
-		"pako": "^2.0.3",
-		"svelte": "^3.41.0",
-		"svelte-eslint-parser": "file:.."
 	}
 }

@@ -5,7 +5,7 @@
 module.exports = {
     parserOptions: {
         sourceType: "script",
-        ecmaVersion: 2020,
+        ecmaVersion: "latest",
     },
     extends: [
         "plugin:@ota-meshi/recommended",
@@ -16,6 +16,12 @@ module.exports = {
         "plugin:@ota-meshi/+json",
     ],
     rules: {
+        "prettier/prettier": [
+            "error",
+            {
+                usePrettierrc: true,
+            },
+        ],
         "require-jsdoc": "error",
         "no-warning-comments": "warn",
         "no-lonely-if": "off",
@@ -57,17 +63,17 @@ module.exports = {
                         format: null,
                     },
                 ],
-                "no-implicit-globals": "off",
                 "@typescript-eslint/no-non-null-assertion": "off",
                 "@typescript-eslint/no-use-before-define": "off",
                 "@typescript-eslint/no-explicit-any": "off",
+                "no-implicit-globals": "off",
             },
         },
         {
             files: ["scripts/**/*.ts", "tests/**/*.ts"],
             rules: {
-                "require-jsdoc": "off",
                 "no-console": "off",
+                "require-jsdoc": "off",
             },
         },
     ],
