@@ -474,7 +474,7 @@ interface SvelteEachBlock extends Node {
 This is the `{#await}` tag node.
 
 ```ts
-interface BaseSvelteAwaitBlock extends Node {
+interface SvelteAwaitBlock extends Node {
   type: "SvelteAwaitBlock";
   expression: Expression;
   kind: "await" | "await-then" | "await-catch";
@@ -521,7 +521,7 @@ interface SvelteAwaitCatchBlock extends Node {
 }
 ```
 
-### SvelteAwaitCatchBlock
+### SvelteKeyBlock
 
 This is the `{#key}` tag node.
 
@@ -535,7 +535,7 @@ interface SvelteKeyBlock extends Node {
 
 ## Comments
 
-### SvelteAwaitCatchBlock
+### SvelteHTMLComment
 
 This is the HTML comment node.
 
