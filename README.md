@@ -194,7 +194,7 @@ Welcome contributing!
 
 Please use GitHub's Issues/PRs.
 
-See also the documentation on the internal mechanism.  
+See also the documentation for the internal mechanism.  
 
 - [internal-mechanism.md](./docs/internal-mechanism.md)
 
