@@ -550,7 +550,8 @@ interface SvelteHTMLComment extends Node {
 
 ### SvelteReactiveStatement
 
-This node is a reactive statement labeled with `$`.
+This node is a reactive statement labeled with `$`.  
+`SvelteReactiveStatement` is a special node to avoid confusing ESLint check rules with `LabeledStatement`.
 
 ```ts
 interface SvelteReactiveStatement extends Node {

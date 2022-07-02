@@ -194,6 +194,10 @@ Welcome contributing!
 
 Please use GitHub's Issues/PRs.
 
+See also the documentation on the internal mechanism.  
+
+- [internal-mechanism.md](./docs/internal-mechanism.md)
+
 ## :lock: License
 
 See the [LICENSE](LICENSE) file for license rights and limitations (MIT).

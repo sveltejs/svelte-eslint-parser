@@ -51,7 +51,8 @@ function parseScriptWithoutAnalyzeScope(
     parser.parseForESLint?.(vcode, options) ?? parser.parse?.(vcode, options);
 
   if ("ast" in result && result.ast != null) {
+    result._virtualScriptCode = vcode;
     return result;
   }
-  return { ast: result } as ESLintExtendedProgram;
+  return { ast: result, _virtualScriptCode: vcode } as ESLintExtendedProgram;
 }
