@@ -79,7 +79,7 @@ interface SvelteScriptElement extends Node {
 
 [Statement] is a node defined in ESTree.
 
-### SvelteScriptElement
+### SvelteStyleElement
 
 This is the `<style>` node.
 
