@@ -104,7 +104,7 @@ Also, this parser returns special results for variables used in `$: foo = expres
 It also adds virtual references for variables that are marked specially used in `*.svelte` (e.g. `export let` and `$ref`). This is a hack that is also used in typescript-eslint.  
 https://github.com/typescript-eslint/typescript-eslint/issues/4508#issuecomment-1030508403
 
-You can also check the results [Online DEMO](https://ota-meshi.github.io/svelte-eslint-parser/).
+You can also check the results [Online DEMO](https://ota-meshi.github.io/svelte-eslint-parser/scope/).
 
 ### `visitorKeys`
 
