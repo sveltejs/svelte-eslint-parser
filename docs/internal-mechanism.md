@@ -1,6 +1,6 @@
 # What the Parser does
 
-The main thing this parser does is parse the * .svelte file and return an AST that can be parsed by ESLint.  
+The main thing this parser does is parsing the `*.svelte` file and return an AST that can be parsed by ESLint.  
 However, this parser does a few other things for a better experience with ESLint integration.
 
 ## Entry Point
