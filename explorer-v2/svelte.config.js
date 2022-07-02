@@ -28,7 +28,6 @@ const config = {
 
 					globby: resolve('./build-system/shim/globby.js'),
 					tslib: resolve('./node_modules/tslib/tslib.es6.js'),
-					// tsutils: resolve('./build-system/shim/globby.js'),
 					eslint: resolve('./build-system/shim/eslint.js'),
 					'svelte-eslint-parser': resolve('./build-system/shim/svelte-eslint-parser.js'),
 					'eslint-plugin-svelte3': resolve('./build-system/shim/eslint-plugin-svelte3.js')
