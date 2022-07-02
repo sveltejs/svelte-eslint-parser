@@ -21,15 +21,21 @@
 			loaded = true;
 		});
 
-	let svelteValue = `<script>
-    let a = 1; 
-    let b = 2;
+	let svelteValue = `<script lang="ts">
+    const array = [1, 2, 3]
+
+    function inputHandler () {
+        // process
+    }
 <\/script>
 
-<input type="number" bind:value={a}>
-<input type="number" bind:value={b}>
+<input on:input={inputHandler}>
 
-<p>{a} + {b} = {a + b}</p>`;
+{#each array as e}
+    {@const ee = e * 2}
+    {ee}
+{/each}
+`;
 	let virtualScriptCode = '';
 	let time = '';
 
@@ -46,7 +52,7 @@
 				parser: '@typescript-eslint/parser'
 			})._virtualScriptCode;
 		} catch (e) {
-			// eslint-disable-next-line no-console -- demo
+			// eslint-disable-next-line no-console -- Demo
 			console.error(e);
 			virtualScriptCode = `message: ${e.message}`;
 			time = `${Date.now() - start}ms`;
@@ -65,6 +71,7 @@
 			code={virtualScriptCode}
 			language="typescript"
 			readOnly
+			editorOptions={{ wordWrap: 'on' }}
 		/>
 	</div>
 </div>

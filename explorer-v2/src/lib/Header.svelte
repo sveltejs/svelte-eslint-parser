@@ -4,7 +4,11 @@
 	import { base as baseUrl } from '$app/paths';
 
 	function isActive(pathname, path) {
-		return pathname === path || pathname === `${baseUrl}${path}`;
+		const normalizedPathname = pathname.replace(/\/$/u, '');
+		const normalizedPath = path.replace(/\/$/u, '');
+		return (
+			normalizedPathname === normalizedPath || normalizedPathname === `${baseUrl}${normalizedPath}`
+		);
 	}
 
 	// eslint-disable-next-line no-process-env -- ignore
@@ -31,11 +35,10 @@
 		sveltekit:prefetch
 		href="{baseUrl}/scope">Scope</a
 	>
-	{#if dev}
+	{#if dev || isActive($page.url.pathname, `/virtual-script-code`)}
 		<a
 			class="menu"
 			class:active={isActive($page.url.pathname, `/virtual-script-code`)}
-			sveltekit:prefetch
 			href="{baseUrl}/virtual-script-code">Virtual Script Code</a
 		>
 	{/if}

@@ -28,6 +28,7 @@ export function enhance(form, { pending, error, result }) {
 			} else if (error) {
 				error(res, null, form);
 			} else {
+				// eslint-disable-next-line no-console -- Demo
 				console.error(await res.text());
 			}
 		} catch (e) {

@@ -47,7 +47,7 @@ For example, if you enter `*.svelte` template to listen for input events:
 
 Parse the following virtual script code as a script:
 
-```js
+```ts
                   
     function inputHandler () {
         // process
@@ -85,7 +85,7 @@ For example, when using `{#each}` and `{@const}`:
 
 Parse the following virtual script code as a script:
 
-```js
+```ts
                   
     const array = [1, 2, 3]
 ;        
@@ -105,3 +105,9 @@ It also adds virtual references for variables that are marked specially used in 
 https://github.com/typescript-eslint/typescript-eslint/issues/4508#issuecomment-1030508403
 
 You can also check the results [Online DEMO](https://ota-meshi.github.io/svelte-eslint-parser/).
+
+### `visitorKeys`
+
+ESLint custom parsers that provide their own AST require `visitorKeys` to properly traverse the node.
+
+See https://eslint.org/docs/latest/developer-guide/working-with-custom-parsers.
