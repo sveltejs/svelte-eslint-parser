@@ -16,6 +16,7 @@
 	export let markers = [];
 	export let rightMarkers = [];
 	export let provideCodeActions = null;
+	export let editorOptions = {};
 
 	export let waiting = null;
 	let rootElement,
@@ -92,7 +93,8 @@
 			renderIndentGuides: true,
 			renderValidationDecorations: 'on',
 			renderWhitespace: 'boundary',
-			scrollBeyondLastLine: false
+			scrollBeyondLastLine: false,
+			...editorOptions
 		};
 
 		if (diffEditor) {

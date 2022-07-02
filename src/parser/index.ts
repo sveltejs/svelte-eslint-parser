@@ -32,6 +32,10 @@ export interface ESLintExtendedProgram {
   services?: Record<string, any>;
   visitorKeys?: { [type: string]: string[] };
   scopeManager?: ScopeManager;
+
+  // For debug
+  // The code used to parse the script.
+  _virtualScriptCode?: string;
 }
 /**
  * Parse source code
