@@ -4,12 +4,12 @@
 	"type": "module",
 	"private": true,
 	"scripts": {
-		"build": "svelte-kit build",
-		"dev": "svelte-kit dev",
+		"build": "vite build",
+		"dev": "vite dev",
 		"format": "prettier --write --plugin-search-dir=. .",
 		"lint": "prettier --check --plugin-search-dir=. . && eslint --ignore-path .gitignore .",
 		"pre-build": "cd build-system/pre-build && webpack && cd ..",
-		"preview": "svelte-kit preview"
+		"preview": "vite preview"
 	},
 	"dependencies": {
 		"@fontsource/fira-mono": "^4.2.2",
@@ -27,6 +27,7 @@
 		"prettier": "^2.3.0",
 		"prettier-plugin-svelte": "^2.3.0",
 		"string-replace-loader": "^3.0.1",
+		"vite": "^3.0.2",
 		"webpack": "^5.37.1",
 		"webpack-cli": "^4.7.0",
 		"wrapper-webpack-plugin": "^2.1.0"
