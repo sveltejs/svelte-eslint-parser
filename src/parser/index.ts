@@ -85,6 +85,7 @@ export function parseForESLint(
   extractTokens(ctx);
   analyzeStoreScope(resultScript.scopeManager!);
   analyzeReactiveScope(resultScript.scopeManager!);
+  analyzeStoreScope(resultScript.scopeManager!); // for reactive vars
 
   // Add $$xxx variable
   for (const $$name of ["$$slots", "$$props", "$$restProps"]) {
