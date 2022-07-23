@@ -369,7 +369,15 @@ function convertSpecialElement(
     ctx.scriptLet.addExpression(thisExpression, thisAttr, null, (es) => {
       thisAttr.expression = es;
     });
-    element.startTag.attributes.push(thisAttr);
+
+    const targetIndex = element.startTag.attributes.findIndex(
+      (attr) => thisAttr.range[1] <= attr.range[0]
+    );
+    if (targetIndex === -1) {
+      element.startTag.attributes.push(thisAttr);
+    } else {
+      element.startTag.attributes.splice(targetIndex, 0, thisAttr);
+    }
   }
 
   extractElementTags(element, ctx, {
