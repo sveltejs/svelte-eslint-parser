@@ -44,7 +44,7 @@ jobs:
         node-version: ${{ matrix.node-version }}
     - name: Install @typescript-eslint v4
       run: |+
-        yarn add -D @typescript-eslint/parser@4 @typescript-eslint/eslint-plugin@4 --ignore-engines
+        yarn add -D @typescript-eslint/parser@4 @typescript-eslint/eslint-plugin@4 eslint@7 --ignore-engines
         rm -rf node_modules
     - name: Install Packages
       run: yarn install --ignore-engines
