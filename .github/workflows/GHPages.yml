@@ -9,19 +9,19 @@ jobs:
   deploy-docs:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
-    - uses: actions/setup-node@v3
-    - name: Install And Build
-      run: |+
-        yarn install
-        yarn build
-        cd explorer-v2
-        yarn install
-        yarn pre-build
-        yarn build
-    - name: Deploy
-      uses: peaceiris/actions-gh-pages@v3
-      with:
-        github_token: ${{ secrets.GITHUB_TOKEN }}
-        publish_dir: ./explorer-v2/build
-        force_orphan: true
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+      - name: Install And Build
+        run: |+
+          yarn install
+          yarn build
+          cd explorer-v2
+          yarn install
+          yarn pre-build
+          yarn build
+      - name: Deploy
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./explorer-v2/build
+          force_orphan: true

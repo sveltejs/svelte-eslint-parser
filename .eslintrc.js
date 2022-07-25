@@ -14,6 +14,7 @@ module.exports = {
     "plugin:@ota-meshi/+prettier",
     "plugin:@ota-meshi/+package-json",
     "plugin:@ota-meshi/+json",
+    "plugin:@ota-meshi/+yaml",
   ],
   rules: {
     "no-lonely-if": "off",
