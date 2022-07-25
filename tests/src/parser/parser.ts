@@ -33,6 +33,9 @@ describe("Check for AST.", () => {
 
       it("most to generate the expected AST.", () => {
         result = parse(input, inputFileName);
+        if (!meetRequirements("test")) {
+          return;
+        }
         const astJson = JSON.stringify(result.ast, nodeReplacer, 2);
         const output = fs.readFileSync(outputFileName, "utf8");
         assert.strictEqual(astJson, output);
