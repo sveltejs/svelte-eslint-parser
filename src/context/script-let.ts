@@ -528,6 +528,26 @@ export class ScriptLetContext {
     this.closeScopeCallbacks.pop()!();
   }
 
+  public appendDeclareMaybeStores(maybeStores: Set<string>): void {
+    const reservedNames = new Set<string>([
+      "$$props",
+      "$$restProps",
+      "$$slots",
+    ]);
+    for (const nm of maybeStores) {
+      if (reservedNames.has(nm)) continue;
+
+      this.appendScriptWithoutOffset(
+        `declare let $${nm}: Parameters<Parameters<(typeof ${nm})["subscribe"]>[0]>[0];`,
+        (node, tokens, comments, result) => {
+          tokens.length = 0;
+          comments.length = 0;
+          removeAllScope(node, result);
+        }
+      );
+    }
+  }
+
   private appendScript(
     text: string,
     offset: number,
@@ -912,7 +932,7 @@ function removeAllScope(target: ESTree.Node, result: ScriptLetCallbackOption) {
         return;
       }
       if (node.type === "Identifier") {
-        let scope = result.getScope(node);
+        let scope = result.getInnermostScope(node);
         if (
           (scope.block as any).type === "TSTypeAliasDeclaration" &&
           (scope.block as any).id === node
@@ -939,16 +959,37 @@ function removeAllScope(target: ESTree.Node, result: ScriptLetCallbackOption) {
 
 /** Remove variable */
 function removeIdentifierVariable(node: ESTree.Identifier, scope: Scope): void {
-  const varIndex = scope.variables.findIndex((v) =>
-    v.defs.some((def) => def.name === node)
-  );
-  if (varIndex >= 0) {
+  for (let varIndex = 0; varIndex < scope.variables.length; varIndex++) {
     const variable = scope.variables[varIndex];
-    scope.variables.splice(varIndex, 1);
-    const name = node.name;
-    if (variable === scope.set.get(name)) {
-      scope.set.delete(name);
+    const defIndex = variable.defs.findIndex((def) => def.name === node);
+    if (defIndex < 0) {
+      continue;
     }
+    variable.defs.splice(defIndex, 1);
+    if (variable.defs.length === 0) {
+      // Remove variable
+      referencesToThrough(variable.references, scope);
+      scope.variables.splice(varIndex, 1);
+      const name = node.name;
+      if (variable === scope.set.get(name)) {
+        scope.set.delete(name);
+      }
+    } else {
+      const idIndex = variable.identifiers.indexOf(node);
+      if (idIndex >= 0) {
+        variable.identifiers.splice(idIndex, 1);
+      }
+    }
+    return;
+  }
+}
+
+/** Move reference to through */
+function referencesToThrough(references: Reference[], baseScope: Scope) {
+  let scope: Scope | null = baseScope;
+  while (scope) {
+    scope.through.push(...references);
+    scope = scope.upper;
   }
 }
 
