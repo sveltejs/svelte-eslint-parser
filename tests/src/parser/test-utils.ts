@@ -14,7 +14,7 @@ export const BASIC_PARSER_OPTIONS: Linter.BaseConfig["parserOptions"] = {
     ts: "@typescript-eslint/parser",
     typescript: require.resolve("@typescript-eslint/parser"),
   },
-  project: require.resolve("../../fixtures/parser/tsconfig.test.json"),
+  project: require.resolve("../../fixtures/tsconfig.test.json"),
   extraFileExtensions: [".svelte"],
 };
 export function* listupFixtures(dir?: string): IterableIterator<{
