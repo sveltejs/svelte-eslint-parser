@@ -19,7 +19,7 @@ import {
   analyzeStoreScope,
 } from "./analyze-scope";
 import { ParseError } from "../errors";
-import { appendDeclareStoreTypes } from "./analyze-type";
+import { appendDeclareSvelteVarsTypes } from "./analyze-type";
 
 export interface ESLintProgram extends Program {
   comments: Comment[];
@@ -77,7 +77,7 @@ export function parseForESLint(
     parserOptions
   );
 
-  if (ctx.isTypeScript()) appendDeclareStoreTypes(ctx);
+  if (ctx.isTypeScript()) appendDeclareSvelteVarsTypes(ctx);
 
   const resultScript = parseScript(ctx.sourceCode.scripts, parserOptions);
   ctx.scriptLet.restore(resultScript);
