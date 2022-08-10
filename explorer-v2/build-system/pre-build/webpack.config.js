@@ -80,8 +80,8 @@ export default [
 					test: /\/resolve-parser\.js$/u,
 					loader: 'string-replace-loader',
 					options: {
-						search: 'require\\(name\\)',
-						replace: `__non_webpack_require__(name)`,
+						search: 'require\\(parserValue\\)',
+						replace: `__non_webpack_require__(parserValue)`,
 						flags: ''
 					}
 				}

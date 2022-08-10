@@ -4,6 +4,7 @@
 	import MonacoEditor from './MonacoEditor.svelte';
 	import * as svelteEslintParser from 'svelte-eslint-parser';
 
+	let tsParser = undefined;
 	let loaded = false;
 	import('@typescript-eslint/parser')
 		.then((parser) => {
@@ -14,8 +15,8 @@
 						env: {}
 					};
 				}
-				window.require.define('@typescript-eslint/parser', parser);
 			}
+			tsParser = parser;
 		})
 		.then(() => {
 			loaded = true;
@@ -49,7 +50,7 @@
 		const start = Date.now();
 		try {
 			virtualScriptCode = svelteEslintParser.parseForESLint(svelteValue, {
-				parser: '@typescript-eslint/parser'
+				parser: tsParser
 			})._virtualScriptCode;
 		} catch (e) {
 			// eslint-disable-next-line no-console -- Demo

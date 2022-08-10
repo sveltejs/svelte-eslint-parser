@@ -3,6 +3,7 @@ import { analyzeScope } from "./analyze-scope";
 import { traverseNodes } from "../traverse";
 import type { ScriptsSourceCode } from "../context";
 import { getParser } from "./resolve-parser";
+import { isEnhancedParserObject } from "./parser-object";
 
 /**
  * Parse for script
@@ -47,8 +48,9 @@ function parseScriptWithoutAnalyzeScope(
 ): ESLintExtendedProgram {
   const parser = getParser(attrs, options.parser);
 
-  const result =
-    parser.parseForESLint?.(vcode, options) ?? parser.parse?.(vcode, options);
+  const result = isEnhancedParserObject(parser)
+    ? parser.parseForESLint(vcode, options)
+    : parser.parse(vcode, options);
 
   if ("ast" in result && result.ast != null) {
     result._virtualScriptCode = vcode;

@@ -162,6 +162,28 @@ If you want to switch the parser for each lang, specify the object.
 }
 ```
 
+#### Parser Object
+
+When using JavaScript configuration (`.eslintrc.js`), you can also give the parser object directly.
+
+```js
+const tsParser = require("@typescript-eslint/parser")
+const espree = require("espree")
+
+module.exports = {
+    parser: "svelte-eslint-parser",
+    parserOptions: {
+        // Single parser
+        parser: tsParser,
+        // Multiple parser
+        parser: {
+            js: espree,
+            ts: tsParser,
+        }
+    },
+}
+```
+
 ## :computer: Editor Integrations
 
 ### Visual Studio Code
