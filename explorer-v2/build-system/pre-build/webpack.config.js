@@ -74,19 +74,6 @@ export default [
 			'svelte/compiler': '$$inject_svelte_compiler$$',
 			espree: '$$inject_espree$$'
 		},
-		module: {
-			rules: [
-				{
-					test: /\/resolve-parser\.js$/u,
-					loader: 'string-replace-loader',
-					options: {
-						search: 'require\\(parserValue\\)',
-						replace: `__non_webpack_require__(parserValue)`,
-						flags: ''
-					}
-				}
-			]
-		},
 		plugins: [
 			new WrapperPlugin({
 				test: /svelte-eslint-parser\.js/,
