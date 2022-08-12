@@ -11,9 +11,10 @@ import type {
 import type ESTree from "estree";
 import { ScriptLetContext } from "./script-let";
 import { LetDirectiveCollections } from "./let-directive-collection";
-import { getParserName } from "../parser/resolve-parser";
+import { getParserForLang } from "../parser/resolve-parser";
 import type { AttributeToken } from "../parser/html";
 import { parseAttributes } from "../parser/html";
+import { maybeTSESLintParserObject } from "../parser/parser-object";
 
 export class ScriptsSourceCode {
   private raw: string;
@@ -202,13 +203,20 @@ export class Context {
     if (!lang) {
       return (this.state.isTypeScript = false);
     }
-    const parserName = getParserName(
+    const parserValue = getParserForLang(
       this.sourceCode.scripts.attrs,
       this.parserOptions?.parser
     );
-    if (parserName === "@typescript-eslint/parser") {
+    if (
+      maybeTSESLintParserObject(parserValue) ||
+      parserValue === "@typescript-eslint/parser"
+    ) {
       return (this.state.isTypeScript = true);
     }
+    if (typeof parserValue !== "string") {
+      return (this.state.isTypeScript = false);
+    }
+    const parserName = parserValue;
     if (parserName.includes("@typescript-eslint/parser")) {
       let targetPath = parserName;
       while (targetPath) {

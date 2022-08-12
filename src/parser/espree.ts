@@ -1,6 +1,6 @@
 import Module from "module";
 import path from "path";
-import type { ESLintCustomParser } from "./resolve-parser";
+import type { BasicParserObject } from "./parser-object";
 
 const createRequire: (filename: string) => (modName: string) => any =
   // Added in v12.2.0
@@ -19,7 +19,7 @@ const createRequire: (filename: string) => (modName: string) => any =
     return mod.exports;
   });
 
-let espreeCache: ESLintCustomParser | null = null;
+let espreeCache: BasicParserObject | null = null;
 
 /** Checks if given path is linter path */
 function isLinterPath(p: string): boolean {
@@ -35,7 +35,7 @@ function isLinterPath(p: string): boolean {
  * Load `espree` from the loaded ESLint.
  * If the loaded ESLint was not found, just returns `require("espree")`.
  */
-export function getEspree(): ESLintCustomParser {
+export function getEspree(): BasicParserObject {
   if (!espreeCache) {
     // Lookup the loaded eslint
     const linterPath = Object.keys(require.cache || {}).find(isLinterPath);
