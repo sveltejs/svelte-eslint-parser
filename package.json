@@ -35,7 +35,9 @@
     "lint": "eslint . --ext .js,.ts,.json,.yaml,.yml,.svelte",
     "mocha": "yarn ts ./node_modules/mocha/bin/mocha.js",
     "prebuild": "yarn clean",
+    "prerelease": "yarn clean && yarn build",
     "preversion": "yarn lint && yarn test",
+    "release": "changeset publish",
     "test": "yarn mocha \"tests/src/**/*.ts\" --reporter dot --timeout 60000",
     "ts": "node -r esbuild-register",
     "update-fixtures": "yarn ts ./tools/update-fixtures.ts"
@@ -49,6 +51,8 @@
     "espree": "^9.0.0"
   },
   "devDependencies": {
+    "@changesets/changelog-github": "^0.4.6",
+    "@changesets/cli": "^2.24.2",
     "@ota-meshi/eslint-plugin": "^0.11.0",
     "@types/benchmark": "^2.1.1",
     "@types/chai": "^4.3.0",
