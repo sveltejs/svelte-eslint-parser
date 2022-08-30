@@ -116,6 +116,8 @@ export class ScriptLetContext {
 
   private readonly usedUniqueIds = new Set<string>();
 
+  private storeValueTypeName: string | undefined;
+
   public constructor(ctx: Context) {
     this.script = ctx.sourceCode.scripts;
     this.ctx = ctx;
@@ -537,8 +539,27 @@ export class ScriptLetContext {
     for (const nm of maybeStores) {
       if (reservedNames.has(nm)) continue;
 
+      if (!this.storeValueTypeName) {
+        this.storeValueTypeName = this.generateUniqueId("StoreValueType");
+
+        this.appendScriptWithoutOffset(
+          `type ${this.storeValueTypeName}<T> = T extends null | undefined
+  ? T
+  : T extends object & { subscribe(run: infer F, ...args: any): any }
+  ? F extends (value: infer V, ...args: any) => any
+    ? V
+    : never
+  : T;`,
+          (node, tokens, comments, result) => {
+            tokens.length = 0;
+            comments.length = 0;
+            removeAllScope(node, result);
+          }
+        );
+      }
+
       this.appendScriptWithoutOffset(
-        `declare let $${nm}: Parameters<Parameters<(typeof ${nm})["subscribe"]>[0]>[0];`,
+        `declare let $${nm}: ${this.storeValueTypeName}<typeof ${nm}>;`,
         (node, tokens, comments, result) => {
           tokens.length = 0;
           comments.length = 0;
@@ -933,9 +954,9 @@ function removeAllScope(target: ESTree.Node, result: ScriptLetCallbackOption) {
       }
       if (node.type === "Identifier") {
         let scope = result.getInnermostScope(node);
-        if (
-          (scope.block as any).type === "TSTypeAliasDeclaration" &&
-          (scope.block as any).id === node
+        while (
+          target.range![0] <= scope.block.range![0] &&
+          scope.block.range![1] <= target.range![1]
         ) {
           scope = scope.upper!;
         }
