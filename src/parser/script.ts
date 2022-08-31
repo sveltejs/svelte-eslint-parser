@@ -12,7 +12,7 @@ export function parseScript(
   script: ScriptsSourceCode,
   parserOptions: any = {}
 ): ESLintExtendedProgram {
-  const result = parseScriptWithoutAnalyzeScope(script, parserOptions);
+  const result = parseScriptWithoutAnalyzeScopeFromVCode(script, parserOptions);
 
   if (!result.scopeManager) {
     const scopeManager = analyzeScope(result.ast, parserOptions);
@@ -42,19 +42,31 @@ export function parseScript(
 /**
  * Parse for script without analyze scope
  */
-function parseScriptWithoutAnalyzeScope(
-  { vcode, attrs }: ScriptsSourceCode,
+export function parseScriptWithoutAnalyzeScope(
+  code: string,
+  attrs: Record<string, string | undefined>,
   options: any
 ): ESLintExtendedProgram {
   const parser = getParser(attrs, options.parser);
 
   const result = isEnhancedParserObject(parser)
-    ? parser.parseForESLint(vcode, options)
-    : parser.parse(vcode, options);
+    ? parser.parseForESLint(code, options)
+    : parser.parse(code, options);
 
   if ("ast" in result && result.ast != null) {
-    result._virtualScriptCode = vcode;
     return result;
   }
-  return { ast: result, _virtualScriptCode: vcode } as ESLintExtendedProgram;
+  return { ast: result } as ESLintExtendedProgram;
+}
+
+/**
+ * Parse for script without analyze scope
+ */
+function parseScriptWithoutAnalyzeScopeFromVCode(
+  { vcode, attrs }: ScriptsSourceCode,
+  options: any
+): ESLintExtendedProgram {
+  const result = parseScriptWithoutAnalyzeScope(vcode, attrs, options);
+  result._virtualScriptCode = vcode;
+  return result;
 }
