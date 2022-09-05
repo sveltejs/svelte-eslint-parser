@@ -1,5 +1,11 @@
 # svelte-eslint-parser
 
+## 0.18.2
+
+### Patch Changes
+
+- [#216](https://github.com/ota-meshi/svelte-eslint-parser/pull/216) [`095bf84`](https://github.com/ota-meshi/svelte-eslint-parser/commit/095bf84633cc853c74da2c6464bc931cf61553d7) Thanks [@ota-meshi](https://github.com/ota-meshi)! - Fix error in member expr on LHS of reactive statement with TS
+
 ## 0.18.1
 
 ### Patch Changes
