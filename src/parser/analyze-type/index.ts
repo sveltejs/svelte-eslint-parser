@@ -54,6 +54,8 @@ function appendDeclareSvelteVarsTypesFromAST(
           parent !== result.ast ||
           node.body.type !== "ExpressionStatement" ||
           node.body.expression.type !== "AssignmentExpression" ||
+          // Must be a pattern that can be used in the LHS of variable declarations.
+          // https://github.com/ota-meshi/svelte-eslint-parser/issues/213
           (node.body.expression.left.type !== "Identifier" &&
             node.body.expression.left.type !== "ArrayPattern" &&
             node.body.expression.left.type !== "ObjectPattern" &&
