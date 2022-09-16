@@ -185,3 +185,45 @@ Object {
   "index": 10,
 }
 `;
+
+exports[`parseAttributes quote="'"   1`] = `
+Object {
+  "attributes": Array [
+    Object {
+      "key": Object {
+        "end": 5,
+        "name": "quote",
+        "start": 0,
+      },
+      "value": Object {
+        "end": 9,
+        "quote": "\\"",
+        "start": 6,
+        "value": "'",
+      },
+    },
+  ],
+  "index": 11,
+}
+`;
+
+exports[`parseAttributes quote='"'   1`] = `
+Object {
+  "attributes": Array [
+    Object {
+      "key": Object {
+        "end": 5,
+        "name": "quote",
+        "start": 0,
+      },
+      "value": Object {
+        "end": 9,
+        "quote": "'",
+        "start": 6,
+        "value": "\\"",
+      },
+    },
+  ],
+  "index": 11,
+}
+`;
