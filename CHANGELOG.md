@@ -1,5 +1,11 @@
 # svelte-eslint-parser
 
+## 0.18.3
+
+### Patch Changes
+
+- [#220](https://github.com/ota-meshi/svelte-eslint-parser/pull/220) [`f19019b`](https://github.com/ota-meshi/svelte-eslint-parser/commit/f19019b0554750b730279d1f58ef46e8cac34d22) Thanks [@ota-meshi](https://github.com/ota-meshi)! - fix: parsing error when `<script>` has attribute with empty value
+
 ## 0.18.2
 
 ### Patch Changes
