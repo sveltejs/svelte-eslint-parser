@@ -143,3 +143,45 @@ Object {
   "index": 12,
 }
 `;
+
+exports[`parseAttributes empty=""   1`] = `
+Object {
+  "attributes": Array [
+    Object {
+      "key": Object {
+        "end": 5,
+        "name": "empty",
+        "start": 0,
+      },
+      "value": Object {
+        "end": 8,
+        "quote": "\\"",
+        "start": 6,
+        "value": "",
+      },
+    },
+  ],
+  "index": 10,
+}
+`;
+
+exports[`parseAttributes empty=''   1`] = `
+Object {
+  "attributes": Array [
+    Object {
+      "key": Object {
+        "end": 5,
+        "name": "empty",
+        "start": 0,
+      },
+      "value": Object {
+        "end": 8,
+        "quote": "'",
+        "start": 6,
+        "value": "",
+      },
+    },
+  ],
+  "index": 10,
+}
+`;

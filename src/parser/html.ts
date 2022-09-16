@@ -157,6 +157,17 @@ function parseAttributeValue(
       index,
     };
   }
+  if (valueFirstChar === quote) {
+    return {
+      value: {
+        value: "",
+        quote,
+        start: startIndex,
+        end: index + 1,
+      },
+      index: index + 1,
+    };
+  }
   const value: AttributeValueToken = {
     value: valueFirstChar,
     quote,
