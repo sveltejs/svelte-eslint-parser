@@ -33,6 +33,18 @@ describe("parseAttributes", () => {
     {
       input: "attr  ",
     },
+    {
+      input: `empty=""  `,
+    },
+    {
+      input: `empty=''  `,
+    },
+    {
+      input: `quote="'"  `,
+    },
+    {
+      input: `quote='"'  `,
+    },
   ];
   for (const { input, index } of testCases) {
     it(input, () => {

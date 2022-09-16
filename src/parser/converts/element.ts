@@ -78,6 +78,9 @@ export function* convertChildren(
       continue;
     }
     if (child.type === "Text") {
+      if (!child.data && child.start === child.end) {
+        continue;
+      }
       yield convertText(child, parent, ctx);
       continue;
     }
