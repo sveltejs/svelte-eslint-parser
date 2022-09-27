@@ -30,8 +30,7 @@ export function parseAttributes(
       index++;
       continue;
     }
-    if (char === ">") break;
-    if (char === "/" && code[index + 1] === ">") break;
+    if (char === ">" || (char === "/" && code[index + 1] === ">")) break;
     const attrData = parseAttribute(code, index);
     attributes.push(attrData.attribute);
     index = attrData.index;
@@ -96,7 +95,11 @@ function parseAttributeKey(
   let index = key.end;
   while (index < code.length) {
     const char = code[index];
-    if (char === "=") {
+    if (
+      char === "=" ||
+      char === ">" ||
+      (char === "/" && code[index + 1] === ">")
+    ) {
       break;
     }
     if (spacePattern.test(char)) {

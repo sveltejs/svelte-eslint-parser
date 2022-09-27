@@ -1,5 +1,12 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
+exports[`parseAttributes (empty) 1`] = `
+Object {
+  "attributes": Array [],
+  "index": 0,
+}
+`;
+
 exports[`parseAttributes <script lang="ts"> 1`] = `
 Object {
   "attributes": Array [
@@ -63,10 +70,35 @@ Object {
 }
 `;
 
-exports[`parseAttributes <script lang=ts> 2`] = `
+exports[`parseAttributes <style global/> 1`] = `
 Object {
-  "attributes": Array [],
-  "index": 0,
+  "attributes": Array [
+    Object {
+      "key": Object {
+        "end": 13,
+        "name": "global",
+        "start": 7,
+      },
+      "value": null,
+    },
+  ],
+  "index": 13,
+}
+`;
+
+exports[`parseAttributes <style global> 1`] = `
+Object {
+  "attributes": Array [
+    Object {
+      "key": Object {
+        "end": 13,
+        "name": "global",
+        "start": 7,
+      },
+      "value": null,
+    },
+  ],
+  "index": 13,
 }
 `;
 
