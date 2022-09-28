@@ -22,6 +22,14 @@ describe("parseAttributes", () => {
       index: 7,
     },
     {
+      input: "<style global>",
+      index: 6,
+    },
+    {
+      input: "<style global/>",
+      index: 6,
+    },
+    {
       input: "",
     },
     {
@@ -47,7 +55,7 @@ describe("parseAttributes", () => {
     },
   ];
   for (const { input, index } of testCases) {
-    it(input, () => {
+    it(input || "(empty)", () => {
       chai.expect(parseAttributes(input, index || 0)).toMatchSnapshot();
     });
   }
