@@ -1,5 +1,11 @@
 # svelte-eslint-parser
 
+## 0.18.4
+
+### Patch Changes
+
+- [#222](https://github.com/ota-meshi/svelte-eslint-parser/pull/222) [`df22f7f`](https://github.com/ota-meshi/svelte-eslint-parser/commit/df22f7f11669324f5947ac30dd7fd1560107c556) Thanks [@ota-meshi](https://github.com/ota-meshi)! - fix: parsing error when `<style lang="scss" global>`
+
 ## 0.18.3
 
 ### Patch Changes
