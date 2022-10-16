@@ -141,7 +141,7 @@
 					{#each messages as msg, i (`${msg.line}:${msg.column}:${msg.ruleId}@${i}`)}
 						<li class="message">
 							[{msg.line}:{msg.column}]:
-							{msg.message} (<a href={getURL(msg.ruleId)} target="_blank">
+							{msg.message} (<a href={getURL(msg.ruleId)} target="_blank" rel="noopener noreferrer">
 								{msg.ruleId}
 							</a>)
 						</li>
