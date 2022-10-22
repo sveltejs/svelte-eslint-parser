@@ -10,7 +10,7 @@ import {
   removeIdentifierVariable,
   replaceScope,
 } from "../../../scope";
-import { addElementsToSortedArray } from "../../../utils";
+import { addElementsToSortedArray, sortedLastIndex } from "../../../utils";
 import { parseScriptWithoutAnalyzeScope } from "../../script";
 import { TypeScriptContext } from "../context";
 import type { TSESParseForESLintResult } from "../types";
@@ -233,14 +233,27 @@ function transformForDeclareReactiveVar(
   //  function fn () { return foo; }
 
   const openParens: TSESTree.Token[] = [];
+  let eq: TSESTree.Token | null = null;
   const closeParens: TSESTree.Token[] = [];
-  for (const token of tokens) {
+  const startIndex = sortedLastIndex(
+    tokens,
+    (target) => target.range[0] - statement.range[0]
+  );
+  for (let index = startIndex; index < tokens.length; index++) {
+    const token = tokens[index];
     if (
       statement.range[0] <= token.range[0] &&
       token.range[1] <= statement.range[1]
     ) {
       if (token.value === "(" && token.range[1] <= expression.range[0]) {
         openParens.push(token);
+      }
+      if (
+        token.value === "=" &&
+        expression.left.range[1] <= token.range[0] &&
+        token.range[1] <= expression.right.range[0]
+      ) {
+        eq = token;
       }
       if (token.value === ")" && expression.range[1] <= token.range[0]) {
         closeParens.push(token);
@@ -258,7 +271,7 @@ function transformForDeclareReactiveVar(
   ctx.appendOriginal(expression.range[0]);
   ctx.skipUntilOriginalOffset(id.range[0]);
   ctx.appendScript("let ");
-  ctx.appendOriginal(expression.right.range[0]);
+  ctx.appendOriginal(eq ? eq.range[1] : expression.right.range[0]);
   ctx.appendScript(`${functionId}();\nfunction ${functionId}(){return `);
   for (const token of closeParens) {
     ctx.appendOriginal(token.range[0]);
