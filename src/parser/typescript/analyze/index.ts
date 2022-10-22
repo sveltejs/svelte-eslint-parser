@@ -1,0 +1,458 @@
+import type { TSESTree } from "@typescript-eslint/types";
+import type { ScopeManager } from "eslint-scope";
+import {
+  addAllReferences,
+  addVariable,
+  getAllReferences,
+  getProgramScope,
+  removeAllScopeAndVariableAndReference,
+  removeIdentifierReference,
+  removeIdentifierVariable,
+  replaceScope,
+} from "../../../scope";
+import { addElementsToSortedArray } from "../../../utils";
+import { parseScriptWithoutAnalyzeScope } from "../../script";
+import { TypeScriptContext } from "../context";
+import type { TSESParseForESLintResult } from "../types";
+import type ESTree from "estree";
+
+const RESERVED_NAMES = new Set<string>(["$$props", "$$restProps", "$$slots"]);
+/**
+ * Analyze <script> block script
+ * Modify the source code to provide correct type information for svelte special variables and scopes.
+ */
+export function analyzeScript(
+  code: { script: string; render: string },
+  attrs: Record<string, string | undefined>,
+  parserOptions: any
+): TypeScriptContext {
+  const ctx = new TypeScriptContext(code.script + code.render);
+  ctx.appendOriginal(/^\s*/u.exec(code.script)![0].length);
+
+  // We will need to parse TypeScript once to extract the reactive variables.
+  const result = parseScriptWithoutAnalyzeScope(
+    code.script + code.render,
+    attrs,
+    {
+      ...parserOptions,
+      // Without typings
+      project: null,
+    }
+  ) as unknown as TSESParseForESLintResult;
+
+  ctx._beforeResult = result;
+
+  const throughIds = analyzeStoreReferenceNamesAndExtractThroughIdentifiers(
+    result,
+    ctx
+  );
+
+  analyzeReactiveScopes(result, throughIds, ctx);
+
+  ctx.appendOriginal(code.script.length);
+  const renderFunctionName = ctx.generateUniqueId("render");
+  ctx.appendScript(`function ${renderFunctionName}(){`);
+  ctx.appendOriginalToEnd();
+  ctx.appendScript(`}`);
+  ctx.restoreContext.addRestoreStatementProcess((node, context) => {
+    if (
+      node.type !== "FunctionDeclaration" ||
+      node.id.name !== renderFunctionName
+    ) {
+      return false;
+    }
+    const result = context.result;
+    const program = result.ast;
+    program.body.splice(program.body.indexOf(node), 1, ...node.body.body);
+    for (const body of node.body.body) {
+      body.parent = program;
+    }
+
+    const scopeManager = result.scopeManager as ScopeManager;
+    removeFunctionScope(node, scopeManager);
+    return true;
+  });
+
+  return ctx;
+}
+
+/**
+ * Analyze the store reference names and extract through identifiers.
+ */
+function analyzeStoreReferenceNamesAndExtractThroughIdentifiers(
+  result: TSESParseForESLintResult,
+  ctx: TypeScriptContext
+) {
+  const scopeManager = result.scopeManager;
+  const programScope = getProgramScope(scopeManager as ScopeManager);
+  const throughIds: (TSESTree.Identifier | TSESTree.JSXIdentifier)[] = [];
+  const maybeStoreRefNames = new Set<string>();
+
+  for (const reference of scopeManager.globalScope!.through) {
+    throughIds.push(reference.identifier);
+    if (
+      reference.identifier.name.startsWith("$") &&
+      !RESERVED_NAMES.has(reference.identifier.name) &&
+      !programScope.set.has(reference.identifier.name)
+    ) {
+      maybeStoreRefNames.add(reference.identifier.name);
+    }
+  }
+
+  if (maybeStoreRefNames.size) {
+    const storeValueTypeName = ctx.generateUniqueId("StoreValueType");
+    ctx.appendScript(
+      `type ${storeValueTypeName}<T> = T extends null | undefined
+? T
+: T extends object & { subscribe(run: infer F, ...args: any): any }
+? F extends (value: infer V, ...args: any) => any
+? V
+: never
+: T;`
+    );
+    ctx.restoreContext.addRestoreStatementProcess((node, context) => {
+      if (
+        node.type !== "TSTypeAliasDeclaration" ||
+        node.id.name !== storeValueTypeName
+      ) {
+        return false;
+      }
+      const result = context.result;
+      const program = result.ast;
+      program.body.splice(program.body.indexOf(node), 1);
+
+      const scopeManager = result.scopeManager as ScopeManager;
+      // Remove `type` scope
+      removeAllScopeAndVariableAndReference(node, {
+        visitorKeys: result.visitorKeys,
+        scopeManager,
+      });
+      return true;
+    });
+
+    for (const nm of maybeStoreRefNames) {
+      const realName = nm.slice(1);
+      ctx.appendScript(
+        `declare let ${nm}: ${storeValueTypeName}<typeof ${realName}>;`
+      );
+      ctx.restoreContext.addRestoreStatementProcess((node, context) => {
+        if (
+          node.type !== "VariableDeclaration" ||
+          !node.declare ||
+          node.declarations.length !== 1 ||
+          node.declarations[0].id.type !== "Identifier" ||
+          node.declarations[0].id.name !== nm
+        ) {
+          return false;
+        }
+        const result = context.result;
+        const program = result.ast;
+        program.body.splice(program.body.indexOf(node), 1);
+
+        const scopeManager = result.scopeManager as ScopeManager;
+
+        // Remove `declare` variable
+        removeAllScopeAndVariableAndReference(node, {
+          visitorKeys: result.visitorKeys,
+          scopeManager,
+        });
+
+        return true;
+      });
+    }
+  }
+
+  return throughIds;
+}
+
+/**
+ * Analyze the reactive scopes.
+ */
+function analyzeReactiveScopes(
+  result: TSESParseForESLintResult,
+  throughIds: (TSESTree.Identifier | TSESTree.JSXIdentifier)[],
+  ctx: TypeScriptContext
+) {
+  for (const statement of result.ast.body) {
+    if (statement.type === "LabeledStatement" && statement.label.name === "$") {
+      if (
+        statement.body.type === "ExpressionStatement" &&
+        statement.body.expression.type === "AssignmentExpression" &&
+        statement.body.expression.operator === "=" &&
+        // Must be a pattern that can be used in the LHS of variable declarations.
+        // https://github.com/ota-meshi/svelte-eslint-parser/issues/213
+        (statement.body.expression.left.type === "Identifier" ||
+          statement.body.expression.left.type === "ArrayPattern" ||
+          statement.body.expression.left.type === "ObjectPattern")
+      ) {
+        const left = statement.body.expression.left;
+        if (
+          throughIds.some(
+            (id) => left.range[0] <= id.range[0] && id.range[1] <= left.range[1]
+          )
+        ) {
+          transformForDeclareReactiveVar(
+            statement,
+            statement.body.expression.left,
+            statement.body.expression,
+            result.ast.tokens!,
+            ctx
+          );
+          continue;
+        }
+      }
+      transformForReactiveStatement(statement, ctx);
+    }
+  }
+}
+
+/**
+ * Transform for `$: id = ...` to `$: let id = ...`
+ */
+function transformForDeclareReactiveVar(
+  statement: TSESTree.LabeledStatement,
+  id: TSESTree.Identifier | TSESTree.ArrayPattern | TSESTree.ObjectPattern,
+  expression: TSESTree.AssignmentExpression,
+  tokens: TSESTree.Token[],
+  ctx: TypeScriptContext
+): void {
+  // e.g.
+  //  From:
+  //  $: id = x + y;
+  //
+  //  To:
+  //  $: let id = fn()
+  //  function fn () { return x + y; }
+  //
+  //
+  //  From:
+  //  $: ({id} = foo);
+  //
+  //  To:
+  //  $: let {id} = fn()
+  //  function fn () { return foo; }
+
+  const openParens: TSESTree.Token[] = [];
+  const closeParens: TSESTree.Token[] = [];
+  for (const token of tokens) {
+    if (
+      statement.range[0] <= token.range[0] &&
+      token.range[1] <= statement.range[1]
+    ) {
+      if (token.value === "(" && token.range[1] <= expression.range[0]) {
+        openParens.push(token);
+      }
+      if (token.value === ")" && expression.range[1] <= token.range[0]) {
+        closeParens.push(token);
+      }
+    } else if (statement.range[1] <= token.range[0]) {
+      break;
+    }
+  }
+
+  const functionId = ctx.generateUniqueId("reactiveVariableScopeFunction");
+  for (const token of openParens) {
+    ctx.appendOriginal(token.range[0]);
+    ctx.skipOriginalOffset(token.range[1] - token.range[0]);
+  }
+  ctx.appendOriginal(expression.range[0]);
+  ctx.skipUntilOriginalOffset(id.range[0]);
+  ctx.appendScript("let ");
+  ctx.appendOriginal(expression.right.range[0]);
+  ctx.appendScript(`${functionId}();\nfunction ${functionId}(){return `);
+  for (const token of closeParens) {
+    ctx.appendOriginal(token.range[0]);
+    ctx.skipOriginalOffset(token.range[1] - token.range[0]);
+  }
+  ctx.appendOriginal(statement.range[1]);
+  ctx.appendScript(`}`);
+
+  // eslint-disable-next-line complexity -- ignore X(
+  ctx.restoreContext.addRestoreStatementProcess((node, context) => {
+    if ((node as any).type !== "SvelteReactiveStatement") {
+      return false;
+    }
+    const reactiveStatement = node as TSESTree.LabeledStatement;
+    if (
+      reactiveStatement.body.type !== "VariableDeclaration" ||
+      reactiveStatement.body.kind !== "let" ||
+      reactiveStatement.body.declarations.length !== 1
+    ) {
+      return false;
+    }
+    const [idDecl] = reactiveStatement.body.declarations;
+    if (
+      idDecl.type !== "VariableDeclarator" ||
+      idDecl.id.type !== id.type ||
+      idDecl.init?.type !== "CallExpression" ||
+      idDecl.init.callee.type !== "Identifier" ||
+      idDecl.init.callee.name !== functionId
+    ) {
+      return false;
+    }
+    const result = context.result;
+    const program = result.ast;
+    const nextIndex = program.body.indexOf(node) + 1;
+    const fnDecl = program.body[nextIndex];
+    if (
+      !fnDecl ||
+      fnDecl.type !== "FunctionDeclaration" ||
+      fnDecl.id.name !== functionId ||
+      fnDecl.body.body.length !== 1 ||
+      fnDecl.body.body[0].type !== "ReturnStatement"
+    ) {
+      return false;
+    }
+    const returnStatement = fnDecl.body.body[0];
+    if (returnStatement.argument?.type !== expression.right.type) {
+      return false;
+    }
+    // Remove function declaration
+    program.body.splice(nextIndex, 1);
+    // Restore expression statement
+    const newExpression: TSESTree.AssignmentExpression = {
+      type: "AssignmentExpression" as TSESTree.AssignmentExpression["type"],
+      operator: "=",
+      left: idDecl.id,
+      right: returnStatement.argument,
+      loc: {
+        start: idDecl.id.loc.start,
+        end: returnStatement.argument.loc.end,
+      },
+      range: [idDecl.id.range[0], returnStatement.argument.range[1]],
+    };
+    idDecl.id.parent = newExpression;
+    returnStatement.argument.parent = newExpression;
+    const newBody: TSESTree.ExpressionStatement = {
+      type: "ExpressionStatement" as TSESTree.ExpressionStatement["type"],
+      expression: newExpression,
+      loc: statement.body.loc,
+      range: statement.body.range,
+      parent: reactiveStatement,
+    };
+    newExpression.parent = newBody;
+    reactiveStatement.body = newBody;
+    // Restore statement end location
+    reactiveStatement.range[1] = returnStatement.range[1];
+    reactiveStatement.loc.end.line = returnStatement.loc.end.line;
+    reactiveStatement.loc.end.column = returnStatement.loc.end.column;
+
+    // Restore tokens
+    addElementsToSortedArray(
+      program.tokens!,
+      [...openParens, ...closeParens],
+      (a, b) => a.range[0] - b.range[0]
+    );
+
+    const scopeManager = result.scopeManager as ScopeManager;
+    removeFunctionScope(fnDecl, scopeManager);
+    const scope = getProgramScope(scopeManager);
+    for (const reference of getAllReferences(idDecl.id, scope)) {
+      reference.writeExpr = newExpression.right as ESTree.Expression;
+    }
+
+    removeIdentifierReference(idDecl.init.callee, scope);
+    removeIdentifierVariable(idDecl.id, scope);
+    return true;
+  });
+}
+
+/**
+ * Transform for `$: ...` to `$: function foo(){...}`
+ */
+function transformForReactiveStatement(
+  statement: TSESTree.LabeledStatement,
+  ctx: TypeScriptContext
+) {
+  const functionId = ctx.generateUniqueId("reactiveStatementScopeFunction");
+  const originalBody = statement.body;
+  ctx.appendOriginal(originalBody.range[0]);
+  ctx.appendScript(`function ${functionId}()`);
+  if (originalBody.type !== "BlockStatement") {
+    ctx.appendScript(`{`);
+  }
+  ctx.appendOriginal(originalBody.range[1]);
+  if (originalBody.type !== "BlockStatement") {
+    ctx.appendScript(`}`);
+  }
+  ctx.appendOriginal(statement.range[1]);
+
+  ctx.restoreContext.addRestoreStatementProcess((node, context) => {
+    if ((node as any).type !== "SvelteReactiveStatement") {
+      return false;
+    }
+    const reactiveStatement = node as TSESTree.LabeledStatement;
+    const body = reactiveStatement.body;
+    if (body.type !== "FunctionDeclaration" || body.id.name !== functionId) {
+      return false;
+    }
+    if (originalBody.type === "BlockStatement") {
+      reactiveStatement.body = body.body;
+    } else {
+      reactiveStatement.body = body.body.body[0];
+    }
+    reactiveStatement.body.parent = reactiveStatement;
+
+    const result = context.result;
+    const scopeManager = result.scopeManager as ScopeManager;
+    removeFunctionScope(body, scopeManager);
+    return true;
+  });
+}
+
+/** Remove function scope and marge child scopes to upper scope */
+function removeFunctionScope(
+  node:
+    | TSESTree.FunctionDeclaration
+    | TSESTree.FunctionExpression
+    | TSESTree.ArrowFunctionExpression,
+  scopeManager: ScopeManager
+) {
+  const scope = scopeManager.acquire(node)!;
+  const upper = scope.upper!;
+  // Remove render function variable
+  if (node.id) {
+    removeIdentifierVariable(node.id, upper);
+    removeIdentifierReference(node.id, upper);
+  }
+
+  replaceScope(scopeManager, scope, scope.childScopes);
+  // Marge scope
+  // * marge variables
+  for (const variable of scope.variables) {
+    if (variable.name === "arguments" && variable.defs.length === 0) {
+      continue;
+    }
+    const upperVariable = upper.set.get(variable.name);
+    if (upperVariable) {
+      addElementsToSortedArray(
+        upperVariable.identifiers,
+        variable.identifiers,
+        (a, b) => a.range![0] - b.range![0]
+      );
+      addElementsToSortedArray(
+        upperVariable.defs,
+        variable.defs,
+        (a, b) => a.node.range![0] - b.node.range![0]
+      );
+      addAllReferences(upperVariable.references, variable.references);
+    } else {
+      upper.set.set(variable.name, variable);
+      addVariable(upper.variables, variable);
+      variable.scope = upper;
+    }
+    for (const reference of variable.references) {
+      if (reference.from === scope) {
+        reference.from = upper;
+      }
+      reference.resolved = upperVariable || variable;
+    }
+  }
+  // * marge references
+  addAllReferences(upper.references, scope.references);
+  for (const reference of scope.references) {
+    if (reference.from === scope) {
+      reference.from = upper;
+    }
+  }
+}

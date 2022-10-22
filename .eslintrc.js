@@ -69,6 +69,7 @@ module.exports = {
         "@typescript-eslint/no-use-before-define": "off",
         "@typescript-eslint/no-explicit-any": "off",
         "no-implicit-globals": "off",
+        "no-invalid-this": "off",
       },
     },
     {

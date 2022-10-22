@@ -4,7 +4,7 @@ import { parseForESLint } from "../../../src";
 import {
   BASIC_PARSER_OPTIONS,
   listupFixtures,
-  nodeReplacer,
+  astToJson,
   normalizeError,
 } from "./test-utils";
 import path from "path";
@@ -36,7 +36,7 @@ describe("Check for Error.", () => {
         try {
           parse(input, inputFileName);
         } catch (e) {
-          const errorJson = JSON.stringify(normalizeError(e), nodeReplacer, 2);
+          const errorJson = astToJson(normalizeError(e));
           const output = fs.readFileSync(outputFileName, "utf8");
           assert.strictEqual(errorJson, output);
           return;

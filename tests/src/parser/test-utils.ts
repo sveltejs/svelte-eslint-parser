@@ -5,6 +5,7 @@ import semver from "semver";
 import type { Linter, Scope as ESLintScope } from "eslint";
 import { LinesAndColumns } from "../../../src/context";
 import type { Reference, Scope, ScopeManager, Variable } from "eslint-scope";
+import type * as TSESScopes from "@typescript-eslint/scope-manager";
 import type { SvelteNode } from "../../../src/ast";
 
 const AST_FIXTURE_ROOT = path.resolve(__dirname, "../../fixtures/parser/ast");
@@ -148,12 +149,28 @@ export function getMessageData(
   };
 }
 
-export function scopeToJSON(scopeManager: ScopeManager): string {
-  const scope = normalizeScope(scopeManager.globalScope);
-  return JSON.stringify(scope, nodeReplacer, 2);
+export function astToJson(node: any): string {
+  return JSON.stringify(node, nodeReplacer, 2);
 }
 
-function normalizeScope(scope: Scope): any {
+export function scopeToJSON(
+  scopeManager: ScopeManager | TSESScopes.ScopeManager,
+  option?: { skipGlobalScope?: boolean }
+): string {
+  const globalScope = scopeManager.globalScope!;
+  let scopeData;
+  if (option?.skipGlobalScope) {
+    scopeData =
+      globalScope.childScopes.length === 1
+        ? normalizeScope(globalScope.childScopes[0])
+        : globalScope.childScopes.map(normalizeScope);
+  } else {
+    scopeData = normalizeScope(globalScope);
+  }
+  return JSON.stringify(scopeData, nodeReplacer, 2);
+}
+
+function normalizeScope(scope: Scope | TSESScopes.Scope): any {
   return {
     type: scope.type,
     variables: scope.variables.map(normalizeVar),
@@ -163,7 +180,7 @@ function normalizeScope(scope: Scope): any {
   };
 }
 
-function normalizeVar(v: Variable) {
+function normalizeVar(v: Variable | TSESScopes.Variable) {
   return {
     name: v.name,
     identifiers: v.identifiers,
@@ -172,7 +189,7 @@ function normalizeVar(v: Variable) {
   };
 }
 
-function normalizeReference(reference: Reference) {
+function normalizeReference(reference: Reference | TSESScopes.Reference) {
   return {
     identifier: reference.identifier,
     from: reference.from.type,
@@ -181,7 +198,9 @@ function normalizeReference(reference: Reference) {
   };
 }
 
-function normalizeDef(reference: ESLintScope.Definition) {
+function normalizeDef(
+  reference: ESLintScope.Definition | TSESScopes.Definition
+) {
   return {
     type: reference.type,
     node: reference.node,
@@ -201,7 +220,7 @@ export function normalizeError(error: any): any {
 /**
  * Remove `parent` properties from the given AST.
  */
-export function nodeReplacer(key: string, value: any): any {
+function nodeReplacer(key: string, value: any): any {
   if (key === "parent") {
     return undefined;
   }

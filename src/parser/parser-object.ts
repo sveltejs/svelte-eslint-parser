@@ -40,7 +40,7 @@ export function isBasicParserObject(
   return Boolean(value && typeof (value as any).parse === "function");
 }
 
-/** Checks whether given object is "@typescript-eslint/parser" */
+/** Checks whether given object maybe "@typescript-eslint/parser" */
 export function maybeTSESLintParserObject(
   value: unknown
 ): value is TSESLintParser {
@@ -51,4 +51,23 @@ export function maybeTSESLintParserObject(
     typeof (value as any).clearCaches === "function" &&
     typeof (value as any).version === "string"
   );
+}
+
+/** Checks whether given object is "@typescript-eslint/parser" */
+export function isTSESLintParserObject(
+  value: unknown
+): value is TSESLintParser {
+  if (!isEnhancedParserObject(value)) return false;
+  try {
+    const result = (value as unknown as TSESLintParser).parseForESLint("", {});
+    const services = result.services;
+    return Boolean(
+      services &&
+        services.esTreeNodeToTSNodeMap &&
+        services.tsNodeToESTreeNodeMap &&
+        services.program
+    );
+  } catch {
+    return false;
+  }
 }

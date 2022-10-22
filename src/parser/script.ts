@@ -1,7 +1,6 @@
 import type { ESLintExtendedProgram } from ".";
 import { analyzeScope } from "./analyze-scope";
 import { traverseNodes } from "../traverse";
-import type { ScriptsSourceCode } from "../context";
 import { getParser } from "./resolve-parser";
 import { isEnhancedParserObject } from "./parser-object";
 
@@ -9,10 +8,15 @@ import { isEnhancedParserObject } from "./parser-object";
  * Parse for script
  */
 export function parseScript(
-  script: ScriptsSourceCode,
+  code: string,
+  attrs: Record<string, string | undefined>,
   parserOptions: any = {}
 ): ESLintExtendedProgram {
-  const result = parseScriptWithoutAnalyzeScopeFromVCode(script, parserOptions);
+  const result = parseScriptWithoutAnalyzeScopeFromVCode(
+    code,
+    attrs,
+    parserOptions
+  );
 
   if (!result.scopeManager) {
     const scopeManager = analyzeScope(result.ast, parserOptions);
@@ -63,10 +67,11 @@ export function parseScriptWithoutAnalyzeScope(
  * Parse for script without analyze scope
  */
 function parseScriptWithoutAnalyzeScopeFromVCode(
-  { vcode, attrs }: ScriptsSourceCode,
+  code: string,
+  attrs: Record<string, string | undefined>,
   options: any
 ): ESLintExtendedProgram {
-  const result = parseScriptWithoutAnalyzeScope(vcode, attrs, options);
-  result._virtualScriptCode = vcode;
+  const result = parseScriptWithoutAnalyzeScope(code, attrs, options);
+  result._virtualScriptCode = code;
   return result;
 }

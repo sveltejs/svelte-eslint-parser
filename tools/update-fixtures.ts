@@ -7,7 +7,7 @@ import {
   BASIC_PARSER_OPTIONS,
   getMessageData,
   listupFixtures,
-  nodeReplacer,
+  astToJson,
   normalizeError,
   scopeToJSON,
 } from "../tests/src/parser/test-utils";
@@ -52,7 +52,7 @@ for (const { input, inputFileName, outputFileName } of listupFixtures(
   try {
     parse(input, inputFileName);
   } catch (e) {
-    const errorJson = JSON.stringify(normalizeError(e), nodeReplacer, 2);
+    const errorJson = astToJson(normalizeError(e));
     fs.writeFileSync(outputFileName, errorJson, "utf8");
   }
 }
@@ -69,7 +69,7 @@ for (const {
     // eslint-disable-next-line no-console -- ignore
     console.log(inputFileName);
     const result = parse(input, inputFileName);
-    const astJson = JSON.stringify(result.ast, nodeReplacer, 2);
+    const astJson = astToJson(result.ast);
     fs.writeFileSync(outputFileName, astJson, "utf8");
     const scopeJson = scopeToJSON(result.scopeManager);
     fs.writeFileSync(scopeFileName, scopeJson, "utf8");

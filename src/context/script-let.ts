@@ -1,4 +1,4 @@
-import type { ScopeManager, Scope, Reference } from "eslint-scope";
+import type { ScopeManager, Scope } from "eslint-scope";
 import type * as ESTree from "estree";
 import type { Context, ScriptsSourceCode } from ".";
 import type {
@@ -12,7 +12,15 @@ import type {
 } from "../ast";
 import type { ESLintExtendedProgram } from "../parser";
 import { getWithLoc } from "../parser/converts/common";
+import {
+  getInnermostScopeFromNode,
+  getScopeFromNode,
+  removeAllScopeAndVariableAndReference,
+  removeReference,
+  removeScope,
+} from "../scope";
 import { traverseNodes } from "../traverse";
+import { UniqueIdGenerator } from "./unique";
 
 type TSAsExpression = {
   type: "TSAsExpression";
@@ -112,11 +120,7 @@ export class ScriptLetContext {
 
   private readonly closeScopeCallbacks: (() => void)[] = [];
 
-  private uniqueIdSeq = 1;
-
-  private readonly usedUniqueIds = new Set<string>();
-
-  private storeValueTypeName: string | undefined;
+  private readonly unique = new UniqueIdGenerator();
 
   public constructor(ctx: Context) {
     this.script = ctx.sourceCode.scripts;
@@ -410,7 +414,7 @@ export class ScriptLetContext {
               (node, tokens, comments, result) => {
                 tokens.length = 0;
                 comments.length = 0;
-                removeAllScope(node, result);
+                removeAllScopeAndVariableAndReference(node, result);
               }
             );
           }
@@ -484,7 +488,7 @@ export class ScriptLetContext {
                 column: typeAnnotation.loc.start.column,
               };
 
-              removeAllScope(typeAnnotation, result);
+              removeAllScopeAndVariableAndReference(typeAnnotation, result);
             }
           }
 
@@ -528,56 +532,6 @@ export class ScriptLetContext {
 
   public closeScope(): void {
     this.closeScopeCallbacks.pop()!();
-  }
-
-  public appendDeclareMaybeStores(maybeStores: Set<string>): void {
-    const reservedNames = new Set<string>([
-      "$$props",
-      "$$restProps",
-      "$$slots",
-    ]);
-    for (const nm of maybeStores) {
-      if (reservedNames.has(nm)) continue;
-
-      if (!this.storeValueTypeName) {
-        this.storeValueTypeName = this.generateUniqueId("StoreValueType");
-
-        this.appendScriptWithoutOffset(
-          `type ${this.storeValueTypeName}<T> = T extends null | undefined
-  ? T
-  : T extends object & { subscribe(run: infer F, ...args: any): any }
-  ? F extends (value: infer V, ...args: any) => any
-    ? V
-    : never
-  : T;`,
-          (node, tokens, comments, result) => {
-            tokens.length = 0;
-            comments.length = 0;
-            removeAllScope(node, result);
-          }
-        );
-      }
-
-      this.appendScriptWithoutOffset(
-        `declare let $${nm}: ${this.storeValueTypeName}<typeof ${nm}>;`,
-        (node, tokens, comments, result) => {
-          tokens.length = 0;
-          comments.length = 0;
-          removeAllScope(node, result);
-        }
-      );
-    }
-  }
-
-  public appendDeclareReactiveVar(assignmentExpression: string): void {
-    this.appendScriptWithoutOffset(
-      `let ${assignmentExpression};`,
-      (node, tokens, comments, result) => {
-        tokens.length = 0;
-        comments.length = 0;
-        removeAllScope(node, result);
-      }
-    );
   }
 
   private appendScript(
@@ -629,7 +583,7 @@ export class ScriptLetContext {
   private pushScope(restoreCallback: RestoreCallback, closeToken: string) {
     this.closeScopeCallbacks.push(() => {
       this.script.addLet(closeToken);
-      restoreCallback.end = this.script.vcode.length;
+      restoreCallback.end = this.script.getCurrentVirtualCodeLength();
     });
   }
 
@@ -735,8 +689,8 @@ export class ScriptLetContext {
           endIndex.comment - startIndex.comment
         );
         restoreCallback.callback(node, targetTokens, targetComments, {
-          getScope: getScopeFromNode,
-          getInnermostScope: getInnermostScopeFromNode,
+          getScope,
+          getInnermostScope,
           registerNodeToScope,
           scopeManager: result.scopeManager!,
           visitorKeys: result.visitorKeys,
@@ -756,13 +710,13 @@ export class ScriptLetContext {
 
     // Helpers
     /** Get scope */
-    function getScopeFromNode(node: ESTree.Node) {
-      return getScope(result.scopeManager!, node);
+    function getScope(node: ESTree.Node) {
+      return getScopeFromNode(result.scopeManager!, node);
     }
 
     /** Get innermost scope */
-    function getInnermostScopeFromNode(node: ESTree.Node) {
-      return getInnermostScope(getScopeFromNode(node), node);
+    function getInnermostScope(node: ESTree.Node) {
+      return getInnermostScopeFromNode(result.scopeManager!, node);
     }
 
     /** Register node to scope */
@@ -887,55 +841,12 @@ export class ScriptLetContext {
   }
 
   private generateUniqueId(base: string) {
-    let candidate = `$_${base.replace(/\W/g, "_")}${this.uniqueIdSeq++}`;
-    while (
-      this.usedUniqueIds.has(candidate) ||
-      this.ctx.code.includes(candidate) ||
-      this.script.vcode.includes(candidate)
-    ) {
-      candidate = `$_${base.replace(/\W/g, "_")}${this.uniqueIdSeq++}`;
-    }
-    this.usedUniqueIds.add(candidate);
-    return candidate;
+    return this.unique.generate(
+      base,
+      this.ctx.code,
+      this.script.getCurrentVirtualCode()
+    );
   }
-}
-
-/**
- * Gets the scope for the current node
- */
-function getScope(scopeManager: ScopeManager, currentNode: ESTree.Node): Scope {
-  let node: any = currentNode;
-  for (; node; node = node.parent || null) {
-    const scope = scopeManager.acquire(node, false);
-    if (scope) {
-      if (scope.type === "function-expression-name") {
-        return scope.childScopes[0];
-      }
-      return scope;
-    }
-  }
-  const global = scopeManager.globalScope;
-  return global;
-}
-
-/**
- * Get the innermost scope which contains a given location.
- * @param initialScope The initial scope to search.
- * @param node The location to search.
- * @returns The innermost scope.
- */
-function getInnermostScope(initialScope: Scope, node: ESTree.Node): Scope {
-  const location = node.range![0];
-
-  for (const childScope of initialScope.childScopes) {
-    const range = childScope.block.range!;
-
-    if (range[0] <= location && location < range[1]) {
-      return getInnermostScope(childScope, node);
-    }
-  }
-
-  return initialScope;
 }
 
 /**
@@ -949,168 +860,6 @@ function applyLocs(target: Locations | ESTree.Node, locs: Locations) {
   }
   if (typeof (target as any).end === "number") {
     delete (target as any).end;
-  }
-}
-
-/** Remove all reference */
-function removeAllScope(target: ESTree.Node, result: ScriptLetCallbackOption) {
-  const targetScopes = new Set<Scope>();
-  traverseNodes(target, {
-    visitorKeys: result.visitorKeys,
-    enterNode(node) {
-      const scope = result.scopeManager.acquire(node);
-      if (scope) {
-        targetScopes.add(scope);
-        return;
-      }
-      if (node.type === "Identifier") {
-        let scope = result.getInnermostScope(node);
-        while (
-          target.range![0] <= scope.block.range![0] &&
-          scope.block.range![1] <= target.range![1]
-        ) {
-          scope = scope.upper!;
-        }
-        if (targetScopes.has(scope)) {
-          return;
-        }
-
-        removeIdentifierVariable(node, scope);
-        removeIdentifierReference(node, scope);
-      }
-    },
-    leaveNode() {
-      // noop
-    },
-  });
-
-  for (const scope of targetScopes) {
-    removeScope(result.scopeManager, scope);
-  }
-}
-
-/** Remove variable */
-function removeIdentifierVariable(node: ESTree.Identifier, scope: Scope): void {
-  for (let varIndex = 0; varIndex < scope.variables.length; varIndex++) {
-    const variable = scope.variables[varIndex];
-    const defIndex = variable.defs.findIndex((def) => def.name === node);
-    if (defIndex < 0) {
-      continue;
-    }
-    variable.defs.splice(defIndex, 1);
-    if (variable.defs.length === 0) {
-      // Remove variable
-      referencesToThrough(variable.references, scope);
-      scope.variables.splice(varIndex, 1);
-      const name = node.name;
-      if (variable === scope.set.get(name)) {
-        scope.set.delete(name);
-      }
-    } else {
-      const idIndex = variable.identifiers.indexOf(node);
-      if (idIndex >= 0) {
-        variable.identifiers.splice(idIndex, 1);
-      }
-    }
-    return;
-  }
-}
-
-/** Move reference to through */
-function referencesToThrough(references: Reference[], baseScope: Scope) {
-  let scope: Scope | null = baseScope;
-  while (scope) {
-    scope.through.push(...references);
-    scope = scope.upper;
-  }
-}
-
-/** Remove reference */
-function removeIdentifierReference(
-  node: ESTree.Identifier,
-  scope: Scope
-): boolean {
-  const reference = scope.references.find((ref) => ref.identifier === node);
-  if (reference) {
-    removeReference(reference, scope);
-    return true;
-  }
-  const location = node.range![0];
-
-  const pendingScopes = [];
-  for (const childScope of scope.childScopes) {
-    const range = childScope.block.range!;
-
-    if (range[0] <= location && location < range[1]) {
-      if (removeIdentifierReference(node, childScope)) {
-        return true;
-      }
-    } else {
-      pendingScopes.push(childScope);
-    }
-  }
-  for (const childScope of pendingScopes) {
-    if (removeIdentifierReference(node, childScope)) {
-      return true;
-    }
-  }
-  return false;
-}
-
-/** Remove reference */
-function removeReference(reference: Reference, baseScope: Scope) {
-  if (reference.resolved) {
-    if (reference.resolved.defs.some((d) => d.name === reference.identifier)) {
-      // remove var
-      const varIndex = baseScope.variables.indexOf(reference.resolved);
-      if (varIndex >= 0) {
-        baseScope.variables.splice(varIndex, 1);
-      }
-      const name = reference.identifier.name;
-      if (reference.resolved === baseScope.set.get(name)) {
-        baseScope.set.delete(name);
-      }
-    } else {
-      const refIndex = reference.resolved.references.indexOf(reference);
-      if (refIndex >= 0) {
-        reference.resolved.references.splice(refIndex, 1);
-      }
-    }
-  }
-
-  let scope: Scope | null = baseScope;
-  while (scope) {
-    const refIndex = scope.references.indexOf(reference);
-    if (refIndex >= 0) {
-      scope.references.splice(refIndex, 1);
-    }
-    const throughIndex = scope.through.indexOf(reference);
-    if (throughIndex >= 0) {
-      scope.through.splice(throughIndex, 1);
-    }
-    scope = scope.upper;
-  }
-}
-
-/** Remove scope */
-function removeScope(scopeManager: ScopeManager, scope: Scope) {
-  for (const childScope of scope.childScopes) {
-    removeScope(scopeManager, childScope);
-  }
-
-  while (scope.references[0]) {
-    removeReference(scope.references[0], scope);
-  }
-  const upper = scope.upper;
-  if (upper) {
-    const index = upper.childScopes.indexOf(scope);
-    if (index >= 0) {
-      upper.childScopes.splice(index, 1);
-    }
-  }
-  const index = scopeManager.scopes.indexOf(scope);
-  if (index >= 0) {
-    scopeManager.scopes.splice(index, 1);
   }
 }
 

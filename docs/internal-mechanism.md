@@ -52,9 +52,10 @@ Parse the following virtual script code as a script:
     function inputHandler () {
         // process
     }
-;        
+;function $_render1(){        
                                
-(inputHandler)as ((e:'input' extends keyof HTMLElementEventMap?HTMLElementEventMap['input']:CustomEvent<any>)=>void);
+(inputHandler) as ((e:'input' extends keyof HTMLElementEventMap ? HTMLElementEventMap['input'] : CustomEvent<any>) => void );
+}
 ```
 
 This gives the correct type information to the inputHandler when used with `on:input={inputHandler}`.
@@ -63,6 +64,8 @@ The script AST for the HTML template is then remapped to the template AST.
 
 You can check what happens to virtual scripts in the Online Demo.  
 https://ota-meshi.github.io/svelte-eslint-parser/virtual-script-code/
+
+See also [Scope Types](#scope-types) section.
 
 ### `scopeManager`
 
@@ -88,13 +91,13 @@ Parse the following virtual script code as a script:
 ```ts
                   
     const array = [1, 2, 3]
-;        
+;function $_render1(){        
                   
-                       
-        
-       
-
-Array.from(array).forEach((e)=>{const ee = e * 2;(ee);});
+Array.from(array).forEach((e) => {
+    const ee = e * 2;
+    (ee);
+});
+}
 ```
 
 This ensures that the variable `e` defined by `{#each}` is correctly scoped only within `{#each}`.
@@ -111,3 +114,58 @@ You can also check the results [Online DEMO](https://ota-meshi.github.io/svelte-
 ESLint custom parsers that provide their own AST require `visitorKeys` to properly traverse the node.
 
 See https://eslint.org/docs/latest/developer-guide/working-with-custom-parsers.
+
+## Scope Types
+
+TypeScript's type inference is pretty good, so parsing Svelte as-is gives some wrong type information.
+
+e.g.
+
+```ts
+export let foo: { bar: number } | null = null
+
+$: console.log(foo && foo.bar);
+                   // ^ never type
+```
+
+(You can see it on [TypeScript Online Playground](https://www.typescriptlang.org/play?#code/KYDwDg9gTgLgBAG2PAZhCAuOBvOAjAQyiwDsBXAWz2CjgF84AfOchBOAXhbLYFgAoAQBIsAYwgkAzhCQA6BBADmACjQQ4AMg1w1swlACUAbgFwz5i5YsB6a3AB6LYADcacGAE8wwAUA))
+
+In the above code, foo in `$:` should be `object` or `null` in `*.svelte`, but TypeScript infers that it is `null` only.
+
+To avoid this problem, the parser generates hypothetical code and traps statements within `$:` to function scope.
+Then restore it to have the correct AST and ScopeManager.
+
+For example:
+
+```svelte
+<script lang="ts">
+export let foo: { bar: number } | null = null
+
+$: console.log(foo && foo.bar);
+
+$: r = foo && foo.bar;
+
+$: ({ bar: n } = foo || { bar: 42 });
+</script>
+
+{foo && foo.bar}
+```
+
+Parse the following virtual script code as a script:
+
+```ts
+                  
+export let foo: { bar: number } | null = null
+
+$: function $_reactiveStatementScopeFunction1(){console.log(foo && foo.bar);}
+
+$: let r = $_reactiveVariableScopeFunction2();
+function $_reactiveVariableScopeFunction2(){return foo && foo.bar;}
+
+$: let { bar: n } = $_reactiveVariableScopeFunction3();
+function $_reactiveVariableScopeFunction3(){return foo || { bar: 42 };}
+;function $_render4(){        
+
+(foo && foo.bar);
+}
+```
