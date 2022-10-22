@@ -6,7 +6,7 @@ import type { TSESParseForESLintResult } from "./types";
 /**
  * A function that restores the statement.
  * @param node The node to restore.
- * @param context The context to restore.
+ * @param result The result of parsing.
  * @returns
  *   If `false`, it indicates that the specified node was not processed.
  *
@@ -15,7 +15,7 @@ import type { TSESParseForESLintResult } from "./types";
  */
 type RestoreStatementProcess = (
   node: TSESTree.Statement,
-  context: RestoreNodeProcessContext
+  result: TSESParseForESLintResult
 ) => boolean;
 
 export class RestoreContext {
@@ -52,7 +52,7 @@ export class RestoreContext {
    * Restore AST nodes
    */
   public restore(result: TSESParseForESLintResult): void {
-    const parentMap = remapLocationsAndGetParentMap(result, {
+    remapLocations(result, {
       remapLocation: (n) => this.remapLocation(n),
       removeToken: (token) =>
         this.fragments.some(
@@ -60,7 +60,7 @@ export class RestoreContext {
         ),
     });
 
-    restoreStatements(result, this.restoreStatementProcesses, parentMap);
+    restoreStatements(result, this.restoreStatementProcesses);
 
     // Adjust program node location
     const firstOffset = Math.min(
@@ -137,26 +137,8 @@ export class RestoreContext {
   }
 }
 
-export class RestoreNodeProcessContext {
-  public readonly result: TSESParseForESLintResult;
-
-  private readonly parentMap: Map<TSESTree.Node, TSESTree.Node | null>;
-
-  public constructor(
-    result: TSESParseForESLintResult,
-    parentMap: Map<TSESTree.Node, TSESTree.Node | null>
-  ) {
-    this.result = result;
-    this.parentMap = parentMap;
-  }
-
-  public getParent(node: TSESTree.Node): TSESTree.Node | null {
-    return this.parentMap.get(node) || null;
-  }
-}
-
-/** Restore locations and generate parent map */
-function remapLocationsAndGetParentMap(
+/** Restore locations */
+function remapLocations(
   result: TSESParseForESLintResult,
   {
     remapLocation,
@@ -166,13 +148,13 @@ function remapLocationsAndGetParentMap(
     removeToken: (node: TSESTree.Token) => boolean;
   }
 ) {
-  const parentMap = new Map<TSESTree.Node, TSESTree.Node | null>();
+  const traversed = new Map<TSESTree.Node, TSESTree.Node | null>();
   // remap locations
   traverseNodes(result.ast, {
     visitorKeys: result.visitorKeys,
     enterNode: (node, p) => {
-      if (!parentMap.has(node)) {
-        parentMap.set(node, p);
+      if (!traversed.has(node)) {
+        traversed.set(node, p);
 
         remapLocation(node);
       }
@@ -193,24 +175,20 @@ function remapLocationsAndGetParentMap(
   for (const token of result.ast.comments || []) {
     remapLocation(token);
   }
-
-  return parentMap;
 }
 
 /** Restore statement nodes */
 function restoreStatements(
   result: TSESParseForESLintResult,
-  restoreStatementProcesses: RestoreStatementProcess[],
-  parentMap: Map<TSESTree.Node, TSESTree.Node | null>
+  restoreStatementProcesses: RestoreStatementProcess[]
 ) {
-  const context = new RestoreNodeProcessContext(result, parentMap);
   const restoreStatementProcessesSet = new Set(restoreStatementProcesses);
   for (const node of [...result.ast.body]) {
     if (!restoreStatementProcessesSet.size) {
       break;
     }
     for (const proc of restoreStatementProcessesSet) {
-      if (proc(node, context)) {
+      if (proc(node, result)) {
         restoreStatementProcessesSet.delete(proc);
         break;
       }

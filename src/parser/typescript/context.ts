@@ -2,7 +2,11 @@ import { UniqueIdGenerator } from "../../context/unique";
 import { RestoreContext } from "./restore";
 import type { TSESParseForESLintResult } from "./types";
 
-export class TypeScriptContext {
+/**
+ * Context for virtual TypeScript code.
+ * See https://github.com/ota-meshi/svelte-eslint-parser/blob/main/docs/internal-mechanism.md#scope-types
+ */
+export class VirtualTypeScriptContext {
   private readonly originalCode: string;
 
   public readonly restoreContext: RestoreContext;

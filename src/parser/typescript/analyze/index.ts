@@ -12,7 +12,7 @@ import {
 } from "../../../scope";
 import { addElementsToSortedArray, sortedLastIndex } from "../../../utils";
 import { parseScriptWithoutAnalyzeScope } from "../../script";
-import { TypeScriptContext } from "../context";
+import { VirtualTypeScriptContext } from "../context";
 import type { TSESParseForESLintResult } from "../types";
 import type ESTree from "estree";
 
@@ -20,13 +20,14 @@ const RESERVED_NAMES = new Set<string>(["$$props", "$$restProps", "$$slots"]);
 /**
  * Analyze <script> block script
  * Modify the source code to provide correct type information for svelte special variables and scopes.
+ * See https://github.com/ota-meshi/svelte-eslint-parser/blob/main/docs/internal-mechanism.md#scope-types
  */
 export function analyzeScript(
   code: { script: string; render: string },
   attrs: Record<string, string | undefined>,
   parserOptions: any
-): TypeScriptContext {
-  const ctx = new TypeScriptContext(code.script + code.render);
+): VirtualTypeScriptContext {
+  const ctx = new VirtualTypeScriptContext(code.script + code.render);
   ctx.appendOriginal(/^\s*/u.exec(code.script)![0].length);
 
   // We will need to parse TypeScript once to extract the reactive variables.
@@ -54,14 +55,13 @@ export function analyzeScript(
   ctx.appendScript(`function ${renderFunctionName}(){`);
   ctx.appendOriginalToEnd();
   ctx.appendScript(`}`);
-  ctx.restoreContext.addRestoreStatementProcess((node, context) => {
+  ctx.restoreContext.addRestoreStatementProcess((node, result) => {
     if (
       node.type !== "FunctionDeclaration" ||
       node.id.name !== renderFunctionName
     ) {
       return false;
     }
-    const result = context.result;
     const program = result.ast;
     program.body.splice(program.body.indexOf(node), 1, ...node.body.body);
     for (const body of node.body.body) {
@@ -81,7 +81,7 @@ export function analyzeScript(
  */
 function analyzeStoreReferenceNamesAndExtractThroughIdentifiers(
   result: TSESParseForESLintResult,
-  ctx: TypeScriptContext
+  ctx: VirtualTypeScriptContext
 ) {
   const scopeManager = result.scopeManager;
   const programScope = getProgramScope(scopeManager as ScopeManager);
@@ -110,14 +110,13 @@ function analyzeStoreReferenceNamesAndExtractThroughIdentifiers(
 : never
 : T;`
     );
-    ctx.restoreContext.addRestoreStatementProcess((node, context) => {
+    ctx.restoreContext.addRestoreStatementProcess((node, result) => {
       if (
         node.type !== "TSTypeAliasDeclaration" ||
         node.id.name !== storeValueTypeName
       ) {
         return false;
       }
-      const result = context.result;
       const program = result.ast;
       program.body.splice(program.body.indexOf(node), 1);
 
@@ -135,7 +134,7 @@ function analyzeStoreReferenceNamesAndExtractThroughIdentifiers(
       ctx.appendScript(
         `declare let ${nm}: ${storeValueTypeName}<typeof ${realName}>;`
       );
-      ctx.restoreContext.addRestoreStatementProcess((node, context) => {
+      ctx.restoreContext.addRestoreStatementProcess((node, result) => {
         if (
           node.type !== "VariableDeclaration" ||
           !node.declare ||
@@ -145,7 +144,6 @@ function analyzeStoreReferenceNamesAndExtractThroughIdentifiers(
         ) {
           return false;
         }
-        const result = context.result;
         const program = result.ast;
         program.body.splice(program.body.indexOf(node), 1);
 
@@ -171,7 +169,7 @@ function analyzeStoreReferenceNamesAndExtractThroughIdentifiers(
 function analyzeReactiveScopes(
   result: TSESParseForESLintResult,
   throughIds: (TSESTree.Identifier | TSESTree.JSXIdentifier)[],
-  ctx: TypeScriptContext
+  ctx: VirtualTypeScriptContext
 ) {
   for (const statement of result.ast.body) {
     if (statement.type === "LabeledStatement" && statement.label.name === "$") {
@@ -214,7 +212,7 @@ function transformForDeclareReactiveVar(
   id: TSESTree.Identifier | TSESTree.ArrayPattern | TSESTree.ObjectPattern,
   expression: TSESTree.AssignmentExpression,
   tokens: TSESTree.Token[],
-  ctx: TypeScriptContext
+  ctx: VirtualTypeScriptContext
 ): void {
   // e.g.
   //  From:
@@ -281,7 +279,7 @@ function transformForDeclareReactiveVar(
   ctx.appendScript(`}`);
 
   // eslint-disable-next-line complexity -- ignore X(
-  ctx.restoreContext.addRestoreStatementProcess((node, context) => {
+  ctx.restoreContext.addRestoreStatementProcess((node, result) => {
     if ((node as any).type !== "SvelteReactiveStatement") {
       return false;
     }
@@ -303,7 +301,6 @@ function transformForDeclareReactiveVar(
     ) {
       return false;
     }
-    const result = context.result;
     const program = result.ast;
     const nextIndex = program.body.indexOf(node) + 1;
     const fnDecl = program.body[nextIndex];
@@ -375,7 +372,7 @@ function transformForDeclareReactiveVar(
  */
 function transformForReactiveStatement(
   statement: TSESTree.LabeledStatement,
-  ctx: TypeScriptContext
+  ctx: VirtualTypeScriptContext
 ) {
   const functionId = ctx.generateUniqueId("reactiveStatementScopeFunction");
   const originalBody = statement.body;
@@ -390,7 +387,7 @@ function transformForReactiveStatement(
   }
   ctx.appendOriginal(statement.range[1]);
 
-  ctx.restoreContext.addRestoreStatementProcess((node, context) => {
+  ctx.restoreContext.addRestoreStatementProcess((node, result) => {
     if ((node as any).type !== "SvelteReactiveStatement") {
       return false;
     }
@@ -406,7 +403,6 @@ function transformForReactiveStatement(
     }
     reactiveStatement.body.parent = reactiveStatement;
 
-    const result = context.result;
     const scopeManager = result.scopeManager as ScopeManager;
     removeFunctionScope(body, scopeManager);
     return true;
