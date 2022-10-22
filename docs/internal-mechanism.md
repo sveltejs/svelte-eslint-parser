@@ -132,7 +132,7 @@ $: console.log(foo && foo.bar);
 
 In the above code, foo in `$:` should be `object` or `null` in `*.svelte`, but TypeScript infers that it is `null` only.
 
-To avoid this problem, the parser generates hypothetical code and traps statements within `$:` to function scope.
+To avoid this problem, the parser generates virtual code and traps statements within `$:` to function scope.
 Then restore it to have the correct AST and ScopeManager.
 
 For example:
