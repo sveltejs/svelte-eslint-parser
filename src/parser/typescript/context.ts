@@ -48,10 +48,10 @@ export class VirtualTypeScriptContext {
     this.consumedIndex = index;
   }
 
-  public appendScript(fragment: string): void {
+  public appendVirtualScript(virtualFragment: string): void {
     const start = this.script.length;
-    this.script += fragment;
-    this.restoreContext.fragmentRange(start, this.script.length);
+    this.script += virtualFragment;
+    this.restoreContext.addVirtualFragmentRange(start, this.script.length);
   }
 
   public generateUniqueId(base: string): string {

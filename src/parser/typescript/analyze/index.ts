@@ -78,7 +78,7 @@ function analyzeStoreReferenceNames(
 
   if (maybeStoreRefNames.size) {
     const storeValueTypeName = ctx.generateUniqueId("StoreValueType");
-    ctx.appendScript(
+    ctx.appendVirtualScript(
       `type ${storeValueTypeName}<T> = T extends null | undefined
 ? T
 : T extends object & { subscribe(run: infer F, ...args: any): any }
@@ -108,7 +108,7 @@ function analyzeStoreReferenceNames(
 
     for (const nm of maybeStoreRefNames) {
       const realName = nm.slice(1);
-      ctx.appendScript(
+      ctx.appendVirtualScript(
         `declare let ${nm}: ${storeValueTypeName}<typeof ${realName}>;`
       );
       ctx.restoreContext.addRestoreStatementProcess((node, result) => {
@@ -193,9 +193,9 @@ function analyzeRenderScopes(
 ) {
   ctx.appendOriginal(code.script.length);
   const renderFunctionName = ctx.generateUniqueId("render");
-  ctx.appendScript(`function ${renderFunctionName}(){`);
+  ctx.appendVirtualScript(`function ${renderFunctionName}(){`);
   ctx.appendOriginalToEnd();
-  ctx.appendScript(`}`);
+  ctx.appendVirtualScript(`}`);
   ctx.restoreContext.addRestoreStatementProcess((node, result) => {
     if (
       node.type !== "FunctionDeclaration" ||
@@ -303,15 +303,15 @@ function transformForDeclareReactiveVar(
   }
   ctx.appendOriginal(expression.range[0]);
   ctx.skipUntilOriginalOffset(id.range[0]);
-  ctx.appendScript("let ");
+  ctx.appendVirtualScript("let ");
   ctx.appendOriginal(eq ? eq.range[1] : expression.right.range[0]);
-  ctx.appendScript(`${functionId}();\nfunction ${functionId}(){return `);
+  ctx.appendVirtualScript(`${functionId}();\nfunction ${functionId}(){return `);
   for (const token of closeParens) {
     ctx.appendOriginal(token.range[0]);
     ctx.skipOriginalOffset(token.range[1] - token.range[0]);
   }
   ctx.appendOriginal(statement.range[1]);
-  ctx.appendScript(`}`);
+  ctx.appendVirtualScript(`}`);
 
   // eslint-disable-next-line complexity -- ignore X(
   ctx.restoreContext.addRestoreStatementProcess((node, result) => {
@@ -419,13 +419,13 @@ function transformForReactiveStatement(
   const functionId = ctx.generateUniqueId("reactiveStatementScopeFunction");
   const originalBody = statement.body;
   ctx.appendOriginal(originalBody.range[0]);
-  ctx.appendScript(`function ${functionId}()`);
+  ctx.appendVirtualScript(`function ${functionId}()`);
   if (originalBody.type !== "BlockStatement") {
-    ctx.appendScript(`{`);
+    ctx.appendVirtualScript(`{`);
   }
   ctx.appendOriginal(originalBody.range[1]);
   if (originalBody.type !== "BlockStatement") {
-    ctx.appendScript(`}`);
+    ctx.appendVirtualScript(`}`);
   }
   ctx.appendOriginal(statement.range[1]);
 

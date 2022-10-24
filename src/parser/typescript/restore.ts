@@ -23,7 +23,7 @@ export class RestoreContext {
 
   private readonly offsets: { original: number; dist: number }[] = [];
 
-  private readonly fragments: { start: number; end: number }[] = [];
+  private readonly virtualFragments: { start: number; end: number }[] = [];
 
   private readonly restoreStatementProcesses: RestoreStatementProcess[] = [];
 
@@ -39,13 +39,13 @@ export class RestoreContext {
     this.offsets.push(offset);
   }
 
-  public fragmentRange(start: number, end: number): void {
-    const peek = this.fragments[this.fragments.length - 1];
+  public addVirtualFragmentRange(start: number, end: number): void {
+    const peek = this.virtualFragments[this.virtualFragments.length - 1];
     if (peek && peek.end === start) {
       peek.end = end;
       return;
     }
-    this.fragments.push({ start, end });
+    this.virtualFragments.push({ start, end });
   }
 
   /**
@@ -55,7 +55,7 @@ export class RestoreContext {
     remapLocations(result, {
       remapLocation: (n) => this.remapLocation(n),
       removeToken: (token) =>
-        this.fragments.some(
+        this.virtualFragments.some(
           (f) => f.start <= token.range[0] && token.range[1] <= f.end
         ),
     });
@@ -76,13 +76,13 @@ export class RestoreContext {
 
   private remapLocation(node: TSESTree.Node | TSESTree.Token): void {
     let [start, end] = node.range;
-    const startFragment = this.fragments.find(
+    const startFragment = this.virtualFragments.find(
       (f) => f.start <= start && start < f.end
     );
     if (startFragment) {
       start = startFragment.end;
     }
-    const endFragment = this.fragments.find(
+    const endFragment = this.virtualFragments.find(
       (f) => f.start < end && end <= f.end
     );
     if (endFragment) {
