@@ -18,11 +18,11 @@ import type ESTree from "estree";
 
 const RESERVED_NAMES = new Set<string>(["$$props", "$$restProps", "$$slots"]);
 /**
- * Analyze <script> block script
- * Modify the source code to provide correct type information for svelte special variables and scopes.
+ * Analyze TypeScript source code.
+ * Generate virtual code to provide correct type information for Svelte store reference namess and scopes.
  * See https://github.com/ota-meshi/svelte-eslint-parser/blob/main/docs/internal-mechanism.md#scope-types
  */
-export function analyzeScript(
+export function analyzeTypeScript(
   code: { script: string; render: string },
   attrs: Record<string, string | undefined>,
   parserOptions: any
@@ -30,7 +30,6 @@ export function analyzeScript(
   const ctx = new VirtualTypeScriptContext(code.script + code.render);
   ctx.appendOriginal(/^\s*/u.exec(code.script)![0].length);
 
-  // We will need to parse TypeScript once to extract the reactive variables.
   const result = parseScriptWithoutAnalyzeScope(
     code.script + code.render,
     attrs,
@@ -43,56 +42,34 @@ export function analyzeScript(
 
   ctx._beforeResult = result;
 
-  const throughIds = analyzeStoreReferenceNamesAndExtractThroughIdentifiers(
-    result,
-    ctx
-  );
+  analyzeStoreReferenceNames(result, ctx);
 
-  analyzeReactiveScopes(result, throughIds, ctx);
+  analyzeReactiveScopes(result, ctx);
 
-  ctx.appendOriginal(code.script.length);
-  const renderFunctionName = ctx.generateUniqueId("render");
-  ctx.appendScript(`function ${renderFunctionName}(){`);
-  ctx.appendOriginalToEnd();
-  ctx.appendScript(`}`);
-  ctx.restoreContext.addRestoreStatementProcess((node, result) => {
-    if (
-      node.type !== "FunctionDeclaration" ||
-      node.id.name !== renderFunctionName
-    ) {
-      return false;
-    }
-    const program = result.ast;
-    program.body.splice(program.body.indexOf(node), 1, ...node.body.body);
-    for (const body of node.body.body) {
-      body.parent = program;
-    }
-
-    const scopeManager = result.scopeManager as ScopeManager;
-    removeFunctionScope(node, scopeManager);
-    return true;
-  });
+  analyzeRenderScopes(code, ctx);
 
   return ctx;
 }
 
 /**
- * Analyze the store reference names and extract through identifiers.
+ * Analyze the store reference names.
+ * Insert type definitions code to provide correct type information for variables that begin with `$`.
  */
-function analyzeStoreReferenceNamesAndExtractThroughIdentifiers(
+function analyzeStoreReferenceNames(
   result: TSESParseForESLintResult,
   ctx: VirtualTypeScriptContext
 ) {
   const scopeManager = result.scopeManager;
   const programScope = getProgramScope(scopeManager as ScopeManager);
-  const throughIds: (TSESTree.Identifier | TSESTree.JSXIdentifier)[] = [];
   const maybeStoreRefNames = new Set<string>();
 
   for (const reference of scopeManager.globalScope!.through) {
-    throughIds.push(reference.identifier);
     if (
+      // Begin with `$`.
       reference.identifier.name.startsWith("$") &&
+      // Ignore it is a reserved variable.
       !RESERVED_NAMES.has(reference.identifier.name) &&
+      // Ignore if it is already defined.
       !programScope.set.has(reference.identifier.name)
     ) {
       maybeStoreRefNames.add(reference.identifier.name);
@@ -159,18 +136,20 @@ function analyzeStoreReferenceNamesAndExtractThroughIdentifiers(
       });
     }
   }
-
-  return throughIds;
 }
 
 /**
  * Analyze the reactive scopes.
+ * Transform source code to provide the correct type information in the `$:` statements.
  */
 function analyzeReactiveScopes(
   result: TSESParseForESLintResult,
-  throughIds: (TSESTree.Identifier | TSESTree.JSXIdentifier)[],
   ctx: VirtualTypeScriptContext
 ) {
+  const scopeManager = result.scopeManager;
+  const throughIds = scopeManager.globalScope!.through.map(
+    (reference) => reference.identifier
+  );
   for (const statement of result.ast.body) {
     if (statement.type === "LabeledStatement" && statement.label.name === "$") {
       if (
@@ -205,6 +184,38 @@ function analyzeReactiveScopes(
 }
 
 /**
+ * Analyze the render scopes.
+ * Transform source code to provide the correct type information in the HTML templates.
+ */
+function analyzeRenderScopes(
+  code: { script: string; render: string },
+  ctx: VirtualTypeScriptContext
+) {
+  ctx.appendOriginal(code.script.length);
+  const renderFunctionName = ctx.generateUniqueId("render");
+  ctx.appendScript(`function ${renderFunctionName}(){`);
+  ctx.appendOriginalToEnd();
+  ctx.appendScript(`}`);
+  ctx.restoreContext.addRestoreStatementProcess((node, result) => {
+    if (
+      node.type !== "FunctionDeclaration" ||
+      node.id.name !== renderFunctionName
+    ) {
+      return false;
+    }
+    const program = result.ast;
+    program.body.splice(program.body.indexOf(node), 1, ...node.body.body);
+    for (const body of node.body.body) {
+      body.parent = program;
+    }
+
+    const scopeManager = result.scopeManager as ScopeManager;
+    removeFunctionScope(node, scopeManager);
+    return true;
+  });
+}
+
+/**
  * Transform for `$: id = ...` to `$: let id = ...`
  */
 function transformForDeclareReactiveVar(
@@ -230,34 +241,58 @@ function transformForDeclareReactiveVar(
   //  $: let {id} = fn()
   //  function fn () { return foo; }
 
+  /**
+   * The opening paren tokens for
+   * `$: ({id} = foo);`
+   *     ^
+   */
   const openParens: TSESTree.Token[] = [];
+  /**
+   * The equal token for
+   * `$: ({id} = foo);`
+   *           ^
+   */
   let eq: TSESTree.Token | null = null;
+  /**
+   * The closing paren tokens for
+   * `$: ({id} = foo);`
+   *                ^
+   */
   const closeParens: TSESTree.Token[] = [];
+  /**
+   * The closing paren token for
+   * `$: id = (foo);`
+   *              ^
+   */
+  let expressionCloseParen: TSESTree.Token | null = null;
   const startIndex = sortedLastIndex(
     tokens,
     (target) => target.range[0] - statement.range[0]
   );
   for (let index = startIndex; index < tokens.length; index++) {
     const token = tokens[index];
-    if (
-      statement.range[0] <= token.range[0] &&
-      token.range[1] <= statement.range[1]
-    ) {
-      if (token.value === "(" && token.range[1] <= expression.range[0]) {
-        openParens.push(token);
-      }
-      if (
-        token.value === "=" &&
-        expression.left.range[1] <= token.range[0] &&
-        token.range[1] <= expression.right.range[0]
-      ) {
-        eq = token;
-      }
-      if (token.value === ")" && expression.range[1] <= token.range[0]) {
-        closeParens.push(token);
-      }
-    } else if (statement.range[1] <= token.range[0]) {
+    if (statement.range[1] <= token.range[0]) {
       break;
+    }
+    if (token.range[1] <= statement.range[0]) {
+      continue;
+    }
+    if (token.value === "(" && token.range[1] <= expression.range[0]) {
+      openParens.push(token);
+    }
+    if (
+      token.value === "=" &&
+      expression.left.range[1] <= token.range[0] &&
+      token.range[1] <= expression.right.range[0]
+    ) {
+      eq = token;
+    }
+    if (token.value === ")") {
+      if (expression.range[1] <= token.range[0]) {
+        closeParens.push(token);
+      } else if (expression.right.range[1] <= token.range[0]) {
+        expressionCloseParen = token;
+      }
     }
   }
 
@@ -327,9 +362,16 @@ function transformForDeclareReactiveVar(
       right: returnStatement.argument,
       loc: {
         start: idDecl.id.loc.start,
-        end: returnStatement.argument.loc.end,
+        end: expressionCloseParen
+          ? expressionCloseParen.loc.end
+          : returnStatement.argument.loc.end,
       },
-      range: [idDecl.id.range[0], returnStatement.argument.range[1]],
+      range: [
+        idDecl.id.range[0],
+        expressionCloseParen
+          ? expressionCloseParen.range[1]
+          : returnStatement.argument.range[1],
+      ],
     };
     idDecl.id.parent = newExpression;
     returnStatement.argument.parent = newExpression;
