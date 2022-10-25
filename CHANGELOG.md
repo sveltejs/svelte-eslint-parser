@@ -1,5 +1,11 @@
 # svelte-eslint-parser
 
+## 0.19.0
+
+### Minor Changes
+
+- [#230](https://github.com/ota-meshi/svelte-eslint-parser/pull/230) [`c67a6c1`](https://github.com/ota-meshi/svelte-eslint-parser/commit/c67a6c1ab4f340b9ec206ab737344602e587a2b2) Thanks [@ota-meshi](https://github.com/ota-meshi)! - fix: change virtual code to provide correct type information for reactive statements
+
 ## 0.18.4
 
 ### Patch Changes
