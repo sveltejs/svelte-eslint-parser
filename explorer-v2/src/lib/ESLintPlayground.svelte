@@ -34,6 +34,23 @@
 	let time = '';
 	let options = {};
 
+	$: hasLangTs = /lang\s*=\s*(?:"ts"|ts|'ts'|"typescript"|typescript|'typescript')/u.test(code);
+	let tsParser = undefined;
+	$: {
+		if (hasLangTs && !tsParser) {
+			import('@typescript-eslint/parser').then((parser) => {
+				if (typeof window !== 'undefined') {
+					if (!window.process) {
+						window.process = {
+							cwd: () => '',
+							env: {}
+						};
+					}
+				}
+				tsParser = parser;
+			});
+		}
+	}
 	$: {
 		options = useEslintPluginSvelte3 ? getEslintPluginSvelte3Options() : {};
 	}
@@ -124,7 +141,8 @@
 					parser: useEslintPluginSvelte3 ? undefined : 'svelte-eslint-parser',
 					parserOptions: {
 						ecmaVersion: 2020,
-						sourceType: 'module'
+						sourceType: 'module',
+						parser: { ts: tsParser, typescript: tsParser }
 					},
 					rules,
 					env: {

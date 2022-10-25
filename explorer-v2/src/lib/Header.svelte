@@ -10,9 +10,6 @@
 			normalizedPathname === normalizedPath || normalizedPathname === `${baseUrl}${normalizedPath}`
 		);
 	}
-
-	// eslint-disable-next-line no-process-env -- ignore
-	const dev = process.env.NODE_ENV !== 'production';
 </script>
 
 <header class="header">
@@ -35,13 +32,11 @@
 		sveltekit:prefetch
 		href="{baseUrl}/scope">Scope</a
 	>
-	{#if dev || isActive($page.url.pathname, `/virtual-script-code`)}
-		<a
-			class="menu"
-			class:active={isActive($page.url.pathname, `/virtual-script-code`)}
-			href="{baseUrl}/virtual-script-code">Virtual Script Code</a
-		>
-	{/if}
+	<a
+		class="menu"
+		class:active={isActive($page.url.pathname, `/virtual-script-code`)}
+		href="{baseUrl}/virtual-script-code">Virtual Script Code</a
+	>
 	<div class="debug">
 		$page.url.pathname: {$page.url.pathname}
 		baseUrl: {baseUrl}

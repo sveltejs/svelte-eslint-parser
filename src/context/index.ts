@@ -14,7 +14,11 @@ import { LetDirectiveCollections } from "./let-directive-collection";
 import { getParserForLang } from "../parser/resolve-parser";
 import type { AttributeToken } from "../parser/html";
 import { parseAttributes } from "../parser/html";
-import { maybeTSESLintParserObject } from "../parser/parser-object";
+import {
+  isTSESLintParserObject,
+  maybeTSESLintParserObject,
+} from "../parser/parser-object";
+import { sortedLastIndex } from "../utils";
 
 export class ScriptsSourceCode {
   private raw: string;
@@ -22,6 +26,8 @@ export class ScriptsSourceCode {
   private trimmedRaw: string;
 
   public readonly attrs: Record<string, string | undefined>;
+
+  private _separate = "";
 
   private _appendScriptLets: string | null = null;
 
@@ -37,26 +43,48 @@ export class ScriptsSourceCode {
     this.separateIndexes = [script.length];
   }
 
-  public get vcode(): string {
+  public getCurrentVirtualCode(): string {
     if (this._appendScriptLets == null) {
       return this.raw;
     }
-    return this.trimmedRaw + this._appendScriptLets;
+    return this.trimmedRaw + this._separate + this._appendScriptLets;
+  }
+
+  public getCurrentVirtualCodeInfo(): { script: string; render: string } {
+    if (this._appendScriptLets == null) {
+      return { script: this.raw, render: "" };
+    }
+    return {
+      script: this.trimmedRaw + this._separate,
+      render: this._appendScriptLets,
+    };
+  }
+
+  public getCurrentVirtualCodeLength(): number {
+    if (this._appendScriptLets == null) {
+      return this.raw.length;
+    }
+    return (
+      this.trimmedRaw.length +
+      this._separate.length +
+      this._appendScriptLets.length
+    );
   }
 
   public addLet(letCode: string): { start: number; end: number } {
     if (this._appendScriptLets == null) {
       this._appendScriptLets = "";
-      this.separateIndexes = [this.vcode.length, this.vcode.length + 1];
-      this._appendScriptLets += "\n;";
-      const after = this.raw.slice(this.vcode.length);
+      const currentLength = this.getCurrentVirtualCodeLength();
+      this.separateIndexes = [currentLength, currentLength + 1];
+      this._separate += "\n;";
+      const after = this.raw.slice(this.getCurrentVirtualCodeLength());
       this._appendScriptLets += after;
     }
-    const start = this.vcode.length;
+    const start = this.getCurrentVirtualCodeLength();
     this._appendScriptLets += letCode;
     return {
       start,
-      end: this.vcode.length,
+      end: this.getCurrentVirtualCodeLength(),
     };
   }
 
@@ -207,16 +235,15 @@ export class Context {
       this.sourceCode.scripts.attrs,
       this.parserOptions?.parser
     );
-    if (
-      maybeTSESLintParserObject(parserValue) ||
-      parserValue === "@typescript-eslint/parser"
-    ) {
-      return (this.state.isTypeScript = true);
-    }
     if (typeof parserValue !== "string") {
-      return (this.state.isTypeScript = false);
+      return (this.state.isTypeScript =
+        maybeTSESLintParserObject(parserValue) ||
+        isTSESLintParserObject(parserValue));
     }
     const parserName = parserValue;
+    if (parserName === "@typescript-eslint/parser") {
+      return (this.state.isTypeScript = true);
+    }
     if (parserName.includes("@typescript-eslint/parser")) {
       let targetPath = parserName;
       while (targetPath) {
@@ -330,7 +357,10 @@ export class LinesAndColumns {
   }
 
   public getLocFromIndex(index: number): { line: number; column: number } {
-    const lineNumber = sortedLastIndex(this.lineStartIndices, index);
+    const lineNumber = sortedLastIndex(
+      this.lineStartIndices,
+      (target) => target - index
+    );
     return {
       line: lineNumber,
       column: index - this.lineStartIndices[lineNumber - 1],
@@ -343,26 +373,17 @@ export class LinesAndColumns {
 
     return positionIndex;
   }
-}
 
-/**
- * Uses a binary search to determine the highest index at which value should be inserted into array in order to maintain its sort order.
- */
-function sortedLastIndex(array: number[], value: number): number {
-  let lower = 0;
-  let upper = array.length;
-
-  while (lower < upper) {
-    const mid = Math.floor(lower + (upper - lower) / 2);
-    const target = array[mid];
-    if (target < value) {
-      lower = mid + 1;
-    } else if (target > value) {
-      upper = mid;
-    } else {
-      return mid + 1;
-    }
+  /**
+   * Get the location information of the given indexes.
+   */
+  public getLocations(start: number, end: number): Locations {
+    return {
+      range: [start, end],
+      loc: {
+        start: this.getLocFromIndex(start),
+        end: this.getLocFromIndex(end),
+      },
+    };
   }
-
-  return upper;
 }

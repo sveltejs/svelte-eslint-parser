@@ -19,7 +19,8 @@ import {
   analyzeStoreScope,
 } from "./analyze-scope";
 import { ParseError } from "../errors";
-import { appendDeclareSvelteVarsTypes } from "./analyze-type";
+import { parseTypeScript } from "./typescript";
+import { addReference } from "../scope";
 
 export interface ESLintProgram extends Program {
   comments: Comment[];
@@ -77,9 +78,18 @@ export function parseForESLint(
     parserOptions
   );
 
-  if (ctx.isTypeScript()) appendDeclareSvelteVarsTypes(ctx);
-
-  const resultScript = parseScript(ctx.sourceCode.scripts, parserOptions);
+  const scripts = ctx.sourceCode.scripts;
+  const resultScript = ctx.isTypeScript()
+    ? parseTypeScript(
+        scripts.getCurrentVirtualCodeInfo(),
+        scripts.attrs,
+        parserOptions
+      )
+    : parseScript(
+        scripts.getCurrentVirtualCode(),
+        scripts.attrs,
+        parserOptions
+      );
   ctx.scriptLet.restore(resultScript);
   ctx.tokens.push(...resultScript.ast.tokens);
   ctx.comments.push(...resultScript.ast.comments);
@@ -103,7 +113,7 @@ export function parseForESLint(
         // Links the variable and the reference.
         // And this reference is removed from `Scope#through`.
         reference.resolved = variable;
-        variable.references.push(reference);
+        addReference(variable.references, reference);
         return false;
       }
       return true;

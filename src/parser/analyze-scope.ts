@@ -3,6 +3,8 @@ import type { Scope, ScopeManager } from "eslint-scope";
 import { Variable, Reference, analyze } from "eslint-scope";
 import { getFallbackKeys } from "../traverse";
 import type { SvelteReactiveStatement, SvelteScriptElement } from "../ast";
+import { addReference, addVariable } from "../scope";
+import { addElementToSortedArray } from "../utils";
 /**
  * Analyze scope
  */
@@ -66,16 +68,24 @@ export function analyzeReactiveScope(scopeManager: ScopeManager): void {
       variable = new Variable();
       (variable as any).scope = referenceScope;
       variable.name = name;
-      variable.defs.push({
-        type: "ComputedVariable" as "Variable",
-        node: node as any,
-        parent: parent as any,
-        name: reference.identifier,
-      });
-      referenceScope.variables.push(variable);
+      addElementToSortedArray(
+        variable.defs,
+        {
+          type: "ComputedVariable" as "Variable",
+          node: node as any,
+          parent: parent as any,
+          name: reference.identifier,
+        },
+        (a, b) => a.node.range[0] - b.node.range[0]
+      );
+      addVariable(referenceScope.variables, variable);
       referenceScope.set.set(name, variable);
     }
-    variable.identifiers.push(reference.identifier);
+    addElementToSortedArray(
+      variable.identifiers,
+      reference.identifier,
+      (a, b) => a.range![0] - b.range![0]
+    );
     reference.resolved = variable;
     removeReferenceFromThrough(reference, referenceScope);
   }
@@ -111,7 +121,7 @@ export function analyzeStoreScope(scopeManager: ScopeManager): void {
         reference.isReadOnly = () => true;
         reference.isRead = () => true;
 
-        variable.references.push(reference);
+        addReference(variable.references, reference);
         reference.resolved = variable;
         removeReferenceFromThrough(reference, moduleScope);
       }
@@ -219,7 +229,7 @@ function removeReferenceFromThrough(reference: Reference, baseScope: Scope) {
       } else if (ref.identifier.name === name) {
         ref.resolved = variable;
         if (!variable.references.includes(ref)) {
-          variable.references.push(ref);
+          addReference(variable.references, ref);
         }
         return false;
       }
@@ -248,7 +258,7 @@ function addVirtualReference(
   reference.isReadOnly = () => Boolean(readWrite.read) && !readWrite.write;
   reference.isReadWrite = () => Boolean(readWrite.read && readWrite.write);
 
-  variable.references.push(reference);
+  addReference(variable.references, reference);
   reference.resolved = variable;
 
   return reference;

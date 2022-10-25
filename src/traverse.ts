@@ -2,6 +2,8 @@ import type { VisitorKeys } from "eslint-visitor-keys";
 import { KEYS } from "./visitor-keys";
 import type ESTree from "estree";
 import type { SvelteNode } from "./ast";
+import type { TSESTree } from "@typescript-eslint/types";
+import type { VisitorKeys as TSESVisitorKeys } from "@typescript-eslint/visitor-keys";
 
 /**
  * Check that the given key should be traversed or not.
@@ -39,7 +41,10 @@ export function getFallbackKeys(node: any): string[] {
  * @param node The node to get.
  * @returns The keys to traverse.
  */
-export function getKeys(node: any, visitorKeys?: VisitorKeys): string[] {
+export function getKeys(
+  node: any,
+  visitorKeys?: VisitorKeys | TSESVisitorKeys
+): string[] {
   const keys = (visitorKeys || KEYS)[node.type] || getFallbackKeys(node);
 
   return keys.filter((key) => !getNodes(node, key).next().done);
@@ -52,7 +57,7 @@ export function getKeys(node: any, visitorKeys?: VisitorKeys): string[] {
 export function* getNodes(
   node: any,
   key: string
-): IterableIterator<SvelteNode | ESTree.Node> {
+): IterableIterator<SvelteNode | ESTree.Node | TSESTree.Node> {
   const child = node[key];
   if (Array.isArray(child)) {
     for (const c of child) {
@@ -80,7 +85,7 @@ function isNode(x: any): x is SvelteNode {
  * @param parent The parent node.
  * @param visitor The node visitor.
  */
-function traverse<N extends SvelteNode | ESTree.Node>(
+function traverse<N extends SvelteNode | ESTree.Node | TSESTree.Node>(
   node: N,
   parent: N | null,
   visitor: Visitor<N>
@@ -102,7 +107,7 @@ function traverse<N extends SvelteNode | ESTree.Node>(
 //------------------------------------------------------------------------------
 
 export interface Visitor<N> {
-  visitorKeys?: VisitorKeys;
+  visitorKeys?: VisitorKeys | TSESVisitorKeys;
   enterNode(node: N, parent: N | null): void;
   leaveNode(node: N, parent: N | null): void;
 }
@@ -115,14 +120,22 @@ export function traverseNodes(
   node: ESTree.Node,
   visitor: Visitor<ESTree.Node>
 ): void;
+export function traverseNodes(
+  node: TSESTree.Node,
+  visitor: Visitor<TSESTree.Node>
+): void;
+export function traverseNodes(
+  node: ESTree.Node | TSESTree.Node,
+  visitor: Visitor<ESTree.Node | TSESTree.Node>
+): void;
 /**
  * Traverse the given AST tree.
  * @param node Root node to traverse.
  * @param visitor Visitor.
  */
 export function traverseNodes(
-  node: ESTree.Node | SvelteNode,
-  visitor: Visitor<SvelteNode> | Visitor<ESTree.Node>
+  node: ESTree.Node | SvelteNode | TSESTree.Node,
+  visitor: Visitor<SvelteNode | ESTree.Node | TSESTree.Node>
 ): void {
   traverse(node, null, visitor);
 }

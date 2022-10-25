@@ -8,10 +8,11 @@ import { parseForESLint } from "../../../src";
 import {
   BASIC_PARSER_OPTIONS,
   listupFixtures,
-  nodeReplacer,
+  astToJson,
   scopeToJSON,
 } from "./test-utils";
 import type { Comment, SvelteProgram, Token } from "../../../src/ast";
+import { sort } from "../../../src/parser/sort";
 
 function parse(code: string, filePath: string) {
   return parseForESLint(code, {
@@ -36,7 +37,7 @@ describe("Check for AST.", () => {
         if (!meetRequirements("test")) {
           return;
         }
-        const astJson = JSON.stringify(result.ast, nodeReplacer, 2);
+        const astJson = astToJson(result.ast);
         const output = fs.readFileSync(outputFileName, "utf8");
         assert.strictEqual(astJson, output);
       });
@@ -80,9 +81,8 @@ describe("Check for AST.", () => {
 });
 
 function checkTokens(ast: SvelteProgram, input: string) {
-  const allTokens = [...ast.tokens, ...ast.comments].sort(
-    (a, b) => a.range[0] - b.range[0]
-  );
+  const allTokens = sort([...ast.tokens, ...ast.comments]);
+
   // check loc
   for (const token of allTokens) {
     const value = getText(token);
@@ -134,10 +134,7 @@ function checkLoc(ast: SvelteProgram, fileName: string, code: string) {
         set.has(node)
       ) {
         assert.fail(
-          `Duplicate node @parent: ${parent?.type}, ${JSON.stringify(
-            node,
-            nodeReplacer
-          )}`
+          `Duplicate node @parent: ${parent?.type}, ${astToJson(node)}`
         );
       }
       set.add(node);
@@ -146,20 +143,20 @@ function checkLoc(ast: SvelteProgram, fileName: string, code: string) {
           (node as any).parent?.type === parent?.type,
           `Parent type mismatch [${(node as any).parent?.type} : ${
             parent?.type
-          }] @${JSON.stringify(node, nodeReplacer)}`
+          }] @${astToJson(node)}`
         );
       }
       assert.ok(
         (node as any).parent?.range?.[0] === parent?.range![0],
         `Parent range mismatch [${(node as any).parent?.range?.[0]} : ${
           parent?.range![0]
-        }] @${JSON.stringify(node, nodeReplacer)}`
+        }] @${astToJson(node)}`
       );
       assert.ok(
         (node as any).parent?.range?.[1] === parent?.range![1],
         `Parent range mismatch [${(node as any).parent?.range?.[1]} : ${
           parent?.range![1]
-        }] @${JSON.stringify(node, nodeReplacer)}`
+        }] @${astToJson(node)}`
       );
       assert.ok(
         node.range![0] < node.range![1],

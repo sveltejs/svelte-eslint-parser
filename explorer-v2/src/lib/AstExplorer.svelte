@@ -24,15 +24,38 @@
 
 	let jsonEditor, sourceEditor;
 
+	$: hasLangTs = /lang\s*=\s*(?:"ts"|ts|'ts'|"typescript"|typescript|'typescript')/u.test(
+		svelteValue
+	);
+
+	let tsParser = undefined;
 	$: {
-		refresh(options, svelteValue);
+		if (hasLangTs && !tsParser) {
+			import('@typescript-eslint/parser').then((parser) => {
+				if (typeof window !== 'undefined') {
+					if (!window.process) {
+						window.process = {
+							cwd: () => '',
+							env: {}
+						};
+					}
+				}
+				tsParser = parser;
+			});
+		}
 	}
 
-	function refresh(options, svelteValue) {
+	$: {
+		refresh(options, svelteValue, tsParser);
+	}
+
+	function refresh(options, svelteValue, tsParser) {
 		let ast;
 		const start = Date.now();
 		try {
-			ast = svelteEslintParser.parseForESLint(svelteValue).ast;
+			ast = svelteEslintParser.parseForESLint(svelteValue, {
+				parser: { ts: tsParser, typescript: tsParser }
+			}).ast;
 		} catch (e) {
 			ast = {
 				message: e.message,
