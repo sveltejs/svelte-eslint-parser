@@ -1,5 +1,11 @@
 # svelte-eslint-parser
 
+## 0.19.2
+
+### Patch Changes
+
+- [#236](https://github.com/ota-meshi/svelte-eslint-parser/pull/236) [`82389a3`](https://github.com/ota-meshi/svelte-eslint-parser/commit/82389a3840e63b28d3a93bc20d92e36fb658ae57) Thanks [@ota-meshi](https://github.com/ota-meshi)! - fix: crash in `@typescript-eslint/no-misused-promises` rule
+
 ## 0.19.1
 
 ### Patch Changes
