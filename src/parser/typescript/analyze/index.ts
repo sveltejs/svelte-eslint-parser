@@ -305,7 +305,11 @@ function transformForDeclareReactiveVar(
   ctx.skipUntilOriginalOffset(id.range[0]);
   ctx.appendVirtualScript("let ");
   ctx.appendOriginal(eq ? eq.range[1] : expression.right.range[0]);
-  ctx.appendVirtualScript(`${functionId}();\nfunction ${functionId}(){return `);
+  ctx.appendVirtualScript(
+    `${functionId}();\nfunction ${functionId}(){return (`
+  );
+  ctx.appendOriginal(expression.right.range[1]);
+  ctx.appendVirtualScript(`)`);
   for (const token of closeParens) {
     ctx.appendOriginal(token.range[0]);
     ctx.skipOriginalOffset(token.range[1] - token.range[0]);
