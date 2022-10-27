@@ -1,5 +1,11 @@
 # svelte-eslint-parser
 
+## 0.19.1
+
+### Patch Changes
+
+- [#234](https://github.com/ota-meshi/svelte-eslint-parser/pull/234) [`5f237d2`](https://github.com/ota-meshi/svelte-eslint-parser/commit/5f237d2015551596d3be36b6cbc4b17fb75f91e6) Thanks [@ota-meshi](https://github.com/ota-meshi)! - fix: wrong AST and type due to newline after `=` to reactive variable
+
 ## 0.19.0
 
 ### Minor Changes
