@@ -157,14 +157,22 @@ Parse the following virtual script code as a script:
                   
 export let foo: { bar: number } | null = null
 
-$: function $_reactiveStatementScopeFunction1(){console.log(foo && foo.bar);}
+$: function $_reactiveStatementScopeFunction1(){
+    console.log(foo && foo.bar);
+}
 
-$: let r = $_reactiveVariableScopeFunction2();
-function $_reactiveVariableScopeFunction2(){return foo && foo.bar;}
+$: let r =$_reactiveVariableScopeFunction2();
+function $_reactiveVariableScopeFunction2(){
+    let $_tmpVar3;
+    return ($_tmpVar3 =  foo && foo.bar);
+}
 
-$: let { bar: n } = $_reactiveVariableScopeFunction3();
-function $_reactiveVariableScopeFunction3(){return foo || { bar: 42 };}
-;function $_render4(){        
+$: let { bar: n } =$_reactiveVariableScopeFunction4();
+function $_reactiveVariableScopeFunction4(){
+    let $_tmpVar5;
+    return ($_tmpVar5 =  foo || { bar: 42 });
+}
+;function $_render6(){        
 
 (foo && foo.bar);
 }
