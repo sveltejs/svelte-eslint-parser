@@ -231,7 +231,7 @@ function transformForDeclareReactiveVar(
   //
   //  To:
   //  $: let id = fn()
-  //  function fn () { return x + y; }
+  //  function fn () { let tmp; return (tmp = x + y); }
   //
   //
   //  From:
@@ -239,7 +239,7 @@ function transformForDeclareReactiveVar(
   //
   //  To:
   //  $: let {id} = fn()
-  //  function fn () { return foo; }
+  //  function fn () { let tmp; return (tmp = foo); }
 
   /**
    * The opening paren tokens for
@@ -297,6 +297,7 @@ function transformForDeclareReactiveVar(
   }
 
   const functionId = ctx.generateUniqueId("reactiveVariableScopeFunction");
+  const tmpVarId = ctx.generateUniqueId("tmpVar");
   for (const token of openParens) {
     ctx.appendOriginal(token.range[0]);
     ctx.skipOriginalOffset(token.range[1] - token.range[0]);
@@ -306,7 +307,7 @@ function transformForDeclareReactiveVar(
   ctx.appendVirtualScript("let ");
   ctx.appendOriginal(eq ? eq.range[1] : expression.right.range[0]);
   ctx.appendVirtualScript(
-    `${functionId}();\nfunction ${functionId}(){return (`
+    `${functionId}();\nfunction ${functionId}(){let ${tmpVarId};return (${tmpVarId} = `
   );
   ctx.appendOriginal(expression.right.range[1]);
   ctx.appendVirtualScript(`)`);
@@ -347,46 +348,61 @@ function transformForDeclareReactiveVar(
       !fnDecl ||
       fnDecl.type !== "FunctionDeclaration" ||
       fnDecl.id.name !== functionId ||
-      fnDecl.body.body.length !== 1 ||
-      fnDecl.body.body[0].type !== "ReturnStatement"
+      fnDecl.body.body.length !== 2 ||
+      fnDecl.body.body[0].type !== "VariableDeclaration" ||
+      fnDecl.body.body[1].type !== "ReturnStatement"
     ) {
       return false;
     }
-    const returnStatement = fnDecl.body.body[0];
-    if (returnStatement.argument?.type !== expression.right.type) {
+    const tmpVarDeclaration = fnDecl.body.body[0];
+    if (
+      tmpVarDeclaration.declarations.length !== 1 ||
+      tmpVarDeclaration.declarations[0].type !== "VariableDeclarator"
+    ) {
       return false;
     }
+    const tempVarDeclId = tmpVarDeclaration.declarations[0].id;
+    if (
+      tempVarDeclId.type !== "Identifier" ||
+      tempVarDeclId.name !== tmpVarId
+    ) {
+      return false;
+    }
+    const returnStatement = fnDecl.body.body[1];
+    const assignment = returnStatement.argument;
+    if (
+      assignment?.type !== "AssignmentExpression" ||
+      assignment.left.type !== "Identifier" ||
+      assignment.right.type !== expression.right.type
+    ) {
+      return false;
+    }
+    const tempLeft = assignment.left;
     // Remove function declaration
     program.body.splice(nextIndex, 1);
     // Restore expression statement
-    const newExpression: TSESTree.AssignmentExpression = {
-      type: "AssignmentExpression" as TSESTree.AssignmentExpression["type"],
-      operator: "=",
-      left: idDecl.id,
-      right: returnStatement.argument,
-      loc: {
-        start: idDecl.id.loc.start,
-        end: expressionCloseParen
-          ? expressionCloseParen.loc.end
-          : returnStatement.argument.loc.end,
-      },
-      range: [
-        idDecl.id.range[0],
-        expressionCloseParen
-          ? expressionCloseParen.range[1]
-          : returnStatement.argument.range[1],
-      ],
+    assignment.left = idDecl.id;
+    assignment.loc = {
+      start: idDecl.id.loc.start,
+      end: expressionCloseParen
+        ? expressionCloseParen.loc.end
+        : assignment.right.loc.end,
     };
-    idDecl.id.parent = newExpression;
-    returnStatement.argument.parent = newExpression;
+    assignment.range = [
+      idDecl.id.range[0],
+      expressionCloseParen
+        ? expressionCloseParen.range[1]
+        : assignment.right.range[1],
+    ];
+    idDecl.id.parent = assignment;
     const newBody: TSESTree.ExpressionStatement = {
       type: "ExpressionStatement" as TSESTree.ExpressionStatement["type"],
-      expression: newExpression,
+      expression: assignment,
       loc: statement.body.loc,
       range: statement.body.range,
       parent: reactiveStatement,
     };
-    newExpression.parent = newBody;
+    assignment.parent = newBody;
     reactiveStatement.body = newBody;
     // Restore statement end location
     reactiveStatement.range[1] = returnStatement.range[1];
@@ -401,11 +417,19 @@ function transformForDeclareReactiveVar(
     );
 
     const scopeManager = result.scopeManager as ScopeManager;
+    removeAllScopeAndVariableAndReference(tmpVarDeclaration, {
+      visitorKeys: result.visitorKeys,
+      scopeManager,
+    });
     removeFunctionScope(fnDecl, scopeManager);
+
     const scope = getProgramScope(scopeManager);
     for (const reference of getAllReferences(idDecl.id, scope)) {
-      reference.writeExpr = newExpression.right as ESTree.Expression;
+      reference.writeExpr = assignment.right as ESTree.Expression;
     }
+
+    removeIdentifierReference(tempLeft, scope);
+    removeIdentifierVariable(tempVarDeclId, scope);
 
     removeIdentifierReference(idDecl.init.callee, scope);
     removeIdentifierVariable(idDecl.id, scope);
