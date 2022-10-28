@@ -180,8 +180,15 @@ function convertAttribute(
       range: attribute.range,
     };
     (key as any).parent = sAttr;
-    ctx.scriptLet.addExpression(key, sAttr, null, (es) => {
-      sAttr.value = es;
+    ctx.scriptLet.addObjectShorthandProperty(attribute.key, sAttr, (es) => {
+      if (
+        // FIXME: Older parsers may use the same node. In that case, do not replace.
+        // We will drop support for ESLint v7 in the next major version and remove this branch.
+        es.key !== es.value
+      ) {
+        sAttr.key = es.key;
+      }
+      sAttr.value = es.value;
     });
     return sAttr;
   }
