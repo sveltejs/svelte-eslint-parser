@@ -157,7 +157,17 @@ function buildTypes(
 
   // eslint-disable-next-line require-jsdoc -- X
   function addType(node: ESTree.Expression) {
-    const tsNode = tsNodeMap.get(node)!;
+    const tsNode = tsNodeMap.get(node);
+    if (!tsNode) {
+      throw new Error(
+        `Expression node does not exist in esTreeNodeToTSNodeMap. ${JSON.stringify(
+          {
+            type: node.type,
+            loc: node.loc,
+          }
+        )}`
+      );
+    }
     const type = checker.getTypeAtLocation(tsNode);
     const typeText = checker.typeToString(type);
     const lineTypes = (types[node.loc!.start.line - 1] ??= []);

@@ -180,8 +180,9 @@ function convertAttribute(
       range: attribute.range,
     };
     (key as any).parent = sAttr;
-    ctx.scriptLet.addExpression(key, sAttr, null, (es) => {
-      sAttr.value = es;
+    ctx.scriptLet.addObjectShorthandProperty(attribute.key, sAttr, (es) => {
+      sAttr.key = es.key;
+      sAttr.value = es.value;
     });
     return sAttr;
   }

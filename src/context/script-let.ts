@@ -107,6 +107,11 @@ type RestoreCallback = {
 
 type TypeGenHelper = { generateUniqueId: (base: string) => string };
 
+type ObjectShorthandProperty = ESTree.Property & {
+  key: ESTree.Identifier;
+  value: ESTree.Identifier;
+};
+
 /**
  * A class that handles script fragments.
  * The script fragment AST node remaps and connects to the original directive AST node.
@@ -183,6 +188,40 @@ export class ScriptLetContext {
       }
     );
     return callbacks;
+  }
+
+  public addObjectShorthandProperty(
+    identifier: SvelteName,
+    parent: SvelteNode,
+    ...callbacks: ScriptLetCallback<ObjectShorthandProperty>[]
+  ): void {
+    const range = getNodeRange(identifier);
+    const part = this.ctx.code.slice(...range);
+    this.appendScript(
+      `({${part}});`,
+      range[0] - 2,
+      (st, tokens, _comments, result) => {
+        const exprSt = st as ESTree.ExpressionStatement;
+        const objectExpression: ESTree.ObjectExpression =
+          exprSt.expression as ESTree.ObjectExpression;
+        const node = objectExpression.properties[0] as ObjectShorthandProperty;
+        // Process for nodes
+        for (const callback of callbacks) {
+          callback(node, result);
+        }
+        (node.key as any).parent = parent;
+        (node.value as any).parent = parent;
+
+        tokens.shift(); // (
+        tokens.shift(); // {
+        tokens.pop(); // }
+        tokens.pop(); // )
+        tokens.pop(); // ;
+
+        // Disconnect the tree structure.
+        exprSt.expression = null as never;
+      }
+    );
   }
 
   public addVariableDeclarator(
