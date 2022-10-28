@@ -1,5 +1,11 @@
 # svelte-eslint-parser
 
+## 0.19.3
+
+### Patch Changes
+
+- [#238](https://github.com/ota-meshi/svelte-eslint-parser/pull/238) [`6e063c2`](https://github.com/ota-meshi/svelte-eslint-parser/commit/6e063c25ac54f4242025a8fd9bb2d42dd38447dc) Thanks [@ota-meshi](https://github.com/ota-meshi)! - fix: missing ts node for key of shorthand attribute
+
 ## 0.19.2
 
 ### Patch Changes
