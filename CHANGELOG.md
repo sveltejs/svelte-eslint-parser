@@ -1,5 +1,11 @@
 # svelte-eslint-parser
 
+## 0.20.0
+
+### Minor Changes
+
+- [#241](https://github.com/ota-meshi/svelte-eslint-parser/pull/241) [`df83e3e`](https://github.com/ota-meshi/svelte-eslint-parser/commit/df83e3e185b2a7436b87c00c781a65c9fb7d07b9) Thanks [@ota-meshi](https://github.com/ota-meshi)! - feat: support for `typescript-eslint-parser-for-extra-files`
+
 ## 0.19.3
 
 ### Patch Changes
