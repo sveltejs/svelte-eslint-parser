@@ -20,6 +20,11 @@ import {
 } from "../parser/parser-object";
 import { sortedLastIndex } from "../utils";
 
+const TS_PARSER_NAMES = [
+  "@typescript-eslint/parser",
+  "typescript-eslint-parser-for-extra-files",
+];
+
 export class ScriptsSourceCode {
   private raw: string;
 
@@ -241,18 +246,18 @@ export class Context {
         isTSESLintParserObject(parserValue));
     }
     const parserName = parserValue;
-    if (parserName === "@typescript-eslint/parser") {
+    if (TS_PARSER_NAMES.includes(parserName)) {
       return (this.state.isTypeScript = true);
     }
-    if (parserName.includes("@typescript-eslint/parser")) {
+    if (TS_PARSER_NAMES.some((nm) => parserName.includes(nm))) {
       let targetPath = parserName;
       while (targetPath) {
         const pkgPath = path.join(targetPath, "package.json");
         if (fs.existsSync(pkgPath)) {
           try {
-            return (this.state.isTypeScript =
-              JSON.parse(fs.readFileSync(pkgPath, "utf-8"))?.name ===
-              "@typescript-eslint/parser");
+            return (this.state.isTypeScript = TS_PARSER_NAMES.includes(
+              JSON.parse(fs.readFileSync(pkgPath, "utf-8"))?.name
+            ));
           } catch {
             return (this.state.isTypeScript = false);
           }

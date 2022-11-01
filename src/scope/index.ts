@@ -115,11 +115,17 @@ export function getInnermostScope(
   node: ESTree.Node
 ): Scope {
   const location = node.range![0];
+  const isInRange =
+    node.range![0] === node.range![1]
+      ? (range: [number, number]) =>
+          range[0] <= location && location <= range[1]
+      : (range: [number, number]) =>
+          range[0] <= location && location < range[1];
 
   for (const childScope of initialScope.childScopes) {
     const range = childScope.block.range!;
 
-    if (range[0] <= location && location < range[1]) {
+    if (isInRange(range)) {
       return getInnermostScope(childScope, node);
     }
   }

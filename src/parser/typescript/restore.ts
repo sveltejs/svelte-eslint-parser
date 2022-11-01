@@ -86,10 +86,9 @@ export class RestoreContext {
       (f) => f.start < end && end <= f.end
     );
     if (endFragment) {
+      end = endFragment.start;
       if (startFragment === endFragment) {
-        end = start;
-      } else {
-        end = endFragment.start;
+        start = startFragment.start;
       }
     }
 
