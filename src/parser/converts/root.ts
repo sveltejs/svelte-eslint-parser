@@ -49,6 +49,7 @@ export function convertSvelteRoot(
         const name: SvelteName = {
           type: "SvelteName",
           name: "script",
+          rawName: "script",
           parent: script,
           ...ctx.getConvertLocation(openTokenRange),
         };
@@ -75,6 +76,7 @@ export function convertSvelteRoot(
         const name: SvelteName = {
           type: "SvelteName",
           name: "script",
+          rawName: "script",
           parent: script,
           ...ctx.getConvertLocation(openTokenRange),
         };
@@ -101,6 +103,7 @@ export function convertSvelteRoot(
         const name: SvelteName = {
           type: "SvelteName",
           name: "style",
+          rawName: "style",
           parent: style,
           ...ctx.getConvertLocation(openTokenRange),
         };

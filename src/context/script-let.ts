@@ -8,6 +8,8 @@ import type {
   SvelteIfBlock,
   SvelteName,
   SvelteNode,
+  SveltePugEachBlock,
+  SveltePugNode,
   Token,
 } from "../ast";
 import type { ESLintExtendedProgram } from "../parser";
@@ -141,7 +143,7 @@ export class ScriptLetContext {
 
   public addExpression<E extends ESTree.Expression>(
     expression: E | SvelteName,
-    parent: SvelteNode,
+    parent: SvelteNode | SveltePugNode,
     typing?: string | null,
     ...callbacks: ScriptLetCallback<E>[]
   ): ScriptLetCallback<E>[] {
@@ -311,7 +313,7 @@ export class ScriptLetContext {
     expression: ESTree.Expression,
     context: ESTree.Pattern,
     indexRange: { start: number; end: number } | null,
-    eachBlock: SvelteEachBlock,
+    eachBlock: SvelteEachBlock | SveltePugEachBlock,
     callback: (
       expr: ESTree.Expression,
       ctx: ESTree.Pattern,

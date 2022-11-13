@@ -339,6 +339,12 @@ export class Context {
       )
     );
   }
+
+  public templateBlocks(): (Block & { tag: "template" })[] {
+    return this.blocks.filter(
+      (block): block is Block & { tag: "template" } => block.tag === "template"
+    );
+  }
 }
 
 type Block =

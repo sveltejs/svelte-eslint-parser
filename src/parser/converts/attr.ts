@@ -121,6 +121,7 @@ export function* convertAttributeTokens(
     attribute.key = {
       type: "SvelteName",
       name: attr.key.name,
+      rawName: attr.key.name,
       parent: attribute,
       ...ctx.getConvertLocation(attr.key),
     };
@@ -155,6 +156,7 @@ function convertAttribute(
   attribute.key = {
     type: "SvelteName",
     name: node.name,
+    rawName: node.name,
     parent: attribute,
     ...ctx.getConvertLocation(keyRange),
   };

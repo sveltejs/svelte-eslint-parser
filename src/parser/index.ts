@@ -179,11 +179,20 @@ export function parseForESLint(
 
 /** Extract tokens */
 function extractTokens(ctx: Context) {
+  let template = ctx.sourceCode.template;
+  for (const block of ctx.templateBlocks()) {
+    if (block.selfClosing) continue;
+    template =
+      template.slice(0, block.contentRange[0]) +
+      ctx.code.slice(...block.contentRange) +
+      template.slice(block.contentRange[1]);
+  }
+
   const useRanges = sortNodes([...ctx.tokens, ...ctx.comments]).map(
     (t) => t.range
   );
   let range = useRanges.shift();
-  for (let index = 0; index < ctx.sourceCode.template.length; index++) {
+  for (let index = 0; index < template.length; index++) {
     while (range && range[1] <= index) {
       range = useRanges.shift();
     }
@@ -191,7 +200,7 @@ function extractTokens(ctx: Context) {
       index = range[1] - 1;
       continue;
     }
-    const c = ctx.sourceCode.template[index];
+    const c = template[index];
     if (!c.trim()) {
       continue;
     }

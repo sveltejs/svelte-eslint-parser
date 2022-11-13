@@ -283,6 +283,7 @@ function convertHTMLElement(
       const name: SvelteName = {
         type: "SvelteName",
         name: node.name,
+        rawName: node.name,
         parent: element,
         ...ctx.getConvertLocation(openTokenRange),
       };
@@ -435,6 +436,7 @@ function convertSpecialElement(
       const name: SvelteName = {
         type: "SvelteName",
         name: node.name,
+        rawName: node.name,
         parent: element,
         ...ctx.getConvertLocation(openTokenRange),
       };
@@ -535,6 +537,7 @@ function convertComponentElement(
           property: {
             type: "SvelteName",
             name,
+            rawName: name,
             parent: null as any,
             ...ctx.getConvertLocation(range),
           },

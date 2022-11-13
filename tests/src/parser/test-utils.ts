@@ -281,6 +281,7 @@ const nodeToKeys: SvelteKeysType = {
   SvelteSpreadAttribute: ["argument"],
   SvelteStartTag: ["attributes", "selfClosing"],
   SvelteStyleElement: ["name", "startTag", "children", "endTag"],
+  SveltePugTemplateElement: ["name", "startTag", "children", "endTag"],
   SvelteText: ["value"],
 };
 
@@ -328,7 +329,7 @@ function normalizeObject(value: any) {
   let entries = Object.entries(value);
   if (isNode) {
     entries = entries.filter(
-      ([k]) => k !== "parent" && k !== "start" && k !== "end"
+      ([k]) => k !== "parent" && k !== "start" && k !== "end" && k !== "rawName"
     );
   }
   const nodeType: string | null = isNode ? value.type : null;

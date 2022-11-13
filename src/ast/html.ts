@@ -1,6 +1,12 @@
 import type ESTree from "estree";
 import type { BaseNode } from "./base";
 import type { Token, Comment } from "./common";
+import type {
+  SveltePugAttributePlain,
+  SveltePugElement,
+  SveltePugTemplateElement,
+  SveltePugText,
+} from "./pug";
 
 export type SvelteHTMLNode =
   | SvelteProgram
@@ -37,7 +43,12 @@ export type SvelteHTMLNode =
 /** Node of Svelte program root */
 export interface SvelteProgram extends BaseNode {
   type: "Program";
-  body: (SvelteScriptElement | SvelteStyleElement | Child)[];
+  body: (
+    | SvelteScriptElement
+    | SvelteStyleElement
+    | SveltePugTemplateElement
+    | Child
+  )[];
   sourceType: "script" | "module";
   comments: Comment[];
   tokens: Token[];
@@ -87,7 +98,9 @@ export interface SvelteHTMLElement extends BaseSvelteElement {
     | SvelteAwaitPendingBlock
     | SvelteAwaitThenBlock
     | SvelteAwaitCatchBlock
-    | SvelteKeyBlock;
+    | SvelteKeyBlock
+    // Pug
+    | SveltePugText;
 }
 /** Node of Svelte component element. */
 export interface SvelteComponentElement extends BaseSvelteElement {
@@ -151,13 +164,17 @@ export interface SvelteEndTag extends BaseNode {
 export interface SvelteName extends BaseNode {
   type: "SvelteName";
   name: string;
+  rawName: string;
   parent:
     | SvelteElement
     | SvelteScriptElement
     | SvelteStyleElement
     | SvelteAttribute
     | SvelteMemberExpressionName
-    | SvelteDirectiveKey;
+    | SvelteDirectiveKey
+    // Pug
+    | SveltePugAttributePlain
+    | SveltePugElement;
 }
 
 /** Nodes that may be used in component names. The component names separated by dots. */
@@ -194,7 +211,9 @@ export interface SvelteText extends BaseNode {
     | SvelteAwaitPendingBlock
     | SvelteAwaitThenBlock
     | SvelteAwaitCatchBlock
-    | SvelteKeyBlock;
+    | SvelteKeyBlock
+    // Pug
+    | SveltePugText;
 }
 /** Node of literal. */
 export interface SvelteLiteral extends BaseNode {
@@ -220,7 +239,9 @@ interface BaseSvelteMustacheTag extends BaseNode {
     | SvelteAwaitCatchBlock
     | SvelteKeyBlock
     | SvelteAttribute
-    | SvelteStyleDirective;
+    | SvelteStyleDirective
+    // Pug
+    | SveltePugText;
 }
 /** Node of mustache tag. e.g. `{...}``. Like JSXExpressionContainer */
 export interface SvelteMustacheTagText extends BaseSvelteMustacheTag {
