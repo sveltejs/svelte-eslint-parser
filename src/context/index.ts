@@ -4,6 +4,8 @@ import type {
   Comment,
   Locations,
   Position,
+  SvelteElement,
+  SvelteName,
   SvelteScriptElement,
   SvelteStyleElement,
   Token,
@@ -145,6 +147,12 @@ export class Context {
 
     let start = 0;
     for (const block of extractBlocks(code)) {
+      if (block.tag === "template") {
+        const lang = block.attrs.find((attr) => attr.key.name === "lang");
+        if (!lang || !lang.value || lang.value.value === "html") {
+          continue;
+        }
+      }
       this.blocks.push(block);
       templateCode +=
         code.slice(start, block.contentRange[0]) +
@@ -181,6 +189,10 @@ export class Context {
       line: loc.line,
       column: loc.column,
     };
+  }
+
+  public getIndexFromLoc(loc: { line: number; column: number }): number {
+    return this.locs.getIndexFromLoc(loc);
   }
 
   /**
@@ -278,9 +290,14 @@ export class Context {
   }
 
   public findBlock(
-    element: SvelteScriptElement | SvelteStyleElement
+    element: SvelteScriptElement | SvelteStyleElement | SvelteElement
   ): Block | undefined {
-    const tag = element.type === "SvelteScriptElement" ? "script" : "style";
+    const tag =
+      element.type === "SvelteScriptElement"
+        ? "script"
+        : element.type === "SvelteStyleElement"
+        ? "style"
+        : (element.name as SvelteName).name.toLowerCase();
     return this.blocks.find(
       (block) =>
         block.tag === tag &&
@@ -291,16 +308,17 @@ export class Context {
 }
 
 type Block = {
-  tag: "script" | "style";
+  tag: "script" | "style" | "template";
   attrs: AttributeToken[];
   contentRange: [number, number];
 };
 
 /** Extract <script> blocks */
 function* extractBlocks(code: string): IterableIterator<Block> {
-  const startTagOpenRe = /<!--[\s\S]*?-->|<(script|style)([\s>])/giu;
+  const startTagOpenRe = /<!--[\s\S]*?-->|<(script|style|template)([\s>])/giu;
   const endScriptTagRe = /<\/script>/giu;
   const endStyleTagRe = /<\/style>/giu;
+  const endTemplateTagRe = /<\/template>/giu;
   let startTagOpenMatch;
   while ((startTagOpenMatch = startTagOpenRe.exec(code))) {
     const [, tag, nextChar] = startTagOpenMatch;
@@ -323,8 +341,13 @@ function* extractBlocks(code: string): IterableIterator<Block> {
         continue;
       }
     }
+    const lowerTag = tag.toLowerCase() as "script" | "style" | "template";
     const endTagRe =
-      tag.toLowerCase() === "script" ? endScriptTagRe : endStyleTagRe;
+      lowerTag === "script"
+        ? endScriptTagRe
+        : lowerTag === "style"
+        ? endStyleTagRe
+        : endTemplateTagRe;
     endTagRe.lastIndex = startTagEnd;
     const endTagMatch = endTagRe.exec(code);
     if (endTagMatch) {
@@ -333,7 +356,7 @@ function* extractBlocks(code: string): IterableIterator<Block> {
       yield {
         contentRange,
         attrs,
-        tag: tag as "script" | "style",
+        tag: lowerTag,
       };
       startTagOpenRe.lastIndex = endTagRe.lastIndex;
     }
