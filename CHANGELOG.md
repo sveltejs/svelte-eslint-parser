@@ -1,5 +1,11 @@
 # svelte-eslint-parser
 
+## 0.21.0
+
+### Minor Changes
+
+- [#244](https://github.com/ota-meshi/svelte-eslint-parser/pull/244) [`7ebf326`](https://github.com/ota-meshi/svelte-eslint-parser/commit/7ebf326c97576bfc721bc133e24c6c643e87e6de) Thanks [@ota-meshi](https://github.com/ota-meshi)! - feat: `<template lang="...">` to parse as raw text
+
 ## 0.20.0
 
 ### Minor Changes
