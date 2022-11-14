@@ -263,7 +263,11 @@ function convertHTMLElement(
     },
   });
 
-  if (element.name.name === "script" || element.name.name === "style") {
+  if (
+    element.name.name === "script" ||
+    element.name.name === "style" ||
+    (element.name.name === "template" && ctx.findBlock(element))
+  ) {
     for (const child of element.children) {
       if (child.type === "SvelteText") {
         child.value = ctx.code.slice(...child.range);

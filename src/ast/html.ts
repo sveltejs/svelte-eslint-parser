@@ -1,53 +1,8 @@
 import type ESTree from "estree";
-export type Range = [number, number];
+import type { BaseNode } from "./base";
+import type { Token, Comment } from "./common";
 
-export interface SourceLocation {
-  start: Position;
-  end: Position;
-}
-export interface Locations {
-  loc: SourceLocation;
-  range: Range;
-}
-
-interface BaseNode extends Locations {
-  type: string;
-}
-
-export interface Token extends BaseNode {
-  type:
-    | "Boolean"
-    | "Null"
-    | "Identifier"
-    | "Keyword"
-    | "Punctuator"
-    | "JSXIdentifier"
-    | "JSXText"
-    | "Numeric"
-    | "String"
-    | "RegularExpression"
-    | "Template"
-    // HTML
-    | "HTMLText"
-    | "HTMLIdentifier"
-    | "MustacheKeyword"
-    | "HTMLComment";
-  value: string;
-}
-
-export interface Comment extends BaseNode {
-  type: "Line" | "Block";
-  value: string;
-}
-
-export interface Position {
-  /** >= 1 */
-  line: number;
-  /** >= 0 */
-  column: number;
-}
-
-export type SvelteNode =
+export type SvelteHTMLNode =
   | SvelteProgram
   | SvelteScriptElement
   | SvelteStyleElement
@@ -77,8 +32,7 @@ export type SvelteNode =
   | SvelteSpecialDirective
   | SvelteDirectiveKey
   | SvelteSpecialDirectiveKey
-  | SvelteHTMLComment
-  | SvelteReactiveStatement;
+  | SvelteHTMLComment;
 
 /** Node of Svelte program root */
 export interface SvelteProgram extends BaseNode {
@@ -95,6 +49,7 @@ export type SvelteElement =
   | SvelteHTMLElement
   | SvelteComponentElement
   | SvelteSpecialElement;
+
 type BaseSvelteElement = BaseNode;
 
 /** Node of `<script>` element. */
@@ -615,12 +570,4 @@ export interface SvelteSpecialDirective extends BaseNode {
   key: SvelteSpecialDirectiveKey;
   expression: ESTree.Expression;
   parent: SvelteStartTag /* & { parent: SvelteSpecialElement } */;
-}
-
-/** Node of `$` statement. */
-export interface SvelteReactiveStatement extends BaseNode {
-  type: "SvelteReactiveStatement";
-  label: ESTree.Identifier & { name: "$" };
-  body: ESTree.Statement;
-  parent: ESTree.Node;
 }
