@@ -369,7 +369,7 @@ function convertStyleDirective(
   parent: SvelteStyleDirective["parent"],
   ctx: Context
 ): SvelteStyleDirective {
-  const directive: SvelteStyleDirective = {
+  const directive: SvelteStyleDirectiveLongform = {
     type: "SvelteStyleDirective",
     key: null as any,
     shorthand: false,
@@ -379,20 +379,27 @@ function convertStyleDirective(
   };
   processDirectiveKey(node, directive, ctx);
 
-  const keyName = directive.key.name as SvelteName;
+  const keyName = directive.key.name;
   if (node.value === true) {
-    (directive as unknown as SvelteStyleDirectiveShorthand).shorthand = true;
-    ctx.scriptLet.addExpression(keyName, directive.key, null, (expression) => {
-      if (expression.type !== "Identifier") {
-        throw new ParseError(
-          `Expected JS identifier or attribute value.`,
-          expression.range![0],
-          ctx
-        );
+    const shorthandDirective =
+      directive as unknown as SvelteStyleDirectiveShorthand;
+    shorthandDirective.shorthand = true;
+    ctx.scriptLet.addExpression(
+      keyName,
+      shorthandDirective.key,
+      null,
+      (expression) => {
+        if (expression.type !== "Identifier") {
+          throw new ParseError(
+            `Expected JS identifier or attribute value.`,
+            expression.range![0],
+            ctx
+          );
+        }
+        shorthandDirective.key.name = expression;
       }
-      directive.key.name = expression;
-    });
-    return directive;
+    );
+    return shorthandDirective;
   }
   ctx.addToken("HTMLIdentifier", {
     start: keyName.range[0],
@@ -426,7 +433,10 @@ function convertTransitionDirective(
       ctx,
       null
     ),
-    processName: (name) => ctx.scriptLet.addExpression(name, directive.key),
+    processName: {
+      convert: (name) => ctx.scriptLet.addExpression(name, directive.key),
+      expected: ["Identifier"],
+    },
   });
   return directive;
 }
@@ -451,7 +461,10 @@ function convertAnimationDirective(
       ctx,
       null
     ),
-    processName: (name) => ctx.scriptLet.addExpression(name, directive.key),
+    processName: {
+      convert: (name) => ctx.scriptLet.addExpression(name, directive.key),
+      expected: ["Identifier"],
+    },
   });
   return directive;
 }
@@ -476,7 +489,10 @@ function convertActionDirective(
       ctx,
       null
     ),
-    processName: (name) => ctx.scriptLet.addExpression(name, directive.key),
+    processName: {
+      convert: (name) => ctx.scriptLet.addExpression(name, directive.key),
+      expected: ["Identifier", "MemberExpression"],
+    },
   });
   return directive;
 }
@@ -503,14 +519,17 @@ function convertLetDirective(
     },
     processName: node.expression
       ? undefined
-      : (name) => {
-          // shorthand
-          ctx.letDirCollections
-            .getCollection()
-            .addPattern(name, directive, "any", (es) => {
-              directive.expression = es;
-            });
-          return [];
+      : {
+          convert: (name) => {
+            // shorthand
+            ctx.letDirCollections
+              .getCollection()
+              .addPattern(name, directive, "any", (es) => {
+                directive.expression = es;
+              });
+            return [];
+          },
+          expected: [],
         },
   });
   return directive;
@@ -527,9 +546,12 @@ type DirectiveProcessors<
         shorthand: boolean
       ) => ScriptLetCallback<NonNullable<E>>[];
       processPattern?: undefined;
-      processName?: (
-        expression: SvelteName
-      ) => ScriptLetCallback<ESTree.Identifier>[];
+      processName?: {
+        convert: (
+          expression: SvelteName
+        ) => ScriptLetCallback<Exclude<S["key"]["name"], SvelteName>>[];
+        expected: Exclude<S["key"]["name"], SvelteName>["type"][];
+      };
     }
   | {
       processExpression?: undefined;
@@ -537,9 +559,12 @@ type DirectiveProcessors<
         expression: E,
         shorthand: boolean
       ) => ScriptLetCallback<NonNullable<E>>[];
-      processName?: (
-        expression: SvelteName
-      ) => ScriptLetCallback<ESTree.Identifier>[];
+      processName?: {
+        convert: (
+          expression: SvelteName
+        ) => ScriptLetCallback<Exclude<S["key"]["name"], SvelteName>>[];
+        expected: Exclude<S["key"]["name"], SvelteName>["type"][];
+      };
     };
 
 /** Common process for directive */
@@ -657,9 +682,14 @@ function processDirectiveExpression<
   }
   if (!shorthand) {
     if (processors.processName) {
-      processors.processName(keyName).push((es) => {
-        if (es.type !== "Identifier") {
-          throw new ParseError(`Expected JS identifier.`, es.range![0], ctx);
+      const { convert, expected } = processors.processName;
+      convert(keyName).push((es) => {
+        if (!expected.includes(es.type)) {
+          throw new ParseError(
+            `Expected JS ${expected.join(", or ")}.`,
+            es.range![0],
+            ctx
+          );
         }
         key.name = es;
       });

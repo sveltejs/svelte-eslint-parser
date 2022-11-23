@@ -4,8 +4,8 @@
 
     $: y = x
     $: z = y
-    $: foo = get
+    $: getFunction = get
 </script>
 
 <input title={z} bind:value={x}>
-{foo()}
+{getFunction()}

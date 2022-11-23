@@ -491,12 +491,30 @@ export type SvelteDirective =
   | SvelteLetDirective
   | SvelteRefDirective
   | SvelteTransitionDirective;
-export interface SvelteDirectiveKey extends BaseNode {
+
+export type SvelteDirectiveKey =
+  | SvelteDirectiveKeyTextName
+  | SvelteDirectiveKeyFunctionName
+  | SvelteDirectiveKeyForEventHandler
+  | SvelteDirectiveKeyForAction
+  | SvelteDirectiveKeyForStyleShorthand;
+interface BaseSvelteDirectiveKey<N extends ESTree.Expression | SvelteName>
+  extends BaseNode {
   type: "SvelteDirectiveKey";
-  name: ESTree.Identifier | SvelteName;
+  name: N;
   modifiers: string[];
   parent: SvelteDirective | SvelteStyleDirective;
 }
+export type SvelteDirectiveKeyTextName = BaseSvelteDirectiveKey<SvelteName>;
+export type SvelteDirectiveKeyFunctionName =
+  BaseSvelteDirectiveKey<ESTree.Identifier>;
+export type SvelteDirectiveKeyForEventHandler =
+  BaseSvelteDirectiveKey<SvelteName>;
+export type SvelteDirectiveKeyForAction = BaseSvelteDirectiveKey<
+  ESTree.Identifier | ESTree.MemberExpression | SvelteName
+>;
+export type SvelteDirectiveKeyForStyleShorthand =
+  BaseSvelteDirectiveKey<ESTree.Identifier>;
 
 interface BaseSvelteDirective extends BaseNode {
   type: "SvelteDirective";
@@ -506,36 +524,44 @@ interface BaseSvelteDirective extends BaseNode {
 
 export interface SvelteActionDirective extends BaseSvelteDirective {
   kind: "Action";
+  key: SvelteDirectiveKeyForAction;
   expression: null | ESTree.Expression;
 }
 export interface SvelteAnimationDirective extends BaseSvelteDirective {
   kind: "Animation";
+  key: SvelteDirectiveKeyFunctionName;
   expression: null | ESTree.Expression;
 }
 export interface SvelteBindingDirective extends BaseSvelteDirective {
   kind: "Binding";
+  key: SvelteDirectiveKeyTextName;
   shorthand: boolean;
   expression: null | ESTree.Expression;
 }
 export interface SvelteClassDirective extends BaseSvelteDirective {
   kind: "Class";
+  key: SvelteDirectiveKeyTextName;
   shorthand: boolean;
   expression: null | ESTree.Expression;
 }
 export interface SvelteEventHandlerDirective extends BaseSvelteDirective {
   kind: "EventHandler";
+  key: SvelteDirectiveKeyForEventHandler;
   expression: null | ESTree.Expression;
 }
 export interface SvelteLetDirective extends BaseSvelteDirective {
   kind: "Let";
+  key: SvelteDirectiveKeyTextName;
   expression: null | ESTree.Pattern;
 }
 export interface SvelteRefDirective extends BaseSvelteDirective {
   kind: "Ref";
+  key: SvelteDirectiveKeyTextName;
   expression: null | ESTree.Expression;
 }
 export interface SvelteTransitionDirective extends BaseSvelteDirective {
   kind: "Transition";
+  key: SvelteDirectiveKeyFunctionName;
   intro: boolean;
   outro: boolean;
   expression: null | ESTree.Expression;
@@ -547,16 +573,18 @@ export type SvelteStyleDirective =
   | SvelteStyleDirectiveLongform;
 interface BaseSvelteStyleDirective extends BaseNode {
   type: "SvelteStyleDirective";
-  key: SvelteDirectiveKey;
+  key: SvelteDirectiveKeyTextName | SvelteDirectiveKeyForStyleShorthand;
   value: (SvelteLiteral | SvelteMustacheTagText)[];
   parent: SvelteStartTag;
 }
 export interface SvelteStyleDirectiveShorthand
   extends BaseSvelteStyleDirective {
+  key: SvelteDirectiveKeyForStyleShorthand;
   shorthand: true;
   value: [];
 }
 export interface SvelteStyleDirectiveLongform extends BaseSvelteStyleDirective {
+  key: SvelteDirectiveKeyTextName;
   shorthand: false;
   value: (SvelteLiteral | SvelteMustacheTagText)[];
 }
