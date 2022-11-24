@@ -369,7 +369,7 @@ function convertStyleDirective(
   parent: SvelteStyleDirective["parent"],
   ctx: Context
 ): SvelteStyleDirective {
-  const directive: SvelteStyleDirective = {
+  const directive: SvelteStyleDirectiveLongform = {
     type: "SvelteStyleDirective",
     key: null as any,
     shorthand: false,
@@ -379,20 +379,27 @@ function convertStyleDirective(
   };
   processDirectiveKey(node, directive, ctx);
 
-  const keyName = directive.key.name as SvelteName;
+  const keyName = directive.key.name;
   if (node.value === true) {
-    (directive as unknown as SvelteStyleDirectiveShorthand).shorthand = true;
-    ctx.scriptLet.addExpression(keyName, directive.key, null, (expression) => {
-      if (expression.type !== "Identifier") {
-        throw new ParseError(
-          `Expected JS identifier or attribute value.`,
-          expression.range![0],
-          ctx
-        );
+    const shorthandDirective =
+      directive as unknown as SvelteStyleDirectiveShorthand;
+    shorthandDirective.shorthand = true;
+    ctx.scriptLet.addExpression(
+      keyName,
+      shorthandDirective.key,
+      null,
+      (expression) => {
+        if (expression.type !== "Identifier") {
+          throw new ParseError(
+            `Expected JS identifier or attribute value.`,
+            expression.range![0],
+            ctx
+          );
+        }
+        shorthandDirective.key.name = expression;
       }
-      directive.key.name = expression;
-    });
-    return directive;
+    );
+    return shorthandDirective;
   }
   ctx.addToken("HTMLIdentifier", {
     start: keyName.range[0],
@@ -426,7 +433,13 @@ function convertTransitionDirective(
       ctx,
       null
     ),
-    processName: (name) => ctx.scriptLet.addExpression(name, directive.key),
+    processName: (name) =>
+      ctx.scriptLet.addExpression(
+        name,
+        directive.key,
+        null,
+        buildExpressionTypeChecker(["Identifier"], ctx)
+      ),
   });
   return directive;
 }
@@ -451,7 +464,13 @@ function convertAnimationDirective(
       ctx,
       null
     ),
-    processName: (name) => ctx.scriptLet.addExpression(name, directive.key),
+    processName: (name) =>
+      ctx.scriptLet.addExpression(
+        name,
+        directive.key,
+        null,
+        buildExpressionTypeChecker(["Identifier"], ctx)
+      ),
   });
   return directive;
 }
@@ -476,7 +495,13 @@ function convertActionDirective(
       ctx,
       null
     ),
-    processName: (name) => ctx.scriptLet.addExpression(name, directive.key),
+    processName: (name) =>
+      ctx.scriptLet.addExpression(
+        name,
+        directive.key,
+        null,
+        buildExpressionTypeChecker(["Identifier", "MemberExpression"], ctx)
+      ),
   });
   return directive;
 }
@@ -529,7 +554,7 @@ type DirectiveProcessors<
       processPattern?: undefined;
       processName?: (
         expression: SvelteName
-      ) => ScriptLetCallback<ESTree.Identifier>[];
+      ) => ScriptLetCallback<Exclude<S["key"]["name"], SvelteName>>[];
     }
   | {
       processExpression?: undefined;
@@ -539,7 +564,7 @@ type DirectiveProcessors<
       ) => ScriptLetCallback<NonNullable<E>>[];
       processName?: (
         expression: SvelteName
-      ) => ScriptLetCallback<ESTree.Identifier>[];
+      ) => ScriptLetCallback<Exclude<S["key"]["name"], SvelteName>>[];
     };
 
 /** Common process for directive */
@@ -658,9 +683,6 @@ function processDirectiveExpression<
   if (!shorthand) {
     if (processors.processName) {
       processors.processName(keyName).push((es) => {
-        if (es.type !== "Identifier") {
-          throw new ParseError(`Expected JS identifier.`, es.range![0], ctx);
-        }
         key.name = es;
       });
     } else {
@@ -680,5 +702,21 @@ function buildProcessExpressionForExpression(
 ): (expression: ESTree.Expression) => ScriptLetCallback<ESTree.Expression>[] {
   return (expression) => {
     return ctx.scriptLet.addExpression(expression, directive, typing);
+  };
+}
+
+/** Build expression type checker to script let callbacks */
+function buildExpressionTypeChecker<T extends ESTree.Expression>(
+  expected: T["type"][],
+  ctx: Context
+): ScriptLetCallback<T> {
+  return (node) => {
+    if (!expected.includes(node.type)) {
+      throw new ParseError(
+        `Expected JS ${expected.join(", or ")}, but ${node.type} found.`,
+        node.range![0],
+        ctx
+      );
+    }
   };
 }
