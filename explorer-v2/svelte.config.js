@@ -6,7 +6,6 @@ const config = {
 		paths: {
 			base: '/svelte-eslint-parser'
 		},
-		trailingSlash: 'always',
 
 		adapter: staticAdapter({
 			// default options are shown
