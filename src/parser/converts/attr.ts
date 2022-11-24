@@ -705,7 +705,7 @@ function buildProcessExpressionForExpression(
   };
 }
 
-/** Push expression type checker to script let callbacks */
+/** Build expression type checker to script let callbacks */
 function buildExpressionTypeChecker<T extends ESTree.Expression>(
   expected: T["type"][],
   ctx: Context
