@@ -1,5 +1,11 @@
 # svelte-eslint-parser
 
+## 0.22.0
+
+### Minor Changes
+
+- [#249](https://github.com/ota-meshi/svelte-eslint-parser/pull/249) [`d560864`](https://github.com/ota-meshi/svelte-eslint-parser/commit/d560864681773fb1e795f8f656b3c90c5ca05e5d) Thanks [@ota-meshi](https://github.com/ota-meshi)! - fix: parsing error when use with member expr
+
 ## 0.21.0
 
 ### Minor Changes
