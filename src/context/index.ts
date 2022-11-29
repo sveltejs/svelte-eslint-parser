@@ -148,26 +148,47 @@ export class Context {
     let start = 0;
     for (const block of extractBlocks(code)) {
       if (block.tag === "template") {
+        if (block.selfClosing) {
+          continue;
+        }
         const lang = block.attrs.find((attr) => attr.key.name === "lang");
         if (!lang || !lang.value || lang.value.value === "html") {
           continue;
         }
       }
       this.blocks.push(block);
-      templateCode +=
-        code.slice(start, block.contentRange[0]) +
-        spaces.slice(block.contentRange[0], block.contentRange[1]);
-      if (block.tag === "script") {
-        scriptCode +=
-          spaces.slice(start, block.contentRange[0]) +
-          code.slice(...block.contentRange);
-        for (const attr of block.attrs) {
-          scriptAttrs[attr.key.name] = attr.value?.value;
-        }
+
+      if (block.selfClosing) {
+        // Self-closing blocks are temporarily replaced with `<s---->` or `<t---->` tag
+        // because the svelte compiler cannot parse self-closing block(script, style) tags.
+        // It will be restored later in `convertHTMLElement()` processing.
+        templateCode += `${code.slice(
+          start,
+          block.startTagRange[0] + 2 /* `<` and first letter */
+        )}${"-".repeat(
+          block.tag.length - 1 /* skip first letter */
+        )}${code.slice(
+          block.startTagRange[0] + 1 /* skip `<` */ + block.tag.length,
+          block.startTagRange[1]
+        )}`;
+        scriptCode += spaces.slice(start, block.startTagRange[1]);
+        start = block.startTagRange[1];
       } else {
-        scriptCode += spaces.slice(start, block.contentRange[1]);
+        templateCode +=
+          code.slice(start, block.contentRange[0]) +
+          spaces.slice(block.contentRange[0], block.contentRange[1]);
+        if (block.tag === "script") {
+          scriptCode +=
+            spaces.slice(start, block.contentRange[0]) +
+            code.slice(...block.contentRange);
+          for (const attr of block.attrs) {
+            scriptAttrs[attr.key.name] = attr.value?.value;
+          }
+        } else {
+          scriptCode += spaces.slice(start, block.contentRange[1]);
+        }
+        start = block.contentRange[1];
       }
-      start = block.contentRange[1];
     }
     templateCode += code.slice(start);
     scriptCode += spaces.slice(start);
@@ -301,16 +322,43 @@ export class Context {
     return this.blocks.find(
       (block) =>
         block.tag === tag &&
+        !block.selfClosing &&
         element.range[0] <= block.contentRange[0] &&
         block.contentRange[1] <= element.range[1]
     );
   }
+
+  public findSelfClosingBlock(
+    element: SvelteElement
+  ): SelfClosingBlock | undefined {
+    return this.blocks.find((block): block is SelfClosingBlock =>
+      Boolean(
+        block.selfClosing &&
+          element.startTag.range[0] <= block.startTagRange[0] &&
+          block.startTagRange[1] <= element.startTag.range[1]
+      )
+    );
+  }
 }
 
-type Block = {
+type Block =
+  | {
+      tag: "script" | "style" | "template";
+      originalTag: string;
+      attrs: AttributeToken[];
+      selfClosing?: false;
+      contentRange: [number, number];
+      startTagRange: [number, number];
+      endTagRange: [number, number];
+    }
+  | SelfClosingBlock;
+
+type SelfClosingBlock = {
   tag: "script" | "style" | "template";
+  originalTag: string;
   attrs: AttributeToken[];
-  contentRange: [number, number];
+  selfClosing: true;
+  startTagRange: [number, number];
 };
 
 /** Extract <script> blocks */
@@ -325,15 +373,25 @@ function* extractBlocks(code: string): IterableIterator<Block> {
     if (!tag) {
       continue;
     }
+    const startTagStart = startTagOpenMatch.index;
     let startTagEnd = startTagOpenRe.lastIndex;
+
+    const lowerTag = tag.toLowerCase() as "script" | "style" | "template";
 
     let attrs: AttributeToken[] = [];
     if (!nextChar.trim()) {
       const attrsData = parseAttributes(code, startTagOpenRe.lastIndex);
       attrs = attrsData.attributes;
       startTagEnd = attrsData.index;
-      if (code[startTagEnd] === "/") {
-        startTagEnd++;
+      if (code[startTagEnd] === "/" && code[startTagEnd + 1] === ">") {
+        yield {
+          tag: lowerTag,
+          originalTag: tag,
+          attrs,
+          selfClosing: true,
+          startTagRange: [startTagStart, startTagEnd + 2],
+        };
+        continue;
       }
       if (code[startTagEnd] === ">") {
         startTagEnd++;
@@ -341,7 +399,6 @@ function* extractBlocks(code: string): IterableIterator<Block> {
         continue;
       }
     }
-    const lowerTag = tag.toLowerCase() as "script" | "style" | "template";
     const endTagRe =
       lowerTag === "script"
         ? endScriptTagRe
@@ -352,13 +409,16 @@ function* extractBlocks(code: string): IterableIterator<Block> {
     const endTagMatch = endTagRe.exec(code);
     if (endTagMatch) {
       const endTagStart = endTagMatch.index;
-      const contentRange: [number, number] = [startTagEnd, endTagStart];
+      const endTagEnd = endTagRe.lastIndex;
       yield {
-        contentRange,
-        attrs,
         tag: lowerTag,
+        originalTag: tag,
+        attrs,
+        startTagRange: [startTagStart, startTagEnd],
+        contentRange: [startTagEnd, endTagStart],
+        endTagRange: [endTagStart, endTagEnd],
       };
-      startTagOpenRe.lastIndex = endTagRe.lastIndex;
+      startTagOpenRe.lastIndex = endTagEnd;
     }
   }
 }

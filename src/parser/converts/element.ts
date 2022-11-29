@@ -268,6 +268,7 @@ function convertHTMLElement(
     element.name.name === "style" ||
     (element.name.name === "template" && ctx.findBlock(element))
   ) {
+    // Restore the block-like element.
     for (const child of element.children) {
       if (child.type === "SvelteText") {
         child.value = ctx.code.slice(...child.range);
@@ -278,6 +279,15 @@ function convertHTMLElement(
         element.startTag.range[1],
         element.endTag?.range[0] ?? element.range[1]
       );
+    }
+  }
+  if (element.startTag.selfClosing && element.name.name.endsWith("-")) {
+    // Restore the self-closing block.
+    const selfClosingBlock =
+      /^[a-z]-+$/iu.test(element.name.name) &&
+      ctx.findSelfClosingBlock(element);
+    if (selfClosingBlock) {
+      element.name.name = selfClosingBlock.originalTag;
     }
   }
 
