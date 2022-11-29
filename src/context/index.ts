@@ -130,7 +130,7 @@ export class Context {
 
   public readonly letDirCollections = new LetDirectiveCollections();
 
-  private state: { isTypeScript?: boolean } = {};
+  private readonly state: { isTypeScript?: boolean } = {};
 
   private readonly blocks: Block[] = [];
 
