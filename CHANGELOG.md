@@ -1,5 +1,11 @@
 # svelte-eslint-parser
 
+## 0.22.1
+
+### Patch Changes
+
+- [#252](https://github.com/ota-meshi/svelte-eslint-parser/pull/252) [`fd8adbd`](https://github.com/ota-meshi/svelte-eslint-parser/commit/fd8adbd21a4c6a5ed7e9b15e22562d305024f32b) Thanks [@ota-meshi](https://github.com/ota-meshi)! - fix: self-closing style with external source
+
 ## 0.22.0
 
 ### Minor Changes
