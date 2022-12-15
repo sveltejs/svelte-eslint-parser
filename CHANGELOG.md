@@ -1,5 +1,11 @@
 # svelte-eslint-parser
 
+## 0.22.2
+
+### Patch Changes
+
+- [`e670d44`](https://github.com/ota-meshi/svelte-eslint-parser/commit/e670d4406a188c56505205ef84bd9c0819e78d94) Thanks [@ota-meshi](https://github.com/ota-meshi)! - fix: virtual references remained
+
 ## 0.22.1
 
 ### Patch Changes
