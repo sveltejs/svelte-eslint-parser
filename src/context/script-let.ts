@@ -516,7 +516,6 @@ export class ScriptLetContext {
           callback!(fn.params, result);
           for (let index = 0; index < fn.params.length; index++) {
             const p = fn.params[index];
-            (p as any).parent = parents![index];
             if (this.ctx.isTypeScript()) {
               const typeAnnotation = (p as any).typeAnnotation;
               delete (p as any).typeAnnotation;
@@ -529,6 +528,7 @@ export class ScriptLetContext {
 
               removeAllScopeAndVariableAndReference(typeAnnotation, result);
             }
+            (p as any).parent = parents![index];
           }
 
           // Process for scope
