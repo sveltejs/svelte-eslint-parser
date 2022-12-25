@@ -88,15 +88,16 @@ function getNodeRange(
       node.trailingComments[node.trailingComments.length - 1]
     ).end;
   }
-  if (start != null && end != null) {
-    return [start, end];
-  }
 
-  if ("range" in node) {
-    return [start ?? node.range![0], end ?? node.range![1]];
-  }
-  const loc = getWithLoc(node);
-  return [start ?? loc.start, end ?? loc.end];
+  const loc =
+    "range" in node
+      ? { start: node.range![0], end: node.range![1] }
+      : getWithLoc(node);
+
+  return [
+    start ? Math.min(start, loc.start) : loc.start,
+    end ? Math.max(end, loc.end) : loc.end,
+  ];
 }
 
 type RestoreCallback = {
@@ -702,7 +703,9 @@ export class ScriptLetContext {
             (t) => restoreCallback.start <= t.range[0]
           ),
         };
-
+        if (startIndex.comment === -1) {
+          startIndex.comment = comments.length;
+        }
         const endIndex = {
           token: tokens.findIndex(
             (t) => restoreCallback.end < t.range[1],
