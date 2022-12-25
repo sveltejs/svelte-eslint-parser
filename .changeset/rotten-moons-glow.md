@@ -2,4 +2,4 @@
 "svelte-eslint-parser": patch
 ---
 
-fix: parsing errors for blocks and js comments
+fix: parsing errors (or wrong AST) for js comments in template

@@ -1,3 +1,6 @@
+<script>
+import Foo from './foo.svelte'
+</script>
 {#each Array(
 //comment
-) as i}{i}{/each}
+) as i}<Foo>{i}</Foo>{/each}
