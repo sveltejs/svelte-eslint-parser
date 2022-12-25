@@ -1,5 +1,11 @@
 # svelte-eslint-parser
 
+## 0.22.3
+
+### Patch Changes
+
+- [#262](https://github.com/ota-meshi/svelte-eslint-parser/pull/262) [`03971d7`](https://github.com/ota-meshi/svelte-eslint-parser/commit/03971d737371a4288e2d08466df469a16d4b03b2) Thanks [@ota-meshi](https://github.com/ota-meshi)! - fix: parsing errors (or wrong AST) for js comments in template
+
 ## 0.22.2
 
 ### Patch Changes
