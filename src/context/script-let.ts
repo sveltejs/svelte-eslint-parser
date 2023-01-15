@@ -155,11 +155,6 @@ export class ScriptLetContext {
         for (const callback of callbacks) {
           callback(node as E, result);
         }
-        (node as any).parent = parent;
-
-        tokens.shift(); // (
-        tokens.pop(); // )
-        tokens.pop(); // ;
 
         if (isTS) {
           removeScope(
@@ -183,6 +178,12 @@ export class ScriptLetContext {
             result.visitorKeys
           );
         }
+
+        (node as any).parent = parent;
+
+        tokens.shift(); // (
+        tokens.pop(); // )
+        tokens.pop(); // ;
 
         // Disconnect the tree structure.
         exprSt.expression = null as never;
@@ -242,7 +243,6 @@ export class ScriptLetContext {
         for (const callback of callbacks) {
           callback(node, result);
         }
-        (node as any).parent = parent;
 
         const scope = result.getScope(decl);
         for (const variable of scope.variables) {
@@ -252,6 +252,8 @@ export class ScriptLetContext {
             }
           }
         }
+
+        (node as any).parent = parent;
 
         tokens.shift(); // const
         tokens.pop(); // ;
@@ -340,11 +342,6 @@ export class ScriptLetContext {
 
         // Process for nodes
         callback(expr, ctx, idx);
-        (expr as any).parent = eachBlock;
-        (ctx as any).parent = eachBlock;
-        if (idx) {
-          (idx as any).parent = eachBlock;
-        }
 
         // Process for scope
         result.registerNodeToScope(eachBlock, scope);
@@ -363,6 +360,12 @@ export class ScriptLetContext {
         );
         if (ref) {
           removeReference(ref, scope.upper!);
+        }
+
+        (expr as any).parent = eachBlock;
+        (ctx as any).parent = eachBlock;
+        if (idx) {
+          (idx as any).parent = eachBlock;
         }
 
         tokens.shift(); // Array
@@ -502,7 +505,7 @@ export class ScriptLetContext {
           range,
         });
         if (this.ctx.isTypeScript()) {
-          source += ` : (${arrayTypings[index]})`;
+          source += `: (${arrayTypings[index]})`;
         }
       }
       const restore = this.appendScript(
@@ -641,6 +644,7 @@ export class ScriptLetContext {
     const comments = result.ast.comments;
     const processedComments = [];
     const nodeToScope = getNodeToScope(result.scopeManager!);
+    const postprocessList: (() => void)[] = [];
 
     let tok;
     while ((tok = tokens.shift())) {
@@ -749,6 +753,7 @@ export class ScriptLetContext {
 
     result.ast.tokens = processedTokens;
     result.ast.comments = processedComments;
+    postprocessList.forEach((p) => p());
 
     // Helpers
     /** Get scope */
@@ -763,7 +768,12 @@ export class ScriptLetContext {
 
     /** Register node to scope */
     function registerNodeToScope(node: any, scope: Scope): void {
-      scope.block = node;
+      // If we replace the `scope.block` at this time,
+      // the scope restore calculation will not work, so we will replace the `scope.block` later.
+      postprocessList.push(() => {
+        scope.block = node;
+      });
+
       const scopes = nodeToScope.get(node);
       if (scopes) {
         scopes.push(scope);

@@ -418,3 +418,51 @@ export function addAllReferences(
     (a, b) => a.identifier.range![0] - b.identifier.range![0]
   );
 }
+
+/**
+ * Simplify scope data.
+ * @deprecated For Debug
+ */
+export function simplifyScope(scope: Scope): unknown {
+  return {
+    type: scope.type,
+    childScopes: scope.childScopes.map(simplifyScope),
+    block: {
+      type: scope.block.type,
+      loc: JSON.stringify(scope.block.loc),
+    },
+    variables:
+      scope.type === "global" ? null : simplifyVariables(scope.variables),
+    references: scope.references.map(simplifyReference),
+    through: scope.through.map(simplifyReference),
+    get original() {
+      return scope;
+    },
+  };
+}
+
+/**
+ * Simplify variables data.
+ * @deprecated For Debug
+ */
+function simplifyVariables(variables: Variable[]) {
+  return Object.fromEntries(
+    variables.map((v) => [
+      v.name,
+      {
+        loc: JSON.stringify(v.defs[0]?.node.loc),
+      },
+    ])
+  );
+}
+
+/**
+ * Simplify reference data.
+ * @deprecated For Debug
+ */
+function simplifyReference(reference: Reference) {
+  return {
+    name: reference.identifier.name,
+    loc: JSON.stringify(reference.identifier.loc),
+  };
+}

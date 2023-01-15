@@ -65,6 +65,7 @@ for (const {
   typeFileName,
   getRuleOutputFileName,
 } of listupFixtures()) {
+  // if (!inputFileName.includes("test")) continue;
   try {
     // eslint-disable-next-line no-console -- ignore
     console.log(inputFileName);
