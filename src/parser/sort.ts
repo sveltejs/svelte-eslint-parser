@@ -1,7 +1,7 @@
 /**
  * Sort tokens
  */
-export function sort<T extends { range: [number, number] }>(
+export function sortNodes<T extends { range: [number, number] }>(
   tokens: T[] | null | undefined
 ): T[] {
   if (!tokens) {

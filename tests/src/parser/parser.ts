@@ -12,7 +12,7 @@ import {
   scopeToJSON,
 } from "./test-utils";
 import type { Comment, SvelteProgram, Token } from "../../../src/ast";
-import { sort } from "../../../src/parser/sort";
+import { sortNodes } from "../../../src/parser/sort";
 
 function parse(code: string, filePath: string) {
   return parseForESLint(code, {
@@ -81,7 +81,7 @@ describe("Check for AST.", () => {
 });
 
 function checkTokens(ast: SvelteProgram, input: string) {
-  const allTokens = sort([...ast.tokens, ...ast.comments]);
+  const allTokens = sortNodes([...ast.tokens, ...ast.comments]);
 
   // check loc
   for (const token of allTokens) {
