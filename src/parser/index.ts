@@ -11,7 +11,7 @@ import type { ScopeManager } from "eslint-scope";
 import { Variable } from "eslint-scope";
 import { parseScript } from "./script";
 import type * as SvAST from "./svelte-ast-types";
-import { sort } from "./sort";
+import { sortNodes } from "./sort";
 import { parseTemplate } from "./template";
 import {
   analyzePropsScope,
@@ -93,8 +93,8 @@ export function parseForESLint(
   ctx.scriptLet.restore(resultScript);
   ctx.tokens.push(...resultScript.ast.tokens);
   ctx.comments.push(...resultScript.ast.comments);
-  sort(ctx.comments);
-  sort(ctx.tokens);
+  sortNodes(ctx.comments);
+  sortNodes(ctx.tokens);
   extractTokens(ctx);
   analyzeStoreScope(resultScript.scopeManager!);
   analyzeReactiveScope(resultScript.scopeManager!);
@@ -179,7 +179,9 @@ export function parseForESLint(
 
 /** Extract tokens */
 function extractTokens(ctx: Context) {
-  const useRanges = sort([...ctx.tokens, ...ctx.comments]).map((t) => t.range);
+  const useRanges = sortNodes([...ctx.tokens, ...ctx.comments]).map(
+    (t) => t.range
+  );
   let range = useRanges.shift();
   for (let index = 0; index < ctx.sourceCode.template.length; index++) {
     while (range && range[1] <= index) {
@@ -201,8 +203,8 @@ function extractTokens(ctx: Context) {
       ctx.addToken("Identifier", { start: index, end: index + 1 });
     }
   }
-  sort(ctx.comments);
-  sort(ctx.tokens);
+  sortNodes(ctx.comments);
+  sortNodes(ctx.tokens);
 
   /**
    * Checks if the given char is punctuator

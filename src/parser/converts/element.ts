@@ -43,6 +43,8 @@ import {
 import { convertText } from "./text";
 import { convertAttributes } from "./attr";
 import { convertConstTag } from "./const";
+import { sortNodes } from "../sort";
+import type { ScriptLetBlockParam } from "../../context/script-let";
 
 /* eslint-disable complexity -- X */
 /** Convert for Fragment or Element or ... */
@@ -169,6 +171,26 @@ export function* convertChildren(
   }
 }
 
+/** Extract `let:` directives. */
+function extractLetDirectives(fragment: {
+  attributes: SvAST.AttributeOrDirective[];
+}): {
+  letDirectives: SvAST.LetDirective[];
+  attributes: Exclude<SvAST.AttributeOrDirective, SvAST.LetDirective>[];
+} {
+  const letDirectives: SvAST.LetDirective[] = [];
+  const attributes: Exclude<SvAST.AttributeOrDirective, SvAST.LetDirective>[] =
+    [];
+  for (const attr of fragment.attributes) {
+    if (attr.type === "Let") {
+      letDirectives.push(attr);
+    } else {
+      attributes.push(attr);
+    }
+  }
+  return { letDirectives, attributes };
+}
+
 /** Check if children needs a scope. */
 function needScopeByChildren(fragment: {
   children: SvAST.TemplateNode[];
@@ -231,21 +253,26 @@ function convertHTMLElement(
   };
   element.startTag.parent = element;
 
-  ctx.letDirCollections.beginExtract();
-  element.startTag.attributes.push(
-    ...convertAttributes(node.attributes, element.startTag, ctx)
-  );
-  const lets = ctx.letDirCollections.extract();
-  if (lets.isEmpty() && !needScopeByChildren(node)) {
+  const { letDirectives, attributes } = extractLetDirectives(node);
+  const letParams: ScriptLetBlockParam[] = [];
+  if (letDirectives.length) {
+    ctx.letDirCollections.beginExtract();
+    element.startTag.attributes.push(
+      ...convertAttributes(letDirectives, element.startTag, ctx)
+    );
+    letParams.push(...ctx.letDirCollections.extract().getLetParams());
+  }
+  if (!letParams.length && !needScopeByChildren(node)) {
+    element.startTag.attributes.push(
+      ...convertAttributes(attributes, element.startTag, ctx)
+    );
     element.children.push(...convertChildren(node, element, ctx));
   } else {
-    ctx.scriptLet.nestBlock(
-      element,
-      lets.getLetParams(),
-      lets.getParents(),
-      lets.getCallback(),
-      lets.getTypes()
+    ctx.scriptLet.nestBlock(element, letParams);
+    element.startTag.attributes.push(
+      ...convertAttributes(attributes, element.startTag, ctx)
     );
+    sortNodes(element.startTag.attributes);
     element.children.push(...convertChildren(node, element, ctx));
     ctx.scriptLet.closeScope();
   }
@@ -333,21 +360,26 @@ function convertSpecialElement(
   };
   element.startTag.parent = element;
 
-  ctx.letDirCollections.beginExtract();
-  element.startTag.attributes.push(
-    ...convertAttributes(node.attributes, element.startTag, ctx)
-  );
-  const lets = ctx.letDirCollections.extract();
-  if (lets.isEmpty() && !needScopeByChildren(node)) {
+  const { letDirectives, attributes } = extractLetDirectives(node);
+  const letParams: ScriptLetBlockParam[] = [];
+  if (letDirectives.length) {
+    ctx.letDirCollections.beginExtract();
+    element.startTag.attributes.push(
+      ...convertAttributes(letDirectives, element.startTag, ctx)
+    );
+    letParams.push(...ctx.letDirCollections.extract().getLetParams());
+  }
+  if (!letParams.length && !needScopeByChildren(node)) {
+    element.startTag.attributes.push(
+      ...convertAttributes(attributes, element.startTag, ctx)
+    );
     element.children.push(...convertChildren(node, element, ctx));
   } else {
-    ctx.scriptLet.nestBlock(
-      element,
-      lets.getLetParams(),
-      lets.getParents(),
-      lets.getCallback(),
-      lets.getTypes()
+    ctx.scriptLet.nestBlock(element, letParams);
+    element.startTag.attributes.push(
+      ...convertAttributes(attributes, element.startTag, ctx)
     );
+    sortNodes(element.startTag.attributes);
     element.children.push(...convertChildren(node, element, ctx));
     ctx.scriptLet.closeScope();
   }
@@ -445,21 +477,26 @@ function convertComponentElement(
   };
   element.startTag.parent = element;
 
-  ctx.letDirCollections.beginExtract();
-  element.startTag.attributes.push(
-    ...convertAttributes(node.attributes, element.startTag, ctx)
-  );
-  const lets = ctx.letDirCollections.extract();
-  if (lets.isEmpty() && !needScopeByChildren(node)) {
+  const { letDirectives, attributes } = extractLetDirectives(node);
+  const letParams: ScriptLetBlockParam[] = [];
+  if (letDirectives.length) {
+    ctx.letDirCollections.beginExtract();
+    element.startTag.attributes.push(
+      ...convertAttributes(letDirectives, element.startTag, ctx)
+    );
+    letParams.push(...ctx.letDirCollections.extract().getLetParams());
+  }
+  if (!letParams.length && !needScopeByChildren(node)) {
+    element.startTag.attributes.push(
+      ...convertAttributes(attributes, element.startTag, ctx)
+    );
     element.children.push(...convertChildren(node, element, ctx));
   } else {
-    ctx.scriptLet.nestBlock(
-      element,
-      lets.getLetParams(),
-      lets.getParents(),
-      lets.getCallback(),
-      lets.getTypes()
+    ctx.scriptLet.nestBlock(element, letParams);
+    element.startTag.attributes.push(
+      ...convertAttributes(attributes, element.startTag, ctx)
     );
+    sortNodes(element.startTag.attributes);
     element.children.push(...convertChildren(node, element, ctx));
     ctx.scriptLet.closeScope();
   }

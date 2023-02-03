@@ -113,6 +113,12 @@ type ObjectShorthandProperty = ESTree.Property & {
   value: ESTree.Identifier;
 };
 
+export type ScriptLetBlockParam = {
+  node: ESTree.Pattern | SvelteName;
+  parent: SvelteNode;
+  typing: string;
+  callback: (node: ESTree.Pattern, options: ScriptLetCallbackOption) => void;
+};
 /**
  * A class that handles script fragments.
  * The script fragment AST node remaps and connects to the original directive AST node.
@@ -408,62 +414,15 @@ export class ScriptLetContext {
     this.pushScope(restore, "});");
   }
 
-  public nestBlock(block: SvelteNode): void;
-
   public nestBlock(
     block: SvelteNode,
-    params: (ESTree.Pattern | SvelteName)[],
-    parents: SvelteNode[],
-    callback: (
-      nodes: ESTree.Pattern[],
-      options: ScriptLetCallbackOption
-    ) => void,
-    typings:
-      | string[]
-      | ((helper: TypeGenHelper) => {
-          typings: string[];
-          preparationScript?: string[];
-        })
-  ): void;
-
-  public nestBlock(
-    block: SvelteNode,
-    params?: (ESTree.Pattern | SvelteName)[],
-    parents?: SvelteNode[],
-    callback?: (
-      nodes: ESTree.Pattern[],
-      options: ScriptLetCallbackOption
-    ) => void,
-    typings?:
-      | string[]
-      | ((helper: TypeGenHelper) => {
-          typings: string[];
+    params?:
+      | ScriptLetBlockParam[]
+      | ((helper: TypeGenHelper | null) => {
+          param: ScriptLetBlockParam;
           preparationScript?: string[];
         })
   ): void {
-    let arrayTypings: string[] = [];
-    if (typings && this.ctx.isTypeScript()) {
-      if (Array.isArray(typings)) {
-        arrayTypings = typings;
-      } else {
-        const generatedTypes = typings({
-          generateUniqueId: (base) => this.generateUniqueId(base),
-        });
-        arrayTypings = generatedTypes.typings;
-        if (generatedTypes.preparationScript) {
-          for (const preparationScript of generatedTypes.preparationScript) {
-            this.appendScriptWithoutOffset(
-              preparationScript,
-              (node, tokens, comments, result) => {
-                tokens.length = 0;
-                comments.length = 0;
-                removeAllScopeAndVariableAndReference(node, result);
-              }
-            );
-          }
-        }
-      }
-    }
     if (!params) {
       const restore = this.appendScript(
         `{`,
@@ -483,7 +442,44 @@ export class ScriptLetContext {
       );
       this.pushScope(restore, "}");
     } else {
-      const ranges = params.map(getNodeRange).sort(([a], [b]) => a - b);
+      let resolvedParams;
+      if (typeof params === "function") {
+        if (this.ctx.isTypeScript()) {
+          const generatedTypes = params({
+            generateUniqueId: (base) => this.generateUniqueId(base),
+          });
+          resolvedParams = [generatedTypes.param];
+          if (generatedTypes.preparationScript) {
+            for (const preparationScript of generatedTypes.preparationScript) {
+              this.appendScriptWithoutOffset(
+                preparationScript,
+                (node, tokens, comments, result) => {
+                  tokens.length = 0;
+                  comments.length = 0;
+                  removeAllScopeAndVariableAndReference(node, result);
+                }
+              );
+            }
+          }
+        } else {
+          const generatedTypes = params(null);
+          resolvedParams = [generatedTypes.param];
+        }
+      } else {
+        resolvedParams = params;
+      }
+      const sortedParams = [...resolvedParams]
+        .map((d) => {
+          return {
+            ...d,
+            range: getNodeRange(d.node),
+          };
+        })
+        .sort((a, b) => {
+          const [pA] = a.range;
+          const [pB] = b.range;
+          return pA - pB;
+        });
 
       const maps: {
         index: number;
@@ -492,8 +488,9 @@ export class ScriptLetContext {
       }[] = [];
 
       let source = "";
-      for (let index = 0; index < ranges.length; index++) {
-        const range = ranges[index];
+      for (let index = 0; index < sortedParams.length; index++) {
+        const param = sortedParams[index];
+        const range = param.range;
         if (source) {
           source += ",";
         }
@@ -505,7 +502,7 @@ export class ScriptLetContext {
           range,
         });
         if (this.ctx.isTypeScript()) {
-          source += `: (${arrayTypings[index]})`;
+          source += `: (${param.typing})`;
         }
       }
       const restore = this.appendScript(
@@ -517,9 +514,9 @@ export class ScriptLetContext {
           const scope = result.getScope(fn.body);
 
           // Process for nodes
-          callback!(fn.params, result);
           for (let index = 0; index < fn.params.length; index++) {
             const p = fn.params[index];
+            sortedParams[index].callback(p, result);
             if (this.ctx.isTypeScript()) {
               const typeAnnotation = (p as any).typeAnnotation;
               delete (p as any).typeAnnotation;
@@ -532,7 +529,7 @@ export class ScriptLetContext {
 
               removeAllScopeAndVariableAndReference(typeAnnotation, result);
             }
-            (p as any).parent = parents![index];
+            (p as any).parent = sortedParams[index].parent;
           }
 
           // Process for scope

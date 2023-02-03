@@ -1,45 +1,13 @@
-import type { SvelteLetDirective, SvelteName, SvelteNode } from "../ast";
+import type { SvelteLetDirective, SvelteName } from "../ast";
 import type * as ESTree from "estree";
-import type { ScriptLetCallback, ScriptLetCallbackOption } from "./script-let";
+import type { ScriptLetBlockParam, ScriptLetCallback } from "./script-let";
 
 /** A class that collects pattern nodes for Let directives. */
 export class LetDirectiveCollection {
-  private readonly list: {
-    pattern: ESTree.Pattern | SvelteName;
-    directive: SvelteLetDirective;
-    typing: string;
-    callbacks: ScriptLetCallback<ESTree.Pattern>[];
-  }[] = [];
+  private readonly list: ScriptLetBlockParam[] = [];
 
-  public isEmpty(): boolean {
-    return this.list.length === 0;
-  }
-
-  public getLetParams(): (ESTree.Pattern | SvelteName)[] {
-    return this.list.map((d) => d.pattern);
-  }
-
-  public getParents(): SvelteNode[] {
-    return this.list.map((d) => d.directive);
-  }
-
-  public getCallback(): (
-    nodes: ESTree.Pattern[],
-    options: ScriptLetCallbackOption
-  ) => void {
-    return (nodes, options) => {
-      for (let index = 0; index < nodes.length; index++) {
-        const node = nodes[index];
-        const { callbacks } = this.list[index];
-        for (const callback of callbacks) {
-          callback(node, options);
-        }
-      }
-    };
-  }
-
-  public getTypes(): string[] {
-    return this.list.map((d) => d.typing);
+  public getLetParams(): ScriptLetBlockParam[] {
+    return this.list;
   }
 
   public addPattern(
@@ -49,10 +17,14 @@ export class LetDirectiveCollection {
     ...callbacks: ScriptLetCallback<ESTree.Pattern>[]
   ): ScriptLetCallback<ESTree.Pattern>[] {
     this.list.push({
-      pattern,
-      directive,
+      node: pattern,
+      parent: directive,
       typing,
-      callbacks,
+      callback(node, options) {
+        for (const callback of callbacks) {
+          callback(node, options);
+        }
+      },
     });
     return callbacks;
   }

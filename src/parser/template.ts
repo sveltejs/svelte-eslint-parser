@@ -2,7 +2,7 @@ import { parse } from "svelte/compiler";
 import type * as SvAST from "./svelte-ast-types";
 import type { Context } from "../context";
 import { convertSvelteRoot } from "./converts/index";
-import { sort } from "./sort";
+import { sortNodes } from "./sort";
 import type { SvelteProgram } from "../ast";
 import { ParseError } from "..";
 
@@ -22,7 +22,7 @@ export function parseTemplate(
       filename: parserOptions.filePath,
     }) as SvAST.Ast;
     const ast = convertSvelteRoot(svelteAst, ctx);
-    sort(ast.body);
+    sortNodes(ast.body);
 
     return {
       ast,

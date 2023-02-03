@@ -18,6 +18,7 @@ import type {
 import type { Context } from "../../context";
 import { convertChildren } from "./element";
 import { getWithLoc, indexOf, lastIndexOf } from "./common";
+import type * as ESTree from "estree";
 
 /** Get start index of block */
 function startBlockIndex(code: string, endIndex: number): number {
@@ -281,37 +282,52 @@ export function convertAwaitBlock(
       }),
     };
     if (node.value) {
-      ctx.scriptLet.nestBlock(
-        thenBlock,
-        [node.value],
-        [thenBlock],
-        ([value]) => {
+      const baseParam = {
+        node: node.value,
+        parent: thenBlock,
+        callback(value: ESTree.Pattern) {
           thenBlock.value = value;
         },
-        ({ generateUniqueId }) => {
-          const expression = ctx.getText(node.expression);
-          if (node.expression.type === "Literal") {
-            return {
-              typings: [expression],
-            };
-          }
-          const idAwaitThenValue = generateUniqueId("AwaitThenValue");
-          if (node.expression.type === "Identifier") {
-            return {
-              preparationScript: [generateAwaitThenValueType(idAwaitThenValue)],
-              typings: [`${idAwaitThenValue}<(typeof ${expression})>`],
-            };
-          }
-          const id = generateUniqueId(expression);
+        typing: "any",
+      };
+
+      ctx.scriptLet.nestBlock(thenBlock, (typeCtx) => {
+        if (!typeCtx) {
           return {
-            preparationScript: [
-              `const ${id} = ${expression};`,
-              generateAwaitThenValueType(idAwaitThenValue),
-            ],
-            typings: [`${idAwaitThenValue}<(typeof ${id})>`],
+            param: baseParam,
           };
         }
-      );
+        const expression = ctx.getText(node.expression);
+        if (node.expression.type === "Literal") {
+          return {
+            param: {
+              ...baseParam,
+              typing: expression,
+            },
+          };
+        }
+        const idAwaitThenValue = typeCtx.generateUniqueId("AwaitThenValue");
+        if (node.expression.type === "Identifier") {
+          return {
+            preparationScript: [generateAwaitThenValueType(idAwaitThenValue)],
+            param: {
+              ...baseParam,
+              typing: `${idAwaitThenValue}<(typeof ${expression})>`,
+            },
+          };
+        }
+        const id = typeCtx.generateUniqueId(expression);
+        return {
+          preparationScript: [
+            `const ${id} = ${expression};`,
+            generateAwaitThenValueType(idAwaitThenValue),
+          ],
+          param: {
+            ...baseParam,
+            typing: `${idAwaitThenValue}<(typeof ${id})>`,
+          },
+        };
+      });
     } else {
       ctx.scriptLet.nestBlock(thenBlock);
     }
@@ -351,15 +367,16 @@ export function convertAwaitBlock(
     } as SvelteAwaitCatchBlock;
 
     if (node.error) {
-      ctx.scriptLet.nestBlock(
-        catchBlock,
-        [node.error],
-        [catchBlock],
-        ([error]) => {
-          catchBlock.error = error;
+      ctx.scriptLet.nestBlock(catchBlock, [
+        {
+          node: node.error,
+          parent: catchBlock,
+          typing: "Error",
+          callback: (error) => {
+            catchBlock.error = error;
+          },
         },
-        ["Error"]
-      );
+      ]);
     } else {
       ctx.scriptLet.nestBlock(catchBlock);
     }
