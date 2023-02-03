@@ -1,5 +1,11 @@
 # svelte-eslint-parser
 
+## 0.23.0
+
+### Minor Changes
+
+- [#271](https://github.com/ota-meshi/svelte-eslint-parser/pull/271) [`e355d5c`](https://github.com/ota-meshi/svelte-eslint-parser/commit/e355d5c4d1210ae8b74fd50be6263efc08b849e1) Thanks [@ota-meshi](https://github.com/ota-meshi)! - fix: wrong variable scope in let directive
+
 ## 0.22.4
 
 ### Patch Changes
