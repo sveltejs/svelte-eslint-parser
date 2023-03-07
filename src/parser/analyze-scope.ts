@@ -2,7 +2,7 @@ import type ESTree from "estree";
 import type { Scope, ScopeManager } from "eslint-scope";
 import { Variable, Reference, analyze } from "eslint-scope";
 import { getFallbackKeys } from "../traverse";
-import type { SvelteReactiveStatement, SvelteScriptElement } from "../ast";
+import type { SvelteHTMLNode, SvelteReactiveStatement, SvelteScriptElement } from "../ast";
 import { addReference, addVariable } from "../scope";
 import { addElementToSortedArray } from "../utils";
 /**
@@ -25,7 +25,7 @@ export function analyzeScope(
           sourceType,
         };
 
-  return analyze(root, {
+  let scopeManager = analyze(root, {
     ignoreEval: true,
     nodejsScope: false,
     impliedStrict: ecmaFeatures.impliedStrict,
@@ -33,6 +33,17 @@ export function analyzeScope(
     sourceType,
     fallback: getFallbackKeys,
   });
+  let originalAcquire = scopeManager.acquire;
+  scopeManager.acquire = function(node: ESTree.Node | SvelteHTMLNode, inner: boolean) {
+    if (scopeManager.__get(node) === undefined && node.type !== 'Program' && node.parent.type === 'SvelteScriptElement') {
+      // No deeper scope matched --> use module for nodes besides Program or SvelteScriptElement
+      return scopeManager.globalScope.childScopes.find((s) => s.type === 'module') || scopeManager.globalScope;
+    }
+
+    return originalAcquire.call(scopeManager, node, inner);
+  };
+
+  return scopeManager;
 }
 
 /** Analyze reactive scope */

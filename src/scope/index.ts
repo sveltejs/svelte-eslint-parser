@@ -3,7 +3,6 @@ import type * as ESTree from "estree";
 import type { TSESTree } from "@typescript-eslint/types";
 import { traverseNodes } from "../traverse";
 import { addElementsToSortedArray, addElementToSortedArray } from "../utils";
-import type { SvelteHTMLNode } from "../ast";
 
 /** Remove all scope, variable, and reference */
 export function removeAllScopeAndVariableAndReference(
@@ -59,9 +58,9 @@ export function removeAllScopeAndVariableAndReference(
  */
 export function getScopeFromNode(
   scopeManager: ScopeManager,
-  currentNode: ESTree.Node | SvelteHTMLNode
+  currentNode: ESTree.Node
 ): Scope {
-  let node: ESTree.Node | SvelteHTMLNode | null = currentNode;
+  let node: ESTree.Node | null = currentNode;
   for (; node; node = (node as any).parent || null) {
     const scope = scopeManager.acquire(node, false);
     if (scope) {
@@ -79,10 +78,7 @@ export function getScopeFromNode(
     }
   }
   const global = scopeManager.globalScope;
-
-  return currentNode.type === "Program" || currentNode.type === "SvelteScriptElement" ?
-         global :
-         getProgramScope(scopeManager);
+  return global;
 }
 /**
  * Gets the scope for the Program node
