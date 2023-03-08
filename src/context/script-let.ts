@@ -58,6 +58,7 @@ type ScriptLetRestoreCallbackOption = {
   registerNodeToScope: (node: any, scope: Scope) => void;
   scopeManager: ScopeManager;
   visitorKeys?: { [type: string]: string[] };
+  addPostProcess: (callback: () => void) => void;
 };
 
 /**
@@ -129,6 +130,8 @@ export class ScriptLetContext {
   private readonly ctx: Context;
 
   private readonly restoreCallbacks: RestoreCallback[] = [];
+
+  private readonly programRestoreCallbacks: ScriptLetRestoreCallback[] = [];
 
   private readonly closeScopeCallbacks: (() => void)[] = [];
 
@@ -574,6 +577,10 @@ export class ScriptLetContext {
     this.closeScopeCallbacks.pop()!();
   }
 
+  public addProgramRestore(callback: ScriptLetRestoreCallback): void {
+    this.programRestoreCallbacks.push(callback);
+  }
+
   private appendScript(
     text: string,
     offset: number,
@@ -631,6 +638,57 @@ export class ScriptLetContext {
    * Restore AST nodes
    */
   public restore(result: ESLintExtendedProgram): void {
+    const nodeToScope = getNodeToScope(result.scopeManager!);
+    const postprocessList: (() => void)[] = [];
+
+    const callbackOption: ScriptLetRestoreCallbackOption = {
+      getScope,
+      getInnermostScope,
+      registerNodeToScope,
+      scopeManager: result.scopeManager!,
+      visitorKeys: result.visitorKeys,
+      addPostProcess: (cb) => postprocessList.push(cb),
+    };
+
+    this.restoreNodes(result, callbackOption);
+    this.restoreProgram(result, callbackOption);
+    postprocessList.forEach((p) => p());
+
+    // Helpers
+    /** Get scope */
+    function getScope(node: ESTree.Node) {
+      return getScopeFromNode(result.scopeManager!, node);
+    }
+
+    /** Get innermost scope */
+    function getInnermostScope(node: ESTree.Node) {
+      return getInnermostScopeFromNode(result.scopeManager!, node);
+    }
+
+    /** Register node to scope */
+    function registerNodeToScope(node: any, scope: Scope): void {
+      // If we replace the `scope.block` at this time,
+      // the scope restore calculation will not work, so we will replace the `scope.block` later.
+      postprocessList.push(() => {
+        scope.block = node;
+      });
+
+      const scopes = nodeToScope.get(node);
+      if (scopes) {
+        scopes.push(scope);
+      } else {
+        nodeToScope.set(node, [scope]);
+      }
+    }
+  }
+
+  /**
+   * Restore AST nodes
+   */
+  private restoreNodes(
+    result: ESLintExtendedProgram,
+    callbackOption: ScriptLetRestoreCallbackOption
+  ): void {
     let orderedRestoreCallback = this.restoreCallbacks.shift();
     if (!orderedRestoreCallback) {
       return;
@@ -640,8 +698,6 @@ export class ScriptLetContext {
     const processedTokens = [];
     const comments = result.ast.comments;
     const processedComments = [];
-    const nodeToScope = getNodeToScope(result.scopeManager!);
-    const postprocessList: (() => void)[] = [];
 
     let tok;
     while ((tok = tokens.shift())) {
@@ -731,13 +787,12 @@ export class ScriptLetContext {
           startIndex.comment,
           endIndex.comment - startIndex.comment
         );
-        restoreCallback.callback(node, targetTokens, targetComments, {
-          getScope,
-          getInnermostScope,
-          registerNodeToScope,
-          scopeManager: result.scopeManager!,
-          visitorKeys: result.visitorKeys,
-        });
+        restoreCallback.callback(
+          node,
+          targetTokens,
+          targetComments,
+          callbackOption
+        );
 
         processedTokens.push(...targetTokens);
         processedComments.push(...targetComments);
@@ -750,33 +805,22 @@ export class ScriptLetContext {
 
     result.ast.tokens = processedTokens;
     result.ast.comments = processedComments;
-    postprocessList.forEach((p) => p());
+  }
 
-    // Helpers
-    /** Get scope */
-    function getScope(node: ESTree.Node) {
-      return getScopeFromNode(result.scopeManager!, node);
-    }
-
-    /** Get innermost scope */
-    function getInnermostScope(node: ESTree.Node) {
-      return getInnermostScopeFromNode(result.scopeManager!, node);
-    }
-
-    /** Register node to scope */
-    function registerNodeToScope(node: any, scope: Scope): void {
-      // If we replace the `scope.block` at this time,
-      // the scope restore calculation will not work, so we will replace the `scope.block` later.
-      postprocessList.push(() => {
-        scope.block = node;
-      });
-
-      const scopes = nodeToScope.get(node);
-      if (scopes) {
-        scopes.push(scope);
-      } else {
-        nodeToScope.set(node, [scope]);
-      }
+  /**
+   * Restore program node
+   */
+  private restoreProgram(
+    result: ESLintExtendedProgram,
+    callbackOption: ScriptLetRestoreCallbackOption
+  ): void {
+    for (const callback of this.programRestoreCallbacks) {
+      callback(
+        result.ast,
+        result.ast.tokens,
+        result.ast.comments,
+        callbackOption
+      );
     }
   }
 
