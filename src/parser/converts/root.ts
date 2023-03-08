@@ -9,6 +9,7 @@ import {} from "./common";
 import type { Context } from "../../context";
 import { convertChildren, extractElementTags } from "./element";
 import { convertAttributeTokens } from "./attr";
+import type { Scope } from "eslint-scope";
 
 /**
  * Convert root
@@ -126,6 +127,30 @@ export function convertSvelteRoot(
 
     body.push(style);
   }
+
+  // Set the scope of the Program node.
+  ctx.scriptLet.addProgramRestore(
+    (
+      node,
+      _tokens,
+      _comments,
+      { scopeManager, registerNodeToScope, addPostProcess }
+    ) => {
+      const scopes: Scope[] = [];
+      for (const scope of scopeManager.scopes) {
+        if (scope.block === node) {
+          registerNodeToScope(ast, scope);
+          scopes.push(scope);
+        }
+      }
+      addPostProcess(() => {
+        // Reverts the node indicated by `block` to the original Program node.
+        // This state is incorrect, but `eslint-utils`'s `referenceTracker.iterateEsmReferences()` tracks import statements
+        // from Program nodes set to `block` in global scope. This can only be handled by the original Program node.
+        scopeManager.globalScope.block = node;
+      });
+    }
+  );
 
   return ast;
 }
