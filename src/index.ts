@@ -6,6 +6,8 @@ import { ParseError } from "./errors";
 
 export { AST, ParseError };
 
+export const name = "svelte-eslint-parser";
+
 // parser
 export { parseForESLint };
 // Keys
