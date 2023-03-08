@@ -1,5 +1,17 @@
 # svelte-eslint-parser
 
+## 0.24.0
+
+### Minor Changes
+
+- [#292](https://github.com/ota-meshi/svelte-eslint-parser/pull/292) [`ec061f5`](https://github.com/ota-meshi/svelte-eslint-parser/commit/ec061f574d73aa25c13a631bb3be6fa2f861e8e8) Thanks [@ota-meshi](https://github.com/ota-meshi)! - BREAKING: fix resolve to module scope for top level statements
+
+  This change corrects the result of `context.getScope()`, but it is a breaking change.
+
+- [#294](https://github.com/ota-meshi/svelte-eslint-parser/pull/294) [`14d6e95`](https://github.com/ota-meshi/svelte-eslint-parser/commit/14d6e95773ea638855c25927c11f7a2df1632801) Thanks [@ota-meshi](https://github.com/ota-meshi)! - feat: add peerDependenciesMeta to package.json
+
+- [#295](https://github.com/ota-meshi/svelte-eslint-parser/pull/295) [`924cd3e`](https://github.com/ota-meshi/svelte-eslint-parser/commit/924cd3e72db0d9d09aed1da5ec3f2e5995c9ca77) Thanks [@ota-meshi](https://github.com/ota-meshi)! - feat: export name property
+
 ## 0.23.0
 
 ### Minor Changes
