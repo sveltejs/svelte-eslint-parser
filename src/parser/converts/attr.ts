@@ -351,11 +351,12 @@ function buildEventHandlerType(
     return nativeEventHandlerType;
   }
   if (element.kind === "component") {
-    // I think we need to give an expression to the function call in order to reason correctly,
-    // but that's not currently supported.
-    // In the first place, the `@typescript-eslint/parser` currently
-    // cannot correctly parse the import types of `*.svelte`.
-    // return `(1 as any as ${elementName}['$on'])('${eventName}', $$expr)`;
+    // `@typescript-eslint/parser` currently cannot parse `*.svelte` import types correctly.
+    // So if we try to do a correct type parsing, it's argument type will be `any`.
+    // A workaround is to inject the type directly, as `CustomEvent<any>` is better than `any`.
+
+    // const componentEvents = `import('svelte').ComponentEvents<${elementName}>`;
+    // return `(e:'${eventName}' extends keyof ${componentEvents}?${componentEvents}['${eventName}']:CustomEvent<any>)=>void`;
 
     return `(e:CustomEvent<any>)=>void`;
   }
@@ -374,7 +375,7 @@ function buildEventHandlerType(
     /* */ /* */ /* */ `'${attrName}' extends infer ATTR`,
     /* */ /* */ /* */ `?(`,
     /* */ /* */ /* */ /* */ `ATTR extends keyof ${importSvelteHTMLElements}[EVT]`,
-    /* */ /* */ /* */ /* */ /* */ `?${importSvelteHTMLElements}[U][ATTR]`,
+    /* */ /* */ /* */ /* */ /* */ `?${importSvelteHTMLElements}[EVT][ATTR]`,
     /* */ /* */ /* */ /* */ /* */ `:${nativeEventHandlerType}`,
     /* */ /* */ /* */ `)`,
     /* */ /* */ /* */ `:${nativeEventHandlerType}`,
