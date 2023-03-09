@@ -15,6 +15,9 @@ import type {
   SvelteStyleDirective,
   SvelteStyleDirectiveLongform,
   SvelteStyleDirectiveShorthand,
+  SvelteElement,
+  SvelteScriptElement,
+  SvelteStyleElement,
 } from "../../ast";
 import type ESTree from "estree";
 import type { Context } from "../../context";
@@ -33,6 +36,7 @@ import type { AttributeToken } from "../html";
 export function* convertAttributes(
   attributes: SvAST.AttributeOrDirective[],
   parent: SvelteStartTag,
+  elementName: string,
   ctx: Context
 ): IterableIterator<
   | SvelteAttribute
@@ -55,7 +59,7 @@ export function* convertAttributes(
       continue;
     }
     if (attr.type === "EventHandler") {
-      yield convertEventHandlerDirective(attr, parent, ctx);
+      yield convertEventHandlerDirective(attr, parent, elementName, ctx);
       continue;
     }
     if (attr.type === "Class") {
@@ -314,6 +318,7 @@ function convertBindingDirective(
 function convertEventHandlerDirective(
   node: SvAST.DirectiveForExpression,
   parent: SvelteDirective["parent"],
+  elementName: string,
   ctx: Context
 ): SvelteEventHandlerDirective {
   const directive: SvelteEventHandlerDirective = {
@@ -324,19 +329,60 @@ function convertEventHandlerDirective(
     parent,
     ...ctx.getConvertLocation(node),
   };
-  const isCustomEvent =
-    parent.parent.type === "SvelteElement" &&
-    (parent.parent.kind === "component" || parent.parent.kind === "special");
+  const typing = buildEventHandlerType(parent.parent, elementName, node.name);
   processDirective(node, directive, ctx, {
     processExpression: buildProcessExpressionForExpression(
       directive,
       ctx,
-      isCustomEvent
-        ? "(e:CustomEvent<any>)=>void"
-        : `(e:'${node.name}' extends infer U?U extends keyof HTMLElementEventMap?HTMLElementEventMap[U]:CustomEvent<any>:never)=>void`
+      typing
     ),
   });
   return directive;
+}
+
+/** Build event handler type */
+function buildEventHandlerType(
+  element: SvelteElement | SvelteScriptElement | SvelteStyleElement,
+  elementName: string,
+  eventName: string
+) {
+  const nativeEventHandlerType = `(e:'${eventName}' extends infer U?U extends keyof HTMLElementEventMap?HTMLElementEventMap[U]:CustomEvent<any>:never)=>void`;
+  if (element.type !== "SvelteElement") {
+    return nativeEventHandlerType;
+  }
+  if (element.kind === "component") {
+    // I think we need to give an expression to the function call in order to reason correctly,
+    // but that's not currently supported.
+    // In the first place, the `@typescript-eslint/parser` currently
+    // cannot correctly parse the import types of `*.svelte`.
+    // return `(1 as any as ${elementName}['$on'])('${eventName}', $$expr)`;
+
+    return `(e:CustomEvent<any>)=>void`;
+  }
+  if (element.kind === "special") {
+    if (elementName === "svelte:component") return `(e:CustomEvent<any>)=>void`;
+    return nativeEventHandlerType;
+  }
+  const attrName = `on:${eventName}`;
+  const importSvelteHTMLElements =
+    "import('svelte/elements').SvelteHTMLElements";
+  return [
+    `'${eventName}' extends infer EVT`,
+    /* */ `?(`,
+    /* */ /* */ `EVT extends keyof ${importSvelteHTMLElements}`,
+    /* */ /* */ `?(`,
+    /* */ /* */ /* */ `'${attrName}' extends infer ATTR`,
+    /* */ /* */ /* */ `?(`,
+    /* */ /* */ /* */ /* */ `ATTR extends keyof ${importSvelteHTMLElements}[EVT]`,
+    /* */ /* */ /* */ /* */ /* */ `?${importSvelteHTMLElements}[U][ATTR]`,
+    /* */ /* */ /* */ /* */ /* */ `:${nativeEventHandlerType}`,
+    /* */ /* */ /* */ `)`,
+    /* */ /* */ /* */ `:${nativeEventHandlerType}`,
+    /* */ /* */ `)`,
+    /* */ /* */ `:${nativeEventHandlerType}`,
+    /* */ `)`,
+    /* */ `:${nativeEventHandlerType}`,
+  ].join("");
 }
 
 /** Convert for Class Directive */

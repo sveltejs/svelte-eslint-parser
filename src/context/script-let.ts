@@ -1,5 +1,6 @@
 import type { ScopeManager, Scope } from "eslint-scope";
 import type * as ESTree from "estree";
+import type { TSESTree } from "@typescript-eslint/types";
 import type { Context, ScriptsSourceCode } from ".";
 import type {
   Comment,
@@ -166,14 +167,32 @@ export class ScriptLetContext {
         }
 
         if (isTS) {
-          removeScope(
-            result.scopeManager,
-            result.getScope(
-              tsAs!.typeAnnotation.type === "TSParenthesizedType"
-                ? tsAs!.typeAnnotation.typeAnnotation
-                : tsAs!.typeAnnotation
-            )
-          );
+          const blockNode =
+            tsAs!.typeAnnotation.type === "TSParenthesizedType"
+              ? tsAs!.typeAnnotation.typeAnnotation
+              : tsAs!.typeAnnotation;
+          const targetScopes = [result.getScope(blockNode)];
+          let targetBlockNode: TSESTree.Node | TSParenthesizedType =
+            blockNode as any;
+          while (
+            targetBlockNode.type === "TSConditionalType" ||
+            targetBlockNode.type === "TSParenthesizedType"
+          ) {
+            if (targetBlockNode.type === "TSParenthesizedType") {
+              targetBlockNode = targetBlockNode.typeAnnotation as any;
+              continue;
+            }
+            // TSConditionalType's `falseType` may not be a child scope.
+            const falseType: TSESTree.TypeNode = targetBlockNode.falseType;
+            const falseTypeScope = result.getScope(falseType as any);
+            if (!targetScopes.includes(falseTypeScope)) {
+              targetScopes.push(falseTypeScope);
+            }
+            targetBlockNode = falseType;
+          }
+          for (const scope of targetScopes) {
+            removeScope(result.scopeManager, scope);
+          }
           this.remapNodes(
             [
               {

@@ -3,6 +3,8 @@
 	/* eslint-disable no-useless-escape -- ignore */
 	import MonacoEditor from './MonacoEditor.svelte';
 	import * as svelteEslintParser from 'svelte-eslint-parser';
+	import { deserializeState, serializeState } from './scripts/state';
+	import { onDestroy, onMount } from 'svelte';
 
 	let tsParser = undefined;
 	let loaded = false;
@@ -22,7 +24,7 @@
 			loaded = true;
 		});
 
-	let svelteValue = `<script lang="ts">
+	const DEFAULT_CODE = `<script lang="ts">
     const array = [1, 2, 3]
 
     function inputHandler () {
@@ -37,19 +39,53 @@
     {ee}
 {/each}
 `;
+	const state = deserializeState(
+		(typeof window !== 'undefined' && window.location.hash.slice(1)) || ''
+	);
+	let code = state.code || DEFAULT_CODE;
 	let virtualScriptCode = '';
 	let time = '';
 
 	let vscriptEditor, sourceEditor;
 	$: {
 		if (loaded) {
-			refresh(svelteValue);
+			refresh(code);
 		}
 	}
-	function refresh(svelteValue) {
+	// eslint-disable-next-line no-use-before-define -- false positive
+	$: serializedString = (() => {
+		const serializeCode = DEFAULT_CODE === code ? undefined : code;
+		return serializeState({
+			code: serializeCode
+		});
+	})();
+	$: {
+		if (typeof window !== 'undefined') {
+			window.location.replace(`#${serializedString}`);
+		}
+	}
+	onMount(() => {
+		if (typeof window !== 'undefined') {
+			window.addEventListener('hashchange', onUrlHashChange);
+		}
+	});
+	onDestroy(() => {
+		if (typeof window !== 'undefined') {
+			window.removeEventListener('hashchange', onUrlHashChange);
+		}
+	});
+	function onUrlHashChange() {
+		const newSerializedString =
+			(typeof window !== 'undefined' && window.location.hash.slice(1)) || '';
+		if (newSerializedString !== serializedString) {
+			const state = deserializeState(newSerializedString);
+			code = state.code || DEFAULT_CODE;
+		}
+	}
+	function refresh(svelteCodeValue) {
 		const start = Date.now();
 		try {
-			virtualScriptCode = svelteEslintParser.parseForESLint(svelteValue, {
+			virtualScriptCode = svelteEslintParser.parseForESLint(svelteCodeValue, {
 				parser: tsParser
 			})._virtualScriptCode;
 		} catch (e) {
@@ -66,7 +102,7 @@
 <div class="ast-explorer-root">
 	<div class="ast-tools">{time}</div>
 	<div class="ast-explorer">
-		<MonacoEditor bind:this={sourceEditor} bind:code={svelteValue} language="html" />
+		<MonacoEditor bind:this={sourceEditor} bind:code language="html" />
 		<MonacoEditor
 			bind:this={vscriptEditor}
 			code={virtualScriptCode}

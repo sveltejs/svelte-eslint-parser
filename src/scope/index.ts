@@ -327,8 +327,8 @@ function referencesToThrough(references: Reference[], baseScope: Scope) {
 
 /** Remove scope */
 export function removeScope(scopeManager: ScopeManager, scope: Scope): void {
-  for (const childScope of scope.childScopes) {
-    removeScope(scopeManager, childScope);
+  while (scope.childScopes[0]) {
+    removeScope(scopeManager, scope.childScopes[0]);
   }
 
   while (scope.references[0]) {
