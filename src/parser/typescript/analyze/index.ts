@@ -447,14 +447,9 @@ function transformForReactiveStatement(
   const functionId = ctx.generateUniqueId("reactiveStatementScopeFunction");
   const originalBody = statement.body;
   ctx.appendOriginal(originalBody.range[0]);
-  ctx.appendVirtualScript(`function ${functionId}()`);
-  if (originalBody.type !== "BlockStatement") {
-    ctx.appendVirtualScript(`{`);
-  }
+  ctx.appendVirtualScript(`function ${functionId}(){`);
   ctx.appendOriginal(originalBody.range[1]);
-  if (originalBody.type !== "BlockStatement") {
-    ctx.appendVirtualScript(`}`);
-  }
+  ctx.appendVirtualScript(`}`);
   ctx.appendOriginal(statement.range[1]);
 
   ctx.restoreContext.addRestoreStatementProcess((node, result) => {
@@ -466,11 +461,7 @@ function transformForReactiveStatement(
     if (body.type !== "FunctionDeclaration" || body.id.name !== functionId) {
       return false;
     }
-    if (originalBody.type === "BlockStatement") {
-      reactiveStatement.body = body.body;
-    } else {
-      reactiveStatement.body = body.body.body[0];
-    }
+    reactiveStatement.body = body.body.body[0];
     reactiveStatement.body.parent = reactiveStatement;
 
     const scopeManager = result.scopeManager as ScopeManager;
