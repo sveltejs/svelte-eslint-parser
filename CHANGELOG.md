@@ -1,5 +1,11 @@
 # svelte-eslint-parser
 
+## 0.24.1
+
+### Patch Changes
+
+- [#299](https://github.com/ota-meshi/svelte-eslint-parser/pull/299) [`472a3bb`](https://github.com/ota-meshi/svelte-eslint-parser/commit/472a3bb625adbc451f789b8787e79f771e27fd10) Thanks [@ota-meshi](https://github.com/ota-meshi)! - fix: wrong scope for reactive block statement
+
 ## 0.24.0
 
 ### Minor Changes
