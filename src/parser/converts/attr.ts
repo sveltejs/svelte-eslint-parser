@@ -333,7 +333,7 @@ function convertEventHandlerDirective(
       ctx,
       isCustomEvent
         ? "(e:CustomEvent<any>)=>void"
-        : `(e:'${node.name}' extends keyof HTMLElementEventMap?HTMLElementEventMap['${node.name}']:CustomEvent<any>)=>void`
+        : `(e:'${node.name}' extends infer U?U extends keyof HTMLElementEventMap?HTMLElementEventMap[U]:CustomEvent<any>:never)=>void`
     ),
   });
   return directive;
