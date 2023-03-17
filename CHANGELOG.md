@@ -1,5 +1,11 @@
 # svelte-eslint-parser
 
+## 0.24.2
+
+### Patch Changes
+
+- [#301](https://github.com/ota-meshi/svelte-eslint-parser/pull/301) [`ce2deb9`](https://github.com/ota-meshi/svelte-eslint-parser/commit/ce2deb9ddc67211fe5c6b67172e1da9d53d082a3) Thanks [@ota-meshi](https://github.com/ota-meshi)! - fix: wrong typing for typescript v5
+
 ## 0.24.1
 
 ### Patch Changes
