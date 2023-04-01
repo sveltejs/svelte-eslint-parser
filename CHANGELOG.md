@@ -1,5 +1,11 @@
 # svelte-eslint-parser
 
+## 0.25.0
+
+### Minor Changes
+
+- [#296](https://github.com/ota-meshi/svelte-eslint-parser/pull/296) [`21d8c1c`](https://github.com/ota-meshi/svelte-eslint-parser/commit/21d8c1ccc81e1d456327c1a16925b81044ef051a) Thanks [@ota-meshi](https://github.com/ota-meshi)! - feat: improved event handler type
+
 ## 0.24.2
 
 ### Patch Changes
