@@ -4,7 +4,7 @@ import type { TSESParseForESLintResult } from "./types";
 
 /**
  * Context for virtual TypeScript code.
- * See https://github.com/ota-meshi/svelte-eslint-parser/blob/main/docs/internal-mechanism.md#scope-types
+ * See https://github.com/sveltejs/svelte-eslint-parser/blob/main/docs/internal-mechanism.md#scope-types
  */
 export class VirtualTypeScriptContext {
   private readonly originalCode: string;

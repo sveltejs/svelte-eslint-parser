@@ -42,7 +42,7 @@
 		baseUrl: {baseUrl}
 	</div>
 	<SnsBar />
-	<a href="https://github.com/ota-meshi/svelte-eslint-parser" class="github-link">View on GitHub</a>
+	<a href="https://github.com/sveltejs/svelte-eslint-parser" class="github-link">View on GitHub</a>
 </header>
 
 <style>

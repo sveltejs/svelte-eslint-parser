@@ -20,7 +20,7 @@ const RESERVED_NAMES = new Set<string>(["$$props", "$$restProps", "$$slots"]);
 /**
  * Analyze TypeScript source code.
  * Generate virtual code to provide correct type information for Svelte store reference namess and scopes.
- * See https://github.com/ota-meshi/svelte-eslint-parser/blob/main/docs/internal-mechanism.md#scope-types
+ * See https://github.com/sveltejs/svelte-eslint-parser/blob/main/docs/internal-mechanism.md#scope-types
  */
 export function analyzeTypeScript(
   code: { script: string; render: string },
@@ -157,7 +157,7 @@ function analyzeReactiveScopes(
         statement.body.expression.type === "AssignmentExpression" &&
         statement.body.expression.operator === "=" &&
         // Must be a pattern that can be used in the LHS of variable declarations.
-        // https://github.com/ota-meshi/svelte-eslint-parser/issues/213
+        // https://github.com/sveltejs/svelte-eslint-parser/issues/213
         (statement.body.expression.left.type === "Identifier" ||
           statement.body.expression.left.type === "ArrayPattern" ||
           statement.body.expression.left.type === "ObjectPattern")

@@ -63,7 +63,7 @@ This gives the correct type information to the inputHandler when used with `on:i
 The script AST for the HTML template is then remapped to the template AST.
 
 You can check what happens to virtual scripts in the Online Demo.  
-https://ota-meshi.github.io/svelte-eslint-parser/virtual-script-code/
+https://sveltejs.github.io/svelte-eslint-parser/virtual-script-code/
 
 See also [Scope Types](#scope-types) section.
 
@@ -107,7 +107,7 @@ Also, this parser returns special results for variables used in `$: foo = expres
 It also adds virtual references for variables that are marked specially used in `*.svelte` (e.g. `export let` and `$ref`). This is a hack that is also used in typescript-eslint.  
 https://github.com/typescript-eslint/typescript-eslint/issues/4508#issuecomment-1030508403
 
-You can also check the results [Online DEMO](https://ota-meshi.github.io/svelte-eslint-parser/scope/).
+You can also check the results [Online DEMO](https://sveltejs.github.io/svelte-eslint-parser/scope/).
 
 ### `visitorKeys`
 
