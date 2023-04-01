@@ -346,7 +346,15 @@ function buildEventHandlerType(
   elementName: string,
   eventName: string
 ) {
-  const nativeEventHandlerType = `(e:'${eventName}' extends infer U?U extends keyof HTMLElementEventMap?HTMLElementEventMap[U]:CustomEvent<any>:never)=>void`;
+  const nativeEventHandlerType = [
+    `(e:`,
+    /**/ `'${eventName}' extends infer EVT`,
+    /**/ /**/ `?EVT extends keyof HTMLElementEventMap`,
+    /**/ /**/ /**/ `?HTMLElementEventMap[EVT]`,
+    /**/ /**/ /**/ `:CustomEvent<any>`,
+    /**/ /**/ `:never`,
+    `)=>void`,
+  ].join("");
   if (element.type !== "SvelteElement") {
     return nativeEventHandlerType;
   }
@@ -368,21 +376,21 @@ function buildEventHandlerType(
   const importSvelteHTMLElements =
     "import('svelte/elements').SvelteHTMLElements";
   return [
-    `'${eventName}' extends infer EVT`,
-    /* */ `?(`,
-    /* */ /* */ `EVT extends keyof ${importSvelteHTMLElements}`,
-    /* */ /* */ `?(`,
-    /* */ /* */ /* */ `'${attrName}' extends infer ATTR`,
-    /* */ /* */ /* */ `?(`,
-    /* */ /* */ /* */ /* */ `ATTR extends keyof ${importSvelteHTMLElements}[EVT]`,
-    /* */ /* */ /* */ /* */ /* */ `?${importSvelteHTMLElements}[EVT][ATTR]`,
-    /* */ /* */ /* */ /* */ /* */ `:${nativeEventHandlerType}`,
-    /* */ /* */ /* */ `)`,
-    /* */ /* */ /* */ `:${nativeEventHandlerType}`,
-    /* */ /* */ `)`,
-    /* */ /* */ `:${nativeEventHandlerType}`,
-    /* */ `)`,
-    /* */ `:${nativeEventHandlerType}`,
+    `'${elementName}' extends infer EL`,
+    /**/ `?(`,
+    /**/ /**/ `EL extends keyof ${importSvelteHTMLElements}`,
+    /**/ /**/ `?(`,
+    /**/ /**/ /**/ `'${attrName}' extends infer ATTR`,
+    /**/ /**/ /**/ `?(`,
+    /**/ /**/ /**/ /**/ `ATTR extends keyof ${importSvelteHTMLElements}[EL]`,
+    /**/ /**/ /**/ /**/ /**/ `?${importSvelteHTMLElements}[EL][ATTR]`,
+    /**/ /**/ /**/ /**/ /**/ `:${nativeEventHandlerType}`,
+    /**/ /**/ /**/ `)`,
+    /**/ /**/ /**/ `:never`,
+    /**/ /**/ `)`,
+    /**/ /**/ `:${nativeEventHandlerType}`,
+    /**/ `)`,
+    /**/ `:never`,
   ].join("");
 }
 
