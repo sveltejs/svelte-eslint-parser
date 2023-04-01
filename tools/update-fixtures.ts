@@ -137,14 +137,26 @@ function buildTypes(
   }
 ): string {
   const scriptLineRange: [number, number][] = [];
-  for (const body of result.ast.body) {
-    if (body.type === "SvelteScriptElement" && body.body.length) {
-      scriptLineRange.push([
-        body.body[0].loc!.start.line - 1,
-        body.body[body.body.length - 1].loc!.end.line - 1,
-      ]);
-    }
-  }
+  parser.traverseNodes(result.ast, {
+    enterNode(node) {
+      if (node.type === "SvelteScriptElement" && node.body.length) {
+        scriptLineRange.push([
+          node.body[0].loc!.start.line - 1,
+          node.body[node.body.length - 1].loc!.end.line - 1,
+        ]);
+      }
+      if (node.type === "SvelteDirective" && node.expression) {
+        if (node.expression.loc!.start.line !== node.expression.loc!.end.line)
+          scriptLineRange.push([
+            node.expression.loc!.start.line - 1,
+            node.expression.loc!.end.line - 2,
+          ]);
+      }
+    },
+    leaveNode() {
+      // noop
+    },
+  });
 
   const tsNodeMap: ReadonlyMap<any, ts.Node> =
     result.services.esTreeNodeToTSNodeMap;
@@ -170,12 +182,14 @@ function buildTypes(
       );
     }
     const type = checker.getTypeAtLocation(tsNode);
-    const typeText = checker.typeToString(type);
+    const typeText = checker.typeToString(type).replace(/\s*\n\s*/gu, " ");
     const lineTypes = (types[node.loc!.start.line - 1] ??= []);
     if (node.type === "Identifier") {
       lineTypes.push(`${node.name}: ${typeText}`);
     } else {
-      lineTypes.push(`${input.slice(...node.range!)}: ${typeText}`);
+      lineTypes.push(
+        `${input.slice(...node.range!).replace(/\s*\n\s*/gu, " ")}: ${typeText}`
+      );
     }
   }
 

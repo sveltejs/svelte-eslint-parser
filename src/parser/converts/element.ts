@@ -252,25 +252,26 @@ function convertHTMLElement(
     ...locs,
   };
   element.startTag.parent = element;
+  const elementName = node.name;
 
   const { letDirectives, attributes } = extractLetDirectives(node);
   const letParams: ScriptLetBlockParam[] = [];
   if (letDirectives.length) {
     ctx.letDirCollections.beginExtract();
     element.startTag.attributes.push(
-      ...convertAttributes(letDirectives, element.startTag, ctx)
+      ...convertAttributes(letDirectives, element.startTag, elementName, ctx)
     );
     letParams.push(...ctx.letDirCollections.extract().getLetParams());
   }
   if (!letParams.length && !needScopeByChildren(node)) {
     element.startTag.attributes.push(
-      ...convertAttributes(attributes, element.startTag, ctx)
+      ...convertAttributes(attributes, element.startTag, elementName, ctx)
     );
     element.children.push(...convertChildren(node, element, ctx));
   } else {
     ctx.scriptLet.nestBlock(element, letParams);
     element.startTag.attributes.push(
-      ...convertAttributes(attributes, element.startTag, ctx)
+      ...convertAttributes(attributes, element.startTag, elementName, ctx)
     );
     sortNodes(element.startTag.attributes);
     element.children.push(...convertChildren(node, element, ctx));
@@ -282,7 +283,7 @@ function convertHTMLElement(
       ctx.addToken("HTMLIdentifier", openTokenRange);
       const name: SvelteName = {
         type: "SvelteName",
-        name: node.name,
+        name: elementName,
         parent: element,
         ...ctx.getConvertLocation(openTokenRange),
       };
@@ -359,25 +360,26 @@ function convertSpecialElement(
     ...locs,
   };
   element.startTag.parent = element;
+  const elementName = node.name;
 
   const { letDirectives, attributes } = extractLetDirectives(node);
   const letParams: ScriptLetBlockParam[] = [];
   if (letDirectives.length) {
     ctx.letDirCollections.beginExtract();
     element.startTag.attributes.push(
-      ...convertAttributes(letDirectives, element.startTag, ctx)
+      ...convertAttributes(letDirectives, element.startTag, elementName, ctx)
     );
     letParams.push(...ctx.letDirCollections.extract().getLetParams());
   }
   if (!letParams.length && !needScopeByChildren(node)) {
     element.startTag.attributes.push(
-      ...convertAttributes(attributes, element.startTag, ctx)
+      ...convertAttributes(attributes, element.startTag, elementName, ctx)
     );
     element.children.push(...convertChildren(node, element, ctx));
   } else {
     ctx.scriptLet.nestBlock(element, letParams);
     element.startTag.attributes.push(
-      ...convertAttributes(attributes, element.startTag, ctx)
+      ...convertAttributes(attributes, element.startTag, elementName, ctx)
     );
     sortNodes(element.startTag.attributes);
     element.children.push(...convertChildren(node, element, ctx));
@@ -386,9 +388,9 @@ function convertSpecialElement(
 
   const thisExpression =
     (node.type === "InlineComponent" &&
-      node.name === "svelte:component" &&
+      elementName === "svelte:component" &&
       node.expression) ||
-    (node.type === "Element" && node.name === "svelte:element" && node.tag);
+    (node.type === "Element" && elementName === "svelte:element" && node.tag);
   if (thisExpression) {
     const eqIndex = ctx.code.lastIndexOf("=", getWithLoc(thisExpression).start);
     const startIndex = ctx.code.lastIndexOf("this", eqIndex);
@@ -434,7 +436,7 @@ function convertSpecialElement(
       ctx.addToken("HTMLIdentifier", openTokenRange);
       const name: SvelteName = {
         type: "SvelteName",
-        name: node.name,
+        name: elementName,
         parent: element,
         ...ctx.getConvertLocation(openTokenRange),
       };
@@ -476,25 +478,26 @@ function convertComponentElement(
     ...locs,
   };
   element.startTag.parent = element;
+  const elementName = node.name;
 
   const { letDirectives, attributes } = extractLetDirectives(node);
   const letParams: ScriptLetBlockParam[] = [];
   if (letDirectives.length) {
     ctx.letDirCollections.beginExtract();
     element.startTag.attributes.push(
-      ...convertAttributes(letDirectives, element.startTag, ctx)
+      ...convertAttributes(letDirectives, element.startTag, elementName, ctx)
     );
     letParams.push(...ctx.letDirCollections.extract().getLetParams());
   }
   if (!letParams.length && !needScopeByChildren(node)) {
     element.startTag.attributes.push(
-      ...convertAttributes(attributes, element.startTag, ctx)
+      ...convertAttributes(attributes, element.startTag, elementName, ctx)
     );
     element.children.push(...convertChildren(node, element, ctx));
   } else {
     ctx.scriptLet.nestBlock(element, letParams);
     element.startTag.attributes.push(
-      ...convertAttributes(attributes, element.startTag, ctx)
+      ...convertAttributes(attributes, element.startTag, elementName, ctx)
     );
     sortNodes(element.startTag.attributes);
     element.children.push(...convertChildren(node, element, ctx));
@@ -503,7 +506,7 @@ function convertComponentElement(
 
   extractElementTags(element, ctx, {
     buildNameNode: (openTokenRange) => {
-      const chains = node.name.split(".");
+      const chains = elementName.split(".");
       const id = chains.shift()!;
       const idRange = {
         start: openTokenRange.start,
