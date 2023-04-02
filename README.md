@@ -1,7 +1,7 @@
 # svelte-eslint-parser
 
 [Svelte] parser for [ESLint].  
-You can check it on [Online DEMO](https://ota-meshi.github.io/svelte-eslint-parser/playground).
+You can check it on [Online DEMO](https://sveltejs.github.io/svelte-eslint-parser/playground).
 
 [![NPM license](https://img.shields.io/npm/l/svelte-eslint-parser.svg)](https://www.npmjs.com/package/svelte-eslint-parser)
 [![NPM version](https://img.shields.io/npm/v/svelte-eslint-parser.svg)](https://www.npmjs.com/package/svelte-eslint-parser)
@@ -10,8 +10,8 @@ You can check it on [Online DEMO](https://ota-meshi.github.io/svelte-eslint-pars
 [![NPM downloads](https://img.shields.io/npm/dm/svelte-eslint-parser.svg)](http://www.npmtrends.com/svelte-eslint-parser)
 [![NPM downloads](https://img.shields.io/npm/dy/svelte-eslint-parser.svg)](http://www.npmtrends.com/svelte-eslint-parser)
 [![NPM downloads](https://img.shields.io/npm/dt/svelte-eslint-parser.svg)](http://www.npmtrends.com/svelte-eslint-parser)
-[![Build Status](https://github.com/ota-meshi/svelte-eslint-parser/workflows/CI/badge.svg?branch=main)](https://github.com/ota-meshi/svelte-eslint-parser/actions?query=workflow%3ACI)
-[![Coverage Status](https://coveralls.io/repos/github/ota-meshi/svelte-eslint-parser/badge.svg?branch=main)](https://coveralls.io/github/ota-meshi/svelte-eslint-parser?branch=main)
+[![Build Status](https://github.com/sveltejs/svelte-eslint-parser/workflows/CI/badge.svg?branch=main)](https://github.com/sveltejs/svelte-eslint-parser/actions?query=workflow%3ACI)
+[![Coverage Status](https://coveralls.io/repos/github/sveltejs/svelte-eslint-parser/badge.svg?branch=main)](https://coveralls.io/github/sveltejs/svelte-eslint-parser?branch=main)
 
 ## ❓ Why?
 
@@ -21,16 +21,16 @@ The [svelte-eslint-parser] aims to make it easy to create your own rules for the
 
 The [`eslint-plugin-svelte`] is an ESLint plugin that uses the [svelte-eslint-parser]. I have already [implemented some rules].
 
-[`eslint-plugin-svelte`]: https://github.com/ota-meshi/eslint-plugin-svelte
-[implemented some rules]: https://ota-meshi.github.io/eslint-plugin-svelte/rules/
+[`eslint-plugin-svelte`]: https://github.com/sveltejs/eslint-plugin-svelte
+[implemented some rules]: https://sveltejs.github.io/eslint-plugin-svelte/rules/
 
 ### Benefits of Using AST
 
 - We can create rules using the information contained in the AST.  
   e.g.
-  - [svelte/no-dupe-else-if-blocks](https://ota-meshi.github.io/eslint-plugin-svelte/rules/no-dupe-else-if-blocks/) rule
-  - [svelte/no-at-html-tags](https://ota-meshi.github.io/eslint-plugin-svelte/rules/no-at-html-tags/) rule
-  - [svelte/no-at-debug-tags](https://ota-meshi.github.io/eslint-plugin-svelte/rules/no-at-debug-tags/) rule
+  - [svelte/no-dupe-else-if-blocks](https://sveltejs.github.io/eslint-plugin-svelte/rules/no-dupe-else-if-blocks/) rule
+  - [svelte/no-at-html-tags](https://sveltejs.github.io/eslint-plugin-svelte/rules/no-at-html-tags/) rule
+  - [svelte/no-at-debug-tags](https://sveltejs.github.io/eslint-plugin-svelte/rules/no-at-debug-tags/) rule
 - Rules that use text work well.  
   e.g.
   - [eol-last](https://eslint.org/docs/rules/eol-last) rule
@@ -39,7 +39,7 @@ The [`eslint-plugin-svelte`] is an ESLint plugin that uses the [svelte-eslint-pa
 
 ### ESLint Plugins Using svelte-eslint-parser
 
-#### [eslint-plugin-svelte](https://ota-meshi.github.io/eslint-plugin-svelte/)
+#### [eslint-plugin-svelte](https://sveltejs.github.io/eslint-plugin-svelte/)
 
 ESLint plugin for Svelte.  
 It provides many unique check rules by using the template AST.
@@ -53,7 +53,7 @@ It provides rules to help internationalization your application created with Sve
 
 The [svelte-eslint-parser] can not be used with the [eslint-plugin-svelte3].
 
-[svelte-eslint-parser]: https://github.com/ota-meshi/svelte-eslint-parser
+[svelte-eslint-parser]: https://github.com/sveltejs/svelte-eslint-parser
 
 ## 💿 Installation
 
@@ -206,8 +206,8 @@ Example **.vscode/settings.json**:
 
 ## Usage for Custom Rules / Plugins
 
-- [AST.md](./docs/AST.md) is AST specification. You can check it on the [Online DEMO](https://ota-meshi.github.io/svelte-eslint-parser/).
-- The parser will generate its own [ScopeManager](https://eslint.org/docs/developer-guide/scope-manager-interface). You can check it on the [Online DEMO](https://ota-meshi.github.io/svelte-eslint-parser/scope).
+- [AST.md](./docs/AST.md) is AST specification. You can check it on the [Online DEMO](https://sveltejs.github.io/svelte-eslint-parser/).
+- The parser will generate its own [ScopeManager](https://eslint.org/docs/developer-guide/scope-manager-interface). You can check it on the [Online DEMO](https://sveltejs.github.io/svelte-eslint-parser/scope).
 - I have already [implemented some rules] in the [`eslint-plugin-svelte`]. The source code for these rules will be helpful to you.
 
 ## :beers: Contributing

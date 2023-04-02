@@ -1,5 +1,5 @@
 <script lang="ts">
-    // https://github.com/ota-meshi/svelte-eslint-parser/issues/206
+    // https://github.com/sveltejs/svelte-eslint-parser/issues/206
     let obj = {
       child: {
         title: "hello!",
