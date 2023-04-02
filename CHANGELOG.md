@@ -1,5 +1,11 @@
 # svelte-eslint-parser
 
+## 0.25.1
+
+### Patch Changes
+
+- [#309](https://github.com/sveltejs/svelte-eslint-parser/pull/309) [`97a4135`](https://github.com/sveltejs/svelte-eslint-parser/commit/97a4135c3c2fb733a4a33106ec2414c5f37dfd93) Thanks [@ota-meshi](https://github.com/ota-meshi)! - chore: move repo and move url of docs
+
 ## 0.25.0
 
 ### Minor Changes
