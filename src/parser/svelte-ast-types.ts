@@ -20,6 +20,7 @@ export declare type TemplateNode =
   | Element
   | InlineComponent
   | Window
+  | Document
   | Body
   | Head
   | Title
@@ -131,6 +132,12 @@ export interface BaseInlineComponent extends BaseNode {
 export interface Window extends BaseNode {
   type: "Window";
   name: "svelte:window";
+  children: TemplateNode[];
+  attributes: AttributeOrDirective[];
+}
+export interface Document extends BaseNode {
+  type: "Document";
+  name: "svelte:document";
   children: TemplateNode[];
   attributes: AttributeOrDirective[];
 }
