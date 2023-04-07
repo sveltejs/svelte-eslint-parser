@@ -1,5 +1,11 @@
 # svelte-eslint-parser
 
+## 0.26.0
+
+### Minor Changes
+
+- [#312](https://github.com/sveltejs/svelte-eslint-parser/pull/312) [`9856029`](https://github.com/sveltejs/svelte-eslint-parser/commit/98560296e59c8e39cf126a1a66a2deda0095439e) Thanks [@ota-meshi](https://github.com/ota-meshi)! - feat: add support for `<svelte:document>`
+
 ## 0.25.1
 
 ### Patch Changes
