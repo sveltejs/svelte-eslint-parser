@@ -166,6 +166,10 @@ export function* convertChildren(
       yield convertConstTag(child, parent, ctx);
       continue;
     }
+    if (child.type === "Document") {
+      yield convertDocumentElement(child, parent, ctx);
+      continue;
+    }
 
     throw new Error(`Unknown type:${(child as any).type}`);
   }
@@ -328,6 +332,7 @@ function convertSpecialElement(
     | SvAST.InlineComponent
     | SvAST.Element
     | SvAST.Window
+    | SvAST.Document
     | SvAST.Body
     | SvAST.Head
     | SvAST.Options
@@ -584,6 +589,15 @@ function convertSlotElement(
 /** Convert for window element. e.g. <svelte:window> */
 function convertWindowElement(
   node: SvAST.Window,
+  parent: SvelteSpecialElement["parent"],
+  ctx: Context
+): SvelteSpecialElement {
+  return convertSpecialElement(node, parent, ctx);
+}
+
+/** Convert for document element. e.g. <svelte:document> */
+function convertDocumentElement(
+  node: SvAST.Document,
   parent: SvelteSpecialElement["parent"],
   ctx: Context
 ): SvelteSpecialElement {
