@@ -12,7 +12,7 @@ export function setupLinter(linter: Linter) {
 export function getConfig() {
   return {
     parser: "svelte-eslint-parser",
-    parserOptions: generateParserOptions,
+    parserOptions: generateParserOptions(),
     rules: {
       "@typescript-eslint/no-unsafe-argument": "error",
     },
