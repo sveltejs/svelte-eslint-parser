@@ -51,7 +51,7 @@ describe("svelte-eslint-parser with ESLint rules", () => {
             input,
             {
               parser: "svelte-eslint-parser",
-              parserOptions: generateParserOptions(inputFileName, config),
+              parserOptions: generateParserOptions(config),
               rules: {
                 [rule]: "error",
               },

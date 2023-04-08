@@ -39,7 +39,7 @@ describe("Integration tests.", () => {
         input,
         setup?.getConfig?.() ?? {
           parser: "svelte-eslint-parser",
-          parserOptions: generateParserOptions(inputFileName, config),
+          parserOptions: generateParserOptions(config),
           env: {
             browser: true,
             es2021: true,

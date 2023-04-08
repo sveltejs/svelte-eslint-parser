@@ -38,7 +38,7 @@ const RULES = [
  * Parse
  */
 function parse(code: string, filePath: string, config: any) {
-  return parseForESLint(code, generateParserOptions(filePath, config));
+  return parseForESLint(code, generateParserOptions({ filePath }, config));
 }
 
 for (const {
@@ -76,7 +76,7 @@ for (const {
       input,
       {
         parser: "svelte-eslint-parser",
-        parserOptions: generateParserOptions(inputFileName, config),
+        parserOptions: generateParserOptions(config),
         rules: {
           [rule]: "error",
         },

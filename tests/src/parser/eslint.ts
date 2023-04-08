@@ -2,7 +2,7 @@ import { Linter } from "eslint";
 import assert from "assert";
 import semver from "semver";
 import * as parser from "../../../src/index";
-import { BASIC_PARSER_OPTIONS } from "./test-utils";
+import { generateParserOptions } from "./test-utils";
 
 function createLinter() {
   const linter = new Linter();
@@ -246,10 +246,7 @@ describe("eslint custom parser", () => {
         const linter = createLinter();
         const result = linter.verifyAndFix(code, {
           parser: "svelte-eslint-parser",
-          parserOptions: {
-            ...BASIC_PARSER_OPTIONS,
-            ...(parserOptions ? parserOptions : {}),
-          },
+          parserOptions: generateParserOptions(parserOptions),
           rules: {
             "no-unused-labels": "error",
             "no-extra-label": "error",

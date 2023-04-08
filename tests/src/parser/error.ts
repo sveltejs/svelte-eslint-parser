@@ -15,7 +15,7 @@ const ERROR_FIXTURE_ROOT = path.resolve(
 );
 
 function parse(code: string, filePath: string, config: any) {
-  return parseForESLint(code, generateParserOptions(filePath, config));
+  return parseForESLint(code, generateParserOptions({ filePath }, config));
 }
 
 describe("Check for Error.", () => {

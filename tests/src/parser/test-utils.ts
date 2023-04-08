@@ -19,14 +19,13 @@ const BASIC_PARSER_OPTIONS: Linter.ParserOptions = {
   extraFileExtensions: [".svelte"],
 };
 export function generateParserOptions(
-  filePath: string,
-  options: Linter.ParserOptions
+  ...options: Linter.ParserOptions[]
 ): Linter.ParserOptions {
-  return {
-    ...BASIC_PARSER_OPTIONS,
-    filePath,
-    ...options,
-  };
+  let result = { ...BASIC_PARSER_OPTIONS };
+  for (const option of options) {
+    result = { ...result, ...option };
+  }
+  return result;
 }
 export function* listupFixtures(dir?: string): Iterable<{
   input: string;

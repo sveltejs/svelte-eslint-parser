@@ -16,8 +16,7 @@ describe("Check for typescript analyze result.", () => {
       continue;
     }
     describe(inputFileName, () => {
-      const parserOptions = {
-        ...generateParserOptions(inputFileName, config),
+      const parserOptions = generateParserOptions(config, {
         ecmaVersion: 2020,
         sourceType: "module",
         loc: true,
@@ -28,8 +27,7 @@ describe("Check for typescript analyze result.", () => {
         eslintVisitorKeys: true,
         eslintScopeManager: true,
         filePath: inputFileName,
-      };
-
+      });
       const ctx = new Context(input, parserOptions);
       parseTemplate(ctx.sourceCode.template, ctx, parserOptions);
 

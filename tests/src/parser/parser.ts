@@ -15,7 +15,7 @@ import type { Comment, SvelteProgram, Token } from "../../../src/ast";
 import { sortNodes } from "../../../src/parser/sort";
 
 function parse(code: string, filePath: string, config: any) {
-  return parseForESLint(code, generateParserOptions(filePath, config));
+  return parseForESLint(code, generateParserOptions({ filePath }, config));
 }
 
 describe("Check for AST.", () => {
