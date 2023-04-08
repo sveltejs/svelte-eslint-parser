@@ -3,6 +3,9 @@
 </script>
 
 <Component on:foo="{e=>{
-    // TODO: e.detail is number
+    // e.detail is number
+    //   `@typescript-eslint/parser` doesn't get the correct types.
+    //   Using `typescript-eslint-parser-for-extra-files` will give we the correct types.
+    //   See `ts-event06-input.svelte` test case
     e.detail;
 }}" />

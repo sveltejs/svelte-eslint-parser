@@ -9,7 +9,7 @@ import type * as TSESScopes from "@typescript-eslint/scope-manager";
 import type { SvelteNode } from "../../../src/ast";
 
 const AST_FIXTURE_ROOT = path.resolve(__dirname, "../../fixtures/parser/ast");
-export const BASIC_PARSER_OPTIONS: Linter.BaseConfig["parserOptions"] = {
+const BASIC_PARSER_OPTIONS: Linter.ParserOptions = {
   ecmaVersion: 2020,
   parser: {
     ts: "@typescript-eslint/parser",
@@ -18,12 +18,23 @@ export const BASIC_PARSER_OPTIONS: Linter.BaseConfig["parserOptions"] = {
   project: require.resolve("../../fixtures/tsconfig.test.json"),
   extraFileExtensions: [".svelte"],
 };
-export function* listupFixtures(dir?: string): IterableIterator<{
+export function generateParserOptions(
+  filePath: string,
+  options: Linter.ParserOptions
+): Linter.ParserOptions {
+  return {
+    ...BASIC_PARSER_OPTIONS,
+    filePath,
+    ...options,
+  };
+}
+export function* listupFixtures(dir?: string): Iterable<{
   input: string;
   inputFileName: string;
   outputFileName: string;
   scopeFileName: string;
   typeFileName: string | null;
+  config: Linter.ParserOptions;
   requirements: {
     scope?: Record<string, string>;
   };
@@ -33,12 +44,13 @@ export function* listupFixtures(dir?: string): IterableIterator<{
   yield* listupFixturesImpl(dir || AST_FIXTURE_ROOT);
 }
 
-function* listupFixturesImpl(dir: string): IterableIterator<{
+function* listupFixturesImpl(dir: string): Iterable<{
   input: string;
   inputFileName: string;
   outputFileName: string;
   scopeFileName: string;
   typeFileName: string | null;
+  config: Linter.ParserOptions;
   requirements: {
     scope?: Record<string, string>;
   };
@@ -60,6 +72,10 @@ function* listupFixturesImpl(dir: string): IterableIterator<{
         /input\.svelte$/u,
         "type-output.svelte"
       );
+      const configFileName = inputFileName.replace(
+        /input\.svelte$/u,
+        "config.json"
+      );
       const requirementsFileName = inputFileName.replace(
         /input\.svelte$/u,
         "requirements.json"
@@ -69,12 +85,16 @@ function* listupFixturesImpl(dir: string): IterableIterator<{
       const requirements = fs.existsSync(requirementsFileName)
         ? JSON.parse(fs.readFileSync(requirementsFileName, "utf-8"))
         : {};
+      const config = fs.existsSync(configFileName)
+        ? JSON.parse(fs.readFileSync(configFileName, "utf-8"))
+        : {};
       yield {
         input,
         inputFileName,
         outputFileName,
         scopeFileName,
         typeFileName: fs.existsSync(typeFileName) ? typeFileName : null,
+        config,
         requirements,
         getRuleOutputFileName: (ruleName) => {
           return inputFileName.replace(

@@ -2,17 +2,22 @@ import { Context } from "../../../../src/context";
 import { parseScript } from "../../../../src/parser/script";
 import { parseTemplate } from "../../../../src/parser/template";
 import { parseTypeScript } from "../../../../src/parser/typescript";
-import { BASIC_PARSER_OPTIONS, listupFixtures } from "../test-utils";
+import { generateParserOptions, listupFixtures } from "../test-utils";
 import { assertResult } from "./assert-result";
 
 describe("Check for typescript analyze result.", () => {
-  for (const { input, inputFileName, meetRequirements } of listupFixtures()) {
+  for (const {
+    input,
+    inputFileName,
+    config,
+    meetRequirements,
+  } of listupFixtures()) {
     if (!input.includes('lang="ts"')) {
       continue;
     }
     describe(inputFileName, () => {
       const parserOptions = {
-        ...BASIC_PARSER_OPTIONS,
+        ...generateParserOptions(inputFileName, config),
         ecmaVersion: 2020,
         sourceType: "module",
         loc: true,
