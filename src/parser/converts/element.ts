@@ -1,4 +1,5 @@
 import type {
+  SvelteAttribute,
   SvelteAwaitBlock,
   SvelteAwaitCatchBlock,
   SvelteAwaitPendingBlock,
@@ -45,6 +46,7 @@ import { convertAttributes } from "./attr";
 import { convertConstTag } from "./const";
 import { sortNodes } from "../sort";
 import type { ScriptLetBlockParam } from "../../context/script-let";
+import { ParseError } from "../..";
 
 /* eslint-disable complexity -- X */
 /** Convert for Fragment or Element or ... */
@@ -397,43 +399,7 @@ function convertSpecialElement(
       node.expression) ||
     (node.type === "Element" && elementName === "svelte:element" && node.tag);
   if (thisExpression) {
-    const eqIndex = ctx.code.lastIndexOf("=", getWithLoc(thisExpression).start);
-    const startIndex = ctx.code.lastIndexOf("this", eqIndex);
-    const closeIndex = ctx.code.indexOf("}", getWithLoc(thisExpression).end);
-    const endIndex = indexOf(
-      ctx.code,
-      (c) => c === ">" || !c.trim(),
-      closeIndex
-    );
-    const thisAttr: SvelteSpecialDirective = {
-      type: "SvelteSpecialDirective",
-      kind: "this",
-      key: null as any,
-      expression: null as any,
-      parent: element.startTag,
-      ...ctx.getConvertLocation({ start: startIndex, end: endIndex }),
-    };
-    thisAttr.key = {
-      type: "SvelteSpecialDirectiveKey",
-      parent: thisAttr,
-      ...ctx.getConvertLocation({ start: startIndex, end: eqIndex }),
-    };
-    ctx.addToken("HTMLIdentifier", {
-      start: startIndex,
-      end: eqIndex,
-    });
-    ctx.scriptLet.addExpression(thisExpression, thisAttr, null, (es) => {
-      thisAttr.expression = es;
-    });
-
-    const targetIndex = element.startTag.attributes.findIndex(
-      (attr) => thisAttr.range[1] <= attr.range[0]
-    );
-    if (targetIndex === -1) {
-      element.startTag.attributes.push(thisAttr);
-    } else {
-      element.startTag.attributes.splice(targetIndex, 0, thisAttr);
-    }
+    processThisAttribute(node, thisExpression, element, ctx);
   }
 
   extractElementTags(element, ctx, {
@@ -450,6 +416,164 @@ function convertSpecialElement(
   });
 
   return element;
+}
+
+/** process `this=` */
+function processThisAttribute(
+  node: SvAST.SvelteElement | SvAST.InlineSvelteComponent,
+  thisValue: string | ESTree.Expression,
+  element: SvelteSpecialElement,
+  ctx: Context
+) {
+  let thisNode: SvelteSpecialDirective | SvelteAttribute;
+  if (typeof thisValue === "string") {
+    // this="..."
+    const startIndex = findStartIndexOfThis(node, ctx);
+    const eqIndex = ctx.code.indexOf("=", startIndex + 4 /* t,h,i,s */);
+    const valueStartIndex = indexOf(
+      ctx.code,
+      (c) => Boolean(c.trim()),
+      eqIndex + 1
+    );
+    const quote = ctx.code.startsWith(thisValue, valueStartIndex)
+      ? null
+      : ctx.code[valueStartIndex];
+    const literalStartIndex = quote
+      ? valueStartIndex + quote.length
+      : valueStartIndex;
+    const literalEndIndex = literalStartIndex + thisValue.length;
+    const endIndex = quote ? literalEndIndex + quote.length : literalEndIndex;
+    const thisAttr: SvelteAttribute = {
+      type: "SvelteAttribute",
+      key: null as any,
+      boolean: false,
+      value: [],
+      parent: element.startTag,
+      ...ctx.getConvertLocation({ start: startIndex, end: endIndex }),
+    };
+    thisAttr.key = {
+      type: "SvelteName",
+      name: "this",
+      parent: thisAttr,
+      ...ctx.getConvertLocation({ start: startIndex, end: eqIndex }),
+    };
+    thisAttr.value.push({
+      type: "SvelteLiteral",
+      value: thisValue,
+      parent: thisAttr,
+      ...ctx.getConvertLocation({
+        start: literalStartIndex,
+        end: literalEndIndex,
+      }),
+    });
+    // this
+    ctx.addToken("HTMLIdentifier", {
+      start: startIndex,
+      end: startIndex + 4,
+    });
+    // =
+    ctx.addToken("Punctuator", {
+      start: eqIndex,
+      end: eqIndex + 1,
+    });
+    if (quote) {
+      // "
+      ctx.addToken("Punctuator", {
+        start: valueStartIndex,
+        end: literalStartIndex,
+      });
+    }
+    ctx.addToken("HTMLText", {
+      start: literalStartIndex,
+      end: literalEndIndex,
+    });
+    if (quote) {
+      // "
+      ctx.addToken("Punctuator", {
+        start: literalEndIndex,
+        end: endIndex,
+      });
+    }
+    thisNode = thisAttr;
+  } else {
+    // this={...}
+    const eqIndex = ctx.code.lastIndexOf("=", getWithLoc(thisValue).start);
+    const startIndex = ctx.code.lastIndexOf("this", eqIndex);
+    const closeIndex = ctx.code.indexOf("}", getWithLoc(thisValue).end);
+    const endIndex = indexOf(
+      ctx.code,
+      (c) => c === ">" || !c.trim(),
+      closeIndex
+    );
+    const thisDir: SvelteSpecialDirective = {
+      type: "SvelteSpecialDirective",
+      kind: "this",
+      key: null as any,
+      expression: null as any,
+      parent: element.startTag,
+      ...ctx.getConvertLocation({ start: startIndex, end: endIndex }),
+    };
+    thisDir.key = {
+      type: "SvelteSpecialDirectiveKey",
+      parent: thisDir,
+      ...ctx.getConvertLocation({ start: startIndex, end: eqIndex }),
+    };
+    // this
+    ctx.addToken("HTMLIdentifier", {
+      start: startIndex,
+      end: startIndex + 4,
+    });
+    // =
+    ctx.addToken("Punctuator", {
+      start: eqIndex,
+      end: eqIndex + 1,
+    });
+    ctx.scriptLet.addExpression(thisValue, thisDir, null, (es) => {
+      thisDir.expression = es;
+    });
+    thisNode = thisDir;
+  }
+
+  const targetIndex = element.startTag.attributes.findIndex(
+    (attr) => thisNode.range[1] <= attr.range[0]
+  );
+  if (targetIndex === -1) {
+    element.startTag.attributes.push(thisNode);
+  } else {
+    element.startTag.attributes.splice(targetIndex, 0, thisNode);
+  }
+}
+
+/** Find the start index of `this` */
+function findStartIndexOfThis(
+  node: SvAST.SvelteElement | SvAST.InlineSvelteComponent,
+  ctx: Context
+) {
+  // Get the end index of `svelte:element`
+  const startIndex = ctx.code.indexOf(node.name, node.start) + node.name.length;
+  const sortedAttrs = [...node.attributes].sort((a, b) => a.start - b.start);
+  // Find the start index of `this` from the end index of `svelte:element`.
+  // However, it only seeks to the start index of the first attribute (or the end index of element node).
+  let thisIndex = indexOf(
+    ctx.code,
+    (_c, index) => ctx.code.startsWith("this", index),
+    startIndex,
+    sortedAttrs[0]?.start ?? node.end
+  );
+  while (thisIndex < 0) {
+    if (sortedAttrs.length === 0)
+      throw new ParseError("Cannot resolved `this` attribute.", thisIndex, ctx);
+    // Step3: Find the start index of `this` from the end index of attribute.
+    // However, it only seeks to the start index of the first attribute (or the end index of element node).
+    const nextStartIndex = sortedAttrs.shift()!.end;
+    thisIndex = indexOf(
+      ctx.code,
+      (_c, index) => ctx.code.startsWith("this", index),
+      nextStartIndex,
+      sortedAttrs[0]?.start ?? node.end
+    );
+  }
+  return thisIndex;
 }
 
 /** Convert for ComponentElement */
