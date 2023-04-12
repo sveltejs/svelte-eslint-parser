@@ -12,7 +12,7 @@ type KeyofObject<T> = { [key in keyof T]: key }[keyof T];
 const svelteKeys: SvelteKeysType = {
   Program: ["body"],
   SvelteScriptElement: ["name", "startTag", "body", "endTag"],
-  SvelteStyleElement: ["name", "startTag", "children", "endTag"],
+  SvelteStyleElement: ["name", "startTag", "body", "children", "endTag"],
   SvelteElement: ["name", "startTag", "children", "endTag"],
   SvelteStartTag: ["attributes"],
   SvelteEndTag: [],

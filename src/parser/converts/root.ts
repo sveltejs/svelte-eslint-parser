@@ -10,6 +10,7 @@ import type { Context } from "../../context";
 import { convertChildren, extractElementTags } from "./element";
 import { convertAttributeTokens } from "./attr";
 import type { Scope } from "eslint-scope";
+import postcss from "postcss";
 
 /**
  * Convert root
@@ -89,6 +90,7 @@ export function convertSvelteRoot(
       type: "SvelteStyleElement",
       name: null as any,
       startTag: null as any,
+      body: null as any,
       children: [] as any,
       endTag: null,
       parent: ast,
@@ -114,11 +116,13 @@ export function convertSvelteRoot(
         start: style.startTag.range[1],
         end: style.endTag.range[0],
       };
+      const styleCode = ctx.code.slice(contentRange.start, contentRange.end);
+      style.body = postcss.parse(styleCode);
       ctx.addToken("HTMLText", contentRange);
       style.children = [
         {
           type: "SvelteText",
-          value: ctx.code.slice(contentRange.start, contentRange.end),
+          value: styleCode,
           parent: style,
           ...ctx.getConvertLocation(contentRange),
         },

@@ -1,4 +1,5 @@
 import type ESTree from "estree";
+import type { Root } from "postcss";
 import type { BaseNode } from "./base";
 import type { Token, Comment } from "./common";
 
@@ -66,6 +67,7 @@ export interface SvelteStyleElement extends BaseSvelteElement {
   type: "SvelteStyleElement";
   name: SvelteName;
   startTag: SvelteStartTag;
+  body: Root;
   children: [SvelteText];
   endTag: SvelteEndTag | null;
   parent: SvelteProgram;
