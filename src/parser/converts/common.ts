@@ -2,12 +2,14 @@ import type ESTree from "estree";
 /** indexOf */
 export function indexOf(
   str: string,
-  search: (c: string) => boolean,
-  start: number
+  search: (c: string, index: number) => boolean,
+  start: number,
+  end?: number
 ): number {
-  for (let index = start; index < str.length; index++) {
+  const endIndex = end ?? str.length;
+  for (let index = start; index < endIndex; index++) {
     const c = str[index];
-    if (search(c)) {
+    if (search(c, index)) {
       return index;
     }
   }

@@ -117,11 +117,11 @@ export interface BaseElement extends BaseNode {
 export interface BasicElement extends BaseElement {
   tag?: undefined;
 }
-export interface SvelteComponent extends BaseElement {
+export interface SvelteElement extends BaseElement {
   name: "svelte:element";
-  tag: ESTree.Expression;
+  tag: ESTree.Expression | string;
 }
-export type Element = BasicElement | SvelteComponent;
+export type Element = BasicElement | SvelteElement;
 
 export interface BaseInlineComponent extends BaseNode {
   type: "InlineComponent";
