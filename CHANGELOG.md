@@ -1,5 +1,11 @@
 # svelte-eslint-parser
 
+## 0.26.1
+
+### Patch Changes
+
+- [#316](https://github.com/sveltejs/svelte-eslint-parser/pull/316) [`501c1b4`](https://github.com/sveltejs/svelte-eslint-parser/commit/501c1b474c14ab3d1655391bacc16c300493cf1c) Thanks [@ota-meshi](https://github.com/ota-meshi)! - fix: crash with plain `this` attribute.
+
 ## 0.26.0
 
 ### Minor Changes
