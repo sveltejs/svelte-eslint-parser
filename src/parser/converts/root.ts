@@ -117,7 +117,9 @@ export function convertSvelteRoot(
         end: style.endTag.range[0],
       };
       const styleCode = ctx.code.slice(contentRange.start, contentRange.end);
-      style.body = postcss.parse(styleCode);
+      style.body = postcss.parse(styleCode, {
+        from: ctx.parserOptions.filePath,
+      });
       ctx.addToken("HTMLText", contentRange);
       style.children = [
         {
