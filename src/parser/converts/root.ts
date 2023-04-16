@@ -130,7 +130,6 @@ export function convertSvelteRoot(
         case "css":
           parseFn = postcss.parse;
           break;
-        case "sass":
         case "scss":
           parseFn = SCSSparse;
           break;
