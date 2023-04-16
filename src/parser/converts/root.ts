@@ -10,7 +10,9 @@ import type { Context } from "../../context";
 import { convertChildren, extractElementTags } from "./element";
 import { convertAttributeTokens } from "./attr";
 import type { Scope } from "eslint-scope";
+import type { Parser, Root } from "postcss";
 import postcss from "postcss";
+import { parse as SCSSparse } from "postcss-scss";
 
 /**
  * Convert root
@@ -112,12 +114,35 @@ export function convertSvelteRoot(
     });
 
     if (style.endTag && style.startTag.range[1] < style.endTag.range[0]) {
+      let lang = "css";
+      for (const attribute of style.startTag.attributes) {
+        if (
+          attribute.type === "SvelteAttribute" &&
+          attribute.key.name === "lang" &&
+          attribute.value.length > 0 &&
+          attribute.value[0].type === "SvelteLiteral"
+        ) {
+          lang = attribute.value[0].value;
+        }
+      }
+      let parseFn: Parser<Root>;
+      switch (lang) {
+        case "css":
+          parseFn = postcss.parse;
+          break;
+        case "sass":
+        case "scss":
+          parseFn = SCSSparse;
+          break;
+        default:
+          throw new Error(`Unknown <style> block language "${lang}".`);
+      }
       const contentRange = {
         start: style.startTag.range[1],
         end: style.endTag.range[0],
       };
       const styleCode = ctx.code.slice(contentRange.start, contentRange.end);
-      style.body = postcss.parse(styleCode, {
+      style.body = parseFn(styleCode, {
         from: ctx.parserOptions.filePath,
       });
       ctx.addToken("HTMLText", contentRange);
