@@ -125,7 +125,7 @@ export function convertSvelteRoot(
           lang = attribute.value[0].value;
         }
       }
-      let parseFn: Parser<Root>;
+      let parseFn: Parser<Root> | undefined = postcss.parse;
       switch (lang) {
         case "css":
           parseFn = postcss.parse;
@@ -134,14 +134,15 @@ export function convertSvelteRoot(
           parseFn = SCSSparse;
           break;
         default:
-          throw new Error(`Unknown <style> block language "${lang}".`);
+          console.warn(`Unknown <style> block language "${lang}".`);
+          parseFn = undefined;
       }
       const contentRange = {
         start: style.startTag.range[1],
         end: style.endTag.range[0],
       };
       const styleCode = ctx.code.slice(contentRange.start, contentRange.end);
-      style.body = parseFn(styleCode, {
+      style.body = parseFn?.(styleCode, {
         from: ctx.parserOptions.filePath,
       });
       ctx.addToken("HTMLText", contentRange);

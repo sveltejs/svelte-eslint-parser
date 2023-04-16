@@ -67,7 +67,7 @@ export interface SvelteStyleElement extends BaseSvelteElement {
   type: "SvelteStyleElement";
   name: SvelteName;
   startTag: SvelteStartTag;
-  body: Root;
+  body: Root | undefined;
   children: [SvelteText];
   endTag: SvelteEndTag | null;
   parent: SvelteProgram;
