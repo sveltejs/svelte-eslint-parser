@@ -10,10 +10,10 @@ import type { Context } from "../../context";
 import { convertChildren, extractElementTags } from "./element";
 import { convertAttributeTokens } from "./attr";
 import type { Scope } from "eslint-scope";
-import type { AnyNode, Parser, Root } from "postcss";
+import type { Parser, Root } from "postcss";
 import postcss from "postcss";
 import { parse as SCSSparse } from "postcss-scss";
-import type { BaseNode } from "../../ast/base";
+import type { ESLintCompatiblePostCSSNode } from "../../ast/style";
 
 /**
  * Convert root
@@ -146,10 +146,10 @@ export function convertSvelteRoot(
       if (parseFn !== undefined) {
         style.body = parseFn(styleCode, {
           from: ctx.parserOptions.filePath,
-        });
-        convertPostCSSNodeToESLintNode(style.body as any, contentRange);
+        }) as unknown as ESLintCompatiblePostCSSNode<Root>;
+        convertPostCSSNodeToESLintNode(style.body, contentRange);
         style.body?.walk((node) =>
-          convertPostCSSNodeToESLintNode(node as any, contentRange)
+          convertPostCSSNodeToESLintNode(node, contentRange)
         );
       }
       ctx.addToken("HTMLText", contentRange);
@@ -192,13 +192,6 @@ export function convertSvelteRoot(
 
   return ast;
 }
-
-// TODO: Move this to own file and actually use it in the exported type. Also needs to override node.nodes types
-type ESLintCompatiblePostCSSNode<PostCSSNode extends AnyNode = AnyNode> = Omit<
-  PostCSSNode,
-  "type"
-> &
-  BaseNode;
 
 /**
  * Instruments PostCSS AST nodes to also be valid ESLint AST nodes.

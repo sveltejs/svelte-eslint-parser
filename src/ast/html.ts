@@ -2,6 +2,7 @@ import type ESTree from "estree";
 import type { Root } from "postcss";
 import type { BaseNode } from "./base";
 import type { Token, Comment } from "./common";
+import type { ESLintCompatiblePostCSSNode } from "./style";
 
 export type SvelteHTMLNode =
   | SvelteProgram
@@ -67,7 +68,7 @@ export interface SvelteStyleElement extends BaseSvelteElement {
   type: "SvelteStyleElement";
   name: SvelteName;
   startTag: SvelteStartTag;
-  body: Root | undefined;
+  body: ESLintCompatiblePostCSSNode<Root> | undefined;
   children: [SvelteText];
   endTag: SvelteEndTag | null;
   parent: SvelteProgram;
