@@ -10,9 +10,10 @@ import type { Context } from "../../context";
 import { convertChildren, extractElementTags } from "./element";
 import { convertAttributeTokens } from "./attr";
 import type { Scope } from "eslint-scope";
-import type { Parser, Root } from "postcss";
+import type { AnyNode, Parser, Root } from "postcss";
 import postcss from "postcss";
 import { parse as SCSSparse } from "postcss-scss";
+import type { BaseNode } from "../../ast/base";
 
 /**
  * Convert root
@@ -92,7 +93,7 @@ export function convertSvelteRoot(
       type: "SvelteStyleElement",
       name: null as any,
       startTag: null as any,
-      body: null as any,
+      body: undefined,
       children: [] as any,
       endTag: null,
       parent: ast,
@@ -142,9 +143,15 @@ export function convertSvelteRoot(
         end: style.endTag.range[0],
       };
       const styleCode = ctx.code.slice(contentRange.start, contentRange.end);
-      style.body = parseFn?.(styleCode, {
-        from: ctx.parserOptions.filePath,
-      });
+      if (parseFn !== undefined) {
+        style.body = parseFn(styleCode, {
+          from: ctx.parserOptions.filePath,
+        });
+        convertPostCSSNodeToESLintNode(style.body as any, contentRange);
+        style.body?.walk((node) =>
+          convertPostCSSNodeToESLintNode(node as any, contentRange)
+        );
+      }
       ctx.addToken("HTMLText", contentRange);
       style.children = [
         {
@@ -184,6 +191,28 @@ export function convertSvelteRoot(
   );
 
   return ast;
+}
+
+// TODO: Move this to own file and actually use it in the exported type. Also needs to override node.nodes types
+type ESLintCompatiblePostCSSNode<PostCSSNode extends AnyNode = AnyNode> = Omit<
+  PostCSSNode,
+  "type"
+> &
+  BaseNode;
+
+/**
+ * Instruments PostCSS AST nodes to also be valid ESLint AST nodes.
+ */
+function convertPostCSSNodeToESLintNode(
+  node: ESLintCompatiblePostCSSNode,
+  styleRange: { start: number; end: number }
+) {
+  const start = styleRange.start + (node.source?.start?.offset ?? 0);
+  const end =
+    node.source?.end !== undefined
+      ? styleRange.start + node.source.end.offset
+      : styleRange.end;
+  node.range = [start, end];
 }
 
 /** Extract attrs */
