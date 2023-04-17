@@ -11,7 +11,7 @@ import type { Context } from "../../context";
 import { convertChildren, extractElementTags } from "./element";
 import { convertAttributeTokens } from "./attr";
 import type { Scope } from "eslint-scope";
-import type { Parser, Root } from "postcss";
+import type { ChildNode, Node, Parser, Root } from "postcss";
 import postcss from "postcss";
 import { parse as SCSSparse } from "postcss-scss";
 import type { ESLintCompatiblePostCSSNode } from "../../ast/style";
@@ -148,13 +148,13 @@ export function convertSvelteRoot(
         // The assertion here is a bit of a lie, the body only becomes `ESLintCompatiblePostCSSNode` after the convertPostCSSNodeToESLintNode function has been called on it and all its descendants.
         style.body = parseFn(styleCode, {
           from: ctx.parserOptions.filePath,
-        }) as ESLintCompatiblePostCSSNode<Root>;
+        }) as unknown as ESLintCompatiblePostCSSNode<Root>;
         convertPostCSSNodeToESLintNode(style.body, style.loc, contentRange);
         // Fix Root loc
         style.body.loc.start.column += style.startTag.loc.end.column;
         style.body.loc.end.column -=
           style.endTag.loc.end.column - style.endTag.loc.start.column;
-        style.body?.walk((node) =>
+        style.body?.walk((node: ESLintCompatiblePostCSSNode<ChildNode>) =>
           convertPostCSSNodeToESLintNode(node, style.loc, contentRange)
         );
         delete style.body.source?.input.file;
@@ -203,25 +203,23 @@ export function convertSvelteRoot(
 /**
  * Instruments PostCSS AST nodes to also be valid ESLint AST nodes.
  */
-function convertPostCSSNodeToESLintNode(
-  node: ESLintCompatiblePostCSSNode,
+function convertPostCSSNodeToESLintNode<PostCSSNode extends Node>(
+  node: ESLintCompatiblePostCSSNode<PostCSSNode>,
   styleLoc: SourceLocation,
   styleRange: { start: number; end: number }
 ) {
   node.type = `SvelteStyle-${node.type}`;
-  const startOffset =
-    styleRange.start + ((node.source?.start?.offset ?? 0) as number);
+  const startOffset = styleRange.start + (node.source?.start?.offset ?? 0);
   const endOffset =
     node.source?.end !== undefined
-      ? styleRange.start + (node.source.end.offset as number)
+      ? styleRange.start + node.source.end.offset
       : styleRange.end;
   node.range = [startOffset, endOffset];
-  const startLine =
-    styleLoc.start.line + ((node.source?.start?.line ?? 0) as number) - 1;
-  const startColumn = node.source.start.column;
+  const startLine = styleLoc.start.line + (node.source?.start?.line ?? 0) - 1;
+  const startColumn = node.source?.start?.column ?? 1;
   const endLine =
     node.source?.end !== undefined
-      ? styleLoc.start.line + (node.source.end.line as number) - 1
+      ? styleLoc.start.line + node.source.end.line - 1
       : styleLoc.end.line;
   const endColumn =
     node.source?.end !== undefined

@@ -1,11 +1,15 @@
 import type { Node, Container } from "postcss";
 import type { BaseNode } from "./base";
 
-export type ESLintCompatiblePostCSSNode<PostCSSNode extends Node = Node> = Omit<
-  PostCSSNode,
-  "type"
-> &
+export type ESLintCompatiblePostCSSNode<PostCSSNode extends Node = Node> =
   BaseNode &
-  (PostCSSNode extends Container<infer Child>
-    ? Container<ESLintCompatiblePostCSSNode<Child>>
-    : any);
+    (PostCSSNode extends Container<infer Child>
+      ? Omit<Container<ESLintCompatiblePostCSSNode<Child>>, "walk"> & {
+          walk(
+            callback: (
+              node: ESLintCompatiblePostCSSNode<Child>,
+              index: number
+            ) => false | void
+          ): false | undefined;
+        }
+      : PostCSSNode);
