@@ -157,6 +157,7 @@ export function convertSvelteRoot(
         style.body?.walk((node) =>
           convertPostCSSNodeToESLintNode(node, style.loc, contentRange)
         );
+        delete style.body.source?.input.file;
       }
       ctx.addToken("HTMLText", contentRange);
       style.children = [
