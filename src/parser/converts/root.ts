@@ -208,17 +208,19 @@ function convertPostCSSNodeToESLintNode(
   styleRange: { start: number; end: number }
 ) {
   node.type = `SvelteStyle-${node.type}`;
-  const startOffset = styleRange.start + (node.source?.start?.offset ?? 0);
+  const startOffset =
+    styleRange.start + ((node.source?.start?.offset ?? 0) as number);
   const endOffset =
     node.source?.end !== undefined
-      ? styleRange.start + node.source.end.offset
+      ? styleRange.start + (node.source.end.offset as number)
       : styleRange.end;
   node.range = [startOffset, endOffset];
-  const startLine = styleLoc.start.line + node.source!.start.line - 1;
+  const startLine =
+    styleLoc.start.line + ((node.source?.start?.line ?? 0) as number) - 1;
   const startColumn = node.source.start.column;
   const endLine =
     node.source?.end !== undefined
-      ? styleLoc.start.line + node.source.end.line - 1
+      ? styleLoc.start.line + (node.source.end.line as number) - 1
       : styleLoc.end.line;
   const endColumn =
     node.source?.end !== undefined
