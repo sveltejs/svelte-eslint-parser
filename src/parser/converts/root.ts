@@ -1,5 +1,6 @@
 import type * as SvAST from "../svelte-ast-types";
 import type {
+  SourceLocation,
   SvelteName,
   SvelteProgram,
   SvelteScriptElement,
@@ -148,9 +149,13 @@ export function convertSvelteRoot(
         style.body = parseFn(styleCode, {
           from: ctx.parserOptions.filePath,
         }) as ESLintCompatiblePostCSSNode<Root>;
-        convertPostCSSNodeToESLintNode(style.body, contentRange);
+        convertPostCSSNodeToESLintNode(style.body, style.loc, contentRange);
+        // Fix Root loc
+        style.body.loc.start.column += style.startTag.loc.end.column;
+        style.body.loc.end.column -=
+          style.endTag.loc.end.column - style.endTag.loc.start.column;
         style.body?.walk((node) =>
-          convertPostCSSNodeToESLintNode(node, contentRange)
+          convertPostCSSNodeToESLintNode(node, style.loc, contentRange)
         );
       }
       ctx.addToken("HTMLText", contentRange);
@@ -199,15 +204,30 @@ export function convertSvelteRoot(
  */
 function convertPostCSSNodeToESLintNode(
   node: ESLintCompatiblePostCSSNode,
+  styleLoc: SourceLocation,
   styleRange: { start: number; end: number }
 ) {
   node.type = `SvelteStyle-${node.type}`;
-  const start = styleRange.start + (node.source?.start?.offset ?? 0);
-  const end =
+  const startOffset = styleRange.start + (node.source?.start?.offset ?? 0);
+  const endOffset =
     node.source?.end !== undefined
       ? styleRange.start + node.source.end.offset
       : styleRange.end;
-  node.range = [start, end];
+  node.range = [startOffset, endOffset];
+  const startLine = styleLoc.start.line + node.source!.start.line - 1;
+  const startColumn = node.source.start.column;
+  const endLine =
+    node.source?.end !== undefined
+      ? styleLoc.start.line + node.source.end.line - 1
+      : styleLoc.end.line;
+  const endColumn =
+    node.source?.end !== undefined
+      ? node.source.end.column
+      : styleLoc.end.column;
+  node.loc = {
+    start: { line: startLine, column: startColumn },
+    end: { line: endLine, column: endColumn },
+  };
 }
 
 /** Extract attrs */
