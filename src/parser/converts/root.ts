@@ -144,9 +144,10 @@ export function convertSvelteRoot(
       };
       const styleCode = ctx.code.slice(contentRange.start, contentRange.end);
       if (parseFn !== undefined) {
+        // The assertion here is a bit of a lie, the body only becomes `ESLintCompatiblePostCSSNode` after the convertPostCSSNodeToESLintNode function has been called on it and all its descendants.
         style.body = parseFn(styleCode, {
           from: ctx.parserOptions.filePath,
-        }) as unknown as ESLintCompatiblePostCSSNode<Root>;
+        }) as ESLintCompatiblePostCSSNode<Root>;
         convertPostCSSNodeToESLintNode(style.body, contentRange);
         style.body?.walk((node) =>
           convertPostCSSNodeToESLintNode(node, contentRange)
