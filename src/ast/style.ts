@@ -1,5 +1,6 @@
-import type { Node, ChildProps, Container } from "postcss";
+import type { Node, ChildProps, Container, Root } from "postcss";
 import type { Locations } from "./common";
+import type { SvelteStyleElement } from "./html";
 
 type ESLintCompatiblePostCSSContainer<
   PostCSSNode extends Node,
@@ -64,10 +65,12 @@ type ESLintCompatiblePostCSSContainer<
 };
 
 export type ESLintCompatiblePostCSSNode<PostCSSNode extends Node> =
+  // The following hack makes the `type` property work for type narrowing, see microsoft/TypeScript#53887.
   PostCSSNode extends any
     ? Locations &
         Omit<
           PostCSSNode,
+          | "parent"
           | "type"
           | "each"
           | "every"
@@ -85,5 +88,12 @@ export type ESLintCompatiblePostCSSNode<PostCSSNode extends Node> =
           type: `SvelteStyle-${PostCSSNode["type"]}`;
         } & (PostCSSNode extends Container<infer Child>
           ? ESLintCompatiblePostCSSContainer<PostCSSNode, Child>
-          : unknown)
+          : unknown) &
+        (PostCSSNode extends Root
+          ? {
+              parent: SvelteStyleElement;
+            }
+          : {
+              parent: PostCSSNode["parent"];
+            })
     : never;
