@@ -11,7 +11,7 @@ import type { Context } from "../../context";
 import { convertChildren, extractElementTags } from "./element";
 import { convertAttributeTokens } from "./attr";
 import type { Scope } from "eslint-scope";
-import type { ChildNode, Node, Parser, Root } from "postcss";
+import type { Document, Node, Parser, Root } from "postcss";
 import postcss from "postcss";
 import { parse as SCSSparse } from "postcss-scss";
 import type { ESLintCompatiblePostCSSNode } from "../../ast/style";
@@ -154,10 +154,10 @@ export function convertSvelteRoot(
         style.body.loc.start.column += style.startTag.loc.end.column;
         style.body.loc.end.column -=
           style.endTag.loc.end.column - style.endTag.loc.start.column;
-        style.body?.walk((node: ESLintCompatiblePostCSSNode<ChildNode>) =>
+        style.body?.walk((node) =>
           convertPostCSSNodeToESLintNode(node, style.loc, contentRange)
         );
-        style.body.parent = style;
+        style.body.parent = style as unknown as Document;
         delete style.body.source?.input.file;
       }
       ctx.addToken("HTMLText", contentRange);
