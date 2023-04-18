@@ -209,7 +209,7 @@ function convertPostCSSNodeToESLintNode<PostCSSNode extends Node>(
   styleLoc: SourceLocation,
   styleRange: { start: number; end: number }
 ) {
-  node.type = `SvelteStyle-${node.type}`;
+  node.type = `SvelteStyle-${node.type as PostCSSNode["type"]}`;
   const startOffset = styleRange.start + (node.source?.start?.offset ?? 0);
   const endOffset =
     node.source?.end !== undefined
