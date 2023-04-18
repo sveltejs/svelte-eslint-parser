@@ -63,24 +63,27 @@ type ESLintCompatiblePostCSSContainer<
   ): false | undefined;
 };
 
-export type ESLintCompatiblePostCSSNode<PostCSSNode extends Node> = Locations &
-  Omit<
-    PostCSSNode,
-    | "type"
-    | "each"
-    | "every"
-    | "first"
-    | "index"
-    | "insertAfter"
-    | "insertBefore"
-    | "last"
-    | "nodes"
-    | "push"
-    | "removeChild"
-    | "some"
-    | "walk"
-  > & {
-    type: `SvelteStyle-${PostCSSNode["type"]}`;
-  } & (PostCSSNode extends Container<infer Child>
-    ? ESLintCompatiblePostCSSContainer<PostCSSNode, Child>
-    : unknown);
+export type ESLintCompatiblePostCSSNode<PostCSSNode extends Node> =
+  PostCSSNode extends any
+    ? Locations &
+        Omit<
+          PostCSSNode,
+          | "type"
+          | "each"
+          | "every"
+          | "first"
+          | "index"
+          | "insertAfter"
+          | "insertBefore"
+          | "last"
+          | "nodes"
+          | "push"
+          | "removeChild"
+          | "some"
+          | "walk"
+        > & {
+          type: `SvelteStyle-${PostCSSNode["type"]}`;
+        } & (PostCSSNode extends Container<infer Child>
+          ? ESLintCompatiblePostCSSContainer<PostCSSNode, Child>
+          : unknown)
+    : never;
