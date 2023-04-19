@@ -1,4 +1,4 @@
-import type { Container, Node, Root } from "postcss";
+import type { ChildNode, Container, Node, Root } from "postcss";
 import type { Locations } from "./common";
 import type { SvelteStyleElement } from "./html";
 
@@ -8,7 +8,7 @@ type ESLintCompatiblePostCSSContainer<Child extends Node> = Omit<
 > & {
   walk(
     callback: (
-      node: ESLintCompatiblePostCSSNode<Child>,
+      node: ESLintCompatiblePostCSSNode<ChildNode>,
       index: number
     ) => false | void
   ): false | undefined;
