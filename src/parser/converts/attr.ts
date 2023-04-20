@@ -351,7 +351,7 @@ function buildEventHandlerType(
     extends: `infer EVT`,
     true: conditional({
       check: `EVT`,
-      extends: keyof(`HTMLElementEventMap`),
+      extends: `keyof HTMLElementEventMap`,
       true: `HTMLElementEventMap[EVT]`,
       false: `CustomEvent<any>`,
     }),
@@ -376,7 +376,7 @@ function buildEventHandlerType(
         extends: `infer EVT`,
         true: conditional({
           check: `EVT`,
-          extends: keyof(componentEventsType),
+          extends: `keyof ${componentEventsType}`,
           true: `${componentEventsType}[EVT]`,
           false: `CustomEvent<any>`,
         }),
@@ -395,13 +395,13 @@ function buildEventHandlerType(
     extends: "infer EL",
     true: conditional({
       check: `EL`,
-      extends: keyof(`${svelteHTMLElementsType}`),
+      extends: `keyof ${svelteHTMLElementsType}`,
       true: conditional({
         check: `'${attrName}'`,
         extends: "infer ATTR",
         true: conditional({
           check: `ATTR`,
-          extends: keyof(`${svelteHTMLElementsType}[EL]`),
+          extends: `keyof ${svelteHTMLElementsType}[EL]`,
           true: `${svelteHTMLElementsType}[EL][ATTR]`,
           false: nativeEventHandlerType,
         }),
@@ -411,11 +411,6 @@ function buildEventHandlerType(
     }),
     false: `never`,
   });
-
-  /** Generate `keyof T` type. */
-  function keyof(type: string) {
-    return `keyof ${type}`;
-  }
 
   /** Generate `C extends E ? T : F` type. */
   function conditional(types: {
