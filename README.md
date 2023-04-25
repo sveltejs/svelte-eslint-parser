@@ -15,7 +15,7 @@ You can check it on [Online DEMO](https://sveltejs.github.io/svelte-eslint-parse
 
 ## ⤴️ Motivation
 
-The [svelte-eslint-parser] aims to make it easy to create your own ESLint rules for the [Svelte].
+The [svelte-eslint-parser] aims to make it easy to create your own ESLint rules for [Svelte].
 
 The [`eslint-plugin-svelte`] is an ESLint plugin that uses the [svelte-eslint-parser]. I have already [implemented some rules].
 
