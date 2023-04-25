@@ -548,7 +548,7 @@ function convertActionDirective(
     processExpression: buildProcessExpressionForExpression(
       directive,
       ctx,
-      null
+      `Parameters<typeof ${node.name}>[1]`
     ),
     processName: (name) =>
       ctx.scriptLet.addExpression(
