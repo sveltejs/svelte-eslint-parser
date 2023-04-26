@@ -6,7 +6,7 @@ import semver from "semver";
 import { traverseNodes } from "../../../src/traverse";
 import { parseForESLint } from "../../../src";
 import {
-  BASIC_PARSER_OPTIONS,
+  generateParserOptions,
   listupFixtures,
   astToJson,
   scopeToJSON,
@@ -14,11 +14,8 @@ import {
 import type { Comment, SvelteProgram, Token } from "../../../src/ast";
 import { sortNodes } from "../../../src/parser/sort";
 
-function parse(code: string, filePath: string) {
-  return parseForESLint(code, {
-    ...BASIC_PARSER_OPTIONS!,
-    filePath,
-  });
+function parse(code: string, filePath: string, config: any) {
+  return parseForESLint(code, generateParserOptions({ filePath }, config));
 }
 
 describe("Check for AST.", () => {
@@ -27,13 +24,14 @@ describe("Check for AST.", () => {
     inputFileName,
     outputFileName,
     scopeFileName,
+    config,
     meetRequirements,
   } of listupFixtures()) {
     describe(inputFileName, () => {
       let result: any;
 
       it("most to generate the expected AST.", () => {
-        result = parse(input, inputFileName);
+        result = parse(input, inputFileName, config);
         if (!meetRequirements("test")) {
           return;
         }
@@ -72,7 +70,7 @@ describe("Check for AST.", () => {
       it("even if Win, it must be correct.", () => {
         const inputForWin = input.replace(/\n/g, "\r\n");
         // check
-        const astForWin = parse(inputForWin, inputFileName).ast;
+        const astForWin = parse(inputForWin, inputFileName, config).ast;
         // check tokens
         checkTokens(astForWin, inputForWin);
       });

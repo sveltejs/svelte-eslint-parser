@@ -346,52 +346,81 @@ function buildEventHandlerType(
   elementName: string,
   eventName: string
 ) {
-  const nativeEventHandlerType = [
-    `(e:`,
-    /**/ `'${eventName}' extends infer EVT`,
-    /**/ /**/ `?EVT extends keyof HTMLElementEventMap`,
-    /**/ /**/ /**/ `?HTMLElementEventMap[EVT]`,
-    /**/ /**/ /**/ `:CustomEvent<any>`,
-    /**/ /**/ `:never`,
-    `)=>void`,
-  ].join("");
+  const nativeEventHandlerType = `(e:${conditional({
+    check: `'${eventName}'`,
+    extends: `infer EVT`,
+    true: conditional({
+      check: `EVT`,
+      extends: `keyof HTMLElementEventMap`,
+      true: `HTMLElementEventMap[EVT]`,
+      false: `CustomEvent<any>`,
+    }),
+    false: `never`,
+  })})=>void`;
   if (element.type !== "SvelteElement") {
     return nativeEventHandlerType;
   }
   if (element.kind === "component") {
-    // `@typescript-eslint/parser` currently cannot parse `*.svelte` import types correctly.
-    // So if we try to do a correct type parsing, it's argument type will be `any`.
-    // A workaround is to inject the type directly, as `CustomEvent<any>` is better than `any`.
-
-    // const componentEvents = `import('svelte').ComponentEvents<${elementName}>`;
-    // return `(e:'${eventName}' extends keyof ${componentEvents}?${componentEvents}['${eventName}']:CustomEvent<any>)=>void`;
-
-    return `(e:CustomEvent<any>)=>void`;
+    const componentEventsType = `import('svelte').ComponentEvents<${elementName}>`;
+    return `(e:${conditional({
+      check: `0`,
+      extends: `(1 & ${componentEventsType})`,
+      // `componentEventsType` is `any`
+      //   `@typescript-eslint/parser` currently cannot parse `*.svelte` import types correctly.
+      //   So if we try to do a correct type parsing, it's argument type will be `any`.
+      //   A workaround is to inject the type directly, as `CustomEvent<any>` is better than `any`.
+      true: `CustomEvent<any>`,
+      // `componentEventsType` has an exact type.
+      false: conditional({
+        check: `'${eventName}'`,
+        extends: `infer EVT`,
+        true: conditional({
+          check: `EVT`,
+          extends: `keyof ${componentEventsType}`,
+          true: `${componentEventsType}[EVT]`,
+          false: `CustomEvent<any>`,
+        }),
+        false: `never`,
+      }),
+    })})=>void`;
   }
   if (element.kind === "special") {
     if (elementName === "svelte:component") return `(e:CustomEvent<any>)=>void`;
     return nativeEventHandlerType;
   }
   const attrName = `on:${eventName}`;
-  const importSvelteHTMLElements =
-    "import('svelte/elements').SvelteHTMLElements";
-  return [
-    `'${elementName}' extends infer EL`,
-    /**/ `?(`,
-    /**/ /**/ `EL extends keyof ${importSvelteHTMLElements}`,
-    /**/ /**/ `?(`,
-    /**/ /**/ /**/ `'${attrName}' extends infer ATTR`,
-    /**/ /**/ /**/ `?(`,
-    /**/ /**/ /**/ /**/ `ATTR extends keyof ${importSvelteHTMLElements}[EL]`,
-    /**/ /**/ /**/ /**/ /**/ `?${importSvelteHTMLElements}[EL][ATTR]`,
-    /**/ /**/ /**/ /**/ /**/ `:${nativeEventHandlerType}`,
-    /**/ /**/ /**/ `)`,
-    /**/ /**/ /**/ `:never`,
-    /**/ /**/ `)`,
-    /**/ /**/ `:${nativeEventHandlerType}`,
-    /**/ `)`,
-    /**/ `:never`,
-  ].join("");
+  const svelteHTMLElementsType = "import('svelte/elements').SvelteHTMLElements";
+  return conditional({
+    check: `'${elementName}'`,
+    extends: "infer EL",
+    true: conditional({
+      check: `EL`,
+      extends: `keyof ${svelteHTMLElementsType}`,
+      true: conditional({
+        check: `'${attrName}'`,
+        extends: "infer ATTR",
+        true: conditional({
+          check: `ATTR`,
+          extends: `keyof ${svelteHTMLElementsType}[EL]`,
+          true: `${svelteHTMLElementsType}[EL][ATTR]`,
+          false: nativeEventHandlerType,
+        }),
+        false: `never`,
+      }),
+      false: nativeEventHandlerType,
+    }),
+    false: `never`,
+  });
+
+  /** Generate `C extends E ? T : F` type. */
+  function conditional(types: {
+    check: string;
+    extends: string;
+    true: string;
+    false: string;
+  }) {
+    return `${types.check} extends ${types.extends}?(${types.true}):(${types.false})`;
+  }
 }
 
 /** Convert for Class Directive */
