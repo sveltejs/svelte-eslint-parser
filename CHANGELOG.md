@@ -1,5 +1,13 @@
 # svelte-eslint-parser
 
+## 0.27.0
+
+### Minor Changes
+
+- [#314](https://github.com/sveltejs/svelte-eslint-parser/pull/314) [`96a72a5`](https://github.com/sveltejs/svelte-eslint-parser/commit/96a72a5d9e549c6f433a104b5db296684015303c) Thanks [@ota-meshi](https://github.com/ota-meshi)! - feat: improve component event handler type
+
+- [#325](https://github.com/sveltejs/svelte-eslint-parser/pull/325) [`36b01ec`](https://github.com/sveltejs/svelte-eslint-parser/commit/36b01ecb3abf6b793127e577d0aa213f9fea32a3) Thanks [@ota-meshi](https://github.com/ota-meshi)! - feat: support for `use:` directive parameter type
+
 ## 0.26.1
 
 ### Patch Changes
