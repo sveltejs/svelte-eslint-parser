@@ -4,12 +4,15 @@ import { ESLint } from "eslint";
 import { name, version } from "../package.json";
 import { getNewVersion } from "./lib/changesets-util";
 
-const META_PATH = path.resolve(__dirname, "../src/meta.ts");
+const META_PATH = path.join(__dirname, "../src/meta.ts");
 
 void main();
 
 /** main */
 async function main() {
+  if (!fs.existsSync(META_PATH)) {
+    fs.writeFileSync(META_PATH, "", "utf8");
+  }
   const eslint = new ESLint({ fix: true });
   const [result] = await eslint.lintText(
     `/*
