@@ -3,10 +3,10 @@ import * as AST from "./ast";
 import { traverseNodes } from "./traverse";
 import { KEYS } from "./visitor-keys";
 import { ParseError } from "./errors";
+export * as meta from "./meta";
+export { name } from "./meta";
 
 export { AST, ParseError };
-
-export const name = "svelte-eslint-parser";
 
 // parser
 export { parseForESLint };

@@ -26,7 +26,9 @@
   ],
   "scripts": {
     "benchmark": "yarn ts benchmark/index.ts",
-    "build": "tsc --project ./tsconfig.build.json",
+    "build": "yarn build:meta && yarn build:tsc",
+    "build:meta": "yarn ts ./tools/update-meta.ts",
+    "build:tsc": "tsc --project ./tsconfig.build.json",
     "clean": "rimraf .nyc_output lib coverage",
     "cover": "nyc --reporter=lcov yarn test",
     "debug": "yarn mocha \"tests/src/**/*.ts\" --reporter dot --timeout 60000",
@@ -40,7 +42,8 @@
     "release": "changeset publish",
     "test": "yarn mocha \"tests/src/**/*.ts\" --reporter dot --timeout 60000",
     "ts": "node -r esbuild-register",
-    "update-fixtures": "yarn ts ./tools/update-fixtures.ts"
+    "update-fixtures": "yarn ts ./tools/update-fixtures.ts",
+    "version:ci": "env-cmd -e version-ci yarn build:meta && changeset version"
   },
   "peerDependencies": {
     "svelte": "^3.37.0"
@@ -71,6 +74,7 @@
     "@typescript-eslint/parser": "~5.59.0",
     "benchmark": "^2.1.4",
     "chai": "^4.3.4",
+    "env-cmd": "^10.1.0",
     "esbuild": "^0.17.0",
     "esbuild-register": "^3.3.3",
     "eslint": "^8.2.0",
