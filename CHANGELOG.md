@@ -1,5 +1,11 @@
 # svelte-eslint-parser
 
+## 0.28.0
+
+### Minor Changes
+
+- [#329](https://github.com/sveltejs/svelte-eslint-parser/pull/329) [`45c958e`](https://github.com/sveltejs/svelte-eslint-parser/commit/45c958e752ed2ea1b7d8df3fe21ffc0f7a664275) Thanks [@ota-meshi](https://github.com/ota-meshi)! - feat: export meta object
+
 ## 0.27.0
 
 ### Minor Changes
