@@ -11,6 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+      - uses: pnpm/action-setup@v2
       - uses: actions/setup-node@v3
       - name: Install Packages
         run: pnpm install
@@ -25,12 +26,13 @@ jobs:
         node-version: [12.x, 14.x, 16.x, 17.x, 18.x, 19.x]
     steps:
       - uses: actions/checkout@v3
+      - uses: pnpm/action-setup@v2
       - name: Use Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v3
         with:
           node-version: ${{ matrix.node-version }}
       - name: Install Packages
-        run: pnpm install --ignore-engines
+        run: pnpm install
       - name: Test
         run: pnpm run test
   test-for-ts-eslint-v4:
@@ -40,16 +42,17 @@ jobs:
         node-version: [14.x]
     steps:
       - uses: actions/checkout@v3
+      - uses: pnpm/action-setup@v2
       - name: Use Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v3
         with:
           node-version: ${{ matrix.node-version }}
       - name: Install @typescript-eslint v4
         run: |+
-          pnpm run add -D @typescript-eslint/parser@4 @typescript-eslint/eslint-plugin@4 eslint@7 --ignore-engines
+          pnpm install -D @typescript-eslint/parser@4 @typescript-eslint/eslint-plugin@4 eslint@7
           rm -rf node_modules
       - name: Install Packages
-        run: pnpm install --ignore-engines
+        run: pnpm install
       - name: Test
         run: pnpm run test
   test-for-eslint-v7:
@@ -59,27 +62,29 @@ jobs:
         node-version: [14.x]
     steps:
       - uses: actions/checkout@v3
+      - uses: pnpm/action-setup@v2
       - name: Use Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v3
         with:
           node-version: ${{ matrix.node-version }}
       - name: Install eslint v7
         run: |+
-          pnpm run add -D eslint@7 --ignore-engines
+          pnpm install -D eslint@7
           rm -rf node_modules
       - name: Install Packages
-        run: pnpm install --ignore-engines
+        run: pnpm install
       - name: Test
         run: pnpm run test
   update-fixtures:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+      - uses: pnpm/action-setup@v2
       - uses: actions/setup-node@v3
         with:
           node-version: 18
       - name: Install Packages
-        run: pnpm install --ignore-engines
+        run: pnpm install
       - name: Update fixtures
         run: pnpm run update-fixtures
       - name: Check changes
@@ -90,9 +95,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+      - uses: pnpm/action-setup@v2
       - uses: actions/setup-node@v3
       - name: Install Packages
-        run: pnpm install --ignore-engines
+        run: pnpm install
       - name: Test
         run: pnpm run cover
       - name: Coveralls GitHub Action
