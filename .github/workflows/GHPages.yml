@@ -28,12 +28,12 @@ jobs:
       - uses: actions/setup-node@v3
       - name: Install And Build
         run: |+
-          yarn install
-          yarn build
+          pnpm install
+          pnpm run build
           cd explorer-v2
-          yarn install
-          yarn pre-build
-          yarn build
+          pnpm install
+          pnpm run pre-build
+          pnpm run build
       - name: Setup Pages
         uses: actions/configure-pages@v3
       - name: Upload artifact

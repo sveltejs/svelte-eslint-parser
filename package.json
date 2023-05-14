@@ -10,7 +10,7 @@
   ],
   "funding": "https://github.com/sponsors/ota-meshi",
   "license": "MIT",
-  "packageManager": "yarn@1.22.19",
+  "packageManager": "pnpm@7.32.4",
   "engines": {
     "node": "^12.22.0 || ^14.17.0 || >=16.0.0"
   },
@@ -25,25 +25,25 @@
     "parser"
   ],
   "scripts": {
-    "benchmark": "yarn ts benchmark/index.ts",
-    "build": "yarn build:meta && yarn build:tsc",
-    "build:meta": "yarn ts ./tools/update-meta.ts",
+    "benchmark": "pnpm run ts benchmark/index.ts",
+    "build": "pnpm run build:meta && pnpm run build:tsc",
+    "build:meta": "pnpm run ts ./tools/update-meta.ts",
     "build:tsc": "tsc --project ./tsconfig.build.json",
     "clean": "rimraf .nyc_output lib coverage",
-    "cover": "nyc --reporter=lcov yarn test",
-    "debug": "yarn mocha \"tests/src/**/*.ts\" --reporter dot --timeout 60000",
-    "eslint-fix": "yarn lint --fix",
+    "cover": "nyc --reporter=lcov pnpm run test",
+    "debug": "pnpm run mocha \"tests/src/**/*.ts\" --reporter dot --timeout 60000",
+    "eslint-fix": "pnpm run lint --fix",
     "eslint-playground": "eslint tests/fixtures --ext .svelte --config .eslintrc-for-playground.js --format codeframe",
     "lint": "eslint . --ext .js,.ts,.json,.yaml,.yml,.svelte",
-    "mocha": "yarn ts ./node_modules/mocha/bin/mocha.js",
-    "prebuild": "yarn clean",
-    "prerelease": "yarn clean && yarn build",
-    "preversion": "yarn lint && yarn test",
+    "mocha": "pnpm run ts ./node_modules/mocha/bin/mocha.js",
+    "prebuild": "pnpm run clean",
+    "prerelease": "pnpm run clean && pnpm run build",
+    "preversion": "pnpm run lint && pnpm run test",
     "release": "changeset publish",
-    "test": "yarn mocha \"tests/src/**/*.ts\" --reporter dot --timeout 60000",
+    "test": "pnpm run mocha \"tests/src/**/*.ts\" --reporter dot --timeout 60000",
     "ts": "node -r esbuild-register",
-    "update-fixtures": "yarn ts ./tools/update-fixtures.ts",
-    "version:ci": "env-cmd -e version-ci yarn build:meta && changeset version"
+    "update-fixtures": "pnpm run ts ./tools/update-fixtures.ts",
+    "version:ci": "env-cmd -e version-ci pnpm run build:meta && changeset version"
   },
   "peerDependencies": {
     "svelte": "^3.37.0"

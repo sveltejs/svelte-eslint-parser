@@ -13,11 +13,11 @@ jobs:
       - uses: actions/checkout@v3
       - uses: actions/setup-node@v3
       - name: Install Packages
-        run: yarn install
+        run: pnpm install
       - name: Lint
-        run: yarn lint
+        run: pnpm run lint
       - name: Build
-        run: yarn build
+        run: pnpm run build
   test:
     runs-on: ubuntu-latest
     strategy:
@@ -30,9 +30,9 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
       - name: Install Packages
-        run: yarn install --ignore-engines
+        run: pnpm install --ignore-engines
       - name: Test
-        run: yarn test
+        run: pnpm run test
   test-for-ts-eslint-v4:
     runs-on: ubuntu-latest
     strategy:
@@ -46,12 +46,12 @@ jobs:
           node-version: ${{ matrix.node-version }}
       - name: Install @typescript-eslint v4
         run: |+
-          yarn add -D @typescript-eslint/parser@4 @typescript-eslint/eslint-plugin@4 eslint@7 --ignore-engines
+          pnpm run add -D @typescript-eslint/parser@4 @typescript-eslint/eslint-plugin@4 eslint@7 --ignore-engines
           rm -rf node_modules
       - name: Install Packages
-        run: yarn install --ignore-engines
+        run: pnpm install --ignore-engines
       - name: Test
-        run: yarn test
+        run: pnpm run test
   test-for-eslint-v7:
     runs-on: ubuntu-latest
     strategy:
@@ -65,12 +65,12 @@ jobs:
           node-version: ${{ matrix.node-version }}
       - name: Install eslint v7
         run: |+
-          yarn add -D eslint@7 --ignore-engines
+          pnpm run add -D eslint@7 --ignore-engines
           rm -rf node_modules
       - name: Install Packages
-        run: yarn install --ignore-engines
+        run: pnpm install --ignore-engines
       - name: Test
-        run: yarn test
+        run: pnpm run test
   update-fixtures:
     runs-on: ubuntu-latest
     steps:
@@ -79,9 +79,9 @@ jobs:
         with:
           node-version: 18
       - name: Install Packages
-        run: yarn install --ignore-engines
+        run: pnpm install --ignore-engines
       - name: Update fixtures
-        run: yarn update-fixtures
+        run: pnpm run update-fixtures
       - name: Check changes
         run: |
           git add --all && \
@@ -92,9 +92,9 @@ jobs:
       - uses: actions/checkout@v3
       - uses: actions/setup-node@v3
       - name: Install Packages
-        run: yarn install --ignore-engines
+        run: pnpm install --ignore-engines
       - name: Test
-        run: yarn cover
+        run: pnpm run cover
       - name: Coveralls GitHub Action
         uses: coverallsapp/github-action@v2.1.2
         with:
