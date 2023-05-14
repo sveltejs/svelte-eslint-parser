@@ -23,12 +23,10 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        node-version: [12.x, 14.x, 16.x, 17.x, 18.x, 19.x]
+        node-version: [14.x, 16.x, 17.x, 18.x, 19.x]
     steps:
       - uses: actions/checkout@v3
       - uses: pnpm/action-setup@v2
-        with:
-          version: ${{ matrix.node-version == '12.x' && 6 || 7 }}
       - name: Use Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v3
         with:
