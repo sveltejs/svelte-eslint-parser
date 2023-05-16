@@ -15,7 +15,6 @@ import type {
 import type { ESLintExtendedProgram } from "../parser";
 import { getWithLoc } from "../parser/converts/common";
 import {
-  getInnermostScopeFromNode,
   getScopeFromNode,
   removeAllScopeAndVariableAndReference,
   removeReference,
@@ -43,7 +42,6 @@ export type ScriptLetCallback<E extends ESTree.Node> = (
 
 export type ScriptLetCallbackOption = {
   getScope: (node: ESTree.Node) => Scope;
-  getInnermostScope: (node: ESTree.Node) => Scope;
   registerNodeToScope: (node: any, scope: Scope) => void;
   scopeManager: ScopeManager;
   visitorKeys?: { [type: string]: string[] };
@@ -56,7 +54,6 @@ export type ScriptLetRestoreCallback = (
 ) => void;
 type ScriptLetRestoreCallbackOption = {
   getScope: (node: ESTree.Node) => Scope;
-  getInnermostScope: (node: ESTree.Node) => Scope;
   registerNodeToScope: (node: any, scope: Scope) => void;
   scopeManager: ScopeManager;
   visitorKeys?: { [type: string]: string[] };
@@ -643,7 +640,6 @@ export class ScriptLetContext {
 
     const callbackOption: ScriptLetRestoreCallbackOption = {
       getScope,
-      getInnermostScope,
       registerNodeToScope,
       scopeManager: result.scopeManager!,
       visitorKeys: result.visitorKeys,
@@ -658,11 +654,6 @@ export class ScriptLetContext {
     /** Get scope */
     function getScope(node: ESTree.Node) {
       return getScopeFromNode(result.scopeManager!, node);
-    }
-
-    /** Get innermost scope */
-    function getInnermostScope(node: ESTree.Node) {
-      return getInnermostScopeFromNode(result.scopeManager!, node);
     }
 
     /** Register node to scope */
