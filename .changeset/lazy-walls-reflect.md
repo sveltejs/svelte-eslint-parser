@@ -2,4 +2,4 @@
 "svelte-eslint-parser": minor
 ---
 
-Drop Node 12 support
+**BREAKING CHANGE**: Drop Node 12 support
