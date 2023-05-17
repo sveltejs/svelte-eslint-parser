@@ -39,7 +39,9 @@ describe("Check for typescript analyze result.", () => {
         if (!meetRequirements("test")) {
           return;
         }
-        const analyzedResult = parseTypeScript(code, attrs, parserOptions);
+        const analyzedResult = parseTypeScript(code, attrs, parserOptions, {
+          slots: new Set(),
+        });
         const result = parseScript(
           code.script + code.render,
           attrs,

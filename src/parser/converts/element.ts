@@ -707,7 +707,9 @@ function convertSlotElement(
   ctx: Context
 ): SvelteHTMLElement {
   // Slot translates to SvelteHTMLElement.
-  return convertHTMLElement(node, parent, ctx);
+  const element = convertHTMLElement(node, parent, ctx);
+  ctx.slots.add(element);
+  return element;
 }
 
 /** Convert for window element. e.g. <svelte:window> */

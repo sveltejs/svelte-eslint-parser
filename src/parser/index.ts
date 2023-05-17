@@ -83,7 +83,8 @@ export function parseForESLint(
     ? parseTypeScript(
         scripts.getCurrentVirtualCodeInfo(),
         scripts.attrs,
-        parserOptions
+        parserOptions,
+        { slots: ctx.slots }
       )
     : parseScript(
         scripts.getCurrentVirtualCode(),
