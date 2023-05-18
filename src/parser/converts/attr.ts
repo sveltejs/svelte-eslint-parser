@@ -293,9 +293,9 @@ function convertBindingDirective(
         expression,
         directive,
         null,
-        (es, { getInnermostScope }) => {
+        (es, { getScope }) => {
           directive.expression = es;
-          const scope = getInnermostScope(es);
+          const scope = getScope(es);
           const reference = scope.references.find(
             (ref) => ref.identifier === es
           );
