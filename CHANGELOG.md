@@ -2,11 +2,13 @@
 
 ## 0.29.0
 
-### Minor Changes
-
-- [#338](https://github.com/sveltejs/svelte-eslint-parser/pull/338) [`af55230`](https://github.com/sveltejs/svelte-eslint-parser/commit/af5523076d72e29d9f7cc2708d514564a2fafb45) Thanks [@ota-meshi](https://github.com/ota-meshi)! - feat: improve $ vars type
+### 💥 Breaking Changes
 
 - [#334](https://github.com/sveltejs/svelte-eslint-parser/pull/334) [`fa4adf6`](https://github.com/sveltejs/svelte-eslint-parser/commit/fa4adf6038810573df6cdead34800fb41b3ab3d5) Thanks [@baseballyama](https://github.com/baseballyama)! - **BREAKING CHANGE**: Drop Node 12 support
+
+### Minor Changes
+
+- [#338](https://github.com/sveltejs/svelte-eslint-parser/pull/338) [`af55230`](https://github.com/sveltejs/svelte-eslint-parser/commit/af5523076d72e29d9f7cc2708d514564a2fafb45) Thanks [@ota-meshi](https://github.com/ota-meshi)! - feat: improve `$$` vars type
 
 ### Patch Changes
 
