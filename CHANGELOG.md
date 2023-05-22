@@ -1,5 +1,39 @@
 # svelte-eslint-parser
 
+## 0.29.0
+
+### 💥 Breaking Changes
+
+- [#334](https://github.com/sveltejs/svelte-eslint-parser/pull/334) [`fa4adf6`](https://github.com/sveltejs/svelte-eslint-parser/commit/fa4adf6038810573df6cdead34800fb41b3ab3d5) Thanks [@baseballyama](https://github.com/baseballyama)! - **BREAKING CHANGE**: Drop Node 12 support
+
+### Minor Changes
+
+- [#338](https://github.com/sveltejs/svelte-eslint-parser/pull/338) [`af55230`](https://github.com/sveltejs/svelte-eslint-parser/commit/af5523076d72e29d9f7cc2708d514564a2fafb45) Thanks [@ota-meshi](https://github.com/ota-meshi)! - feat: improve `$$` vars type
+
+### Patch Changes
+
+- [#337](https://github.com/sveltejs/svelte-eslint-parser/pull/337) [`21c0dc6`](https://github.com/sveltejs/svelte-eslint-parser/commit/21c0dc6a0b4a5e864e0181dfbb31f4b47edcefd1) Thanks [@ota-meshi](https://github.com/ota-meshi)! - fix: wrong scope for ts in `bind:`
+
+## 0.28.0
+
+### Minor Changes
+
+- [#329](https://github.com/sveltejs/svelte-eslint-parser/pull/329) [`45c958e`](https://github.com/sveltejs/svelte-eslint-parser/commit/45c958e752ed2ea1b7d8df3fe21ffc0f7a664275) Thanks [@ota-meshi](https://github.com/ota-meshi)! - feat: export meta object
+
+## 0.27.0
+
+### Minor Changes
+
+- [#314](https://github.com/sveltejs/svelte-eslint-parser/pull/314) [`96a72a5`](https://github.com/sveltejs/svelte-eslint-parser/commit/96a72a5d9e549c6f433a104b5db296684015303c) Thanks [@ota-meshi](https://github.com/ota-meshi)! - feat: improve component event handler type
+
+- [#325](https://github.com/sveltejs/svelte-eslint-parser/pull/325) [`36b01ec`](https://github.com/sveltejs/svelte-eslint-parser/commit/36b01ecb3abf6b793127e577d0aa213f9fea32a3) Thanks [@ota-meshi](https://github.com/ota-meshi)! - feat: support for `use:` directive parameter type
+
+## 0.26.1
+
+### Patch Changes
+
+- [#316](https://github.com/sveltejs/svelte-eslint-parser/pull/316) [`501c1b4`](https://github.com/sveltejs/svelte-eslint-parser/commit/501c1b474c14ab3d1655391bacc16c300493cf1c) Thanks [@ota-meshi](https://github.com/ota-meshi)! - fix: crash with plain `this` attribute.
+
 ## 0.26.0
 
 ### Minor Changes

@@ -4,7 +4,7 @@ import { Linter } from "eslint";
 import * as parser from "../src/index";
 import { parseForESLint } from "../src/parser";
 import {
-  BASIC_PARSER_OPTIONS,
+  generateParserOptions,
   getMessageData,
   listupFixtures,
   astToJson,
@@ -13,6 +13,7 @@ import {
 } from "../tests/src/parser/test-utils";
 import type ts from "typescript";
 import type ESTree from "estree";
+import * as tsESLintParser from "@typescript-eslint/parser";
 
 const ERROR_FIXTURE_ROOT = path.resolve(
   __dirname,
@@ -34,14 +35,22 @@ const RULES = [
   "template-curly-spacing",
 ];
 
+let beforeFilePath: string | undefined;
+
 /**
  * Parse
  */
-function parse(code: string, filePath: string) {
-  return parseForESLint(code, {
-    ...BASIC_PARSER_OPTIONS!,
-    filePath,
-  });
+function parse(code: string, filePath: string, config: any) {
+  if (beforeFilePath) {
+    // Clear type info cache
+    tsESLintParser.parseForESLint(
+      "",
+      generateParserOptions({ filePath: beforeFilePath }, config)
+    );
+  }
+
+  beforeFilePath = filePath;
+  return parseForESLint(code, generateParserOptions({ filePath }, config));
 }
 
 for (const {
@@ -50,13 +59,14 @@ for (const {
   outputFileName,
   scopeFileName,
   typeFileName,
+  config,
   getRuleOutputFileName,
 } of listupFixtures()) {
   // if (!inputFileName.includes("test")) continue;
   try {
     // eslint-disable-next-line no-console -- ignore
     console.log(inputFileName);
-    const result = parse(input, inputFileName);
+    const result = parse(input, inputFileName, config);
     const astJson = astToJson(result.ast);
     fs.writeFileSync(outputFileName, astJson, "utf8");
     const scopeJson = scopeToJSON(result.scopeManager);
@@ -78,7 +88,7 @@ for (const {
       input,
       {
         parser: "svelte-eslint-parser",
-        parserOptions: BASIC_PARSER_OPTIONS,
+        parserOptions: generateParserOptions(config),
         rules: {
           [rule]: "error",
         },
@@ -105,13 +115,13 @@ for (const {
   }
 }
 
-for (const { input, inputFileName, outputFileName } of listupFixtures(
+for (const { input, inputFileName, outputFileName, config } of listupFixtures(
   ERROR_FIXTURE_ROOT
 )) {
   // eslint-disable-next-line no-console -- ignore
   console.log(inputFileName);
   try {
-    parse(input, inputFileName);
+    parse(input, inputFileName, config);
   } catch (e) {
     const errorJson = astToJson(normalizeError(e));
     fs.writeFileSync(outputFileName, errorJson, "utf8");

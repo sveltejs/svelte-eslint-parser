@@ -4,7 +4,7 @@ import assert from "assert";
 import fs from "fs";
 import * as parser from "../../src";
 import {
-  BASIC_PARSER_OPTIONS,
+  generateParserOptions,
   getMessageData,
   listupFixtures,
 } from "./parser/test-utils";
@@ -21,7 +21,7 @@ function createLinter() {
 }
 
 describe("Integration tests.", () => {
-  for (const { input, inputFileName, outputFileName } of listupFixtures(
+  for (const { input, inputFileName, outputFileName, config } of listupFixtures(
     FIXTURE_ROOT
   )) {
     it(inputFileName, () => {
@@ -39,7 +39,7 @@ describe("Integration tests.", () => {
         input,
         setup?.getConfig?.() ?? {
           parser: "svelte-eslint-parser",
-          parserOptions: BASIC_PARSER_OPTIONS,
+          parserOptions: generateParserOptions(config),
           env: {
             browser: true,
             es2021: true,

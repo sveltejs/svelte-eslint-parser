@@ -6,7 +6,8 @@ const output = {
 	filename: '[name].js',
 	library: {
 		type: 'module'
-	}
+	},
+	hashFunction: 'xxhash64'
 };
 const alias = {
 	assert: resolve('./shim-assert.cjs'),

@@ -15,6 +15,11 @@ import { parseScriptWithoutAnalyzeScope } from "../../script";
 import { VirtualTypeScriptContext } from "../context";
 import type { TSESParseForESLintResult } from "../types";
 import type ESTree from "estree";
+import type { SvelteAttribute, SvelteHTMLElement } from "../../../ast";
+
+export type AnalyzeTypeScriptContext = {
+  slots: Set<SvelteHTMLElement>;
+};
 
 const RESERVED_NAMES = new Set<string>(["$$props", "$$restProps", "$$slots"]);
 /**
@@ -25,7 +30,8 @@ const RESERVED_NAMES = new Set<string>(["$$props", "$$restProps", "$$slots"]);
 export function analyzeTypeScript(
   code: { script: string; render: string },
   attrs: Record<string, string | undefined>,
-  parserOptions: any
+  parserOptions: any,
+  context: AnalyzeTypeScriptContext
 ): VirtualTypeScriptContext {
   const ctx = new VirtualTypeScriptContext(code.script + code.render);
   ctx.appendOriginal(/^\s*/u.exec(code.script)![0].length);
@@ -43,6 +49,8 @@ export function analyzeTypeScript(
   ctx._beforeResult = result;
 
   analyzeStoreReferenceNames(result, ctx);
+
+  analyzeDollarDollarVariables(result, ctx, context.slots);
 
   analyzeReactiveScopes(result, ctx);
 
@@ -135,6 +143,104 @@ function analyzeStoreReferenceNames(
         return true;
       });
     }
+  }
+}
+
+/**
+ * Analyze `$$slots`, `$$props`, and `$$restProps` .
+ * Insert type definitions code to provide correct type information for `$$slots`, `$$props`, and `$$restProps`.
+ */
+function analyzeDollarDollarVariables(
+  result: TSESParseForESLintResult,
+  ctx: VirtualTypeScriptContext,
+  slots: Set<SvelteHTMLElement>
+) {
+  const scopeManager = result.scopeManager;
+
+  if (
+    scopeManager.globalScope!.through.some(
+      (reference) => reference.identifier.name === "$$props"
+    )
+  ) {
+    appendDeclareVirtualScript("$$props", `{ [index: string]: any }`);
+  }
+  if (
+    scopeManager.globalScope!.through.some(
+      (reference) => reference.identifier.name === "$$restProps"
+    )
+  ) {
+    appendDeclareVirtualScript("$$restProps", `{ [index: string]: any }`);
+  }
+  if (
+    scopeManager.globalScope!.through.some(
+      (reference) => reference.identifier.name === "$$slots"
+    )
+  ) {
+    const nameTypes = new Set<string>();
+    for (const slot of slots) {
+      const nameAttr = slot.startTag.attributes.find(
+        (attr): attr is SvelteAttribute =>
+          attr.type === "SvelteAttribute" && attr.key.name === "name"
+      );
+      if (!nameAttr || nameAttr.value.length === 0) {
+        nameTypes.add('"default"');
+        continue;
+      }
+
+      if (nameAttr.value.length === 1) {
+        const value = nameAttr.value[0];
+        if (value.type === "SvelteLiteral") {
+          nameTypes.add(JSON.stringify(value.value));
+        } else {
+          nameTypes.add("string");
+        }
+        continue;
+      }
+      nameTypes.add(
+        `\`${nameAttr.value
+          .map((value) =>
+            value.type === "SvelteLiteral"
+              ? value.value.replace(/([$`])/gu, "\\$1")
+              : "${string}"
+          )
+          .join("")}\``
+      );
+    }
+
+    appendDeclareVirtualScript(
+      "$$slots",
+      `Record<${
+        nameTypes.size > 0 ? [...nameTypes].join(" | ") : "any"
+      }, boolean>`
+    );
+  }
+
+  /** Append declare virtual script */
+  function appendDeclareVirtualScript(name: string, type: string) {
+    ctx.appendVirtualScript(`declare let ${name}: ${type};`);
+    ctx.restoreContext.addRestoreStatementProcess((node, result) => {
+      if (
+        node.type !== "VariableDeclaration" ||
+        !node.declare ||
+        node.declarations.length !== 1 ||
+        node.declarations[0].id.type !== "Identifier" ||
+        node.declarations[0].id.name !== name
+      ) {
+        return false;
+      }
+      const program = result.ast;
+      program.body.splice(program.body.indexOf(node), 1);
+
+      const scopeManager = result.scopeManager as ScopeManager;
+
+      // Remove `declare` variable
+      removeAllScopeAndVariableAndReference(node, {
+        visitorKeys: result.visitorKeys,
+        scopeManager,
+      });
+
+      return true;
+    });
   }
 }
 

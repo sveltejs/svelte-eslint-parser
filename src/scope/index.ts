@@ -26,7 +26,7 @@ export function removeAllScopeAndVariableAndReference(
         return;
       }
       if (node.type === "Identifier") {
-        let scope = getInnermostScopeFromNode(info.scopeManager, node);
+        let scope = getScopeFromNode(info.scopeManager, node);
         while (
           scope &&
           scope.block.type !== "Program" &&
@@ -88,49 +88,6 @@ export function getProgramScope(scopeManager: ScopeManager): Scope {
   return (
     globalScope.childScopes.find((s) => s.type === "module") || globalScope
   );
-}
-
-/**
- * Get the innermost scope which contains a given node.
- * @returns The innermost scope.
- */
-export function getInnermostScopeFromNode(
-  scopeManager: ScopeManager,
-  currentNode: ESTree.Node
-): Scope {
-  return getInnermostScope(
-    getScopeFromNode(scopeManager, currentNode),
-    currentNode
-  );
-}
-
-/**
- * Get the innermost scope which contains a given location.
- * @param initialScope The initial scope to search.
- * @param node The location to search.
- * @returns The innermost scope.
- */
-export function getInnermostScope(
-  initialScope: Scope,
-  node: ESTree.Node
-): Scope {
-  const location = node.range![0];
-  const isInRange =
-    node.range![0] === node.range![1]
-      ? (range: [number, number]) =>
-          range[0] <= location && location <= range[1]
-      : (range: [number, number]) =>
-          range[0] <= location && location < range[1];
-
-  for (const childScope of initialScope.childScopes) {
-    const range = childScope.block.range!;
-
-    if (isInRange(range)) {
-      return getInnermostScope(childScope, node);
-    }
-  }
-
-  return initialScope;
 }
 
 /* eslint-disable complexity -- ignore X( */

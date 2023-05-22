@@ -13,29 +13,14 @@ You can check it on [Online DEMO](https://sveltejs.github.io/svelte-eslint-parse
 [![Build Status](https://github.com/sveltejs/svelte-eslint-parser/workflows/CI/badge.svg?branch=main)](https://github.com/sveltejs/svelte-eslint-parser/actions?query=workflow%3ACI)
 [![Coverage Status](https://coveralls.io/repos/github/sveltejs/svelte-eslint-parser/badge.svg?branch=main)](https://coveralls.io/github/sveltejs/svelte-eslint-parser?branch=main)
 
-## ❓ Why?
+## ⤴️ Motivation
 
-[Svelte] has the official ESLint plugin the [eslint-plugin-svelte3]. The [eslint-plugin-svelte3] works well enough to check scripts. However, it does not handle the AST of the template, which makes it very difficult for third parties to create their own the [ESLint] rules for the [Svelte].
-
-The [svelte-eslint-parser] aims to make it easy to create your own rules for the [Svelte] by allowing the template AST to be used in the rules.
+The [svelte-eslint-parser] aims to make it easy to create your own ESLint rules for [Svelte].
 
 The [`eslint-plugin-svelte`] is an ESLint plugin that uses the [svelte-eslint-parser]. I have already [implemented some rules].
 
 [`eslint-plugin-svelte`]: https://github.com/sveltejs/eslint-plugin-svelte
 [implemented some rules]: https://sveltejs.github.io/eslint-plugin-svelte/rules/
-
-### Benefits of Using AST
-
-- We can create rules using the information contained in the AST.  
-  e.g.
-  - [svelte/no-dupe-else-if-blocks](https://sveltejs.github.io/eslint-plugin-svelte/rules/no-dupe-else-if-blocks/) rule
-  - [svelte/no-at-html-tags](https://sveltejs.github.io/eslint-plugin-svelte/rules/no-at-html-tags/) rule
-  - [svelte/no-at-debug-tags](https://sveltejs.github.io/eslint-plugin-svelte/rules/no-at-debug-tags/) rule
-- Rules that use text work well.  
-  e.g.
-  - [eol-last](https://eslint.org/docs/rules/eol-last) rule
-  - [unicode-bom](https://eslint.org/docs/rules/unicode-bom) rule
-  - [eslint-plugin-prettier](https://github.com/prettier/eslint-plugin-prettier)
 
 ### ESLint Plugins Using svelte-eslint-parser
 

@@ -3,7 +3,7 @@ import assert from "assert";
 import fs from "fs";
 import * as parser from "../../../src/index";
 import {
-  BASIC_PARSER_OPTIONS,
+  generateParserOptions,
   getMessageData,
   listupFixtures,
 } from "./test-utils";
@@ -39,6 +39,7 @@ describe("svelte-eslint-parser with ESLint rules", () => {
   for (const {
     input,
     inputFileName,
+    config,
     getRuleOutputFileName,
   } of listupFixtures()) {
     const linter = createLinter();
@@ -50,7 +51,7 @@ describe("svelte-eslint-parser with ESLint rules", () => {
             input,
             {
               parser: "svelte-eslint-parser",
-              parserOptions: BASIC_PARSER_OPTIONS,
+              parserOptions: generateParserOptions(config),
               rules: {
                 [rule]: "error",
               },

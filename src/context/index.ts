@@ -5,6 +5,7 @@ import type {
   Locations,
   Position,
   SvelteElement,
+  SvelteHTMLElement,
   SvelteName,
   SvelteScriptElement,
   SvelteStyleElement,
@@ -116,6 +117,7 @@ export class Context {
 
   public readonly parserOptions: any;
 
+  // ----- Source Code ------
   public readonly sourceCode: ContextSourceCode;
 
   public readonly tokens: Token[] = [];
@@ -126,10 +128,14 @@ export class Context {
 
   private readonly locsMap = new Map<number, Position>();
 
+  // ----- Context Data ------
   public readonly scriptLet: ScriptLetContext;
 
   public readonly letDirCollections = new LetDirectiveCollections();
 
+  public readonly slots = new Set<SvelteHTMLElement>();
+
+  // ----- States ------
   private readonly state: { isTypeScript?: boolean } = {};
 
   private readonly blocks: Block[] = [];

@@ -11,28 +11,30 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+      - uses: pnpm/action-setup@v2
       - uses: actions/setup-node@v3
       - name: Install Packages
-        run: yarn install
+        run: pnpm install
       - name: Lint
-        run: yarn lint
+        run: pnpm run lint
       - name: Build
-        run: yarn build
+        run: pnpm run build
   test:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        node-version: [12.x, 14.x, 16.x, 17.x, 18.x, 19.x]
+        node-version: [14.x, 16.x, 17.x, 18.x, 19.x]
     steps:
       - uses: actions/checkout@v3
+      - uses: pnpm/action-setup@v2
       - name: Use Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v3
         with:
           node-version: ${{ matrix.node-version }}
       - name: Install Packages
-        run: yarn install --ignore-engines
+        run: pnpm install
       - name: Test
-        run: yarn test
+        run: pnpm run test
   test-for-ts-eslint-v4:
     runs-on: ubuntu-latest
     strategy:
@@ -40,18 +42,19 @@ jobs:
         node-version: [14.x]
     steps:
       - uses: actions/checkout@v3
+      - uses: pnpm/action-setup@v2
       - name: Use Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v3
         with:
           node-version: ${{ matrix.node-version }}
       - name: Install @typescript-eslint v4
         run: |+
-          yarn add -D @typescript-eslint/parser@4 @typescript-eslint/eslint-plugin@4 eslint@7 --ignore-engines
+          pnpm install -D @typescript-eslint/parser@4 @typescript-eslint/eslint-plugin@4 eslint@7
           rm -rf node_modules
       - name: Install Packages
-        run: yarn install --ignore-engines
+        run: pnpm install
       - name: Test
-        run: yarn test
+        run: pnpm run test
   test-for-eslint-v7:
     runs-on: ubuntu-latest
     strategy:
@@ -59,29 +62,31 @@ jobs:
         node-version: [14.x]
     steps:
       - uses: actions/checkout@v3
+      - uses: pnpm/action-setup@v2
       - name: Use Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v3
         with:
           node-version: ${{ matrix.node-version }}
       - name: Install eslint v7
         run: |+
-          yarn add -D eslint@7 --ignore-engines
+          pnpm install -D eslint@7
           rm -rf node_modules
       - name: Install Packages
-        run: yarn install --ignore-engines
+        run: pnpm install
       - name: Test
-        run: yarn test
+        run: pnpm run test
   update-fixtures:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+      - uses: pnpm/action-setup@v2
       - uses: actions/setup-node@v3
         with:
           node-version: 18
       - name: Install Packages
-        run: yarn install --ignore-engines
+        run: pnpm install
       - name: Update fixtures
-        run: yarn update-fixtures
+        run: pnpm run update-fixtures
       - name: Check changes
         run: |
           git add --all && \
@@ -90,12 +95,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+      - uses: pnpm/action-setup@v2
       - uses: actions/setup-node@v3
       - name: Install Packages
-        run: yarn install --ignore-engines
+        run: pnpm install
       - name: Test
-        run: yarn cover
+        run: pnpm run cover
       - name: Coveralls GitHub Action
-        uses: coverallsapp/github-action@v2.0.0
+        uses: coverallsapp/github-action@v2.1.2
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}

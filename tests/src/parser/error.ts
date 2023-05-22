@@ -2,7 +2,7 @@ import assert from "assert";
 import fs from "fs";
 import { parseForESLint } from "../../../src";
 import {
-  BASIC_PARSER_OPTIONS,
+  generateParserOptions,
   listupFixtures,
   astToJson,
   normalizeError,
@@ -14,11 +14,8 @@ const ERROR_FIXTURE_ROOT = path.resolve(
   "../../fixtures/parser/error"
 );
 
-function parse(code: string, filePath: string) {
-  return parseForESLint(code, {
-    ...BASIC_PARSER_OPTIONS!,
-    filePath,
-  });
+function parse(code: string, filePath: string, config: any) {
+  return parseForESLint(code, generateParserOptions({ filePath }, config));
 }
 
 describe("Check for Error.", () => {
@@ -26,6 +23,7 @@ describe("Check for Error.", () => {
     input,
     inputFileName,
     outputFileName,
+    config,
     meetRequirements,
   } of listupFixtures(ERROR_FIXTURE_ROOT)) {
     describe(inputFileName, () => {
@@ -34,7 +32,7 @@ describe("Check for Error.", () => {
       }
       it("most to the expected error.", () => {
         try {
-          parse(input, inputFileName);
+          parse(input, inputFileName, config);
         } catch (e) {
           const errorJson = astToJson(normalizeError(e));
           const output = fs.readFileSync(outputFileName, "utf8");

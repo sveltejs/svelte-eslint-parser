@@ -1,5 +1,6 @@
 import type { ESLintExtendedProgram } from "..";
 import { parseScript } from "../script";
+import type { AnalyzeTypeScriptContext } from "./analyze";
 import { analyzeTypeScript } from "./analyze";
 import type { TSESParseForESLintResult } from "./types";
 
@@ -9,9 +10,10 @@ import type { TSESParseForESLintResult } from "./types";
 export function parseTypeScript(
   code: { script: string; render: string },
   attrs: Record<string, string | undefined>,
-  parserOptions: any = {}
+  parserOptions: unknown,
+  context: AnalyzeTypeScriptContext
 ): ESLintExtendedProgram {
-  const tsCtx = analyzeTypeScript(code, attrs, parserOptions);
+  const tsCtx = analyzeTypeScript(code, attrs, parserOptions, context);
 
   const result = parseScript(tsCtx.script, attrs, parserOptions);
 

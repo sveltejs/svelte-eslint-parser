@@ -1,6 +1,7 @@
 import type { ScopeManager, Scope } from "eslint-scope";
 import type * as ESTree from "estree";
 import type { TSESTree } from "@typescript-eslint/types";
+import type { Scope as TSScope } from "@typescript-eslint/scope-manager";
 import type { Context, ScriptsSourceCode } from ".";
 import type {
   Comment,
@@ -14,25 +15,24 @@ import type {
 import type { ESLintExtendedProgram } from "../parser";
 import { getWithLoc } from "../parser/converts/common";
 import {
-  getInnermostScopeFromNode,
   getScopeFromNode,
   removeAllScopeAndVariableAndReference,
   removeReference,
   removeScope,
 } from "../scope";
-import { traverseNodes } from "../traverse";
+import { getKeys, traverseNodes, getNodes } from "../traverse";
 import { UniqueIdGenerator } from "./unique";
 
 type TSAsExpression = {
   type: "TSAsExpression";
   expression: ESTree.Expression;
-  typeAnnotation: TSParenthesizedType | ESTree.Node;
+  typeAnnotation: TSParenthesizedType | TSESTree.TypeNode;
 };
 
 // TS ESLint v4 Node
 type TSParenthesizedType = {
   type: "TSParenthesizedType";
-  typeAnnotation: ESTree.Node;
+  typeAnnotation: TSESTree.TypeNode;
 };
 
 export type ScriptLetCallback<E extends ESTree.Node> = (
@@ -42,7 +42,6 @@ export type ScriptLetCallback<E extends ESTree.Node> = (
 
 export type ScriptLetCallbackOption = {
   getScope: (node: ESTree.Node) => Scope;
-  getInnermostScope: (node: ESTree.Node) => Scope;
   registerNodeToScope: (node: any, scope: Scope) => void;
   scopeManager: ScopeManager;
   visitorKeys?: { [type: string]: string[] };
@@ -55,7 +54,6 @@ export type ScriptLetRestoreCallback = (
 ) => void;
 type ScriptLetRestoreCallbackOption = {
   getScope: (node: ESTree.Node) => Scope;
-  getInnermostScope: (node: ESTree.Node) => Scope;
   registerNodeToScope: (node: any, scope: Scope) => void;
   scopeManager: ScopeManager;
   visitorKeys?: { [type: string]: string[] };
@@ -167,30 +165,10 @@ export class ScriptLetContext {
         }
 
         if (isTS) {
-          const blockNode =
-            tsAs!.typeAnnotation.type === "TSParenthesizedType"
-              ? tsAs!.typeAnnotation.typeAnnotation
-              : tsAs!.typeAnnotation;
-          const targetScopes = [result.getScope(blockNode)];
-          let targetBlockNode: TSESTree.Node | TSParenthesizedType =
-            blockNode as any;
-          while (
-            targetBlockNode.type === "TSConditionalType" ||
-            targetBlockNode.type === "TSParenthesizedType"
-          ) {
-            if (targetBlockNode.type === "TSParenthesizedType") {
-              targetBlockNode = targetBlockNode.typeAnnotation as any;
-              continue;
-            }
-            // TSConditionalType's `falseType` may not be a child scope.
-            const falseType: TSESTree.TypeNode = targetBlockNode.falseType;
-            const falseTypeScope = result.getScope(falseType as any);
-            if (!targetScopes.includes(falseTypeScope)) {
-              targetScopes.push(falseTypeScope);
-            }
-            targetBlockNode = falseType;
-          }
-          for (const scope of targetScopes) {
+          for (const scope of extractTypeNodeScopes(
+            tsAs!.typeAnnotation,
+            result
+          )) {
             removeScope(result.scopeManager, scope);
           }
           this.remapNodes(
@@ -662,7 +640,6 @@ export class ScriptLetContext {
 
     const callbackOption: ScriptLetRestoreCallbackOption = {
       getScope,
-      getInnermostScope,
       registerNodeToScope,
       scopeManager: result.scopeManager!,
       visitorKeys: result.visitorKeys,
@@ -677,11 +654,6 @@ export class ScriptLetContext {
     /** Get scope */
     function getScope(node: ESTree.Node) {
       return getScopeFromNode(result.scopeManager!, node);
-    }
-
-    /** Get innermost scope */
-    function getInnermostScope(node: ESTree.Node) {
-      return getInnermostScopeFromNode(result.scopeManager!, node);
     }
 
     /** Register node to scope */
@@ -1038,4 +1010,45 @@ function getNodeToScope(
   };
 
   return nodeToScope;
+}
+
+/** Extract the type scope of the given node. */
+function extractTypeNodeScopes(
+  node: TSESTree.TypeNode | TSParenthesizedType,
+  result: ScriptLetCallbackOption
+): Iterable<Scope> {
+  const scopes = new Set<Scope>();
+  for (const scope of iterateTypeNodeScopes(node)) {
+    scopes.add(scope);
+  }
+
+  return scopes;
+
+  /** Iterate the type scope of the given node. */
+  function* iterateTypeNodeScopes(
+    node: TSESTree.TypeNode | TSParenthesizedType
+  ): Iterable<Scope> {
+    if (node.type === "TSParenthesizedType") {
+      // Skip TSParenthesizedType.
+      yield* iterateTypeNodeScopes(node.typeAnnotation);
+    } else if (node.type === "TSConditionalType") {
+      yield result.getScope(node as any);
+      // `falseType` of `TSConditionalType` is sibling scope.
+      const falseType: TSESTree.TypeNode = node.falseType;
+      yield* iterateTypeNodeScopes(falseType);
+    } else if (
+      node.type === "TSFunctionType" ||
+      node.type === "TSMappedType" ||
+      node.type === "TSConstructorType"
+    ) {
+      yield result.getScope(node as any);
+    } else {
+      const typeNode: Exclude<TSESTree.TypeNode, TSScope["block"]> = node;
+      for (const key of getKeys(typeNode, result.visitorKeys)) {
+        for (const child of getNodes(typeNode, key)) {
+          yield* iterateTypeNodeScopes(child as TSESTree.TypeNode);
+        }
+      }
+    }
+  }
 }
