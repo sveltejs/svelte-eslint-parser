@@ -4,6 +4,7 @@ import type {
   Comment,
   SvelteProgram,
   SvelteScriptElement,
+  SvelteStyleElement,
   Token,
 } from "../ast";
 import type { Program } from "estree";
@@ -21,6 +22,9 @@ import {
 import { ParseError } from "../errors";
 import { parseTypeScript } from "./typescript";
 import { addReference } from "../scope";
+import type { Parser, Root } from "postcss";
+import postcss from "postcss";
+import { parse as SCSSparse } from "postcss-scss";
 
 export interface ESLintProgram extends Program {
   comments: Comment[];
@@ -50,6 +54,7 @@ export function parseForESLint(
   services: Record<string, any> & {
     isSvelte: true;
     getSvelteHtmlAst: () => SvAST.Fragment;
+    getStyleSourceAst: () => Root | null;
   };
   visitorKeys: { [type: string]: string[] };
   scopeManager: ScopeManager;
@@ -166,11 +171,20 @@ export function parseForESLint(
     );
   }
 
+  const styleElement = ast.body.find(
+    (b): b is SvelteStyleElement => b.type === "SvelteStyleElement"
+  );
+  const styleSourceAst: Root | null =
+    styleElement !== undefined ? parseStyleAst(styleElement, ctx) : null;
+
   resultScript.ast = ast as any;
   resultScript.services = Object.assign(resultScript.services || {}, {
     isSvelte: true,
     getSvelteHtmlAst() {
       return resultTemplate.svelteAst.html;
+    },
+    getStyleSourceAst() {
+      return styleSourceAst;
     },
   });
   resultScript.visitorKeys = Object.assign({}, KEYS, resultScript.visitorKeys);
@@ -213,4 +227,48 @@ function extractTokens(ctx: Context) {
   function isPunctuator(c: string) {
     return /^[^\w$]$/iu.test(c);
   }
+}
+
+function parseStyleAst(
+  styleElement: SvelteStyleElement,
+  ctx: Context
+): Root | null {
+  if (!styleElement.endTag) {
+    return null;
+  }
+  let lang = "css";
+  for (const attribute of styleElement.startTag.attributes) {
+    if (
+      attribute.type === "SvelteAttribute" &&
+      attribute.key.name === "lang" &&
+      attribute.value.length > 0 &&
+      attribute.value[0].type === "SvelteLiteral"
+    ) {
+      lang = attribute.value[0].value;
+    }
+  }
+  let parseFn: Parser<Root> | undefined = postcss.parse;
+  switch (lang) {
+    case "css":
+      parseFn = postcss.parse;
+      break;
+    case "scss":
+      parseFn = SCSSparse;
+      break;
+    default:
+      console.warn(`Unknown <style> block language "${lang}".`);
+      parseFn = undefined;
+  }
+  if (parseFn !== undefined) {
+    const styleCode = ctx.code.slice(
+      styleElement.startTag.range[1],
+      styleElement.endTag.range[0]
+    );
+    return parseFn(styleCode, {
+      from: ctx.parserOptions.filePath,
+    });
+    // TODO: Fix Root loc?
+    // delete style.body.source?.input.file;
+  }
+  return null;
 }
