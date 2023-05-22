@@ -229,6 +229,9 @@ function extractTokens(ctx: Context) {
   }
 }
 
+/**
+ * Extracts style source from a SvelteStyleElement and parses it into a PostCSS AST.
+ */
 function parseStyleAst(
   styleElement: SvelteStyleElement,
   ctx: Context
@@ -267,8 +270,6 @@ function parseStyleAst(
     return parseFn(styleCode, {
       from: ctx.parserOptions.filePath,
     });
-    // TODO: Fix Root loc?
-    // delete style.body.source?.input.file;
   }
   return null;
 }
