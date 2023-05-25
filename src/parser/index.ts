@@ -22,6 +22,7 @@ import {
 import { ParseError } from "../errors";
 import { parseTypeScript } from "./typescript";
 import { addReference } from "../scope";
+import { StyleContext } from "./style-context";
 import type { Parser, Root } from "postcss";
 import postcss from "postcss";
 import { parse as SCSSparse } from "postcss-scss";
@@ -54,7 +55,7 @@ export function parseForESLint(
   services: Record<string, any> & {
     isSvelte: true;
     getSvelteHtmlAst: () => SvAST.Fragment;
-    getStyleSourceAst: () => Root | null;
+    getStyleContext: () => StyleContext;
   };
   visitorKeys: { [type: string]: string[] };
   scopeManager: ScopeManager;
@@ -174,8 +175,7 @@ export function parseForESLint(
   const styleElement = ast.body.find(
     (b): b is SvelteStyleElement => b.type === "SvelteStyleElement"
   );
-  const styleSourceAst: Root | null =
-    styleElement !== undefined ? parseStyleAst(styleElement, ctx) : null;
+  const styleContext = parseStyleContext(styleElement, ctx);
 
   resultScript.ast = ast as any;
   resultScript.services = Object.assign(resultScript.services || {}, {
@@ -183,8 +183,8 @@ export function parseForESLint(
     getSvelteHtmlAst() {
       return resultTemplate.svelteAst.html;
     },
-    getStyleSourceAst() {
-      return styleSourceAst;
+    getStyleContext() {
+      return styleContext;
     },
   });
   resultScript.visitorKeys = Object.assign({}, KEYS, resultScript.visitorKeys);
@@ -232,14 +232,18 @@ function extractTokens(ctx: Context) {
 /**
  * Extracts style source from a SvelteStyleElement and parses it into a PostCSS AST.
  */
-function parseStyleAst(
-  styleElement: SvelteStyleElement,
+function parseStyleContext(
+  styleElement: SvelteStyleElement | undefined,
   ctx: Context
-): Root | null {
-  if (!styleElement.endTag) {
-    return null;
+): StyleContext {
+  const styleContext: StyleContext = {
+    sourceLang: null,
+    sourceAst: null,
+  };
+  if (!styleElement || !styleElement.endTag) {
+    return styleContext;
   }
-  let lang = "css";
+  styleContext.sourceLang = "css";
   for (const attribute of styleElement.startTag.attributes) {
     if (
       attribute.type === "SvelteAttribute" &&
@@ -247,11 +251,11 @@ function parseStyleAst(
       attribute.value.length > 0 &&
       attribute.value[0].type === "SvelteLiteral"
     ) {
-      lang = attribute.value[0].value;
+      styleContext.sourceLang = attribute.value[0].value;
     }
   }
-  let parseFn: Parser<Root> | undefined = postcss.parse;
-  switch (lang) {
+  let parseFn: Parser<Root>;
+  switch (styleContext.sourceLang) {
     case "css":
       parseFn = postcss.parse;
       break;
@@ -259,17 +263,14 @@ function parseStyleAst(
       parseFn = SCSSparse;
       break;
     default:
-      console.warn(`Unknown <style> block language "${lang}".`);
-      parseFn = undefined;
+      return styleContext;
   }
-  if (parseFn !== undefined) {
-    const styleCode = ctx.code.slice(
-      styleElement.startTag.range[1],
-      styleElement.endTag.range[0]
-    );
-    return parseFn(styleCode, {
-      from: ctx.parserOptions.filePath,
-    });
-  }
-  return null;
+  const styleCode = ctx.code.slice(
+    styleElement.startTag.range[1],
+    styleElement.endTag.range[0]
+  );
+  styleContext.sourceAst = parseFn(styleCode, {
+    from: ctx.parserOptions.filePath,
+  });
+  return styleContext;
 }
