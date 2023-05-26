@@ -22,7 +22,7 @@ import {
 import { ParseError } from "../errors";
 import { parseTypeScript } from "./typescript";
 import { addReference } from "../scope";
-import { StyleContext } from "./style-context";
+import type { StyleContext } from "./style-context";
 import type { Parser, Root } from "postcss";
 import postcss from "postcss";
 import { parse as SCSSparse } from "postcss-scss";
@@ -239,6 +239,7 @@ function parseStyleContext(
   const styleContext: StyleContext = {
     sourceLang: null,
     sourceAst: null,
+    sourceParseError: null,
   };
   if (!styleElement || !styleElement.endTag) {
     return styleContext;
@@ -269,8 +270,12 @@ function parseStyleContext(
     styleElement.startTag.range[1],
     styleElement.endTag.range[0]
   );
-  styleContext.sourceAst = parseFn(styleCode, {
-    from: ctx.parserOptions.filePath,
-  });
+  try {
+    styleContext.sourceAst = parseFn(styleCode, {
+      from: ctx.parserOptions.filePath,
+    });
+  } catch (e: unknown) {
+    styleContext.sourceParseError = e;
+  }
   return styleContext;
 }
