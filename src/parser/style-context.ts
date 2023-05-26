@@ -8,7 +8,6 @@ import type { SourceLocation, SvelteStyleElement } from "../ast";
 export interface StyleContext {
   sourceLang: string | null;
   sourceAst: Root | null;
-  sourceParseError: unknown;
 }
 
 /**
@@ -21,7 +20,6 @@ export function parseStyleContext(
   const styleContext: StyleContext = {
     sourceLang: null,
     sourceAst: null,
-    sourceParseError: null,
   };
   if (!styleElement || !styleElement.endTag) {
     return styleContext;
@@ -56,21 +54,20 @@ export function parseStyleContext(
     styleContext.sourceAst = parseFn(styleCode, {
       from: ctx.parserOptions.filePath,
     });
+    // eslint-disable-next-line no-empty -- Catching errors is not a good way to go around this, a safe parser should be used instead.
+  } catch {}
+  fixPostCSSNodeLocation(
+    styleContext.sourceAst,
+    styleElement.loc,
+    styleElement.startTag.range[1]
+  );
+  styleContext.sourceAst.walk((node) =>
     fixPostCSSNodeLocation(
-      styleContext.sourceAst,
+      node,
       styleElement.loc,
       styleElement.startTag.range[1]
-    );
-    styleContext.sourceAst.walk((node) =>
-      fixPostCSSNodeLocation(
-        node,
-        styleElement.loc,
-        styleElement.startTag.range[1]
-      )
-    );
-  } catch (e: unknown) {
-    styleContext.sourceParseError = e;
-  }
+    )
+  );
   return styleContext;
 }
 
