@@ -1,9 +1,9 @@
-import type { Parser, Root } from "postcss";
+import type { Node, Parser, Root } from "postcss";
 import postcss from "postcss";
 import { parse as SCSSparse } from "postcss-scss";
 
 import type { Context } from "../context";
-import type { SvelteStyleElement } from "../ast";
+import type { SourceLocation, SvelteStyleElement } from "../ast";
 
 export interface StyleContext {
   sourceLang: string | null;
@@ -56,8 +56,42 @@ export function parseStyleContext(
     styleContext.sourceAst = parseFn(styleCode, {
       from: ctx.parserOptions.filePath,
     });
+    fixPostCSSNodeLocation(
+      styleContext.sourceAst,
+      styleElement.loc,
+      styleElement.startTag.range[1]
+    );
+    styleContext.sourceAst.walk((node) =>
+      fixPostCSSNodeLocation(
+        node,
+        styleElement.loc,
+        styleElement.startTag.range[1]
+      )
+    );
   } catch (e: unknown) {
     styleContext.sourceParseError = e;
   }
   return styleContext;
+}
+
+/**
+ * Fixes PostCSS AST locations to be relative to the whole file instead of relative to the <style> element.
+ */
+function fixPostCSSNodeLocation(
+  node: Node,
+  styleElementLoc: SourceLocation,
+  styleElementOffset: number
+) {
+  if (node.source?.start?.offset !== undefined) {
+    node.source.start.offset += styleElementOffset;
+  }
+  if (node.source?.start?.line !== undefined) {
+    node.source.start.line += styleElementLoc.start.line - 1;
+  }
+  if (node.source?.end?.offset !== undefined) {
+    node.source.end.offset += styleElementOffset;
+  }
+  if (node.source?.end?.line !== undefined) {
+    node.source.end.line += styleElementLoc.start.line - 1;
+  }
 }
