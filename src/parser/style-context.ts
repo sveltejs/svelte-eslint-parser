@@ -72,8 +72,9 @@ export function parseStyleContext(
     sourceAst = parseFn(styleCode, {
       from: ctx.parserOptions.filePath,
     });
-    // eslint-disable-next-line no-empty -- Catching errors is not a good way to go around this, a safe parser should be used instead.
-  } catch {}
+  } catch (error) {
+    return { status: "parse-error", sourceLang, error };
+  }
   fixPostCSSNodeLocation(
     sourceAst,
     styleElement.loc,
