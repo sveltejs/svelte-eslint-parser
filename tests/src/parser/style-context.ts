@@ -3,6 +3,7 @@ import fs from "fs";
 import path from "path";
 
 import { parseForESLint } from "../../../src";
+import type { StyleContext } from "../../../src/parser/style-context";
 import { generateParserOptions, listupFixtures } from "./test-utils";
 
 const STYLE_CONTEXT_FIXTURE_ROOT = path.resolve(
@@ -32,11 +33,19 @@ describe("Check for AST.", () => {
         }
         const styleContext = result.services.getStyleContext();
         const output = fs.readFileSync(outputFileName, "utf8");
-        assert.strictEqual(
-          `${JSON.stringify(styleContext, undefined, 2)}\n`,
-          output
-        );
+        assert.strictEqual(`${styleContextToJson(styleContext)}\n`, output);
       });
     });
   }
 });
+
+function styleContextToJson(styleContext: StyleContext): string {
+  return JSON.stringify(styleContext, nodeReplacer, 2);
+}
+
+function nodeReplacer(key: string, value: any): any {
+  if (key === "file") {
+    return undefined;
+  }
+  return value;
+}
