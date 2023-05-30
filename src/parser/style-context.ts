@@ -77,14 +77,12 @@ export function parseStyleContext(
   }
   fixPostCSSNodeLocation(
     sourceAst,
-    styleElement.loc,
-    styleElement.startTag.range[1]
+    styleElement
   );
   sourceAst.walk((node) =>
     fixPostCSSNodeLocation(
       node,
-      styleElement.loc,
-      styleElement.startTag.range[1]
+      styleElement
     )
   );
   return { status: "success", sourceLang, sourceAst };
@@ -95,19 +93,18 @@ export function parseStyleContext(
  */
 function fixPostCSSNodeLocation(
   node: Node,
-  styleElementLoc: SourceLocation,
-  styleElementOffset: number
+  styleElement: SvelteStyleElement
 ) {
   if (node.source?.start?.offset !== undefined) {
-    node.source.start.offset += styleElementOffset;
+    node.source.start.offset += styleElement.startTag.range[1];
   }
   if (node.source?.start?.line !== undefined) {
-    node.source.start.line += styleElementLoc.start.line - 1;
+    node.source.start.line += styleElement.loc.start.line - 1;
   }
   if (node.source?.end?.offset !== undefined) {
-    node.source.end.offset += styleElementOffset;
+    node.source.end.offset += styleElement.startTag.range[1];
   }
   if (node.source?.end?.line !== undefined) {
-    node.source.end.line += styleElementLoc.start.line - 1;
+    node.source.end.line += styleElement.loc.start.line - 1;
   }
 }
