@@ -3,7 +3,7 @@ import postcss from "postcss";
 import { parse as SCSSparse } from "postcss-scss";
 
 import type { Context } from "../context";
-import type { SourceLocation, SvelteStyleElement } from "../ast";
+import type { SvelteStyleElement } from "../ast";
 
 export type StyleContext =
   | StyleContextNoStyleElement
@@ -75,26 +75,15 @@ export function parseStyleContext(
   } catch (error) {
     return { status: "parse-error", sourceLang, error };
   }
-  fixPostCSSNodeLocation(
-    sourceAst,
-    styleElement
-  );
-  sourceAst.walk((node) =>
-    fixPostCSSNodeLocation(
-      node,
-      styleElement
-    )
-  );
+  fixPostCSSNodeLocation(sourceAst, styleElement);
+  sourceAst.walk((node) => fixPostCSSNodeLocation(node, styleElement));
   return { status: "success", sourceLang, sourceAst };
 }
 
 /**
  * Fixes PostCSS AST locations to be relative to the whole file instead of relative to the <style> element.
  */
-function fixPostCSSNodeLocation(
-  node: Node,
-  styleElement: SvelteStyleElement
-) {
+function fixPostCSSNodeLocation(node: Node, styleElement: SvelteStyleElement) {
   if (node.source?.start?.offset !== undefined) {
     node.source.start.offset += styleElement.startTag.range[1];
   }
