@@ -107,4 +107,7 @@ function fixPostCSSNodeLocation(
   if (node.source?.end?.line !== undefined) {
     node.source.end.line += styleElement.loc.start.line - 1;
   }
+  if (node.source?.start?.line === styleElement.loc.start.line) {
+    node.source.start.column += styleElement.startTag.loc.end.column;
+  }
 }
