@@ -44,7 +44,7 @@ function styleContextToJson(styleContext: StyleContext): string {
 }
 
 function nodeReplacer(key: string, value: any): any {
-  if (key === "file") {
+  if (key === "file" || key === "url") {
     return undefined;
   }
   return value;
