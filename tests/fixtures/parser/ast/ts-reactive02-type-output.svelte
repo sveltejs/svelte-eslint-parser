@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { writable } from 'svelte/store'; // writable: <T>(value?: T | undefined, start?: StartStopNotifier<T> | undefined) => Writable<T>, writable: <T>(value?: T | undefined, start?: StartStopNotifier<T> | undefined) => Writable<T>
+	import { writable } from 'svelte/store'; // writable: <T>(value: T, start?: StartStopNotifier<T> | undefined) => Writable<T>, writable: <T>(value: T, start?: StartStopNotifier<T> | undefined) => Writable<T>
     let x = "hello" // x: string
     const get = ()=>"hello" // get: () => string
 
