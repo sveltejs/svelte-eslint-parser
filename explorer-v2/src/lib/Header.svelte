@@ -14,23 +14,14 @@
 
 <header class="header">
 	<span class="title">svelte-eslint-parser</span>
-	<a
-		class="menu"
-		class:active={isActive($page.url.pathname, `/`)}
-		sveltekit:prefetch
-		href="{baseUrl}/">AST</a
-	>
+	<a class="menu" class:active={isActive($page.url.pathname, `/`)} href="{baseUrl}/">AST</a>
 	<a
 		class="menu"
 		class:active={isActive($page.url.pathname, `/playground`)}
-		sveltekit:prefetch
 		href="{baseUrl}/playground">Playgroud</a
 	>
-	<a
-		class="menu"
-		class:active={isActive($page.url.pathname, `/scope`)}
-		sveltekit:prefetch
-		href="{baseUrl}/scope">Scope</a
+	<a class="menu" class:active={isActive($page.url.pathname, `/scope`)} href="{baseUrl}/scope"
+		>Scope</a
 	>
 	<a
 		class="menu"
