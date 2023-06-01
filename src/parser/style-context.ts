@@ -3,7 +3,7 @@ import postcss from "postcss";
 import { parse as SCSSparse } from "postcss-scss";
 
 import type { Context } from "../context";
-import type { SvelteStyleElement } from "../ast";
+import type { SourceLocation, SvelteStyleElement } from "../ast";
 
 export type StyleContext =
   | StyleContextNoStyleElement
@@ -78,6 +78,46 @@ export function parseStyleContext(
   fixPostCSSNodeLocation(sourceAst, styleElement);
   sourceAst.walk((node) => fixPostCSSNodeLocation(node, styleElement));
   return { status: "success", sourceLang, sourceAst };
+}
+
+/**
+ * Extracts a node location (like that of any ESLint node) from a parsed svelte style node.
+ */
+export function styleNodeLoc(node: Node): Partial<SourceLocation> {
+  if (node.source === undefined) {
+    return {};
+  }
+  return {
+    start:
+      node.source.start !== undefined
+        ? {
+            line: node.source.start.line,
+            column: node.source.start.column - 1,
+          }
+        : undefined,
+    end:
+      node.source.end !== undefined
+        ? {
+            line: node.source.end.line,
+            column: node.source.end.column,
+          }
+        : undefined,
+  };
+}
+
+/**
+ * Extracts a node range (like that of any ESLint node) from a parsed svelte style node.
+ */
+export function styleNodeRange(
+  node: Node
+): [number | undefined, number | undefined] {
+  if (node.source === undefined) {
+    return [undefined, undefined];
+  }
+  return [
+    node.source.start !== undefined ? node.source.start.offset - 2 : undefined,
+    node.source.end !== undefined ? node.source.end.offset - 1 : undefined,
+  ];
 }
 
 /**
