@@ -115,8 +115,8 @@ export function styleNodeRange(
     return [undefined, undefined];
   }
   return [
-    node.source.start !== undefined ? node.source.start.offset - 2 : undefined,
-    node.source.end !== undefined ? node.source.end.offset - 1 : undefined,
+    node.source.start !== undefined ? node.source.start.offset : undefined,
+    node.source.end !== undefined ? node.source.end.offset + 1 : undefined,
   ];
 }
 
