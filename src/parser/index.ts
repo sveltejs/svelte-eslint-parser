@@ -29,6 +29,8 @@ import {
   type StyleContextParseError,
   type StyleContextSuccess,
   type StyleContextUnknownLang,
+  styleNodeLoc,
+  styleNodeRange,
 } from "./style-context";
 
 export {
@@ -198,6 +200,8 @@ export function parseForESLint(
     getStyleContext() {
       return styleContext;
     },
+    styleNodeLoc,
+    styleNodeRange,
   });
   resultScript.visitorKeys = Object.assign({}, KEYS, resultScript.visitorKeys);
 

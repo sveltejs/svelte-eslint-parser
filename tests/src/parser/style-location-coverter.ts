@@ -5,10 +5,6 @@ import type { Node } from "postcss";
 
 import { parseForESLint } from "../../../src";
 import type { SourceLocation } from "../../../src/ast";
-import {
-  styleNodeLoc,
-  styleNodeRange,
-} from "../../../src/parser/style-context";
 import { generateParserOptions, listupFixtures } from "./test-utils";
 
 const STYLE_CONTEXT_FIXTURE_ROOT = path.resolve(
@@ -29,26 +25,29 @@ describe("Check for AST.", () => {
     meetRequirements,
   } of listupFixtures(STYLE_CONTEXT_FIXTURE_ROOT)) {
     describe(inputFileName, () => {
-      let result: any;
+      let services: any;
 
       it("most to generate the expected style context.", () => {
-        result = parse(input, inputFileName, config);
+        services = parse(input, inputFileName, config).services;
         if (!meetRequirements("test")) {
           return;
         }
-        const styleContext = result.services.getStyleContext();
+        const styleContext = services.getStyleContext();
         assert.strictEqual(styleContext.status, "success");
         const locations: [
           Partial<SourceLocation>,
           [number | undefined, number | undefined]
         ][] = [
           [
-            styleNodeLoc(styleContext.sourceAst),
-            styleNodeRange(styleContext.sourceAst),
+            services.styleNodeLoc(styleContext.sourceAst),
+            services.styleNodeRange(styleContext.sourceAst),
           ],
         ];
         styleContext.sourceAst.walk((node: Node) => {
-          locations.push([styleNodeLoc(node), styleNodeRange(node)]);
+          locations.push([
+            services.styleNodeLoc(node),
+            services.styleNodeRange(node),
+          ]);
         });
         const output = fs.readFileSync(outputFileName, "utf8");
         assert.strictEqual(
