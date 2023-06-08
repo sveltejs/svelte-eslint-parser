@@ -3,7 +3,7 @@ import fs from "fs";
 import path from "path";
 
 import { parseForESLint } from "../../../src";
-import type { StyleContext } from "../../../src/parser/style-context";
+import type { StyleContext } from "../../../src/parser";
 import { generateParserOptions, listupFixtures } from "./test-utils";
 
 const STYLE_CONTEXT_FIXTURE_ROOT = path.resolve(

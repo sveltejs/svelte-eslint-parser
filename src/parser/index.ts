@@ -22,7 +22,22 @@ import {
 import { ParseError } from "../errors";
 import { parseTypeScript } from "./typescript";
 import { addReference } from "../scope";
-import { parseStyleContext, type StyleContext } from "./style-context";
+import {
+  parseStyleContext,
+  type StyleContext,
+  type StyleContextNoStyleElement,
+  type StyleContextParseError,
+  type StyleContextSuccess,
+  type StyleContextUnknownLang,
+} from "./style-context";
+
+export {
+  StyleContext,
+  StyleContextNoStyleElement,
+  StyleContextParseError,
+  StyleContextSuccess,
+  StyleContextUnknownLang,
+};
 
 export interface ESLintProgram extends Program {
   comments: Comment[];
