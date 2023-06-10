@@ -4,6 +4,7 @@ import type {
   Comment,
   SvelteProgram,
   SvelteScriptElement,
+  SvelteStyleElement,
   Token,
 } from "../ast";
 import type { Program } from "estree";
@@ -21,6 +22,24 @@ import {
 import { ParseError } from "../errors";
 import { parseTypeScript } from "./typescript";
 import { addReference } from "../scope";
+import {
+  parseStyleContext,
+  type StyleContext,
+  type StyleContextNoStyleElement,
+  type StyleContextParseError,
+  type StyleContextSuccess,
+  type StyleContextUnknownLang,
+  styleNodeLoc,
+  styleNodeRange,
+} from "./style-context";
+
+export {
+  StyleContext,
+  StyleContextNoStyleElement,
+  StyleContextParseError,
+  StyleContextSuccess,
+  StyleContextUnknownLang,
+};
 
 export interface ESLintProgram extends Program {
   comments: Comment[];
@@ -50,6 +69,7 @@ export function parseForESLint(
   services: Record<string, any> & {
     isSvelte: true;
     getSvelteHtmlAst: () => SvAST.Fragment;
+    getStyleContext: () => StyleContext;
   };
   visitorKeys: { [type: string]: string[] };
   scopeManager: ScopeManager;
@@ -166,12 +186,22 @@ export function parseForESLint(
     );
   }
 
+  const styleElement = ast.body.find(
+    (b): b is SvelteStyleElement => b.type === "SvelteStyleElement"
+  );
+  const styleContext = parseStyleContext(styleElement, ctx);
+
   resultScript.ast = ast as any;
   resultScript.services = Object.assign(resultScript.services || {}, {
     isSvelte: true,
     getSvelteHtmlAst() {
       return resultTemplate.svelteAst.html;
     },
+    getStyleContext() {
+      return styleContext;
+    },
+    styleNodeLoc,
+    styleNodeRange,
   });
   resultScript.visitorKeys = Object.assign({}, KEYS, resultScript.visitorKeys);
 
