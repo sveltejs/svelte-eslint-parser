@@ -423,7 +423,33 @@ export class ScriptLetContext {
           preparationScript?: string[];
         })
   ): void {
-    if (!params) {
+    let resolvedParams;
+    if (typeof params === "function") {
+      if (this.ctx.isTypeScript()) {
+        const generatedTypes = params({
+          generateUniqueId: (base) => this.generateUniqueId(base),
+        });
+        resolvedParams = [generatedTypes.param];
+        if (generatedTypes.preparationScript) {
+          for (const preparationScript of generatedTypes.preparationScript) {
+            this.appendScriptWithoutOffset(
+              preparationScript,
+              (node, tokens, comments, result) => {
+                tokens.length = 0;
+                comments.length = 0;
+                removeAllScopeAndVariableAndReference(node, result);
+              }
+            );
+          }
+        }
+      } else {
+        const generatedTypes = params(null);
+        resolvedParams = [generatedTypes.param];
+      }
+    } else {
+      resolvedParams = params;
+    }
+    if (!resolvedParams || resolvedParams.length === 0) {
       const restore = this.appendScript(
         `{`,
         block.range[0],
@@ -442,32 +468,6 @@ export class ScriptLetContext {
       );
       this.pushScope(restore, "}");
     } else {
-      let resolvedParams;
-      if (typeof params === "function") {
-        if (this.ctx.isTypeScript()) {
-          const generatedTypes = params({
-            generateUniqueId: (base) => this.generateUniqueId(base),
-          });
-          resolvedParams = [generatedTypes.param];
-          if (generatedTypes.preparationScript) {
-            for (const preparationScript of generatedTypes.preparationScript) {
-              this.appendScriptWithoutOffset(
-                preparationScript,
-                (node, tokens, comments, result) => {
-                  tokens.length = 0;
-                  comments.length = 0;
-                  removeAllScopeAndVariableAndReference(node, result);
-                }
-              );
-            }
-          }
-        } else {
-          const generatedTypes = params(null);
-          resolvedParams = [generatedTypes.param];
-        }
-      } else {
-        resolvedParams = params;
-      }
       const sortedParams = [...resolvedParams]
         .map((d) => {
           return {
