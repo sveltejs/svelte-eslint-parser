@@ -1,5 +1,11 @@
 # svelte-eslint-parser
 
+## 0.30.0
+
+### Minor Changes
+
+- [#343](https://github.com/sveltejs/svelte-eslint-parser/pull/343) [`2c76b13`](https://github.com/sveltejs/svelte-eslint-parser/commit/2c76b1378bad41bf8493d06813eb28283755d570) Thanks [@ota-meshi](https://github.com/ota-meshi)! - feat: add experimental support for Svelte v4
+
 ## 0.29.0
 
 ### 💥 Breaking Changes

@@ -1,6 +1,6 @@
 <script lang="ts">
-    import {createEventDispatcher} from 'svelte' // createEventDispatcher: <EventMap extends {} = any>() => <EventKey extends Extract<keyof EventMap, string>>(type: EventKey, detail?: EventMap[EventKey] | undefined, options?: DispatchOptions | undefined) => boolean, createEventDispatcher: <EventMap extends {} = any>() => <EventKey extends Extract<keyof EventMap, string>>(type: EventKey, detail?: EventMap[EventKey] | undefined, options?: DispatchOptions | undefined) => boolean
-    const emit = createEventDispatcher<{ // emit: <EventKey extends "foo" | "bar">(type: EventKey, detail?: { foo: number; bar: string; }[EventKey] | undefined, options?: DispatchOptions | undefined) => boolean, createEventDispatcher<{ foo: number, bar: string }>(): <EventKey extends "foo" | "bar">(type: EventKey, detail?: { foo: number; bar: string; }[EventKey] | undefined, options?: DispatchOptions | undefined) => boolean
+    import {createEventDispatcher} from 'svelte' // createEventDispatcher: <EventMap extends Record<string, any> = any>() => EventDispatcher<EventMap>, createEventDispatcher: <EventMap extends Record<string, any> = any>() => EventDispatcher<EventMap>
+    const emit = createEventDispatcher<{ // emit: EventDispatcher<{ foo: number; bar: string; }>, createEventDispatcher<{ foo: number, bar: string }>(): EventDispatcher<{ foo: number; bar: string; }>
         foo: number,
         bar: string
     }>()
