@@ -1,5 +1,15 @@
 # svelte-eslint-parser
 
+## 0.31.0
+
+### Minor Changes
+
+- [#340](https://github.com/sveltejs/svelte-eslint-parser/pull/340) [`d170f91`](https://github.com/sveltejs/svelte-eslint-parser/commit/d170f915c6133aa42f6d3d1c9fb7bc81269f77eb) Thanks [@marekdedic](https://github.com/marekdedic)! - added PostCSS AST of styles to parser services
+
+### Patch Changes
+
+- [#354](https://github.com/sveltejs/svelte-eslint-parser/pull/354) [`ff24f99`](https://github.com/sveltejs/svelte-eslint-parser/commit/ff24f99d70a97ec13c05459314c08da4f29546eb) Thanks [@ota-meshi](https://github.com/ota-meshi)! - fix: crash when using component and `{@const}`
+
 ## 0.30.0
 
 ### Minor Changes
