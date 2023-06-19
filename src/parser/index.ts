@@ -189,7 +189,7 @@ export function parseForESLint(
   const styleElement = ast.body.find(
     (b): b is SvelteStyleElement => b.type === "SvelteStyleElement"
   );
-  const styleContext = parseStyleContext(styleElement, ctx);
+  let styleContext: StyleContext | null = null;
 
   resultScript.ast = ast as any;
   resultScript.services = Object.assign(resultScript.services || {}, {
@@ -198,6 +198,9 @@ export function parseForESLint(
       return resultTemplate.svelteAst.html;
     },
     getStyleContext() {
+      if (styleContext === null) {
+        styleContext = parseStyleContext(styleElement, ctx);
+      }
       return styleContext;
     },
     styleNodeLoc,
