@@ -1,5 +1,13 @@
 # svelte-eslint-parser
 
+## 0.32.0
+
+### Minor Changes
+
+- [#364](https://github.com/sveltejs/svelte-eslint-parser/pull/364) [`f5de496`](https://github.com/sveltejs/svelte-eslint-parser/commit/f5de4966371e7ceaa43449c561f23b2fe01d018f) Thanks [@ota-meshi](https://github.com/ota-meshi)! - feat: add support for Svelte v4
+
+- [#358](https://github.com/sveltejs/svelte-eslint-parser/pull/358) [`438be64`](https://github.com/sveltejs/svelte-eslint-parser/commit/438be641c211146a86520db7c29b6771f14fe8c8) Thanks [@marekdedic](https://github.com/marekdedic)! - only parsing styles on-demand
+
 ## 0.31.0
 
 ### Minor Changes
