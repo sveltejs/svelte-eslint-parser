@@ -134,5 +134,11 @@ export default [
 				`
 			})
 		]
+	},
+	{
+		...base,
+		entry: {
+			'svelte/compiler': resolve('../../node_modules/svelte/src/compiler/index.js')
+		}
 	}
 ];
