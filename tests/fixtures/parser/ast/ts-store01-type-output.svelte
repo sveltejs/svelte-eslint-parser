@@ -11,4 +11,4 @@
 {$b} <!-- $b: "abc" -->
 {c} <!-- c: "abc" -->
 {$c} <!-- $c: any -->
-{$d} <!-- $d: any -->
+{$unknown} <!-- $unknown: any -->

@@ -307,7 +307,11 @@ export function convertAwaitBlock(
           };
         }
         const idAwaitThenValue = typeCtx.generateUniqueId("AwaitThenValue");
-        if (node.expression.type === "Identifier") {
+        if (
+          node.expression.type === "Identifier" &&
+          // We cannot use type annotations like `(x: Foo<x>)` if they have the same identifier name.
+          !hasIdentifierFor(node.expression.name, baseParam.node)
+        ) {
           return {
             preparationScript: [generateAwaitThenValueType(idAwaitThenValue)],
             param: {
@@ -483,4 +487,31 @@ function generateAwaitThenValueType(id: string) {
         ? ${id}<V>
         : never
         : T;`;
+}
+
+/** Checks whether the given name identifier is exists or not. */
+function hasIdentifierFor(name: string, node: ESTree.Pattern): boolean {
+  if (node.type === "Identifier") {
+    return node.name === name;
+  }
+  if (node.type === "ObjectPattern") {
+    return node.properties.some((property) =>
+      property.type === "Property"
+        ? hasIdentifierFor(name, property.value)
+        : hasIdentifierFor(name, property)
+    );
+  }
+  if (node.type === "ArrayPattern") {
+    return node.elements.some(
+      (element) => element && hasIdentifierFor(name, element)
+    );
+  }
+  if (node.type === "RestElement") {
+    return hasIdentifierFor(name, node.argument);
+  }
+  if (node.type === "AssignmentPattern") {
+    return hasIdentifierFor(name, node.left);
+  }
+
+  return false;
 }
