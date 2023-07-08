@@ -1,5 +1,11 @@
 # svelte-eslint-parser
 
+## 0.32.1
+
+### Patch Changes
+
+- [#371](https://github.com/sveltejs/svelte-eslint-parser/pull/371) [`cf20c86`](https://github.com/sveltejs/svelte-eslint-parser/commit/cf20c86d0c9ab250ca3607ac919bca6988e8cc78) Thanks [@ota-meshi](https://github.com/ota-meshi)! - fix: wrong type information for `#await` with same id
+
 ## 0.32.0
 
 ### Minor Changes
