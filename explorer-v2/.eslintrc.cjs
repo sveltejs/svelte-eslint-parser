@@ -18,12 +18,12 @@ module.exports = {
 	},
 	rules: {
 		'eslint-comments/no-unused-disable': 'off',
-		'node/no-missing-import': 'off',
-		'node/no-unpublished-require': 'off',
-		'node/no-unpublished-import': 'off',
-		'node/no-unsupported-features/es-syntax': 'off',
+		'n/no-missing-import': 'off',
+		'n/no-unpublished-require': 'off',
+		'n/no-unpublished-import': 'off',
+		'n/no-unsupported-features/es-syntax': 'off',
 		'require-jsdoc': 'off',
-		'node/file-extension-in-import': 'off',
+		'n/file-extension-in-import': 'off',
 		'prettier/prettier': [
 			'error',
 			{},
