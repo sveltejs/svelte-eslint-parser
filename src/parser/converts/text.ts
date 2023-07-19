@@ -6,7 +6,7 @@ import type * as SvAST from "../svelte-ast-types";
 export function convertText(
   node: SvAST.Text,
   parent: SvelteText["parent"],
-  ctx: Context
+  ctx: Context,
 ): SvelteText {
   const text: SvelteText = {
     type: "SvelteText",
@@ -22,7 +22,7 @@ export function convertText(
 export function convertTextToLiteral(
   node: SvAST.Text,
   parent: SvelteLiteral["parent"],
-  ctx: Context
+  ctx: Context,
 ): SvelteLiteral {
   const text: SvelteLiteral = {
     type: "SvelteLiteral",
@@ -38,7 +38,7 @@ export function convertTextToLiteral(
 export function convertAttributeValueTokenToLiteral(
   node: AttributeValueToken,
   parent: SvelteLiteral["parent"],
-  ctx: Context
+  ctx: Context,
 ): SvelteLiteral {
   const valueLoc = node.quote
     ? { start: node.start + 1, end: node.end - 1 }
@@ -56,7 +56,7 @@ export function convertAttributeValueTokenToLiteral(
 /** Extract tokens */
 function extractTextTokens(
   node: { start: number; end: number },
-  ctx: Context
+  ctx: Context,
 ): void {
   const loc = node;
   let start = loc.start;

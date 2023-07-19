@@ -5,7 +5,7 @@ import { rules } from "@typescript-eslint/eslint-plugin";
 export function setupLinter(linter: Linter) {
   linter.defineRule(
     "@typescript-eslint/no-unsafe-call",
-    rules["no-unsafe-call"] as never
+    rules["no-unsafe-call"] as never,
   );
 }
 

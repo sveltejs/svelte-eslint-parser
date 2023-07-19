@@ -8,7 +8,7 @@ import { generateParserOptions, listupFixtures } from "./test-utils";
 
 const STYLE_CONTEXT_FIXTURE_ROOT = path.resolve(
   __dirname,
-  "../../fixtures/parser/style-context"
+  "../../fixtures/parser/style-context",
 );
 
 function parse(code: string, filePath: string, config: any) {

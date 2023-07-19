@@ -9,7 +9,7 @@ import { generateParserOptions, listupFixtures } from "./test-utils";
 
 const STYLE_CONTEXT_FIXTURE_ROOT = path.resolve(
   __dirname,
-  "../../fixtures/parser/style-location-converter"
+  "../../fixtures/parser/style-location-converter",
 );
 
 function parse(code: string, filePath: string, config: any) {
@@ -36,7 +36,7 @@ describe("Check for AST.", () => {
         assert.strictEqual(styleContext.status, "success");
         const locations: [
           Partial<SourceLocation>,
-          [number | undefined, number | undefined]
+          [number | undefined, number | undefined],
         ][] = [
           [
             services.styleNodeLoc(styleContext.sourceAst),
@@ -52,7 +52,7 @@ describe("Check for AST.", () => {
         const output = fs.readFileSync(outputFileName, "utf8");
         assert.strictEqual(
           `${JSON.stringify(locations, undefined, 2)}\n`,
-          output
+          output,
         );
       });
     });

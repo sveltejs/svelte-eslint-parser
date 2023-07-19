@@ -222,7 +222,7 @@ describe("eslint custom parser", () => {
       ...(semver.satisfies(
         // eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-var-requires -- ignore
         require("eslint/package.json").version,
-        ">=8.0.0"
+        ">=8.0.0",
       )
         ? [
             {
@@ -269,7 +269,7 @@ describe("eslint custom parser", () => {
               column: m.column,
             };
           }),
-          messages
+          messages,
         );
 
         assert.strictEqual(result.output, output ?? code);

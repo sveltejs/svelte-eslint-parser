@@ -37,7 +37,7 @@ export interface StyleContextUnknownLang {
  */
 export function parseStyleContext(
   styleElement: SvelteStyleElement | undefined,
-  ctx: Context
+  ctx: Context,
 ): StyleContext {
   if (!styleElement || !styleElement.endTag) {
     return { status: "no-style-element" };
@@ -66,7 +66,7 @@ export function parseStyleContext(
   }
   const styleCode = ctx.code.slice(
     styleElement.startTag.range[1],
-    styleElement.endTag.range[0]
+    styleElement.endTag.range[0],
   );
   try {
     sourceAst = parseFn(styleCode, {
@@ -109,7 +109,7 @@ export function styleNodeLoc(node: Node): Partial<SourceLocation> {
  * Extracts a node range (like that of any ESLint node) from a parsed svelte style node.
  */
 export function styleNodeRange(
-  node: Node
+  node: Node,
 ): [number | undefined, number | undefined] {
   if (node.source === undefined) {
     return [undefined, undefined];

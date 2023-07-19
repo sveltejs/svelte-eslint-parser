@@ -5,23 +5,23 @@ import { rules } from "@typescript-eslint/eslint-plugin";
 export function setupLinter(linter: Linter) {
   linter.defineRule(
     "@typescript-eslint/no-unsafe-argument",
-    rules["no-unsafe-argument"] as never
+    rules["no-unsafe-argument"] as never,
   );
   linter.defineRule(
     "@typescript-eslint/no-unsafe-assignment",
-    rules["no-unsafe-assignment"] as never
+    rules["no-unsafe-assignment"] as never,
   );
   linter.defineRule(
     "@typescript-eslint/no-unsafe-call",
-    rules["no-unsafe-call"] as never
+    rules["no-unsafe-call"] as never,
   );
   linter.defineRule(
     "@typescript-eslint/no-unsafe-member-access",
-    rules["no-unsafe-member-access"] as never
+    rules["no-unsafe-member-access"] as never,
   );
   linter.defineRule(
     "@typescript-eslint/no-unsafe-return",
-    rules["no-unsafe-return"] as never
+    rules["no-unsafe-return"] as never,
   );
 }
 

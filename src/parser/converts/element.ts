@@ -63,7 +63,7 @@ export function* convertChildren(
     | SvelteAwaitThenBlock
     | SvelteAwaitCatchBlock
     | SvelteKeyBlock,
-  ctx: Context
+  ctx: Context,
 ): IterableIterator<
   | SvelteText
   | SvelteElement
@@ -213,7 +213,7 @@ function needScopeByChildren(fragment: {
 function convertComment(
   node: SvAST.Comment,
   parent: SvelteHTMLComment["parent"],
-  ctx: Context
+  ctx: Context,
 ): SvelteHTMLComment {
   const comment: SvelteHTMLComment = {
     type: "SvelteHTMLComment",
@@ -231,7 +231,7 @@ function convertComment(
 function convertHTMLElement(
   node: SvAST.Element | SvAST.Slot | SvAST.Title,
   parent: SvelteHTMLElement["parent"],
-  ctx: Context
+  ctx: Context,
 ): SvelteHTMLElement {
   const locs = ctx.getConvertLocation(node);
   const element: SvelteHTMLElement = {
@@ -265,19 +265,19 @@ function convertHTMLElement(
   if (letDirectives.length) {
     ctx.letDirCollections.beginExtract();
     element.startTag.attributes.push(
-      ...convertAttributes(letDirectives, element.startTag, elementName, ctx)
+      ...convertAttributes(letDirectives, element.startTag, elementName, ctx),
     );
     letParams.push(...ctx.letDirCollections.extract().getLetParams());
   }
   if (!letParams.length && !needScopeByChildren(node)) {
     element.startTag.attributes.push(
-      ...convertAttributes(attributes, element.startTag, elementName, ctx)
+      ...convertAttributes(attributes, element.startTag, elementName, ctx),
     );
     element.children.push(...convertChildren(node, element, ctx));
   } else {
     ctx.scriptLet.nestBlock(element, letParams);
     element.startTag.attributes.push(
-      ...convertAttributes(attributes, element.startTag, elementName, ctx)
+      ...convertAttributes(attributes, element.startTag, elementName, ctx),
     );
     sortNodes(element.startTag.attributes);
     element.children.push(...convertChildren(node, element, ctx));
@@ -311,7 +311,7 @@ function convertHTMLElement(
     if (element.name.name === "script") {
       ctx.stripScriptCode(
         element.startTag.range[1],
-        element.endTag?.range[0] ?? element.range[1]
+        element.endTag?.range[0] ?? element.range[1],
       );
     }
   }
@@ -340,7 +340,7 @@ function convertSpecialElement(
     | SvAST.Options
     | SvAST.SlotTemplate,
   parent: SvelteSpecialElement["parent"],
-  ctx: Context
+  ctx: Context,
 ): SvelteSpecialElement {
   const locs = ctx.getConvertLocation(node);
   const element: SvelteSpecialElement = {
@@ -374,19 +374,19 @@ function convertSpecialElement(
   if (letDirectives.length) {
     ctx.letDirCollections.beginExtract();
     element.startTag.attributes.push(
-      ...convertAttributes(letDirectives, element.startTag, elementName, ctx)
+      ...convertAttributes(letDirectives, element.startTag, elementName, ctx),
     );
     letParams.push(...ctx.letDirCollections.extract().getLetParams());
   }
   if (!letParams.length && !needScopeByChildren(node)) {
     element.startTag.attributes.push(
-      ...convertAttributes(attributes, element.startTag, elementName, ctx)
+      ...convertAttributes(attributes, element.startTag, elementName, ctx),
     );
     element.children.push(...convertChildren(node, element, ctx));
   } else {
     ctx.scriptLet.nestBlock(element, letParams);
     element.startTag.attributes.push(
-      ...convertAttributes(attributes, element.startTag, elementName, ctx)
+      ...convertAttributes(attributes, element.startTag, elementName, ctx),
     );
     sortNodes(element.startTag.attributes);
     element.children.push(...convertChildren(node, element, ctx));
@@ -423,7 +423,7 @@ function processThisAttribute(
   node: SvAST.SvelteElement | SvAST.InlineSvelteComponent,
   thisValue: string | ESTree.Expression,
   element: SvelteSpecialElement,
-  ctx: Context
+  ctx: Context,
 ) {
   let thisNode: SvelteSpecialDirective | SvelteAttribute;
   if (typeof thisValue === "string") {
@@ -433,7 +433,7 @@ function processThisAttribute(
     const valueStartIndex = indexOf(
       ctx.code,
       (c) => Boolean(c.trim()),
-      eqIndex + 1
+      eqIndex + 1,
     );
     const quote = ctx.code.startsWith(thisValue, valueStartIndex)
       ? null
@@ -503,7 +503,7 @@ function processThisAttribute(
     const endIndex = indexOf(
       ctx.code,
       (c) => c === ">" || !c.trim(),
-      closeIndex
+      closeIndex,
     );
     const thisDir: SvelteSpecialDirective = {
       type: "SvelteSpecialDirective",
@@ -535,7 +535,7 @@ function processThisAttribute(
   }
 
   const targetIndex = element.startTag.attributes.findIndex(
-    (attr) => thisNode.range[1] <= attr.range[0]
+    (attr) => thisNode.range[1] <= attr.range[0],
   );
   if (targetIndex === -1) {
     element.startTag.attributes.push(thisNode);
@@ -547,7 +547,7 @@ function processThisAttribute(
 /** Find the start index of `this` */
 function findStartIndexOfThis(
   node: SvAST.SvelteElement | SvAST.InlineSvelteComponent,
-  ctx: Context
+  ctx: Context,
 ) {
   // Get the end index of `svelte:element`
   const startIndex = ctx.code.indexOf(node.name, node.start) + node.name.length;
@@ -558,7 +558,7 @@ function findStartIndexOfThis(
     ctx.code,
     (_c, index) => ctx.code.startsWith("this", index),
     startIndex,
-    sortedAttrs[0]?.start ?? node.end
+    sortedAttrs[0]?.start ?? node.end,
   );
   while (thisIndex < 0) {
     if (sortedAttrs.length === 0)
@@ -570,7 +570,7 @@ function findStartIndexOfThis(
       ctx.code,
       (_c, index) => ctx.code.startsWith("this", index),
       nextStartIndex,
-      sortedAttrs[0]?.start ?? node.end
+      sortedAttrs[0]?.start ?? node.end,
     );
   }
   return thisIndex;
@@ -580,7 +580,7 @@ function findStartIndexOfThis(
 function convertComponentElement(
   node: SvAST.InlineComponent,
   parent: SvelteComponentElement["parent"],
-  ctx: Context
+  ctx: Context,
 ): SvelteComponentElement {
   const locs = ctx.getConvertLocation(node);
   const element: SvelteComponentElement = {
@@ -614,19 +614,19 @@ function convertComponentElement(
   if (letDirectives.length) {
     ctx.letDirCollections.beginExtract();
     element.startTag.attributes.push(
-      ...convertAttributes(letDirectives, element.startTag, elementName, ctx)
+      ...convertAttributes(letDirectives, element.startTag, elementName, ctx),
     );
     letParams.push(...ctx.letDirCollections.extract().getLetParams());
   }
   if (!letParams.length && !needScopeByChildren(node)) {
     element.startTag.attributes.push(
-      ...convertAttributes(attributes, element.startTag, elementName, ctx)
+      ...convertAttributes(attributes, element.startTag, elementName, ctx),
     );
     element.children.push(...convertChildren(node, element, ctx));
   } else {
     ctx.scriptLet.nestBlock(element, letParams);
     element.startTag.attributes.push(
-      ...convertAttributes(attributes, element.startTag, elementName, ctx)
+      ...convertAttributes(attributes, element.startTag, elementName, ctx),
     );
     sortNodes(element.startTag.attributes);
     element.children.push(...convertChildren(node, element, ctx));
@@ -691,7 +691,7 @@ function convertComponentElement(
         identifier,
         (identifier as any).parent,
         null,
-        esCallback
+        esCallback,
       );
 
       return object;
@@ -704,7 +704,7 @@ function convertComponentElement(
 function convertSlotElement(
   node: SvAST.Slot,
   parent: SvelteHTMLElement["parent"],
-  ctx: Context
+  ctx: Context,
 ): SvelteHTMLElement {
   // Slot translates to SvelteHTMLElement.
   const element = convertHTMLElement(node, parent, ctx);
@@ -716,7 +716,7 @@ function convertSlotElement(
 function convertWindowElement(
   node: SvAST.Window,
   parent: SvelteSpecialElement["parent"],
-  ctx: Context
+  ctx: Context,
 ): SvelteSpecialElement {
   return convertSpecialElement(node, parent, ctx);
 }
@@ -725,7 +725,7 @@ function convertWindowElement(
 function convertDocumentElement(
   node: SvAST.Document,
   parent: SvelteSpecialElement["parent"],
-  ctx: Context
+  ctx: Context,
 ): SvelteSpecialElement {
   return convertSpecialElement(node, parent, ctx);
 }
@@ -734,7 +734,7 @@ function convertDocumentElement(
 function convertBodyElement(
   node: SvAST.Body,
   parent: SvelteSpecialElement["parent"],
-  ctx: Context
+  ctx: Context,
 ): SvelteSpecialElement {
   return convertSpecialElement(node, parent, ctx);
 }
@@ -743,7 +743,7 @@ function convertBodyElement(
 function convertHeadElement(
   node: SvAST.Head,
   parent: SvelteSpecialElement["parent"],
-  ctx: Context
+  ctx: Context,
 ): SvelteSpecialElement {
   return convertSpecialElement(node, parent, ctx);
 }
@@ -752,7 +752,7 @@ function convertHeadElement(
 function convertTitleElement(
   node: SvAST.Title,
   parent: SvelteHTMLElement["parent"],
-  ctx: Context
+  ctx: Context,
 ): SvelteHTMLElement {
   return convertHTMLElement(node, parent, ctx);
 }
@@ -761,7 +761,7 @@ function convertTitleElement(
 function convertOptionsElement(
   node: SvAST.Options,
   parent: SvelteSpecialElement["parent"],
-  ctx: Context
+  ctx: Context,
 ): SvelteSpecialElement {
   return convertSpecialElement(node, parent, ctx);
 }
@@ -770,14 +770,14 @@ function convertOptionsElement(
 function convertSlotTemplateElement(
   node: SvAST.SlotTemplate,
   parent: SvelteSpecialElement["parent"],
-  ctx: Context
+  ctx: Context,
 ): SvelteSpecialElement {
   return convertSpecialElement(node, parent, ctx);
 }
 
 /** Extract element tag and tokens */
 export function extractElementTags<
-  E extends SvelteScriptElement | SvelteElement | SvelteStyleElement
+  E extends SvelteScriptElement | SvelteElement | SvelteStyleElement,
 >(
   element: E,
   ctx: Context,
@@ -787,12 +787,12 @@ export function extractElementTags<
       end: number;
     }) => E["name"];
     extractAttribute?: boolean;
-  }
+  },
 ): void {
   const startTagNameEnd = indexOf(
     ctx.code,
     (c) => c === "/" || c === ">" || !c.trim(),
-    element.range[0] + 1
+    element.range[0] + 1,
   );
   const openTokenRange = {
     start: element.range[0] + 1,
@@ -805,7 +805,7 @@ export function extractElementTags<
     ctx.code.indexOf(
       ">",
       element.startTag.attributes[element.startTag.attributes.length - 1]
-        ?.range[1] ?? openTokenRange.end
+        ?.range[1] ?? openTokenRange.end,
     ) + 1;
   element.startTag.range[1] = startTagEnd;
   element.startTag.loc.end = ctx.getLocFromIndex(startTagEnd);
@@ -829,7 +829,7 @@ export function extractElementTags<
   const endTagNameEnd = indexOf(
     ctx.code,
     (c) => c === ">" || !c.trim(),
-    endTagNameStart
+    endTagNameStart,
   );
   const endTagClose = ctx.code.indexOf(">", endTagNameEnd);
   element.endTag = {

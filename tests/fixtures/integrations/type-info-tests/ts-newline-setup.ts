@@ -5,11 +5,11 @@ import { rules } from "@typescript-eslint/eslint-plugin";
 export function setupLinter(linter: Linter) {
   linter.defineRule(
     "@typescript-eslint/no-confusing-void-expression",
-    rules["no-confusing-void-expression"] as never
+    rules["no-confusing-void-expression"] as never,
   );
   linter.defineRule(
     "@typescript-eslint/explicit-function-return-type",
-    rules["explicit-function-return-type"] as never
+    rules["explicit-function-return-type"] as never,
   );
 }
 

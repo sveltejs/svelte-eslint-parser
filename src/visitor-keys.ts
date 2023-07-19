@@ -51,5 +51,5 @@ const svelteKeys: SvelteKeysType = {
 };
 
 export const KEYS: SourceCode.VisitorKeys = unionWith(
-  svelteKeys
+  svelteKeys,
 ) as SourceCode.VisitorKeys;

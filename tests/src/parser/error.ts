@@ -11,7 +11,7 @@ import path from "path";
 
 const ERROR_FIXTURE_ROOT = path.resolve(
   __dirname,
-  "../../fixtures/parser/error"
+  "../../fixtures/parser/error",
 );
 
 function parse(code: string, filePath: string, config: any) {

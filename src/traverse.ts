@@ -43,7 +43,7 @@ export function getFallbackKeys(node: any): string[] {
  */
 export function getKeys(
   node: any,
-  visitorKeys?: VisitorKeys | TSESVisitorKeys
+  visitorKeys?: VisitorKeys | TSESVisitorKeys,
 ): string[] {
   const keys = (visitorKeys || KEYS)[node.type] || getFallbackKeys(node);
 
@@ -56,7 +56,7 @@ export function getKeys(
  */
 export function* getNodes(
   node: any,
-  key: string
+  key: string,
 ): IterableIterator<SvelteNode | ESTree.Node | TSESTree.Node> {
   const child = node[key];
   if (Array.isArray(child)) {
@@ -88,7 +88,7 @@ function isNode(x: any): x is SvelteNode {
 function traverse<N extends SvelteNode | ESTree.Node | TSESTree.Node>(
   node: N,
   parent: N | null,
-  visitor: Visitor<N>
+  visitor: Visitor<N>,
 ): void {
   visitor.enterNode(node, parent);
 
@@ -114,19 +114,19 @@ export interface Visitor<N> {
 
 export function traverseNodes(
   node: SvelteNode,
-  visitor: Visitor<SvelteNode | ESTree.Node>
+  visitor: Visitor<SvelteNode | ESTree.Node>,
 ): void;
 export function traverseNodes(
   node: ESTree.Node,
-  visitor: Visitor<ESTree.Node>
+  visitor: Visitor<ESTree.Node>,
 ): void;
 export function traverseNodes(
   node: TSESTree.Node,
-  visitor: Visitor<TSESTree.Node>
+  visitor: Visitor<TSESTree.Node>,
 ): void;
 export function traverseNodes(
   node: ESTree.Node | TSESTree.Node,
-  visitor: Visitor<ESTree.Node | TSESTree.Node>
+  visitor: Visitor<ESTree.Node | TSESTree.Node>,
 ): void;
 /**
  * Traverse the given AST tree.
@@ -135,7 +135,7 @@ export function traverseNodes(
  */
 export function traverseNodes(
   node: ESTree.Node | SvelteNode | TSESTree.Node,
-  visitor: Visitor<SvelteNode | ESTree.Node | TSESTree.Node>
+  visitor: Visitor<SvelteNode | ESTree.Node | TSESTree.Node>,
 ): void {
   traverse(node, null, visitor);
 }

@@ -60,14 +60,14 @@ describe("svelte-eslint-parser with ESLint rules", () => {
                 es2021: true,
               },
             },
-            inputFileName
+            inputFileName,
           );
 
           if (messages.length === 0) {
             assert.strictEqual(
               fs.existsSync(outputFileName),
               false,
-              "Expected empty messages"
+              "Expected empty messages",
             );
           } else {
             const messagesJson = JSON.stringify(
@@ -75,7 +75,7 @@ describe("svelte-eslint-parser with ESLint rules", () => {
                 return getMessageData(input, m);
               }),
               null,
-              2
+              2,
             );
             const output = fs.readFileSync(outputFileName, "utf8");
             assert.strictEqual(messagesJson, output);

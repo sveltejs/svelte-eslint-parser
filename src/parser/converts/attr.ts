@@ -37,7 +37,7 @@ export function* convertAttributes(
   attributes: SvAST.AttributeOrDirective[],
   parent: SvelteStartTag,
   elementName: string,
-  ctx: Context
+  ctx: Context,
 ): IterableIterator<
   | SvelteAttribute
   | SvelteShorthandAttribute
@@ -93,13 +93,13 @@ export function* convertAttributes(
       throw new ParseError(
         `Svelte v3.46.0 is no longer supported. Please use Svelte>=v3.46.1.`,
         attr.start,
-        ctx
+        ctx,
       );
     }
     throw new ParseError(
       `Unknown directive or attribute (${attr.type}) are not supported.`,
       attr.start,
-      ctx
+      ctx,
     );
   }
 }
@@ -108,7 +108,7 @@ export function* convertAttributes(
 export function* convertAttributeTokens(
   attributes: AttributeToken[],
   parent: SvelteStartTag,
-  ctx: Context
+  ctx: Context,
 ): IterableIterator<SvelteAttribute> {
   for (const attr of attributes) {
     const attribute: SvelteAttribute = {
@@ -133,7 +133,7 @@ export function* convertAttributeTokens(
       attribute.boolean = true;
     } else {
       attribute.value.push(
-        convertAttributeValueTokenToLiteral(attr.value, attribute, ctx)
+        convertAttributeValueTokenToLiteral(attr.value, attribute, ctx),
       );
     }
     yield attribute;
@@ -144,7 +144,7 @@ export function* convertAttributeTokens(
 function convertAttribute(
   node: SvAST.Attribute,
   parent: SvelteAttribute["parent"],
-  ctx: Context
+  ctx: Context,
 ): SvelteAttribute | SvelteShorthandAttribute {
   const attribute: SvelteAttribute = {
     type: "SvelteAttribute",
@@ -199,7 +199,7 @@ function convertAttribute(
   processAttributeValue(
     node.value as (SvAST.Text | SvAST.MustacheTag)[],
     attribute,
-    ctx
+    ctx,
   );
 
   // Not required for shorthands. Therefore, register the token here.
@@ -212,7 +212,7 @@ function convertAttribute(
 function processAttributeValue(
   nodeValue: (SvAST.Text | SvAST.MustacheTag)[],
   attribute: SvelteAttribute | SvelteStyleDirectiveLongform,
-  ctx: Context
+  ctx: Context,
 ) {
   for (let index = 0; index < nodeValue.length; index++) {
     const v = nodeValue[index];
@@ -240,7 +240,7 @@ function processAttributeValue(
     throw new ParseError(
       `Unknown attribute value (${u.type}) are not supported.`,
       u.start,
-      ctx
+      ctx,
     );
   }
 }
@@ -249,7 +249,7 @@ function processAttributeValue(
 function convertSpreadAttribute(
   node: SvAST.Spread,
   parent: SvelteSpreadAttribute["parent"],
-  ctx: Context
+  ctx: Context,
 ): SvelteSpreadAttribute {
   const attribute: SvelteSpreadAttribute = {
     type: "SvelteSpreadAttribute",
@@ -275,7 +275,7 @@ function convertSpreadAttribute(
 function convertBindingDirective(
   node: SvAST.DirectiveForExpression,
   parent: SvelteDirective["parent"],
-  ctx: Context
+  ctx: Context,
 ): SvelteBindingDirective {
   const directive: SvelteBindingDirective = {
     type: "SvelteDirective",
@@ -297,7 +297,7 @@ function convertBindingDirective(
           directive.expression = es;
           const scope = getScope(es);
           const reference = scope.references.find(
-            (ref) => ref.identifier === es
+            (ref) => ref.identifier === es,
           );
           if (reference) {
             // The bind directive does read and write.
@@ -307,7 +307,7 @@ function convertBindingDirective(
             reference.isReadOnly = () => false;
             reference.isRead = () => true;
           }
-        }
+        },
       );
     },
   });
@@ -319,7 +319,7 @@ function convertEventHandlerDirective(
   node: SvAST.DirectiveForExpression,
   parent: SvelteDirective["parent"],
   elementName: string,
-  ctx: Context
+  ctx: Context,
 ): SvelteEventHandlerDirective {
   const directive: SvelteEventHandlerDirective = {
     type: "SvelteDirective",
@@ -334,7 +334,7 @@ function convertEventHandlerDirective(
     processExpression: buildProcessExpressionForExpression(
       directive,
       ctx,
-      typing
+      typing,
     ),
   });
   return directive;
@@ -344,7 +344,7 @@ function convertEventHandlerDirective(
 function buildEventHandlerType(
   element: SvelteElement | SvelteScriptElement | SvelteStyleElement,
   elementName: string,
-  eventName: string
+  eventName: string,
 ) {
   const nativeEventHandlerType = `(e:${conditional({
     check: `'${eventName}'`,
@@ -427,7 +427,7 @@ function buildEventHandlerType(
 function convertClassDirective(
   node: SvAST.DirectiveForExpression,
   parent: SvelteDirective["parent"],
-  ctx: Context
+  ctx: Context,
 ): SvelteClassDirective {
   const directive: SvelteClassDirective = {
     type: "SvelteDirective",
@@ -451,7 +451,7 @@ function convertClassDirective(
 function convertStyleDirective(
   node: SvAST.StyleDirective,
   parent: SvelteStyleDirective["parent"],
-  ctx: Context
+  ctx: Context,
 ): SvelteStyleDirective {
   const directive: SvelteStyleDirectiveLongform = {
     type: "SvelteStyleDirective",
@@ -477,11 +477,11 @@ function convertStyleDirective(
           throw new ParseError(
             `Expected JS identifier or attribute value.`,
             expression.range![0],
-            ctx
+            ctx,
           );
         }
         shorthandDirective.key.name = expression;
-      }
+      },
     );
     return shorthandDirective;
   }
@@ -499,7 +499,7 @@ function convertStyleDirective(
 function convertTransitionDirective(
   node: SvAST.TransitionDirective,
   parent: SvelteDirective["parent"],
-  ctx: Context
+  ctx: Context,
 ): SvelteTransitionDirective {
   const directive: SvelteTransitionDirective = {
     type: "SvelteDirective",
@@ -515,14 +515,14 @@ function convertTransitionDirective(
     processExpression: buildProcessExpressionForExpression(
       directive,
       ctx,
-      null
+      null,
     ),
     processName: (name) =>
       ctx.scriptLet.addExpression(
         name,
         directive.key,
         null,
-        buildExpressionTypeChecker(["Identifier"], ctx)
+        buildExpressionTypeChecker(["Identifier"], ctx),
       ),
   });
   return directive;
@@ -532,7 +532,7 @@ function convertTransitionDirective(
 function convertAnimationDirective(
   node: SvAST.DirectiveForExpression,
   parent: SvelteDirective["parent"],
-  ctx: Context
+  ctx: Context,
 ): SvelteAnimationDirective {
   const directive: SvelteAnimationDirective = {
     type: "SvelteDirective",
@@ -546,14 +546,14 @@ function convertAnimationDirective(
     processExpression: buildProcessExpressionForExpression(
       directive,
       ctx,
-      null
+      null,
     ),
     processName: (name) =>
       ctx.scriptLet.addExpression(
         name,
         directive.key,
         null,
-        buildExpressionTypeChecker(["Identifier"], ctx)
+        buildExpressionTypeChecker(["Identifier"], ctx),
       ),
   });
   return directive;
@@ -563,7 +563,7 @@ function convertAnimationDirective(
 function convertActionDirective(
   node: SvAST.DirectiveForExpression,
   parent: SvelteDirective["parent"],
-  ctx: Context
+  ctx: Context,
 ): SvelteActionDirective {
   const directive: SvelteActionDirective = {
     type: "SvelteDirective",
@@ -577,14 +577,14 @@ function convertActionDirective(
     processExpression: buildProcessExpressionForExpression(
       directive,
       ctx,
-      `Parameters<typeof ${node.name}>[1]`
+      `Parameters<typeof ${node.name}>[1]`,
     ),
     processName: (name) =>
       ctx.scriptLet.addExpression(
         name,
         directive.key,
         null,
-        buildExpressionTypeChecker(["Identifier", "MemberExpression"], ctx)
+        buildExpressionTypeChecker(["Identifier", "MemberExpression"], ctx),
       ),
   });
   return directive;
@@ -594,7 +594,7 @@ function convertActionDirective(
 function convertLetDirective(
   node: SvAST.LetDirective,
   parent: SvelteLetDirective["parent"],
-  ctx: Context
+  ctx: Context,
 ): SvelteLetDirective {
   const directive: SvelteLetDirective = {
     type: "SvelteDirective",
@@ -628,26 +628,26 @@ function convertLetDirective(
 type DirectiveProcessors<
   D extends SvAST.Directive,
   S extends SvelteDirective,
-  E extends D["expression"] & S["expression"]
+  E extends D["expression"] & S["expression"],
 > =
   | {
       processExpression: (
         expression: E,
-        shorthand: boolean
+        shorthand: boolean,
       ) => ScriptLetCallback<NonNullable<E>>[];
       processPattern?: undefined;
       processName?: (
-        expression: SvelteName
+        expression: SvelteName,
       ) => ScriptLetCallback<Exclude<S["key"]["name"], SvelteName>>[];
     }
   | {
       processExpression?: undefined;
       processPattern: (
         expression: E,
-        shorthand: boolean
+        shorthand: boolean,
       ) => ScriptLetCallback<NonNullable<E>>[];
       processName?: (
-        expression: SvelteName
+        expression: SvelteName,
       ) => ScriptLetCallback<Exclude<S["key"]["name"], SvelteName>>[];
     };
 
@@ -655,12 +655,12 @@ type DirectiveProcessors<
 function processDirective<
   D extends SvAST.Directive,
   S extends SvelteDirective,
-  E extends D["expression"] & S["expression"]
+  E extends D["expression"] & S["expression"],
 >(
   node: D & { expression: null | E },
   directive: S,
   ctx: Context,
-  processors: DirectiveProcessors<D, S, E>
+  processors: DirectiveProcessors<D, S, E>,
 ) {
   processDirectiveKey(node, directive, ctx);
   processDirectiveExpression<D, S, E>(node, directive, ctx, processors);
@@ -669,7 +669,7 @@ function processDirective<
 /** Common process for directive key */
 function processDirectiveKey<
   D extends SvAST.Directive | SvAST.StyleDirective,
-  S extends SvelteDirective | SvelteStyleDirective
+  S extends SvelteDirective | SvelteStyleDirective,
 >(node: D, directive: S, ctx: Context) {
   const colonIndex = ctx.code.indexOf(":", directive.range[0]);
   ctx.addToken("HTMLIdentifier", {
@@ -690,7 +690,7 @@ function processDirectiveKey<
     let nextEnd = indexOf(
       ctx.code,
       (c) => c === "=" || c === ">" || c === "/" || c === "|" || !c.trim(),
-      nextStart
+      nextStart,
     );
     ctx.addToken("HTMLIdentifier", { start: nextStart, end: nextEnd });
     while (ctx.code[nextEnd] === "|") {
@@ -698,7 +698,7 @@ function processDirectiveKey<
       nextEnd = indexOf(
         ctx.code,
         (c) => c === "=" || c === ">" || c === "/" || c === "|" || !c.trim(),
-        nextStart
+        nextStart,
       );
       ctx.addToken("HTMLIdentifier", { start: nextStart, end: nextEnd });
     }
@@ -726,12 +726,12 @@ function processDirectiveKey<
 function processDirectiveExpression<
   D extends SvAST.Directive,
   S extends SvelteDirective,
-  E extends D["expression"]
+  E extends D["expression"],
 >(
   node: D & { expression: null | E },
   directive: S,
   ctx: Context,
-  processors: DirectiveProcessors<D, S, E>
+  processors: DirectiveProcessors<D, S, E>,
 ) {
   const key = directive.key;
   const keyName = key.name as SvelteName;
@@ -753,7 +753,7 @@ function processDirectiveExpression<
           throw new ParseError(
             `Expected ${node.expression.type}, but ${es.type} found.`,
             es.range![0],
-            ctx
+            ctx,
           );
         }
         directive.expression = es;
@@ -782,7 +782,7 @@ function processDirectiveExpression<
 function buildProcessExpressionForExpression(
   directive: SvelteDirective & { expression: null | ESTree.Expression },
   ctx: Context,
-  typing: string | null
+  typing: string | null,
 ): (expression: ESTree.Expression) => ScriptLetCallback<ESTree.Expression>[] {
   return (expression) => {
     return ctx.scriptLet.addExpression(expression, directive, typing);
@@ -792,14 +792,14 @@ function buildProcessExpressionForExpression(
 /** Build expression type checker to script let callbacks */
 function buildExpressionTypeChecker<T extends ESTree.Expression>(
   expected: T["type"][],
-  ctx: Context
+  ctx: Context,
 ): ScriptLetCallback<T> {
   return (node) => {
     if (!expected.includes(node.type)) {
       throw new ParseError(
         `Expected JS ${expected.join(", or ")}, but ${node.type} found.`,
         node.range![0],
-        ctx
+        ctx,
       );
     }
   };

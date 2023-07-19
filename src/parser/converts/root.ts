@@ -16,7 +16,7 @@ import type { Scope } from "eslint-scope";
  */
 export function convertSvelteRoot(
   svelteAst: SvAST.Ast,
-  ctx: Context
+  ctx: Context,
 ): SvelteProgram {
   const ast: SvelteProgram = {
     type: "Program",
@@ -134,7 +134,7 @@ export function convertSvelteRoot(
       node,
       _tokens,
       _comments,
-      { scopeManager, registerNodeToScope, addPostProcess }
+      { scopeManager, registerNodeToScope, addPostProcess },
     ) => {
       const scopes: Scope[] = [];
       for (const scope of scopeManager.scopes) {
@@ -149,7 +149,7 @@ export function convertSvelteRoot(
         // from Program nodes set to `block` in global scope. This can only be handled by the original Program node.
         scopeManager.globalScope.block = node;
       });
-    }
+    },
   );
 
   return ast;
@@ -158,7 +158,7 @@ export function convertSvelteRoot(
 /** Extract attrs */
 function extractAttributes(
   element: SvelteScriptElement | SvelteStyleElement,
-  ctx: Context
+  ctx: Context,
 ) {
   element.startTag = {
     type: "SvelteStartTag",
@@ -177,7 +177,7 @@ function extractAttributes(
   const block = ctx.findBlock(element);
   if (block) {
     element.startTag.attributes.push(
-      ...convertAttributeTokens(block.attrs, element.startTag, ctx)
+      ...convertAttributeTokens(block.attrs, element.startTag, ctx),
     );
   }
 }

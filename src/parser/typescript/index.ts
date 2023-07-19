@@ -11,7 +11,7 @@ export function parseTypeScript(
   code: { script: string; render: string },
   attrs: Record<string, string | undefined>,
   parserOptions: unknown,
-  context: AnalyzeTypeScriptContext
+  context: AnalyzeTypeScriptContext,
 ): ESLintExtendedProgram {
   const tsCtx = analyzeTypeScript(code, attrs, parserOptions, context);
 

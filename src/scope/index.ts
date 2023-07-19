@@ -14,7 +14,7 @@ export function removeAllScopeAndVariableAndReference(
           readonly [type: string]: readonly string[] | undefined;
         };
     scopeManager: ScopeManager;
-  }
+  },
 ): void {
   const targetScopes = new Set<Scope>();
   traverseNodes(target, {
@@ -58,7 +58,7 @@ export function removeAllScopeAndVariableAndReference(
  */
 export function getScopeFromNode(
   scopeManager: ScopeManager,
-  currentNode: ESTree.Node
+  currentNode: ESTree.Node,
 ): Scope {
   let node: ESTree.Node | null = currentNode;
   for (; node; node = (node as any).parent || null) {
@@ -99,7 +99,7 @@ export function removeIdentifierVariable(
     | TSESTree.BindingName
     | TSESTree.RestElement
     | TSESTree.DestructuringPattern,
-  scope: Scope
+  scope: Scope,
 ): void {
   if (node.type === "ObjectPattern") {
     for (const prop of node.properties) {
@@ -168,7 +168,7 @@ export function* getAllReferences(
     | TSESTree.BindingName
     | TSESTree.RestElement
     | TSESTree.DestructuringPattern,
-  scope: Scope
+  scope: Scope,
 ): Iterable<Reference> {
   if (node.type === "ObjectPattern") {
     for (const prop of node.properties) {
@@ -209,7 +209,7 @@ export function* getAllReferences(
 /** Remove reference */
 export function removeIdentifierReference(
   node: ESTree.Identifier,
-  scope: Scope
+  scope: Scope,
 ): boolean {
   const reference = scope.references.find((ref) => ref.identifier === node);
   if (reference) {
@@ -307,7 +307,7 @@ export function removeScope(scopeManager: ScopeManager, scope: Scope): void {
 export function replaceScope(
   scopeManager: ScopeManager,
   scope: Scope,
-  newChildScopes: Scope[] = []
+  newChildScopes: Scope[] = [],
 ): void {
   // remove scope from scopeManager
   scopeManager.scopes = scopeManager.scopes.filter((s) => s !== scope);
@@ -318,7 +318,7 @@ export function replaceScope(
     upper.childScopes.splice(
       upper.childScopes.indexOf(scope),
       1,
-      ...newChildScopes
+      ...newChildScopes,
     );
     for (const child of newChildScopes) {
       child.upper = upper;
@@ -359,7 +359,7 @@ export function addReference(list: Reference[], reference: Reference): void {
   addElementToSortedArray(
     list,
     reference,
-    (a, b) => a.identifier.range![0] - b.identifier.range![0]
+    (a, b) => a.identifier.range![0] - b.identifier.range![0],
   );
 }
 /**
@@ -367,12 +367,12 @@ export function addReference(list: Reference[], reference: Reference): void {
  */
 export function addAllReferences(
   list: Reference[],
-  elements: Reference[]
+  elements: Reference[],
 ): void {
   addElementsToSortedArray(
     list,
     elements,
-    (a, b) => a.identifier.range![0] - b.identifier.range![0]
+    (a, b) => a.identifier.range![0] - b.identifier.range![0],
   );
 }
 
@@ -409,7 +409,7 @@ function simplifyVariables(variables: Variable[]) {
       {
         loc: JSON.stringify(v.defs[0]?.node.loc),
       },
-    ])
+    ]),
   );
 }
 

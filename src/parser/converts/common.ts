@@ -4,7 +4,7 @@ export function indexOf(
   str: string,
   search: (c: string, index: number) => boolean,
   start: number,
-  end?: number
+  end?: number,
 ): number {
   const endIndex = end ?? str.length;
   for (let index = start; index < endIndex; index++) {
@@ -20,7 +20,7 @@ export function indexOf(
 export function lastIndexOf(
   str: string,
   search: (c: string, index: number) => boolean,
-  end: number
+  end: number,
 ): number {
   for (let index = end; index >= 0; index--) {
     const c = str[index];
@@ -32,15 +32,15 @@ export function lastIndexOf(
 }
 
 export function getWithLoc<N extends ESTree.Comment>(
-  node: N
+  node: N,
 ): N & { start: number; end: number };
 export function getWithLoc<
-  N extends ESTree.Node | { start: number; end: number }
+  N extends ESTree.Node | { start: number; end: number },
 >(node: N): N & { start: number; end: number };
 export function getWithLoc<
-  N extends ESTree.Node | { start: number; end: number }
+  N extends ESTree.Node | { start: number; end: number },
 >(
-  node: N | null | undefined
+  node: N | null | undefined,
 ): (N & { start: number; end: number }) | null | undefined;
 
 /** Get node with location */

@@ -13,7 +13,7 @@ import { ParseError } from "..";
 export function parseTemplate(
   code: string,
   ctx: Context,
-  parserOptions: any = {}
+  parserOptions: any = {},
 ): {
   ast: SvelteProgram;
   svelteAst: SvAST.Ast;

@@ -43,7 +43,7 @@ export class ScriptsSourceCode {
 
   public constructor(
     script: string,
-    attrs: Record<string, string | undefined>
+    attrs: Record<string, string | undefined>,
   ) {
     this.raw = script;
     this.trimmedRaw = script.trimEnd();
@@ -170,12 +170,12 @@ export class Context {
         // It will be restored later in `convertHTMLElement()` processing.
         templateCode += `${code.slice(
           start,
-          block.startTagRange[0] + 2 /* `<` and first letter */
+          block.startTagRange[0] + 2 /* `<` and first letter */,
         )}${"-".repeat(
-          block.tag.length - 1 /* skip first letter */
+          block.tag.length - 1 /* skip first letter */,
         )}${code.slice(
           block.startTagRange[0] + 1 /* skip `<` */ + block.tag.length,
-          block.startTagRange[1]
+          block.startTagRange[1],
         )}`;
         scriptCode += spaces.slice(start, block.startTagRange[1]);
         start = block.startTagRange[1];
@@ -227,7 +227,7 @@ export class Context {
    * @param node The node.
    */
   public getConvertLocation(
-    node: { start: number; end: number } | ESTree.Node
+    node: { start: number; end: number } | ESTree.Node,
   ): Locations {
     const { start, end } = node as any;
 
@@ -249,7 +249,7 @@ export class Context {
    */
   public addToken(
     type: Token["type"],
-    range: { start: number; end: number }
+    range: { start: number; end: number },
   ): Token {
     const token = {
       type,
@@ -277,7 +277,7 @@ export class Context {
     }
     const parserValue = getParserForLang(
       this.sourceCode.scripts.attrs,
-      this.parserOptions?.parser
+      this.parserOptions?.parser,
     );
     if (typeof parserValue !== "string") {
       return (this.state.isTypeScript =
@@ -295,7 +295,7 @@ export class Context {
         if (fs.existsSync(pkgPath)) {
           try {
             return (this.state.isTypeScript = TS_PARSER_NAMES.includes(
-              JSON.parse(fs.readFileSync(pkgPath, "utf-8"))?.name
+              JSON.parse(fs.readFileSync(pkgPath, "utf-8"))?.name,
             ));
           } catch {
             return (this.state.isTypeScript = false);
@@ -317,7 +317,7 @@ export class Context {
   }
 
   public findBlock(
-    element: SvelteScriptElement | SvelteStyleElement | SvelteElement
+    element: SvelteScriptElement | SvelteStyleElement | SvelteElement,
   ): Block | undefined {
     const tag =
       element.type === "SvelteScriptElement"
@@ -330,19 +330,19 @@ export class Context {
         block.tag === tag &&
         !block.selfClosing &&
         element.range[0] <= block.contentRange[0] &&
-        block.contentRange[1] <= element.range[1]
+        block.contentRange[1] <= element.range[1],
     );
   }
 
   public findSelfClosingBlock(
-    element: SvelteElement
+    element: SvelteElement,
   ): SelfClosingBlock | undefined {
     return this.blocks.find((block): block is SelfClosingBlock =>
       Boolean(
         block.selfClosing &&
           element.startTag.range[0] <= block.startTagRange[0] &&
-          block.startTagRange[1] <= element.startTag.range[1]
-      )
+          block.startTagRange[1] <= element.startTag.range[1],
+      ),
     );
   }
 }
@@ -453,7 +453,7 @@ export class LinesAndColumns {
   public getLocFromIndex(index: number): { line: number; column: number } {
     const lineNumber = sortedLastIndex(
       this.lineStartIndices,
-      (target) => target - index
+      (target) => target - index,
     );
     return {
       line: lineNumber,

@@ -63,7 +63,7 @@ export interface ESLintExtendedProgram {
  */
 export function parseForESLint(
   code: string,
-  options?: any
+  options?: any,
 ): {
   ast: SvelteProgram;
   services: Record<string, any> & {
@@ -95,7 +95,7 @@ export function parseForESLint(
   const resultTemplate = parseTemplate(
     ctx.sourceCode.template,
     ctx,
-    parserOptions
+    parserOptions,
   );
 
   const scripts = ctx.sourceCode.scripts;
@@ -104,12 +104,12 @@ export function parseForESLint(
         scripts.getCurrentVirtualCodeInfo(),
         scripts.attrs,
         parserOptions,
-        { slots: ctx.slots }
+        { slots: ctx.slots },
       )
     : parseScript(
         scripts.getCurrentVirtualCode(),
         scripts.attrs,
-        parserOptions
+        parserOptions,
       );
   ctx.scriptLet.restore(resultScript);
   ctx.tokens.push(...resultScript.ast.tokens);
@@ -148,7 +148,7 @@ export function parseForESLint(
   ast.sourceType = resultScript.ast.sourceType;
 
   const scriptElements = ast.body.filter(
-    (b): b is SvelteScriptElement => b.type === "SvelteScriptElement"
+    (b): b is SvelteScriptElement => b.type === "SvelteScriptElement",
   );
   for (let index = 0; index < scriptElements.length; index++) {
     const body = scriptElements[index];
@@ -172,7 +172,7 @@ export function parseForESLint(
           attr.key.name === "context" &&
           attr.value.length === 1 &&
           attr.value[0].type === "SvelteLiteral" &&
-          attr.value[0].value === "module"
+          attr.value[0].value === "module",
       )
     ) {
       analyzePropsScope(body, resultScript.scopeManager!);
@@ -182,12 +182,12 @@ export function parseForESLint(
     throw new ParseError(
       "The script is unterminated",
       statements[0].range![1],
-      ctx
+      ctx,
     );
   }
 
   const styleElement = ast.body.find(
-    (b): b is SvelteStyleElement => b.type === "SvelteStyleElement"
+    (b): b is SvelteStyleElement => b.type === "SvelteStyleElement",
   );
   let styleContext: StyleContext | null = null;
 
@@ -214,7 +214,7 @@ export function parseForESLint(
 /** Extract tokens */
 function extractTokens(ctx: Context) {
   const useRanges = sortNodes([...ctx.tokens, ...ctx.comments]).map(
-    (t) => t.range
+    (t) => t.range,
   );
   let range = useRanges.shift();
   for (let index = 0; index < ctx.sourceCode.template.length; index++) {
