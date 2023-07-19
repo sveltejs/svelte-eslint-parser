@@ -5,7 +5,7 @@ import { rules } from "@typescript-eslint/eslint-plugin";
 export function setupLinter(linter: Linter) {
   linter.defineRule(
     "@typescript-eslint/no-unnecessary-condition",
-    rules["no-unnecessary-condition"] as never
+    rules["no-unnecessary-condition"] as never,
   );
 }
 

@@ -39,7 +39,7 @@ describe("context.getScope", () => {
     generateScopeTestCase(
       '<script>import mod from "mod";</script>',
       "ImportDeclaration",
-      "module"
+      "module",
     );
   });
 
@@ -47,7 +47,7 @@ describe("context.getScope", () => {
     generateScopeTestCase(
       "<script>a || b</script>",
       "LogicalExpression",
-      "module"
+      "module",
     );
   });
 
@@ -55,7 +55,7 @@ describe("context.getScope", () => {
     generateScopeTestCase(
       "<script>function fn() {}</script>",
       "FunctionDeclaration",
-      "function"
+      "function",
     );
   });
 
@@ -63,7 +63,7 @@ describe("context.getScope", () => {
     generateScopeTestCase(
       "<script>a || (() => {})</script>",
       "ArrowFunctionExpression",
-      "function"
+      "function",
     );
   });
 
@@ -71,7 +71,7 @@ describe("context.getScope", () => {
     generateScopeTestCase(
       "<script>function fn() { nested; }</script>",
       "ExpressionStatement",
-      "function"
+      "function",
     );
   });
 });

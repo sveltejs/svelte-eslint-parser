@@ -10,7 +10,7 @@ import { addElementToSortedArray } from "../utils";
  */
 export function analyzeScope(
   node: ESTree.Node,
-  parserOptions: any = {}
+  parserOptions: any = {},
 ): ScopeManager {
   const ecmaVersion = parserOptions.ecmaVersion || 2020;
   const ecmaFeatures = parserOptions.ecmaFeatures || {};
@@ -59,7 +59,7 @@ export function analyzeReactiveScope(scopeManager: ScopeManager): void {
   function transformComputedVariable(
     node: ESTree.AssignmentExpression,
     parent: SvelteReactiveStatement,
-    reference: Reference
+    reference: Reference,
   ) {
     const referenceScope: Scope = reference.from;
     const name = reference.identifier.name;
@@ -76,7 +76,7 @@ export function analyzeReactiveScope(scopeManager: ScopeManager): void {
           parent: parent as any,
           name: reference.identifier,
         },
-        (a, b) => a.node.range[0] - b.node.range[0]
+        (a, b) => a.node.range[0] - b.node.range[0],
       );
       addVariable(referenceScope.variables, variable);
       referenceScope.set.set(name, variable);
@@ -84,7 +84,7 @@ export function analyzeReactiveScope(scopeManager: ScopeManager): void {
     addElementToSortedArray(
       variable.identifiers,
       reference.identifier,
-      (a, b) => a.range![0] - b.range![0]
+      (a, b) => a.range![0] - b.range![0],
     );
     reference.resolved = variable;
     removeReferenceFromThrough(reference, referenceScope);
@@ -96,7 +96,7 @@ export function analyzeReactiveScope(scopeManager: ScopeManager): void {
  */
 export function analyzeStoreScope(scopeManager: ScopeManager): void {
   const moduleScope = scopeManager.scopes.find(
-    (scope) => scope.type === "module"
+    (scope) => scope.type === "module",
   );
   if (!moduleScope) {
     return;
@@ -129,13 +129,13 @@ export function analyzeStoreScope(scopeManager: ScopeManager): void {
   }
 
   for (const variable of new Set(
-    toBeMarkAsUsedReferences.map((ref) => ref.resolved!)
+    toBeMarkAsUsedReferences.map((ref) => ref.resolved!),
   )) {
     if (
       variable.references.some(
         (ref) =>
           !toBeMarkAsUsedReferences.includes(ref) &&
-          ref.identifier !== variable.identifiers[0]
+          ref.identifier !== variable.identifiers[0],
       )
     ) {
       // It is already used.
@@ -154,10 +154,10 @@ export function analyzeStoreScope(scopeManager: ScopeManager): void {
 /** Transform props exports */
 export function analyzePropsScope(
   body: SvelteScriptElement,
-  scopeManager: ScopeManager
+  scopeManager: ScopeManager,
 ): void {
   const moduleScope = scopeManager.scopes.find(
-    (scope) => scope.type === "module"
+    (scope) => scope.type === "module",
   );
   if (!moduleScope) {
     return;
@@ -210,7 +210,7 @@ export function analyzePropsScope(
         {
           write: true,
           read: true,
-        }
+        },
       );
       (reference as any).sveltePropReference = true;
     }
@@ -246,7 +246,7 @@ function addVirtualReference(
   node: ESTree.Identifier,
   variable: Variable,
   scope: Scope,
-  readWrite: { read?: boolean; write?: boolean }
+  readWrite: { read?: boolean; write?: boolean },
 ) {
   const reference = new Reference();
   (reference as any).svelteVirtualReference = true;

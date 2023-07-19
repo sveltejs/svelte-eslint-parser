@@ -4,7 +4,7 @@
 export function addElementToSortedArray<T>(
   array: T[],
   element: T,
-  compare: (a: T, b: T) => number
+  compare: (a: T, b: T) => number,
 ): void {
   const index = sortedLastIndex(array, (target) => compare(target, element));
   array.splice(index, 0, element);
@@ -16,7 +16,7 @@ export function addElementToSortedArray<T>(
 export function addElementsToSortedArray<T>(
   array: T[],
   elements: T[],
-  compare: (a: T, b: T) => number
+  compare: (a: T, b: T) => number,
 ): void {
   if (!elements.length) {
     return;
@@ -40,7 +40,7 @@ export function addElementsToSortedArray<T>(
  */
 export function sortedLastIndex<T>(
   array: T[],
-  compare: (target: T) => number
+  compare: (target: T) => number,
 ): number {
   let lower = 0;
   let upper = array.length;

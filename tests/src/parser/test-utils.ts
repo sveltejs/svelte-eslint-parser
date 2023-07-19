@@ -61,23 +61,23 @@ function* listupFixturesImpl(dir: string): Iterable<{
     if (filename.endsWith("input.svelte")) {
       const outputFileName = inputFileName.replace(
         /input\.svelte$/u,
-        "output.json"
+        "output.json",
       );
       const scopeFileName = inputFileName.replace(
         /input\.svelte$/u,
-        "scope-output.json"
+        "scope-output.json",
       );
       const typeFileName = inputFileName.replace(
         /input\.svelte$/u,
-        "type-output.svelte"
+        "type-output.svelte",
       );
       const configFileName = inputFileName.replace(
         /input\.svelte$/u,
-        "config.json"
+        "config.json",
       );
       const requirementsFileName = inputFileName.replace(
         /input\.svelte$/u,
-        "requirements.json"
+        "requirements.json",
       );
 
       const input = fs.readFileSync(inputFileName, "utf8");
@@ -98,7 +98,7 @@ function* listupFixturesImpl(dir: string): Iterable<{
         getRuleOutputFileName: (ruleName) => {
           return inputFileName.replace(
             /input\.svelte$/u,
-            `${ruleName}-result.json`
+            `${ruleName}-result.json`,
           );
         },
         meetRequirements(key) {
@@ -129,7 +129,7 @@ function* listupFixturesImpl(dir: string): Iterable<{
 
 export function getMessageData(
   code: string,
-  message: Linter.LintMessage
+  message: Linter.LintMessage,
 ): {
   ruleId: string | null;
   code: string;
@@ -174,7 +174,7 @@ export function astToJson(node: any): string {
 
 export function scopeToJSON(
   scopeManager: ScopeManager | TSESScopes.ScopeManager,
-  option?: { skipGlobalScope?: boolean }
+  option?: { skipGlobalScope?: boolean },
 ): string {
   const globalScope = scopeManager.globalScope!;
   let scopeData;
@@ -218,7 +218,7 @@ function normalizeReference(reference: Reference | TSESScopes.Reference) {
 }
 
 function normalizeDef(
-  reference: ESLintScope.Definition | TSESScopes.Definition
+  reference: ESLintScope.Definition | TSESScopes.Definition,
 ) {
   return {
     type: reference.type,
@@ -347,7 +347,7 @@ function normalizeObject(value: any) {
   let entries = Object.entries(value);
   if (isNode) {
     entries = entries.filter(
-      ([k]) => k !== "parent" && k !== "start" && k !== "end"
+      ([k]) => k !== "parent" && k !== "start" && k !== "end",
     );
   }
   const nodeType: string | null = isNode ? value.type : null;
@@ -361,6 +361,6 @@ function normalizeObject(value: any) {
         return c;
       }
       return a < b ? -1 : a > b ? 1 : 0;
-    })
+    }),
   );
 }

@@ -19,7 +19,7 @@ const spacePattern = /\s/;
 /** Parse HTML attributes */
 export function parseAttributes(
   code: string,
-  startIndex: number
+  startIndex: number,
 ): { attributes: AttributeToken[]; index: number } {
   const attributes: AttributeToken[] = [];
 
@@ -42,7 +42,7 @@ export function parseAttributes(
 /** Parse HTML attribute */
 function parseAttribute(
   code: string,
-  startIndex: number
+  startIndex: number,
 ): { attribute: AttributeToken; index: number } {
   // parse key
   const keyData = parseAttributeKey(code, startIndex);
@@ -85,7 +85,7 @@ function parseAttribute(
 /** Parse HTML attribute key */
 function parseAttributeKey(
   code: string,
-  startIndex: number
+  startIndex: number,
 ): { key: AttributeKeyToken; index: number } {
   const key: AttributeKeyToken = {
     name: code[startIndex],
@@ -134,7 +134,7 @@ function parseAttributeKey(
 /** Parse HTML attribute value */
 function parseAttributeValue(
   code: string,
-  startIndex: number
+  startIndex: number,
 ): { value: AttributeValueToken | null; index: number } {
   let index = startIndex;
   const maybeQuote = code[index];

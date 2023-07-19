@@ -5,7 +5,7 @@ import { rules } from "eslint-plugin-svelte";
 export function setupLinter(linter: Linter) {
   linter.defineRule(
     "svelte/no-immutable-reactive-statements",
-    rules["no-immutable-reactive-statements"] as never
+    rules["no-immutable-reactive-statements"] as never,
   );
 }
 

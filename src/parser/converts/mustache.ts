@@ -10,7 +10,7 @@ import type * as SvAST from "../svelte-ast-types";
 export function convertMustacheTag(
   node: SvAST.MustacheTag,
   parent: SvelteMustacheTag["parent"],
-  ctx: Context
+  ctx: Context,
 ): SvelteMustacheTagText {
   return convertMustacheTag0(node, "text", parent, ctx);
 }
@@ -18,13 +18,13 @@ export function convertMustacheTag(
 export function convertRawMustacheTag(
   node: SvAST.RawMustacheTag,
   parent: SvelteMustacheTag["parent"],
-  ctx: Context
+  ctx: Context,
 ): SvelteMustacheTagRaw {
   const mustache: SvelteMustacheTagRaw = convertMustacheTag0(
     node,
     "raw",
     parent,
-    ctx
+    ctx,
   );
   const atHtmlStart = ctx.code.indexOf("@html", mustache.range[0]);
   ctx.addToken("MustacheKeyword", {
@@ -38,7 +38,7 @@ export function convertRawMustacheTag(
 export function convertDebugTag(
   node: SvAST.DebugTag,
   parent: SvelteDebugTag["parent"],
-  ctx: Context
+  ctx: Context,
 ): SvelteDebugTag {
   const mustache: SvelteDebugTag = {
     type: "SvelteDebugTag",
@@ -64,7 +64,7 @@ function convertMustacheTag0<T extends SvelteMustacheTag>(
   node: SvAST.MustacheTag | SvAST.RawMustacheTag,
   kind: T["kind"],
   parent: T["parent"],
-  ctx: Context
+  ctx: Context,
 ): T {
   const mustache = {
     type: "SvelteMustacheTag",

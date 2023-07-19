@@ -15,7 +15,7 @@ import type { TSESParseForESLintResult } from "./types";
  */
 type RestoreStatementProcess = (
   node: TSESTree.Statement,
-  result: TSESParseForESLintResult
+  result: TSESParseForESLintResult,
 ) => boolean;
 
 export class RestoreContext {
@@ -56,7 +56,7 @@ export class RestoreContext {
       remapLocation: (n) => this.remapLocation(n),
       removeToken: (token) =>
         this.virtualFragments.some(
-          (f) => f.start <= token.range[0] && token.range[1] <= f.end
+          (f) => f.start <= token.range[0] && token.range[1] <= f.end,
         ),
     });
 
@@ -66,7 +66,7 @@ export class RestoreContext {
     const firstOffset = Math.min(
       ...[result.ast.body[0], result.ast.tokens?.[0], result.ast.comments?.[0]]
         .filter((t): t is NonNullable<typeof t> => Boolean(t))
-        .map((t) => t.range[0])
+        .map((t) => t.range[0]),
     );
     if (firstOffset < result.ast.range[0]) {
       result.ast.range[0] = firstOffset;
@@ -77,13 +77,13 @@ export class RestoreContext {
   private remapLocation(node: TSESTree.Node | TSESTree.Token): void {
     let [start, end] = node.range;
     const startFragment = this.virtualFragments.find(
-      (f) => f.start <= start && start < f.end
+      (f) => f.start <= start && start < f.end,
     );
     if (startFragment) {
       start = startFragment.end;
     }
     const endFragment = this.virtualFragments.find(
-      (f) => f.start < end && end <= f.end
+      (f) => f.start < end && end <= f.end,
     );
     if (endFragment) {
       end = endFragment.start;
@@ -99,7 +99,7 @@ export class RestoreContext {
     }
 
     const locs = this.originalLocs.getLocations(
-      ...this.getRemapRange(start, end)
+      ...this.getRemapRange(start, end),
     );
 
     node.loc = locs.loc;
@@ -145,7 +145,7 @@ function remapLocations(
   }: {
     remapLocation: (node: TSESTree.Node | TSESTree.Token) => void;
     removeToken: (node: TSESTree.Token) => boolean;
-  }
+  },
 ) {
   const traversed = new Map<TSESTree.Node, TSESTree.Node | null>();
   // remap locations
@@ -179,7 +179,7 @@ function remapLocations(
 /** Restore statement nodes */
 function restoreStatements(
   result: TSESParseForESLintResult,
-  restoreStatementProcesses: RestoreStatementProcess[]
+  restoreStatementProcesses: RestoreStatementProcess[],
 ) {
   const restoreStatementProcessesSet = new Set(restoreStatementProcesses);
   for (const node of [...result.ast.body]) {

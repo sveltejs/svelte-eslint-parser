@@ -3,7 +3,7 @@
 export function assertResult(
   aRoot: unknown,
   bRoot: unknown,
-  _info: any
+  _info: any,
 ): boolean {
   const buffers = new Set([{ a: aRoot, b: bRoot, path: "$" }]);
   const pairs = new Map<unknown, unknown>();
@@ -18,7 +18,7 @@ export function assertResult(
       if (a == null || b == null) {
         throw error(
           path,
-          `Not equal at ${path}: ${toDebugString(a)} !== ${toDebugString(b)}`
+          `Not equal at ${path}: ${toDebugString(a)} !== ${toDebugString(b)}`,
         );
       }
       if (typeof a === "function" && typeof b === "function") {
@@ -28,7 +28,7 @@ export function assertResult(
       if (typeof a !== "object" || typeof b !== "object") {
         throw error(
           path,
-          `Not equal at ${path}: ${toDebugString(a)} !== ${toDebugString(b)}`
+          `Not equal at ${path}: ${toDebugString(a)} !== ${toDebugString(b)}`,
         );
       }
       if (pairs.get(a) === b) {
@@ -41,7 +41,7 @@ export function assertResult(
           throw error(
             path,
             `Not equal array length at ${path}: ${a.length} !== ${b.length}
-    ${toDebugString(a)} !== ${toDebugString(b)}`
+    ${toDebugString(a)} !== ${toDebugString(b)}`,
           );
         }
         const len = Math.max(a.length, b.length);
@@ -68,8 +68,8 @@ export function assertResult(
             throw error(
               path,
               `Not equal keys at ${path}.${key}: ${toDebugString(
-                key
-              )} !== undefined`
+                key,
+              )} !== undefined`,
             );
           }
         }
@@ -77,10 +77,10 @@ export function assertResult(
       }
 
       const aKeys = Object.getOwnPropertyNames(a).filter(
-        (key) => !ignoreKey(key)
+        (key) => !ignoreKey(key),
       );
       const bKeys = Object.getOwnPropertyNames(b).filter(
-        (key) => !ignoreKey(key)
+        (key) => !ignoreKey(key),
       );
       const keys = new Set([...aKeys, ...bKeys]);
       for (const key of keys) {
@@ -143,7 +143,7 @@ function toDebugString(o: unknown): string {
       circular.add(value);
       return normalize(value);
     },
-    2
+    2,
   );
 
   /** Normalize */

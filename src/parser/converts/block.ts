@@ -37,27 +37,27 @@ function startBlockIndex(code: string, endIndex: number): number {
       }
       return false;
     },
-    endIndex
+    endIndex,
   );
 }
 
 export function convertIfBlock(
   node: SvAST.IfBlock,
   parent: SvelteIfBlock["parent"],
-  ctx: Context
+  ctx: Context,
 ): SvelteIfBlockAlone;
 export function convertIfBlock(
   node: SvAST.IfBlock,
   parent: SvelteIfBlock["parent"],
   ctx: Context,
-  elseif: true
+  elseif: true,
 ): SvelteIfBlockElseIf;
 /** Convert for IfBlock */
 export function convertIfBlock(
   node: SvAST.IfBlock,
   parent: SvelteIfBlock["parent"],
   ctx: Context,
-  elseif?: true
+  elseif?: true,
 ): SvelteIfBlock {
   // {#if expr} {:else} {/if}
   // {:else if expr} {/if}
@@ -141,7 +141,7 @@ export function convertIfBlock(
 export function convertEachBlock(
   node: SvAST.EachBlock,
   parent: SvelteEachBlock["parent"],
-  ctx: Context
+  ctx: Context,
 ): SvelteEachBlock {
   // {#each expr as item, index (key)} {/each}
   const eachBlock: SvelteEachBlock = {
@@ -175,7 +175,7 @@ export function convertEachBlock(
       eachBlock.expression = expression;
       eachBlock.context = context;
       eachBlock.index = index;
-    }
+    },
   );
 
   const asStart = ctx.code.indexOf("as", getWithLoc(node.expression).end);
@@ -224,7 +224,7 @@ export function convertEachBlock(
 export function convertAwaitBlock(
   node: SvAST.AwaitBlock,
   parent: SvelteAwaitBlock["parent"],
-  ctx: Context
+  ctx: Context,
 ): SvelteAwaitBlock {
   const awaitBlock = {
     type: "SvelteAwaitBlock",
@@ -243,7 +243,7 @@ export function convertAwaitBlock(
     null,
     (expression) => {
       awaitBlock.expression = expression;
-    }
+    },
   );
 
   if (!node.pending.skip) {
@@ -258,7 +258,7 @@ export function convertAwaitBlock(
     };
     ctx.scriptLet.nestBlock(pendingBlock);
     pendingBlock.children.push(
-      ...convertChildren(node.pending, pendingBlock, ctx)
+      ...convertChildren(node.pending, pendingBlock, ctx),
     );
     awaitBlock.pending = pendingBlock;
     ctx.scriptLet.closeScope();
@@ -341,7 +341,7 @@ export function convertAwaitBlock(
     } else {
       const thenIndex = ctx.code.indexOf(
         "then",
-        getWithLoc(node.expression).end
+        getWithLoc(node.expression).end,
       );
       ctx.addToken("MustacheKeyword", {
         start: thenIndex,
@@ -390,7 +390,7 @@ export function convertAwaitBlock(
     } else {
       const catchIndex = ctx.code.indexOf(
         "catch",
-        getWithLoc(node.expression).end
+        getWithLoc(node.expression).end,
       );
       ctx.addToken("MustacheKeyword", {
         start: catchIndex,
@@ -410,7 +410,7 @@ export function convertAwaitBlock(
 export function convertKeyBlock(
   node: SvAST.KeyBlock,
   parent: SvelteKeyBlock["parent"],
-  ctx: Context
+  ctx: Context,
 ): SvelteKeyBlock {
   const keyBlock: SvelteKeyBlock = {
     type: "SvelteKeyBlock",
@@ -444,17 +444,17 @@ function extractMustacheBlockTokens(
     | SvelteAwaitCatchBlock
     | SvelteKeyBlock,
   ctx: Context,
-  option?: { startOnly?: true }
+  option?: { startOnly?: true },
 ) {
   const startSectionNameStart = indexOf(
     ctx.code,
     (c) => Boolean(c.trim()),
-    node.range[0] + 1
+    node.range[0] + 1,
   );
   const startSectionNameEnd = indexOf(
     ctx.code,
     (c) => c === "}" || !c.trim(),
-    startSectionNameStart + 1
+    startSectionNameStart + 1,
   );
   ctx.addToken("MustacheKeyword", {
     start: startSectionNameStart,
@@ -470,7 +470,7 @@ function extractMustacheBlockTokens(
   const endSectionNameStart = lastIndexOf(
     ctx.code,
     (c) => c === "{" || c === "/" || !c.trim(),
-    endSectionNameEnd - 1
+    endSectionNameEnd - 1,
   );
   ctx.addToken("MustacheKeyword", {
     start: endSectionNameStart,
@@ -498,12 +498,12 @@ function hasIdentifierFor(name: string, node: ESTree.Pattern): boolean {
     return node.properties.some((property) =>
       property.type === "Property"
         ? hasIdentifierFor(name, property.value)
-        : hasIdentifierFor(name, property)
+        : hasIdentifierFor(name, property),
     );
   }
   if (node.type === "ArrayPattern") {
     return node.elements.some(
-      (element) => element && hasIdentifierFor(name, element)
+      (element) => element && hasIdentifierFor(name, element),
     );
   }
   if (node.type === "RestElement") {

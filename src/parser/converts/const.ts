@@ -6,7 +6,7 @@ import type * as SvAST from "../svelte-ast-types";
 export function convertConstTag(
   node: SvAST.ConstTag,
   parent: SvelteConstTag["parent"],
-  ctx: Context
+  ctx: Context,
 ): SvelteConstTag {
   const mustache: SvelteConstTag = {
     type: "SvelteConstTag",
@@ -19,7 +19,7 @@ export function convertConstTag(
     mustache,
     (declaration) => {
       mustache.declaration = declaration;
-    }
+    },
   );
   const atConstStart = ctx.code.indexOf("@const", mustache.range[0]);
   ctx.addToken("MustacheKeyword", {

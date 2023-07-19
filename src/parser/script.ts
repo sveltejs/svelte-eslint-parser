@@ -10,12 +10,12 @@ import { isEnhancedParserObject } from "./parser-object";
 export function parseScript(
   code: string,
   attrs: Record<string, string | undefined>,
-  parserOptions: any = {}
+  parserOptions: any = {},
 ): ESLintExtendedProgram {
   const result = parseScriptWithoutAnalyzeScopeFromVCode(
     code,
     attrs,
-    parserOptions
+    parserOptions,
   );
 
   if (!result.scopeManager) {
@@ -49,7 +49,7 @@ export function parseScript(
 export function parseScriptWithoutAnalyzeScope(
   code: string,
   attrs: Record<string, string | undefined>,
-  options: any
+  options: any,
 ): ESLintExtendedProgram {
   const parser = getParser(attrs, options.parser);
 
@@ -69,7 +69,7 @@ export function parseScriptWithoutAnalyzeScope(
 function parseScriptWithoutAnalyzeScopeFromVCode(
   code: string,
   attrs: Record<string, string | undefined>,
-  options: any
+  options: any,
 ): ESLintExtendedProgram {
   const result = parseScriptWithoutAnalyzeScope(code, attrs, options);
   result._virtualScriptCode = code;

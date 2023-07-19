@@ -5,7 +5,7 @@ import { rules } from "@typescript-eslint/eslint-plugin";
 export function setupLinter(linter: Linter) {
   linter.defineRule(
     "@typescript-eslint/no-misused-promises",
-    rules["no-misused-promises"] as never
+    rules["no-misused-promises"] as never,
   );
 }
 

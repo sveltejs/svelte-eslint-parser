@@ -37,7 +37,7 @@ type TSParenthesizedType = {
 
 export type ScriptLetCallback<E extends ESTree.Node> = (
   es: E,
-  options: ScriptLetCallbackOption
+  options: ScriptLetCallbackOption,
 ) => void;
 
 export type ScriptLetCallbackOption = {
@@ -50,7 +50,7 @@ export type ScriptLetRestoreCallback = (
   node: ESTree.Node,
   tokens: Token[],
   comments: Comment[],
-  options: ScriptLetRestoreCallbackOption
+  options: ScriptLetRestoreCallbackOption,
 ) => void;
 type ScriptLetRestoreCallbackOption = {
   getScope: (node: ESTree.Node) => Scope;
@@ -76,7 +76,7 @@ function getNodeRange(
         range: [number, number];
         leadingComments?: Comment[];
         trailingComments?: Comment[];
-      }
+      },
 ): [number, number] {
   let start = null;
   let end = null;
@@ -85,7 +85,7 @@ function getNodeRange(
   }
   if (node.trailingComments) {
     end = getWithLoc(
-      node.trailingComments[node.trailingComments.length - 1]
+      node.trailingComments[node.trailingComments.length - 1],
     ).end;
   }
 
@@ -167,7 +167,7 @@ export class ScriptLetContext {
         if (isTS) {
           for (const scope of extractTypeNodeScopes(
             tsAs!.typeAnnotation,
-            result
+            result,
           )) {
             removeScope(result.scopeManager, scope);
           }
@@ -181,7 +181,7 @@ export class ScriptLetContext {
             ],
             tokens,
             comments,
-            result.visitorKeys
+            result.visitorKeys,
           );
         }
 
@@ -193,7 +193,7 @@ export class ScriptLetContext {
 
         // Disconnect the tree structure.
         exprSt.expression = null as never;
-      }
+      },
     );
     return callbacks;
   }
@@ -228,7 +228,7 @@ export class ScriptLetContext {
 
         // Disconnect the tree structure.
         exprSt.expression = null as never;
-      }
+      },
     );
   }
 
@@ -266,7 +266,7 @@ export class ScriptLetContext {
 
         // Disconnect the tree structure.
         decl.declarations = [];
-      }
+      },
     );
     return callbacks;
   }
@@ -274,7 +274,7 @@ export class ScriptLetContext {
   public nestIfBlock(
     expression: ESTree.Expression,
     ifBlock: SvelteIfBlock,
-    callback: ScriptLetCallback<ESTree.Expression>
+    callback: ScriptLetCallback<ESTree.Expression>,
   ): void {
     const range = getNodeRange(expression);
     const part = this.ctx.code.slice(...range);
@@ -302,7 +302,7 @@ export class ScriptLetContext {
         // Disconnect the tree structure.
         ifSt.test = null as never;
         ifSt.consequent = null as never;
-      }
+      },
     );
     this.pushScope(restore, "}");
   }
@@ -315,8 +315,8 @@ export class ScriptLetContext {
     callback: (
       expr: ESTree.Expression,
       ctx: ESTree.Pattern,
-      index: ESTree.Identifier | null
-    ) => void
+      index: ESTree.Identifier | null,
+    ) => void,
   ): void {
     const exprRange = getNodeRange(expression);
     const ctxRange = getNodeRange(context);
@@ -362,7 +362,7 @@ export class ScriptLetContext {
         const arrayId = (callArrayFrom.callee as ESTree.MemberExpression)
           .object;
         const ref = scope.upper!.references.find(
-          (r) => r.identifier === arrayId
+          (r) => r.identifier === arrayId,
         );
         if (ref) {
           removeReference(ref, scope.upper!);
@@ -409,7 +409,7 @@ export class ScriptLetContext {
 
         // Disconnect the tree structure.
         expSt.expression = null as never;
-      }
+      },
     );
     this.pushScope(restore, "});");
   }
@@ -421,7 +421,7 @@ export class ScriptLetContext {
       | ((helper: TypeGenHelper | null) => {
           param: ScriptLetBlockParam;
           preparationScript?: string[];
-        })
+        }),
   ): void {
     let resolvedParams;
     if (typeof params === "function") {
@@ -438,7 +438,7 @@ export class ScriptLetContext {
                 tokens.length = 0;
                 comments.length = 0;
                 removeAllScopeAndVariableAndReference(node, result);
-              }
+              },
             );
           }
         }
@@ -464,7 +464,7 @@ export class ScriptLetContext {
 
           // Disconnect the tree structure.
           blockSt.body = null as never;
-        }
+        },
       );
       this.pushScope(restore, "}");
     } else {
@@ -559,12 +559,12 @@ export class ScriptLetContext {
             }),
             tokens,
             comments,
-            result.visitorKeys
+            result.visitorKeys,
           );
 
           // Disconnect the tree structure.
           exprSt.expression = null as never;
-        }
+        },
       );
       this.pushScope(restore, "};");
     }
@@ -585,8 +585,8 @@ export class ScriptLetContext {
       node: ESTree.Node,
       tokens: Token[],
       comments: Comment[],
-      options: ScriptLetCallbackOption
-    ) => void
+      options: ScriptLetCallbackOption,
+    ) => void,
   ) {
     const resultCallback = this.appendScriptWithoutOffset(
       text,
@@ -596,10 +596,10 @@ export class ScriptLetContext {
           tokens,
           comments,
           offset - resultCallback.start,
-          result.visitorKeys
+          result.visitorKeys,
         );
         callback(node, tokens, comments, result);
-      }
+      },
     );
     return resultCallback;
   }
@@ -610,8 +610,8 @@ export class ScriptLetContext {
       node: ESTree.Node,
       tokens: Token[],
       comments: Comment[],
-      options: ScriptLetCallbackOption
-    ) => void
+      options: ScriptLetCallbackOption,
+    ) => void,
   ) {
     const { start: startOffset, end: endOffset } = this.script.addLet(text);
 
@@ -678,7 +678,7 @@ export class ScriptLetContext {
    */
   private restoreNodes(
     result: ESLintExtendedProgram,
-    callbackOption: ScriptLetRestoreCallbackOption
+    callbackOption: ScriptLetRestoreCallbackOption,
   ): void {
     let orderedRestoreCallback = this.restoreCallbacks.shift();
     if (!orderedRestoreCallback) {
@@ -748,7 +748,7 @@ export class ScriptLetContext {
         const startIndex = {
           token: tokens.findIndex((t) => restoreCallback.start <= t.range[0]),
           comment: comments.findIndex(
-            (t) => restoreCallback.start <= t.range[0]
+            (t) => restoreCallback.start <= t.range[0],
           ),
         };
         if (startIndex.comment === -1) {
@@ -757,11 +757,11 @@ export class ScriptLetContext {
         const endIndex = {
           token: tokens.findIndex(
             (t) => restoreCallback.end < t.range[1],
-            startIndex.token
+            startIndex.token,
           ),
           comment: comments.findIndex(
             (t) => restoreCallback.end < t.range[1],
-            startIndex.comment
+            startIndex.comment,
           ),
         };
         if (endIndex.token === -1) {
@@ -772,17 +772,17 @@ export class ScriptLetContext {
         }
         const targetTokens = tokens.splice(
           startIndex.token,
-          endIndex.token - startIndex.token
+          endIndex.token - startIndex.token,
         );
         const targetComments = comments.splice(
           startIndex.comment,
-          endIndex.comment - startIndex.comment
+          endIndex.comment - startIndex.comment,
         );
         restoreCallback.callback(
           node,
           targetTokens,
           targetComments,
-          callbackOption
+          callbackOption,
         );
 
         processedTokens.push(...targetTokens);
@@ -803,14 +803,14 @@ export class ScriptLetContext {
    */
   private restoreProgram(
     result: ESLintExtendedProgram,
-    callbackOption: ScriptLetRestoreCallbackOption
+    callbackOption: ScriptLetRestoreCallbackOption,
   ): void {
     for (const callback of this.programRestoreCallbacks) {
       callback(
         result.ast,
         result.ast.tokens,
         result.ast.comments,
-        callbackOption
+        callbackOption,
       );
     }
   }
@@ -823,7 +823,7 @@ export class ScriptLetContext {
     }[],
     tokens: Token[],
     comments: Comment[],
-    visitorKeys?: { [type: string]: string[] }
+    visitorKeys?: { [type: string]: string[] },
   ) {
     const targetMaps = [...maps];
     const first = targetMaps.shift()!;
@@ -861,10 +861,10 @@ export class ScriptLetContext {
         map.newNode,
         bufferTokens,
         comments.filter(
-          (t) => startOffset <= t.range[0] && t.range[1] <= endOffset
+          (t) => startOffset <= t.range[0] && t.range[1] <= endOffset,
         ),
         map.range[0] - startOffset,
-        visitorKeys
+        visitorKeys,
       );
     }
     tokens.splice(tokenIndex);
@@ -876,7 +876,7 @@ export class ScriptLetContext {
     tokens: Token[],
     comments: Comment[],
     offset: number,
-    visitorKeys?: { [type: string]: string[] }
+    visitorKeys?: { [type: string]: string[] },
   ) {
     if (offset === 0) {
       return;
@@ -928,7 +928,7 @@ export class ScriptLetContext {
     return this.unique.generate(
       base,
       this.ctx.code,
-      this.script.getCurrentVirtualCode()
+      this.script.getCurrentVirtualCode(),
     );
   }
 }
@@ -949,7 +949,7 @@ function applyLocs(target: Locations | ESTree.Node, locs: Locations) {
 
 /** Get the node to scope map from given scope manager  */
 function getNodeToScope(
-  scopeManager: ScopeManager
+  scopeManager: ScopeManager,
 ): WeakMap<ESTree.Node, Scope[]> {
   if ("__nodeToScope" in scopeManager) {
     return (scopeManager as any).__nodeToScope;
@@ -1015,7 +1015,7 @@ function getNodeToScope(
 /** Extract the type scope of the given node. */
 function extractTypeNodeScopes(
   node: TSESTree.TypeNode | TSParenthesizedType,
-  result: ScriptLetCallbackOption
+  result: ScriptLetCallbackOption,
 ): Iterable<Scope> {
   const scopes = new Set<Scope>();
   for (const scope of iterateTypeNodeScopes(node)) {
@@ -1026,7 +1026,7 @@ function extractTypeNodeScopes(
 
   /** Iterate the type scope of the given node. */
   function* iterateTypeNodeScopes(
-    node: TSESTree.TypeNode | TSParenthesizedType
+    node: TSESTree.TypeNode | TSParenthesizedType,
   ): Iterable<Scope> {
     if (node.type === "TSParenthesizedType") {
       // Skip TSParenthesizedType.

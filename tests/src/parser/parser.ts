@@ -99,7 +99,7 @@ function checkTokens(ast: SvelteProgram, input: string) {
       .replace(/\s/gu, "")
       .split(/(.{0,20})/)
       .filter((s) => s)
-      .join("\n")
+      .join("\n"),
   );
 
   function getText(token: Token | Comment) {
@@ -115,13 +115,13 @@ function checkLoc(ast: SvelteProgram, fileName: string, code: string) {
   for (const token of ast.tokens) {
     assert.ok(
       token.range[0] < token.range[1],
-      `No range on "${token.type} line:${token.loc.start.line} col:${token.loc.start.column}" in ${fileName}`
+      `No range on "${token.type} line:${token.loc.start.line} col:${token.loc.start.column}" in ${fileName}`,
     );
   }
   for (const token of ast.comments) {
     assert.ok(
       token.range[0] < token.range[1],
-      `No range on "${token.type} line:${token.loc.start.line} col:${token.loc.start.column}" in ${fileName}`
+      `No range on "${token.type} line:${token.loc.start.line} col:${token.loc.start.column}" in ${fileName}`,
     );
   }
   const set = new Set<any>();
@@ -132,35 +132,32 @@ function checkLoc(ast: SvelteProgram, fileName: string, code: string) {
         set.has(node)
       ) {
         assert.fail(
-          `Duplicate node @parent: ${parent?.type}, ${astToJson(node)}`
+          `Duplicate node @parent: ${parent?.type}, ${astToJson(node)}`,
         );
       }
       set.add(node);
       if (parent?.type.startsWith("Svelte")) {
         assert.ok(
           (node as any).parent?.type === parent?.type,
-          `Parent type mismatch [${(node as any).parent?.type} : ${
-            parent?.type
-          }] @${astToJson(node)}`
+          `Parent type mismatch [${(node as any).parent
+            ?.type} : ${parent?.type}] @${astToJson(node)}`,
         );
       }
       assert.ok(
         (node as any).parent?.range?.[0] === parent?.range![0],
-        `Parent range mismatch [${(node as any).parent?.range?.[0]} : ${
-          parent?.range![0]
-        }] @${astToJson(node)}`
+        `Parent range mismatch [${(node as any).parent
+          ?.range?.[0]} : ${parent?.range![0]}] @${astToJson(node)}`,
       );
       assert.ok(
         (node as any).parent?.range?.[1] === parent?.range![1],
-        `Parent range mismatch [${(node as any).parent?.range?.[1]} : ${
-          parent?.range![1]
-        }] @${astToJson(node)}`
+        `Parent range mismatch [${(node as any).parent
+          ?.range?.[1]} : ${parent?.range![1]}] @${astToJson(node)}`,
       );
       assert.ok(
         node.range![0] < node.range![1],
         `No range on "${node.type} line:${node.loc!.start.line} col:${
           node.loc!.start.column
-        }" in ${fileName}`
+        }" in ${fileName}`,
       );
 
       if (parent) {
@@ -170,7 +167,7 @@ function checkLoc(ast: SvelteProgram, fileName: string, code: string) {
             parent.loc!.start.line
           } col:${parent.loc!.start.column}" > "${node.type} line:${
             node.loc!.start.line
-          } col:${node.loc!.start.column}" in ${fileName}`
+          } col:${node.loc!.start.column}" in ${fileName}`,
         );
         assert.ok(
           node.range![1] <= parent.range![1],
@@ -178,7 +175,7 @@ function checkLoc(ast: SvelteProgram, fileName: string, code: string) {
             parent.loc!.end.line
           } col:${parent.loc!.end.column}" > "${node.type} line:${
             node.loc!.end.line
-          } col:${node.loc!.end.column}" in ${fileName}`
+          } col:${node.loc!.end.column}" in ${fileName}`,
         );
 
         assert.ok(
@@ -187,7 +184,7 @@ function checkLoc(ast: SvelteProgram, fileName: string, code: string) {
             parent.loc!.start.line
           } col:${parent.loc!.start.column}" > "${node.type} line:${
             node.loc!.start.line
-          } col:${node.loc!.start.column}" in ${fileName}`
+          } col:${node.loc!.start.column}" in ${fileName}`,
         );
         if (parent.loc!.start.line === node.loc!.start.line) {
           assert.ok(
@@ -196,7 +193,7 @@ function checkLoc(ast: SvelteProgram, fileName: string, code: string) {
               parent.loc!.start.line
             } col:${parent.loc!.start.column}" > "${node.type} line:${
               node.loc!.start.line
-            } col:${node.loc!.start.column}" in ${fileName}`
+            } col:${node.loc!.start.column}" in ${fileName}`,
           );
         }
 
@@ -206,7 +203,7 @@ function checkLoc(ast: SvelteProgram, fileName: string, code: string) {
             parent.loc!.end.line
           } col:${parent.loc!.end.column}" > "${node.type} line:${
             node.loc!.end.line
-          } col:${node.loc!.end.column}" in ${fileName}`
+          } col:${node.loc!.end.column}" in ${fileName}`,
         );
         if (parent.loc!.end.line === node.loc!.end.line) {
           assert.ok(
@@ -215,7 +212,7 @@ function checkLoc(ast: SvelteProgram, fileName: string, code: string) {
               parent.loc!.end.line
             } col:${parent.loc!.end.column}" > "${node.type} line:${
               node.loc!.end.line
-            } col:${node.loc!.end.column}" in ${fileName}`
+            } col:${node.loc!.end.column}" in ${fileName}`,
           );
         }
       }

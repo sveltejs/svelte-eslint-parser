@@ -45,7 +45,7 @@ describe("Check for typescript analyze result.", () => {
         const result = parseScript(
           code.script + code.render,
           attrs,
-          parserOptions
+          parserOptions,
         );
         const info = {
           code: code.script + code.render,

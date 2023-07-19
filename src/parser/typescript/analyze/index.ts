@@ -31,7 +31,7 @@ export function analyzeTypeScript(
   code: { script: string; render: string },
   attrs: Record<string, string | undefined>,
   parserOptions: any,
-  context: AnalyzeTypeScriptContext
+  context: AnalyzeTypeScriptContext,
 ): VirtualTypeScriptContext {
   const ctx = new VirtualTypeScriptContext(code.script + code.render);
   ctx.appendOriginal(/^\s*/u.exec(code.script)![0].length);
@@ -43,7 +43,7 @@ export function analyzeTypeScript(
       ...parserOptions,
       // Without typings
       project: null,
-    }
+    },
   ) as unknown as TSESParseForESLintResult;
 
   ctx._beforeResult = result;
@@ -65,7 +65,7 @@ export function analyzeTypeScript(
  */
 function analyzeStoreReferenceNames(
   result: TSESParseForESLintResult,
-  ctx: VirtualTypeScriptContext
+  ctx: VirtualTypeScriptContext,
 ) {
   const scopeManager = result.scopeManager;
   const programScope = getProgramScope(scopeManager as ScopeManager);
@@ -93,7 +93,7 @@ function analyzeStoreReferenceNames(
 ? F extends (value: infer V, ...args: any) => any
 ? V
 : never
-: T;`
+: T;`,
     );
     ctx.restoreContext.addRestoreStatementProcess((node, result) => {
       if (
@@ -117,7 +117,7 @@ function analyzeStoreReferenceNames(
     for (const nm of maybeStoreRefNames) {
       const realName = nm.slice(1);
       ctx.appendVirtualScript(
-        `declare let ${nm}: ${storeValueTypeName}<typeof ${realName}>;`
+        `declare let ${nm}: ${storeValueTypeName}<typeof ${realName}>;`,
       );
       ctx.restoreContext.addRestoreStatementProcess((node, result) => {
         if (
@@ -153,34 +153,34 @@ function analyzeStoreReferenceNames(
 function analyzeDollarDollarVariables(
   result: TSESParseForESLintResult,
   ctx: VirtualTypeScriptContext,
-  slots: Set<SvelteHTMLElement>
+  slots: Set<SvelteHTMLElement>,
 ) {
   const scopeManager = result.scopeManager;
 
   if (
     scopeManager.globalScope!.through.some(
-      (reference) => reference.identifier.name === "$$props"
+      (reference) => reference.identifier.name === "$$props",
     )
   ) {
     appendDeclareVirtualScript("$$props", `{ [index: string]: any }`);
   }
   if (
     scopeManager.globalScope!.through.some(
-      (reference) => reference.identifier.name === "$$restProps"
+      (reference) => reference.identifier.name === "$$restProps",
     )
   ) {
     appendDeclareVirtualScript("$$restProps", `{ [index: string]: any }`);
   }
   if (
     scopeManager.globalScope!.through.some(
-      (reference) => reference.identifier.name === "$$slots"
+      (reference) => reference.identifier.name === "$$slots",
     )
   ) {
     const nameTypes = new Set<string>();
     for (const slot of slots) {
       const nameAttr = slot.startTag.attributes.find(
         (attr): attr is SvelteAttribute =>
-          attr.type === "SvelteAttribute" && attr.key.name === "name"
+          attr.type === "SvelteAttribute" && attr.key.name === "name",
       );
       if (!nameAttr || nameAttr.value.length === 0) {
         nameTypes.add('"default"');
@@ -201,9 +201,9 @@ function analyzeDollarDollarVariables(
           .map((value) =>
             value.type === "SvelteLiteral"
               ? value.value.replace(/([$`])/gu, "\\$1")
-              : "${string}"
+              : "${string}",
           )
-          .join("")}\``
+          .join("")}\``,
       );
     }
 
@@ -211,7 +211,7 @@ function analyzeDollarDollarVariables(
       "$$slots",
       `Record<${
         nameTypes.size > 0 ? [...nameTypes].join(" | ") : "any"
-      }, boolean>`
+      }, boolean>`,
     );
   }
 
@@ -250,11 +250,11 @@ function analyzeDollarDollarVariables(
  */
 function analyzeReactiveScopes(
   result: TSESParseForESLintResult,
-  ctx: VirtualTypeScriptContext
+  ctx: VirtualTypeScriptContext,
 ) {
   const scopeManager = result.scopeManager;
   const throughIds = scopeManager.globalScope!.through.map(
-    (reference) => reference.identifier
+    (reference) => reference.identifier,
   );
   for (const statement of result.ast.body) {
     if (statement.type === "LabeledStatement" && statement.label.name === "$") {
@@ -271,7 +271,8 @@ function analyzeReactiveScopes(
         const left = statement.body.expression.left;
         if (
           throughIds.some(
-            (id) => left.range[0] <= id.range[0] && id.range[1] <= left.range[1]
+            (id) =>
+              left.range[0] <= id.range[0] && id.range[1] <= left.range[1],
           )
         ) {
           transformForDeclareReactiveVar(
@@ -279,7 +280,7 @@ function analyzeReactiveScopes(
             statement.body.expression.left,
             statement.body.expression,
             result.ast.tokens!,
-            ctx
+            ctx,
           );
           continue;
         }
@@ -295,7 +296,7 @@ function analyzeReactiveScopes(
  */
 function analyzeRenderScopes(
   code: { script: string; render: string },
-  ctx: VirtualTypeScriptContext
+  ctx: VirtualTypeScriptContext,
 ) {
   ctx.appendOriginal(code.script.length);
   const renderFunctionName = ctx.generateUniqueId("render");
@@ -329,7 +330,7 @@ function transformForDeclareReactiveVar(
   id: TSESTree.Identifier | TSESTree.ArrayPattern | TSESTree.ObjectPattern,
   expression: TSESTree.AssignmentExpression,
   tokens: TSESTree.Token[],
-  ctx: VirtualTypeScriptContext
+  ctx: VirtualTypeScriptContext,
 ): void {
   // e.g.
   //  From:
@@ -373,7 +374,7 @@ function transformForDeclareReactiveVar(
   let expressionCloseParen: TSESTree.Token | null = null;
   const startIndex = sortedLastIndex(
     tokens,
-    (target) => target.range[0] - statement.range[0]
+    (target) => target.range[0] - statement.range[0],
   );
   for (let index = startIndex; index < tokens.length; index++) {
     const token = tokens[index];
@@ -413,7 +414,7 @@ function transformForDeclareReactiveVar(
   ctx.appendVirtualScript("let ");
   ctx.appendOriginal(eq ? eq.range[1] : expression.right.range[0]);
   ctx.appendVirtualScript(
-    `${functionId}();\nfunction ${functionId}(){let ${tmpVarId};return (${tmpVarId} = `
+    `${functionId}();\nfunction ${functionId}(){let ${tmpVarId};return (${tmpVarId} = `,
   );
   ctx.appendOriginal(expression.right.range[1]);
   ctx.appendVirtualScript(`)`);
@@ -519,7 +520,7 @@ function transformForDeclareReactiveVar(
     addElementsToSortedArray(
       program.tokens!,
       [...openParens, ...closeParens],
-      (a, b) => a.range[0] - b.range[0]
+      (a, b) => a.range[0] - b.range[0],
     );
 
     const scopeManager = result.scopeManager as ScopeManager;
@@ -548,7 +549,7 @@ function transformForDeclareReactiveVar(
  */
 function transformForReactiveStatement(
   statement: TSESTree.LabeledStatement,
-  ctx: VirtualTypeScriptContext
+  ctx: VirtualTypeScriptContext,
 ) {
   const functionId = ctx.generateUniqueId("reactiveStatementScopeFunction");
   const originalBody = statement.body;
@@ -582,7 +583,7 @@ function removeFunctionScope(
     | TSESTree.FunctionDeclaration
     | TSESTree.FunctionExpression
     | TSESTree.ArrowFunctionExpression,
-  scopeManager: ScopeManager
+  scopeManager: ScopeManager,
 ) {
   const scope = scopeManager.acquire(node)!;
   const upper = scope.upper!;
@@ -604,12 +605,12 @@ function removeFunctionScope(
       addElementsToSortedArray(
         upperVariable.identifiers,
         variable.identifiers,
-        (a, b) => a.range![0] - b.range![0]
+        (a, b) => a.range![0] - b.range![0],
       );
       addElementsToSortedArray(
         upperVariable.defs,
         variable.defs,
-        (a, b) => a.node.range![0] - b.node.range![0]
+        (a, b) => a.node.range![0] - b.node.range![0],
       );
       addAllReferences(upperVariable.references, variable.references);
     } else {
