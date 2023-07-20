@@ -1,5 +1,11 @@
 # svelte-eslint-parser
 
+## 0.32.2
+
+### Patch Changes
+
+- [#385](https://github.com/sveltejs/svelte-eslint-parser/pull/385) [`71db4ec`](https://github.com/sveltejs/svelte-eslint-parser/commit/71db4ecc1c967cc6c8f17fd5a55a33c255742a3a) Thanks [@ota-meshi](https://github.com/ota-meshi)! - fix: typescript-eslint v6 compatibility
+
 ## 0.32.1
 
 ### Patch Changes
