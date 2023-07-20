@@ -49,7 +49,27 @@ jobs:
           node-version: ${{ matrix.node-version }}
       - name: Install Svelte v3
         run: |+
-          pnpm install -D svelte@3
+          pnpm install -D svelte@3 @typescript-eslint/parser@5 @typescript-eslint/eslint-plugin@5
+          rm -rf node_modules
+      - name: Install Packages
+        run: pnpm install
+      - name: Test
+        run: pnpm run test
+  test-for-ts-eslint-v5:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [18.x]
+    steps:
+      - uses: actions/checkout@v3
+      - uses: pnpm/action-setup@v2
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ matrix.node-version }}
+      - name: Install @typescript-eslint v5
+        run: |+
+          pnpm install -D @typescript-eslint/parser@5 @typescript-eslint/eslint-plugin@5
           rm -rf node_modules
       - name: Install Packages
         run: pnpm install
@@ -89,7 +109,7 @@ jobs:
           node-version: ${{ matrix.node-version }}
       - name: Install eslint v7
         run: |+
-          pnpm install -D eslint@7 svelte@3
+          pnpm install -D eslint@7 svelte@3 @typescript-eslint/parser@5 @typescript-eslint/eslint-plugin@5
           rm -rf node_modules
       - name: Install Packages
         run: pnpm install
