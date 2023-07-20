@@ -243,9 +243,17 @@ function nodeReplacer(key: string, value: any): any {
   if (key === "parent") {
     return undefined;
   }
-  if (key === "assertions" && Array.isArray(value) && value.length === 0) {
+  if (
+    (key === "assertions" || key === "decorators") &&
+    Array.isArray(value) &&
+    value.length === 0
+  ) {
     return undefined;
   }
+  if (key === "definite" && value === false) {
+    return undefined;
+  }
+
   if (value instanceof RegExp) {
     return String(value);
   }
@@ -253,7 +261,13 @@ function nodeReplacer(key: string, value: any): any {
     return null; // Make it null so it can be checked on node8.
     // return `${String(value)}n`
   }
-  return normalizeObject(value);
+  const obj = normalizeObject(value);
+  if (obj?.type === "Identifier" && obj?.optional === false) {
+    const copy = { ...obj };
+    delete copy.optional;
+    return copy;
+  }
+  return obj;
 }
 
 type SvelteKeysType<T extends SvelteNode = SvelteNode> = {
