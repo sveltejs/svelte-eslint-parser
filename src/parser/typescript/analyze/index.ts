@@ -505,6 +505,7 @@ function transformForDeclareReactiveVar(
     const newBody: TSESTree.ExpressionStatement = {
       type: "ExpressionStatement" as TSESTree.ExpressionStatement["type"],
       expression: assignment,
+      directive: undefined,
       loc: statement.body.loc,
       range: statement.body.range,
       parent: reactiveStatement,

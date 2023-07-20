@@ -64,8 +64,7 @@ export function isTSESLintParserObject(
     return Boolean(
       services &&
         services.esTreeNodeToTSNodeMap &&
-        services.tsNodeToESTreeNodeMap &&
-        services.program,
+        services.tsNodeToESTreeNodeMap,
     );
   } catch {
     return false;
