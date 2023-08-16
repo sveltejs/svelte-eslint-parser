@@ -1,5 +1,5 @@
 <script lang="ts">
-  import MyComponent, { ListItem } from "./lib/MyComponent.svelte"; // MyComponent: typeof Mycomponent__SvelteComponent_, ListItem: any, ListItem: any
+  import Component, { ListItem } from "./lib/Component.svelte"; // Component: typeof Component__SvelteComponent_, ListItem: any, ListItem: any
 
   const items: ListItem[] = [ // items: ListItem[]
     {
@@ -15,32 +15,20 @@
       link: "https://www.typescriptlang.org", // link: string
     },
   ];
-
-  const openLink = (item: ListItem) => { // openLink: (item: ListItem) => void, item: ListItem
-    window.location.replace(item.link); // window.location.replace(item.link): void
-  };
 </script>
 
 <main>
-  <MyComponent {items} let:item> <!-- MyComponent: typeof Mycomponent__SvelteComponent_, items: ListItem[], items: ListItem[], item: ListItem -->
+  <Component {items} let:item> <!-- Component: typeof Component__SvelteComponent_, items: ListItem[], items: ListItem[], item: ListItem -->
     <div>
       {item.title} <!-- item.title: string -->
-      <button
-        on:click={() => {
-          openLink(item); // openLink(item): void
-        }}>Open Link</button
-      >
     </div>
-  </MyComponent>
-  <MyComponent {items}> <!-- MyComponent: typeof Mycomponent__SvelteComponent_, items: ListItem[], items: ListItem[] -->
+  </Component>
+  <Component {items}> <!-- Component: typeof Component__SvelteComponent_, items: ListItem[], items: ListItem[] -->
     <div let:item> <!-- item: ListItem -->
       {item.title} <!-- item.title: string -->
-      <button
-        on:click={() => {
-          openLink(item); // openLink(item): void
-        }}>Open Link</button
-      >
     </div>
-    <span slot="count" let:count={foo}>{foo}</span> <!-- foo: number, foo: number -->
-  </MyComponent>
+    <span slot="count" let:count={foo}> <!-- foo: number -->
+      {foo} <!-- foo: number -->
+    </span>
+  </Component>
 </main>

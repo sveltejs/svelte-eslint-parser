@@ -1,5 +1,5 @@
 <script lang="ts">
-  import MyComponent, { ListItem } from "./lib/MyComponent.svelte";
+  import Component, { ListItem } from "./lib/Component.svelte";
 
   const items: ListItem[] = [
     {
@@ -15,32 +15,20 @@
       link: "https://www.typescriptlang.org",
     },
   ];
-
-  const openLink = (item: ListItem) => {
-    window.location.replace(item.link);
-  };
 </script>
 
 <main>
-  <MyComponent {items} let:item>
+  <Component {items} let:item>
     <div>
       {item.title}
-      <button
-        on:click={() => {
-          openLink(item);
-        }}>Open Link</button
-      >
     </div>
-  </MyComponent>
-  <MyComponent {items}>
+  </Component>
+  <Component {items}>
     <div let:item>
       {item.title}
-      <button
-        on:click={() => {
-          openLink(item);
-        }}>Open Link</button
-      >
     </div>
-    <span slot="count" let:count={foo}>{foo}</span>
-  </MyComponent>
+    <span slot="count" let:count={foo}>
+      {foo}
+    </span>
+  </Component>
 </main>
