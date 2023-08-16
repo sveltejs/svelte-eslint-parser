@@ -36,7 +36,6 @@ import type { AttributeToken } from "../html";
 export function* convertAttributes(
   attributes: SvAST.AttributeOrDirective[],
   parent: SvelteStartTag,
-  elementName: string,
   ctx: Context,
 ): IterableIterator<
   | SvelteAttribute
@@ -59,7 +58,7 @@ export function* convertAttributes(
       continue;
     }
     if (attr.type === "EventHandler") {
-      yield convertEventHandlerDirective(attr, parent, elementName, ctx);
+      yield convertEventHandlerDirective(attr, parent, ctx);
       continue;
     }
     if (attr.type === "Class") {
@@ -318,7 +317,6 @@ function convertBindingDirective(
 function convertEventHandlerDirective(
   node: SvAST.DirectiveForExpression,
   parent: SvelteDirective["parent"],
-  elementName: string,
   ctx: Context,
 ): SvelteEventHandlerDirective {
   const directive: SvelteEventHandlerDirective = {
@@ -329,7 +327,7 @@ function convertEventHandlerDirective(
     parent,
     ...ctx.getConvertLocation(node),
   };
-  const typing = buildEventHandlerType(parent.parent, elementName, node.name);
+  const typing = buildEventHandlerType(parent.parent, node.name, ctx);
   processDirective(node, directive, ctx, {
     processExpression: buildProcessExpressionForExpression(
       directive,
@@ -343,8 +341,8 @@ function convertEventHandlerDirective(
 /** Build event handler type */
 function buildEventHandlerType(
   element: SvelteElement | SvelteScriptElement | SvelteStyleElement,
-  elementName: string,
   eventName: string,
+  ctx: Context,
 ) {
   const nativeEventHandlerType = `(e:${conditional({
     check: `'${eventName}'`,
@@ -360,6 +358,7 @@ function buildEventHandlerType(
   if (element.type !== "SvelteElement") {
     return nativeEventHandlerType;
   }
+  const elementName = ctx.elements.get(element)!.name;
   if (element.kind === "component") {
     const componentEventsType = `import('svelte').ComponentEvents<${elementName}>`;
     return `(e:${conditional({
@@ -608,7 +607,11 @@ function convertLetDirective(
     processPattern(pattern) {
       return ctx.letDirCollections
         .getCollection()
-        .addPattern(pattern, directive, "any");
+        .addPattern(
+          pattern,
+          directive,
+          buildLetDirectiveType(parent.parent, node.name, ctx),
+        );
     },
     processName: node.expression
       ? undefined
@@ -616,13 +619,74 @@ function convertLetDirective(
           // shorthand
           ctx.letDirCollections
             .getCollection()
-            .addPattern(name, directive, "any", (es) => {
-              directive.expression = es;
-            });
+            .addPattern(
+              name,
+              directive,
+              buildLetDirectiveType(parent.parent, node.name, ctx),
+              (es) => {
+                directive.expression = es;
+              },
+            );
           return [];
         },
   });
   return directive;
+}
+
+/** Build let directive param type */
+function buildLetDirectiveType(
+  element: SvelteElement | SvelteScriptElement | SvelteStyleElement,
+  letName: string,
+  ctx: Context,
+) {
+  if (element.type !== "SvelteElement") {
+    return "any";
+  }
+  let slotName = "default";
+  let componentName: string;
+  const svelteNode = ctx.elements.get(element)!;
+  const slotAttr = svelteNode.attributes.find(
+    (attr): attr is SvAST.Attribute => {
+      return attr.type === "Attribute" && attr.name === "slot";
+    },
+  );
+  if (slotAttr) {
+    if (
+      Array.isArray(slotAttr.value) &&
+      slotAttr.value.length === 1 &&
+      slotAttr.value[0].type === "Text"
+    ) {
+      slotName = slotAttr.value[0].data;
+    } else {
+      return "any";
+    }
+    const parent = findParentComponent(element);
+    if (parent == null) return "any";
+    componentName = ctx.elements.get(parent)!.name;
+  } else {
+    if (element.kind === "component") {
+      componentName = svelteNode.name;
+    } else {
+      const parent = findParentComponent(element);
+      if (parent == null) return "any";
+      componentName = ctx.elements.get(parent)!.name;
+    }
+  }
+  return `${String(componentName)}['$$slot_def'][${JSON.stringify(
+    slotName,
+  )}][${JSON.stringify(letName)}]`;
+
+  /** Find parent component element */
+  function findParentComponent(node: SvelteElement) {
+    let parent: SvelteElement["parent"] | null = node.parent;
+    while (parent && parent.type !== "SvelteElement") {
+      parent = node.parent;
+    }
+    if (!parent || parent.kind !== "component") {
+      return null;
+    }
+    return parent;
+  }
 }
 
 type DirectiveProcessors<

@@ -257,6 +257,7 @@ function convertHTMLElement(
     parent,
     ...locs,
   };
+  ctx.elements.set(element, node);
   element.startTag.parent = element;
   const elementName = node.name;
 
@@ -265,19 +266,19 @@ function convertHTMLElement(
   if (letDirectives.length) {
     ctx.letDirCollections.beginExtract();
     element.startTag.attributes.push(
-      ...convertAttributes(letDirectives, element.startTag, elementName, ctx),
+      ...convertAttributes(letDirectives, element.startTag, ctx),
     );
     letParams.push(...ctx.letDirCollections.extract().getLetParams());
   }
   if (!letParams.length && !needScopeByChildren(node)) {
     element.startTag.attributes.push(
-      ...convertAttributes(attributes, element.startTag, elementName, ctx),
+      ...convertAttributes(attributes, element.startTag, ctx),
     );
     element.children.push(...convertChildren(node, element, ctx));
   } else {
     ctx.scriptLet.nestBlock(element, letParams);
     element.startTag.attributes.push(
-      ...convertAttributes(attributes, element.startTag, elementName, ctx),
+      ...convertAttributes(attributes, element.startTag, ctx),
     );
     sortNodes(element.startTag.attributes);
     element.children.push(...convertChildren(node, element, ctx));
@@ -366,6 +367,7 @@ function convertSpecialElement(
     parent,
     ...locs,
   };
+  ctx.elements.set(element, node);
   element.startTag.parent = element;
   const elementName = node.name;
 
@@ -374,19 +376,19 @@ function convertSpecialElement(
   if (letDirectives.length) {
     ctx.letDirCollections.beginExtract();
     element.startTag.attributes.push(
-      ...convertAttributes(letDirectives, element.startTag, elementName, ctx),
+      ...convertAttributes(letDirectives, element.startTag, ctx),
     );
     letParams.push(...ctx.letDirCollections.extract().getLetParams());
   }
   if (!letParams.length && !needScopeByChildren(node)) {
     element.startTag.attributes.push(
-      ...convertAttributes(attributes, element.startTag, elementName, ctx),
+      ...convertAttributes(attributes, element.startTag, ctx),
     );
     element.children.push(...convertChildren(node, element, ctx));
   } else {
     ctx.scriptLet.nestBlock(element, letParams);
     element.startTag.attributes.push(
-      ...convertAttributes(attributes, element.startTag, elementName, ctx),
+      ...convertAttributes(attributes, element.startTag, ctx),
     );
     sortNodes(element.startTag.attributes);
     element.children.push(...convertChildren(node, element, ctx));
@@ -606,6 +608,7 @@ function convertComponentElement(
     parent,
     ...locs,
   };
+  ctx.elements.set(element, node);
   element.startTag.parent = element;
   const elementName = node.name;
 
@@ -614,19 +617,19 @@ function convertComponentElement(
   if (letDirectives.length) {
     ctx.letDirCollections.beginExtract();
     element.startTag.attributes.push(
-      ...convertAttributes(letDirectives, element.startTag, elementName, ctx),
+      ...convertAttributes(letDirectives, element.startTag, ctx),
     );
     letParams.push(...ctx.letDirCollections.extract().getLetParams());
   }
   if (!letParams.length && !needScopeByChildren(node)) {
     element.startTag.attributes.push(
-      ...convertAttributes(attributes, element.startTag, elementName, ctx),
+      ...convertAttributes(attributes, element.startTag, ctx),
     );
     element.children.push(...convertChildren(node, element, ctx));
   } else {
     ctx.scriptLet.nestBlock(element, letParams);
     element.startTag.attributes.push(
-      ...convertAttributes(attributes, element.startTag, elementName, ctx),
+      ...convertAttributes(attributes, element.startTag, ctx),
     );
     sortNodes(element.startTag.attributes);
     element.children.push(...convertChildren(node, element, ctx));

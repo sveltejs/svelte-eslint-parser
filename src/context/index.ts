@@ -12,6 +12,7 @@ import type {
   Token,
 } from "../ast";
 import type ESTree from "estree";
+import type * as SvAST from "../parser/svelte-ast-types";
 import { ScriptLetContext } from "./script-let";
 import { LetDirectiveCollections } from "./let-directive-collection";
 import { getParserForLang } from "../parser/resolve-parser";
@@ -134,6 +135,20 @@ export class Context {
   public readonly letDirCollections = new LetDirectiveCollections();
 
   public readonly slots = new Set<SvelteHTMLElement>();
+
+  public readonly elements = new Map<
+    SvelteElement,
+    | SvAST.InlineComponent
+    | SvAST.Element
+    | SvAST.Window
+    | SvAST.Document
+    | SvAST.Body
+    | SvAST.Head
+    | SvAST.Options
+    | SvAST.SlotTemplate
+    | SvAST.Slot
+    | SvAST.Title
+  >();
 
   // ----- States ------
   private readonly state: { isTypeScript?: boolean } = {};
