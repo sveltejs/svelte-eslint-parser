@@ -14,10 +14,20 @@ import {
 import type ts from "typescript";
 import type ESTree from "estree";
 import * as tsESLintParser from "@typescript-eslint/parser";
+import type { SourceLocation } from "../src/ast";
 
 const ERROR_FIXTURE_ROOT = path.resolve(
   __dirname,
   "../tests/fixtures/parser/error",
+);
+
+const STYLE_CONTEXT_FIXTURE_ROOT = path.resolve(
+  __dirname,
+  "../tests/fixtures/parser/style-context",
+);
+const STYLE_LOCATION_FIXTURE_ROOT = path.resolve(
+  __dirname,
+  "../tests/fixtures/parser/style-location-converter",
 );
 
 const RULES = [
@@ -126,6 +136,61 @@ for (const { input, inputFileName, outputFileName, config } of listupFixtures(
     const errorJson = astToJson(normalizeError(e));
     fs.writeFileSync(outputFileName, errorJson, "utf8");
   }
+}
+
+for (const { input, inputFileName, outputFileName, config } of listupFixtures(
+  STYLE_CONTEXT_FIXTURE_ROOT,
+)) {
+  const result = parse(input, inputFileName, config);
+  const styleContext = result.services.getStyleContext();
+  fs.writeFileSync(
+    outputFileName,
+    `${styleContextToJson(styleContext)}\n`,
+    "utf8",
+  );
+}
+
+/** StyleContext to JSON string */
+function styleContextToJson(styleContext: parser.StyleContext): string {
+  return JSON.stringify(styleContext, nodeReplacer, 2);
+
+  /** JSON string replacer for StyleContext */
+  function nodeReplacer(key: string, value: any): any {
+    if (key === "file" || key === "url") {
+      return undefined;
+    }
+    return value;
+  }
+}
+
+for (const { input, inputFileName, outputFileName, config } of listupFixtures(
+  STYLE_LOCATION_FIXTURE_ROOT,
+)) {
+  const services = parse(input, inputFileName, config).services;
+  const styleContext = services.getStyleContext();
+  if (styleContext.status !== "success") {
+    continue;
+  }
+  const locations: [
+    Partial<SourceLocation>,
+    [number | undefined, number | undefined],
+  ][] = [
+    [
+      services.styleNodeLoc(styleContext.sourceAst),
+      services.styleNodeRange(styleContext.sourceAst),
+    ],
+  ];
+  styleContext.sourceAst.walk((node) => {
+    locations.push([
+      services.styleNodeLoc(node),
+      services.styleNodeRange(node),
+    ]);
+  });
+  fs.writeFileSync(
+    outputFileName,
+    `${JSON.stringify(locations, undefined, 2)}\n`,
+    "utf8",
+  );
 }
 
 // eslint-disable-next-line require-jsdoc -- X
