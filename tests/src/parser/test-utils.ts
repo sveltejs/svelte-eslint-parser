@@ -7,6 +7,7 @@ import { LinesAndColumns } from "../../../src/context";
 import type { Reference, Scope, ScopeManager, Variable } from "eslint-scope";
 import type * as TSESScopes from "@typescript-eslint/scope-manager";
 import type { SvelteNode } from "../../../src/ast";
+import type { StyleContext } from "../../../src";
 
 const AST_FIXTURE_ROOT = path.resolve(__dirname, "../../fixtures/parser/ast");
 const BASIC_PARSER_OPTIONS: Linter.ParserOptions = {
@@ -187,6 +188,105 @@ export function scopeToJSON(
     scopeData = normalizeScope(globalScope);
   }
   return JSON.stringify(scopeData, nodeReplacer, 2);
+}
+
+export function styleContextToJson(styleContext: StyleContext): string {
+  const normalized = new Set<any>();
+  return JSON.stringify(styleContext, nodeReplacer, 2);
+
+  function nodeReplacer(key: string, value: any): any {
+    if (key === "file" || key === "url") {
+      return undefined;
+    }
+    return normalizePostcssObject(value);
+  }
+
+  function normalizePostcssObject(
+    value: any,
+    defaultCompare = (_a: string, _b: string) => 0,
+  ) {
+    if (
+      !value ||
+      typeof value !== "object" ||
+      Array.isArray(value) ||
+      normalized.has(value)
+    ) {
+      return value;
+    }
+    let compare = defaultCompare;
+    if (value.sourceLang && typeof value.sourceLang === "string") {
+      // It is context
+      const order = ["status", "sourceLang", "sourceAst", "error"];
+      compare = (a, b) => compareOrder(a, b, order);
+    } else if (typeof value.type === "string") {
+      // It is node
+      compare = (a, b) =>
+        nodeFirsts(a, value.type) - nodeFirsts(b, value.type) ||
+        nodeLasts(a, value.type) - nodeLasts(b, value.type);
+      if (value.raws && typeof value.raws === "object") {
+        const order = ["before", "between", "semicolon", "after"];
+        value.raws = normalizePostcssObject(value.raws, (a, b) =>
+          compareOrder(a, b, order),
+        );
+      }
+    } else if (
+      typeof value.reason === "string" &&
+      typeof value.name === "string"
+    ) {
+      // It is error
+      const order = [
+        "name",
+        "reason",
+        "source",
+        "line",
+        "column",
+        "endLine",
+        "endColumn",
+        "input",
+      ];
+      compare = (a, b) => order.indexOf(a) - order.indexOf(b);
+    } else if (
+      typeof value.line === "number" &&
+      typeof value.column === "number"
+    ) {
+      // It is location
+      const order = ["line", "column", "offset", "endLine", "endColumn"];
+      compare = (a, b) => compareOrder(a, b, order);
+    } else if (typeof value.hasBOM === "boolean") {
+      // It is inputs
+      const order = ["hasBOM", "css"];
+      compare = (a, b) => compareOrder(a, b, order);
+    }
+
+    function nodeFirsts(k: string, _nodeType: string | null) {
+      const o = ["raws", "type"].indexOf(k);
+      return o === -1 ? Infinity : o;
+    }
+
+    function nodeLasts(k: string, _nodeType: string | null) {
+      return ["source", "lastEach", "indexes", "inputs"].indexOf(k);
+    }
+
+    function compareOrder(a: string, b: string, order: string[]) {
+      const oA = order.includes(a) ? order.indexOf(a) : Infinity;
+      const oB = order.includes(b) ? order.indexOf(b) : Infinity;
+      return oA - oB;
+    }
+
+    const entries = Object.entries(value);
+
+    const result = Object.fromEntries(
+      entries.sort(([a], [b]) => {
+        const c = compare(a, b);
+        if (c) {
+          return c;
+        }
+        return a < b ? -1 : a > b ? 1 : 0;
+      }),
+    );
+    normalized.add(result);
+    return result;
+  }
 }
 
 function normalizeScope(scope: Scope | TSESScopes.Scope): any {
