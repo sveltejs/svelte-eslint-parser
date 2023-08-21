@@ -10,6 +10,7 @@ import {
   astToJson,
   normalizeError,
   scopeToJSON,
+  styleContextToJson,
 } from "../tests/src/parser/test-utils";
 import type ts from "typescript";
 import type ESTree from "estree";
@@ -148,19 +149,6 @@ for (const { input, inputFileName, outputFileName, config } of listupFixtures(
     `${styleContextToJson(styleContext)}\n`,
     "utf8",
   );
-}
-
-/** StyleContext to JSON string */
-function styleContextToJson(styleContext: parser.StyleContext): string {
-  return JSON.stringify(styleContext, nodeReplacer, 2);
-
-  /** JSON string replacer for StyleContext */
-  function nodeReplacer(key: string, value: any): any {
-    if (key === "file" || key === "url") {
-      return undefined;
-    }
-    return value;
-  }
 }
 
 for (const { input, inputFileName, outputFileName, config } of listupFixtures(

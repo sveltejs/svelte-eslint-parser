@@ -3,8 +3,11 @@ import fs from "fs";
 import path from "path";
 
 import { parseForESLint } from "../../../src";
-import type { StyleContext } from "../../../src/parser";
-import { generateParserOptions, listupFixtures } from "./test-utils";
+import {
+  generateParserOptions,
+  listupFixtures,
+  styleContextToJson,
+} from "./test-utils";
 
 const STYLE_CONTEXT_FIXTURE_ROOT = path.resolve(
   __dirname,
@@ -38,14 +41,3 @@ describe("Check for AST.", () => {
     });
   }
 });
-
-function styleContextToJson(styleContext: StyleContext): string {
-  return JSON.stringify(styleContext, nodeReplacer, 2);
-
-  function nodeReplacer(key: string, value: any): any {
-    if (key === "file" || key === "url") {
-      return undefined;
-    }
-    return value;
-  }
-}
