@@ -1,5 +1,15 @@
 # svelte-eslint-parser
 
+## 0.33.0
+
+### Minor Changes
+
+- [#395](https://github.com/sveltejs/svelte-eslint-parser/pull/395) [`d9cb8ae`](https://github.com/sveltejs/svelte-eslint-parser/commit/d9cb8ae9b188e546d1d7552b85b72a31c01ccdbd) Thanks [@ota-meshi](https://github.com/ota-meshi)! - feat: improve let directive type
+
+### Patch Changes
+
+- [#396](https://github.com/sveltejs/svelte-eslint-parser/pull/396) [`a4d31f0`](https://github.com/sveltejs/svelte-eslint-parser/commit/a4d31f07f5c93057e276fa804d4e2b267264dc0f) Thanks [@ota-meshi](https://github.com/ota-meshi)! - fix: update postcss to 8.4.28
+
 ## 0.32.2
 
 ### Patch Changes
