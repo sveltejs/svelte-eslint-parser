@@ -88,56 +88,6 @@ export default [
 	{
 		...base,
 		entry: {
-			'eslint-plugin-svelte3': resolve('./eslint-plugin-svelte3.js')
-		},
-		module: {
-			rules: [
-				{
-					test: /node_modules\/eslint-plugin-svelte3\/index\.js$/u,
-					loader: 'string-replace-loader',
-					options: {
-						search: 'Object\\.keys\\(__require\\.cache\\)',
-						replace: (original) => `[] /* ${original} */`,
-						flags: ''
-					}
-				},
-				{
-					test: /node_modules\/eslint-plugin-svelte3\/index\.js$/u,
-					loader: 'string-replace-loader',
-					options: {
-						search: 'require\\(linter_path\\)',
-						replace: (original) => `require('eslint'); // ${original}`,
-						flags: ''
-					}
-				},
-				{
-					test: /node_modules\/eslint-plugin-svelte3\/index\.js$/u,
-					loader: 'string-replace-loader',
-					options: {
-						search: "throw new Error\\('Could not find ESLint Linter in require cache'\\);",
-						replace: (original) => ` // ${original}`,
-						flags: ''
-					}
-				}
-			]
-		},
-		externals: {
-			'svelte/compiler': '$$inject_svelte_compiler$$',
-			eslint: '$$inject_eslint$$'
-		},
-		plugins: [
-			new WrapperPlugin({
-				test: /eslint-plugin-svelte3\.js/,
-				header: `
-				import * as $$inject_svelte_compiler$$ from 'svelte/compiler';
-				import * as $$inject_eslint$$ from 'eslint';
-				`
-			})
-		]
-	},
-	{
-		...base,
-		entry: {
 			'svelte/compiler': resolve('../../node_modules/svelte/src/compiler/index.js')
 		}
 	}

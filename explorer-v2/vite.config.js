@@ -18,7 +18,6 @@ const config = {
 			tslib: resolve('./node_modules/tslib/tslib.es6.js'),
 			eslint: resolve('./build-system/shim/eslint.js'),
 			'svelte-eslint-parser': resolve('./build-system/shim/svelte-eslint-parser.js'),
-			'eslint-plugin-svelte3': resolve('./build-system/shim/eslint-plugin-svelte3.js'),
 			'svelte/compiler': resolve('./build-system/shim/svelte/compiler.js')
 		}
 	}

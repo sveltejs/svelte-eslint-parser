@@ -30,9 +30,7 @@
 	let code = state.code || DEFAULT_CODE;
 	let rules = state.rules || Object.assign({}, DEFAULT_RULES_CONFIG);
 	let messages = [];
-	let useEslintPluginSvelte3 = Boolean(state.useEslintPluginSvelte3);
 	let time = '';
-	let options = {};
 
 	$: hasLangTs = /lang\s*=\s*(?:"ts"|ts|'ts'|"typescript"|typescript|'typescript')/u.test(code);
 	let tsParser = undefined;
@@ -51,16 +49,6 @@
 			});
 		}
 	}
-	$: {
-		options = useEslintPluginSvelte3 ? getEslintPluginSvelte3Options() : {};
-	}
-	async function getEslintPluginSvelte3Options() {
-		const pluginSvelte3 = await import('eslint-plugin-svelte3');
-		return {
-			preprocess: pluginSvelte3.processors.svelte3.preprocess,
-			postprocess: pluginSvelte3.processors.svelte3.postprocess
-		};
-	}
 
 	// eslint-disable-next-line no-use-before-define -- false positive
 	$: serializedString = (() => {
@@ -68,8 +56,7 @@
 		const serializeRules = equalsRules(DEFAULT_RULES_CONFIG, rules) ? undefined : rules;
 		return serializeState({
 			code: serializeCode,
-			rules: serializeRules,
-			useEslintPluginSvelte3: useEslintPluginSvelte3 ? true : undefined
+			rules: serializeRules
 		});
 	})();
 	$: {
@@ -98,7 +85,6 @@
 			const state = deserializeState(newSerializedString);
 			code = state.code || DEFAULT_CODE;
 			rules = state.rules || Object.assign({}, DEFAULT_RULES_CONFIG);
-			useEslintPluginSvelte3 = Boolean(state.useEslintPluginSvelte3);
 		}
 	}
 
@@ -121,14 +107,6 @@
 
 <div class="playground-root">
 	<div class="playground-tools">
-		<label>
-			<input bind:checked={useEslintPluginSvelte3} type="checkbox" />
-			See result of
-			<a href="https://github.com/sveltejs/eslint-plugin-svelte3">eslint-plugin-svelte3</a>.
-		</label>
-		{#if useEslintPluginSvelte3}
-			<span style="color: red">svelte-eslint-parser is not used.</span>
-		{/if}
 		<span style="margin-left: 16px">{time}</span>
 	</div>
 	<div class="playground-content">
@@ -138,7 +116,7 @@
 				{linter}
 				bind:code
 				config={{
-					parser: useEslintPluginSvelte3 ? undefined : 'svelte-eslint-parser',
+					parser: 'svelte-eslint-parser',
 					parserOptions: {
 						ecmaVersion: 2020,
 						sourceType: 'module',
@@ -150,7 +128,6 @@
 						es2021: true
 					}
 				}}
-				{options}
 				class="eslint-playground"
 				on:result={onLintedResult}
 			/>
