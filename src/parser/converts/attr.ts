@@ -18,6 +18,8 @@ import type {
   SvelteElement,
   SvelteScriptElement,
   SvelteStyleElement,
+  SvelteElseBlock,
+  SvelteAwaitBlock,
 } from "../../ast";
 import type ESTree from "estree";
 import type { Context } from "../../context";
@@ -678,9 +680,13 @@ function buildLetDirectiveType(
 
   /** Find parent component element */
   function findParentComponent(node: SvelteElement) {
-    let parent: SvelteElement["parent"] | null = node.parent;
+    let parent:
+      | SvelteElement["parent"]
+      | SvelteElseBlock
+      | SvelteAwaitBlock
+      | null = node.parent;
     while (parent && parent.type !== "SvelteElement") {
-      parent = node.parent;
+      parent = parent.parent;
     }
     if (!parent || parent.kind !== "component") {
       return null;
