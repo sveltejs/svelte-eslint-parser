@@ -1,5 +1,11 @@
 # svelte-eslint-parser
 
+## 0.33.1
+
+### Patch Changes
+
+- [#409](https://github.com/sveltejs/svelte-eslint-parser/pull/409) [`b63c305`](https://github.com/sveltejs/svelte-eslint-parser/commit/b63c3050f4f33b16ebc5902d98556efc4c58cf4c) Thanks [@ota-meshi](https://github.com/ota-meshi)! - fix: infinite loop in attr.ts
+
 ## 0.33.0
 
 ### Minor Changes
