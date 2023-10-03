@@ -8,6 +8,7 @@ import type { Reference, Scope, ScopeManager, Variable } from "eslint-scope";
 import type * as TSESScopes from "@typescript-eslint/scope-manager";
 import type { SvelteNode } from "../../../src/ast";
 import type { StyleContext } from "../../../src";
+import { TS_GLOBALS } from "./ts-vars";
 
 const AST_FIXTURE_ROOT = path.resolve(__dirname, "../../fixtures/parser/ast");
 const BASIC_PARSER_OPTIONS: Linter.ParserOptions = {
@@ -290,9 +291,14 @@ export function styleContextToJson(styleContext: StyleContext): string {
 }
 
 function normalizeScope(scope: Scope | TSESScopes.Scope): any {
+  let variables = scope.variables as TSESScopes.Variable[];
+  if (scope.type === "global") {
+    // Exclude well-known variables as they do not need to be tested.
+    variables = variables.filter((v) => !TS_GLOBALS.includes(v.name));
+  }
   return {
     type: scope.type,
-    variables: scope.variables.map(normalizeVar),
+    variables: variables.map(normalizeVar),
     references: scope.references.map(normalizeReference),
     childScopes: scope.childScopes.map(normalizeScope),
     through: scope.through.map(normalizeReference),
