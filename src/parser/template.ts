@@ -21,7 +21,7 @@ export function parseTemplate(
   try {
     const svelteAst = parse(code, {
       filename: parserOptions.filePath,
-    }) as SvAST.Ast;
+    }) as never as SvAST.Ast;
     const ast = convertSvelteRoot(svelteAst, ctx);
     sortNodes(ast.body);
 

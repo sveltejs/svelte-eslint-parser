@@ -52,7 +52,7 @@ import { ParseError } from "../..";
 /** Convert for Fragment or Element or ... */
 export function* convertChildren(
   /* eslint-enable complexity -- X */
-  fragment: { children: SvAST.TemplateNode[] },
+  fragment: { children?: SvAST.TemplateNode[] },
   parent:
     | SvelteProgram
     | SvelteElement
@@ -76,6 +76,7 @@ export function* convertChildren(
   | SvelteKeyBlock
   | SvelteHTMLComment
 > {
+  if (!fragment.children) return;
   for (const child of fragment.children) {
     if (child.type === "Comment") {
       yield convertComment(child, parent, ctx);
@@ -199,8 +200,9 @@ function extractLetDirectives(fragment: {
 
 /** Check if children needs a scope. */
 function needScopeByChildren(fragment: {
-  children: SvAST.TemplateNode[];
+  children?: SvAST.TemplateNode[];
 }): boolean {
+  if (!fragment.children) return false;
   for (const child of fragment.children) {
     if (child.type === "ConstTag") {
       return true;
