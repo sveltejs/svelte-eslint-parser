@@ -7,7 +7,6 @@ import type {
   SvelteStyleElement,
   Token,
 } from "../ast";
-import { VERSION as SVELTE_VERSION } from "svelte/compiler";
 import type { Program } from "estree";
 import type { ScopeManager } from "eslint-scope";
 import { Variable } from "eslint-scope";
@@ -33,10 +32,7 @@ import {
   styleNodeLoc,
   styleNodeRange,
 } from "./style-context";
-
-const globalsForSvelte4: Readonly<string[]> = ["$$slots", "$$props", "$$restProps"];
-const globalsForSvelte5: Readonly<string[]> = ["$state", "$derived", "$effect", "$effect.pre", "$props"];
-const globals = SVELTE_VERSION.startsWith("5") ? globalsForSvelte5 : globalsForSvelte4;
+import { globals } from './globals';
 
 export {
   StyleContext,
