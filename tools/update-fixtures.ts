@@ -71,8 +71,12 @@ for (const {
   scopeFileName,
   typeFileName,
   config,
+  meetRequirements,
   getRuleOutputFileName,
 } of listupFixtures()) {
+  if (!meetRequirements("test") || !meetRequirements("parse")) {
+    continue;
+  }
   // if (!inputFileName.includes("test")) continue;
   try {
     // eslint-disable-next-line no-console -- ignore

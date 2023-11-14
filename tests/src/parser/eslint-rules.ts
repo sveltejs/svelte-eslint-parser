@@ -41,7 +41,11 @@ describe("svelte-eslint-parser with ESLint rules", () => {
     inputFileName,
     config,
     getRuleOutputFileName,
+    meetRequirements,
   } of listupFixtures()) {
+    if (!meetRequirements("parse")) {
+      continue;
+    }
     const linter = createLinter();
     describe(inputFileName, () => {
       for (const rule of RULES) {

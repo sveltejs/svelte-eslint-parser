@@ -162,7 +162,7 @@ export interface Title extends BaseNode {
 export interface Options extends BaseNode {
   type: "Options";
   name: "svelte:options";
-  children: TemplateNode[];
+  children?: TemplateNode[]; // This property does not exist in Svelte v5.
   attributes: AttributeOrDirective[];
 }
 export interface SlotTemplate extends BaseNode {

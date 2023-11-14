@@ -40,7 +40,7 @@ export function* listupFixtures(dir?: string): Iterable<{
     scope?: Record<string, string>;
   };
   getRuleOutputFileName: (ruleName: string) => string;
-  meetRequirements: (key: "test" | "scope") => boolean;
+  meetRequirements: (key: "test" | "scope" | "parse") => boolean;
 }> {
   yield* listupFixturesImpl(dir || AST_FIXTURE_ROOT);
 }
@@ -56,7 +56,7 @@ function* listupFixturesImpl(dir: string): Iterable<{
     scope?: Record<string, string>;
   };
   getRuleOutputFileName: (ruleName: string) => string;
-  meetRequirements: (key: "test" | "scope") => boolean;
+  meetRequirements: (key: "test" | "scope" | "parse") => boolean;
 }> {
   for (const filename of fs.readdirSync(dir)) {
     const inputFileName = path.join(dir, filename);
