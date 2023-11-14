@@ -7,6 +7,7 @@ import type {
   SvelteStyleElement,
   Token,
 } from "../ast";
+import { VERSION as SVELTE_VERSION } from "svelte/compiler";
 import type { Program } from "estree";
 import type { ScopeManager } from "eslint-scope";
 import { Variable } from "eslint-scope";
@@ -32,6 +33,10 @@ import {
   styleNodeLoc,
   styleNodeRange,
 } from "./style-context";
+
+const globalsForSvelte4: Readonly<string[]> = ["$$slots", "$$props", "$$restProps"];
+const globalsForSvelte5: Readonly<string[]> = ["$state", "$derived", "$effect", "$effect.pre", "$props"];
+const globals = SVELTE_VERSION.startsWith("5") ? globalsForSvelte5 : globalsForSvelte4;
 
 export {
   StyleContext,
@@ -101,16 +106,16 @@ export function parseForESLint(
   const scripts = ctx.sourceCode.scripts;
   const resultScript = ctx.isTypeScript()
     ? parseTypeScript(
-        scripts.getCurrentVirtualCodeInfo(),
-        scripts.attrs,
-        parserOptions,
-        { slots: ctx.slots },
-      )
+      scripts.getCurrentVirtualCodeInfo(),
+      scripts.attrs,
+      parserOptions,
+      { slots: ctx.slots },
+    )
     : parseScript(
-        scripts.getCurrentVirtualCode(),
-        scripts.attrs,
-        parserOptions,
-      );
+      scripts.getCurrentVirtualCode(),
+      scripts.attrs,
+      parserOptions,
+    );
   ctx.scriptLet.restore(resultScript);
   ctx.tokens.push(...resultScript.ast.tokens);
   ctx.comments.push(...resultScript.ast.comments);
@@ -122,7 +127,7 @@ export function parseForESLint(
   analyzeStoreScope(resultScript.scopeManager!); // for reactive vars
 
   // Add $$xxx variable
-  for (const $$name of ["$$slots", "$$props", "$$restProps"]) {
+  for (const $$name of globals) {
     const globalScope = resultScript.scopeManager!.globalScope;
     const variable = new Variable();
     variable.name = $$name;

@@ -1,4 +1,5 @@
 /* global require -- node */
+import { VERSION as SVELTE_VERSION } from "svelte/compiler";
 import path from "path";
 import fs from "fs";
 import semver from "semver";
@@ -65,10 +66,14 @@ function* listupFixturesImpl(dir: string): Iterable<{
         /input\.svelte$/u,
         "output.json",
       );
-      const scopeFileName = inputFileName.replace(
-        /input\.svelte$/u,
-        "scope-output.json",
-      );
+      const scopeFileName = SVELTE_VERSION.startsWith("5")
+        ? inputFileName.replace(
+          /input\.svelte$/u,
+          "scope-output-svelte5.json",
+        ) : inputFileName.replace(
+          /input\.svelte$/u,
+          "scope-output.json",
+        );
       const typeFileName = inputFileName.replace(
         /input\.svelte$/u,
         "type-output.svelte",
@@ -412,8 +417,8 @@ function nodeReplacer(
 
 type SvelteKeysType<T extends SvelteNode = SvelteNode> = {
   [key in SvelteNode["type"]]: T extends { type: key }
-    ? KeyofObject<T>[]
-    : never;
+  ? KeyofObject<T>[]
+  : never;
 };
 type KeyofObject<T> = { [key in keyof T]: key }[keyof T];
 const nodeToKeys: SvelteKeysType = {
