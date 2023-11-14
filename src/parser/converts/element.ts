@@ -439,66 +439,92 @@ function processThisAttribute(
       (c) => Boolean(c.trim()),
       eqIndex + 1,
     );
-    const quote = ctx.code.startsWith(thisValue, valueStartIndex)
-      ? null
-      : ctx.code[valueStartIndex];
-    const literalStartIndex = quote
-      ? valueStartIndex + quote.length
-      : valueStartIndex;
-    const literalEndIndex = literalStartIndex + thisValue.length;
-    const endIndex = quote ? literalEndIndex + quote.length : literalEndIndex;
-    const thisAttr: SvelteAttribute = {
-      type: "SvelteAttribute",
-      key: null as any,
-      boolean: false,
-      value: [],
-      parent: element.startTag,
-      ...ctx.getConvertLocation({ start: startIndex, end: endIndex }),
-    };
-    thisAttr.key = {
-      type: "SvelteName",
-      name: "this",
-      parent: thisAttr,
-      ...ctx.getConvertLocation({ start: startIndex, end: eqIndex }),
-    };
-    thisAttr.value.push({
-      type: "SvelteLiteral",
-      value: thisValue,
-      parent: thisAttr,
-      ...ctx.getConvertLocation({
+    if (ctx.code[valueStartIndex] === "{") {
+      // Svelte v5 `this={"..."}`
+      const openingQuoteIndex = indexOf(
+        ctx.code,
+        (c) => c === '"' || c === "'",
+        valueStartIndex + 1,
+      );
+      const quote = ctx.code[openingQuoteIndex];
+      const closingQuoteIndex = indexOf(
+        ctx.code,
+        (c) => c === quote,
+        openingQuoteIndex + thisValue.length,
+      );
+      const closeIndex = ctx.code.indexOf("}", closingQuoteIndex + 1);
+      const endIndex = indexOf(
+        ctx.code,
+        (c) => c === ">" || !c.trim(),
+        closeIndex,
+      );
+      thisNode = createSvelteSpecialDirective(startIndex, endIndex, eqIndex, {
+        type: "Literal",
+        value: thisValue,
+        range: [openingQuoteIndex, closingQuoteIndex + 1],
+      });
+    } else {
+      const quote = ctx.code.startsWith(thisValue, valueStartIndex)
+        ? null
+        : ctx.code[valueStartIndex];
+      const literalStartIndex = quote
+        ? valueStartIndex + quote.length
+        : valueStartIndex;
+      const literalEndIndex = literalStartIndex + thisValue.length;
+      const endIndex = quote ? literalEndIndex + quote.length : literalEndIndex;
+      const thisAttr: SvelteAttribute = {
+        type: "SvelteAttribute",
+        key: null as any,
+        boolean: false,
+        value: [],
+        parent: element.startTag,
+        ...ctx.getConvertLocation({ start: startIndex, end: endIndex }),
+      };
+      thisAttr.key = {
+        type: "SvelteName",
+        name: "this",
+        parent: thisAttr,
+        ...ctx.getConvertLocation({ start: startIndex, end: eqIndex }),
+      };
+      thisAttr.value.push({
+        type: "SvelteLiteral",
+        value: thisValue,
+        parent: thisAttr,
+        ...ctx.getConvertLocation({
+          start: literalStartIndex,
+          end: literalEndIndex,
+        }),
+      });
+      // this
+      ctx.addToken("HTMLIdentifier", {
+        start: startIndex,
+        end: startIndex + 4,
+      });
+      // =
+      ctx.addToken("Punctuator", {
+        start: eqIndex,
+        end: eqIndex + 1,
+      });
+      if (quote) {
+        // "
+        ctx.addToken("Punctuator", {
+          start: valueStartIndex,
+          end: literalStartIndex,
+        });
+      }
+      ctx.addToken("HTMLText", {
         start: literalStartIndex,
         end: literalEndIndex,
-      }),
-    });
-    // this
-    ctx.addToken("HTMLIdentifier", {
-      start: startIndex,
-      end: startIndex + 4,
-    });
-    // =
-    ctx.addToken("Punctuator", {
-      start: eqIndex,
-      end: eqIndex + 1,
-    });
-    if (quote) {
-      // "
-      ctx.addToken("Punctuator", {
-        start: valueStartIndex,
-        end: literalStartIndex,
       });
+      if (quote) {
+        // "
+        ctx.addToken("Punctuator", {
+          start: literalEndIndex,
+          end: endIndex,
+        });
+      }
+      thisNode = thisAttr;
     }
-    ctx.addToken("HTMLText", {
-      start: literalStartIndex,
-      end: literalEndIndex,
-    });
-    if (quote) {
-      // "
-      ctx.addToken("Punctuator", {
-        start: literalEndIndex,
-        end: endIndex,
-      });
-    }
-    thisNode = thisAttr;
   } else {
     // this={...}
     const eqIndex = ctx.code.lastIndexOf("=", getWithLoc(thisValue).start);
@@ -509,6 +535,30 @@ function processThisAttribute(
       (c) => c === ">" || !c.trim(),
       closeIndex,
     );
+    thisNode = createSvelteSpecialDirective(
+      startIndex,
+      endIndex,
+      eqIndex,
+      thisValue,
+    );
+  }
+
+  const targetIndex = element.startTag.attributes.findIndex(
+    (attr) => thisNode.range[1] <= attr.range[0],
+  );
+  if (targetIndex === -1) {
+    element.startTag.attributes.push(thisNode);
+  } else {
+    element.startTag.attributes.splice(targetIndex, 0, thisNode);
+  }
+
+  /** Create SvelteSpecialDirective */
+  function createSvelteSpecialDirective(
+    startIndex: number,
+    endIndex: number,
+    eqIndex: number,
+    expression: ESTree.Expression,
+  ): SvelteSpecialDirective {
     const thisDir: SvelteSpecialDirective = {
       type: "SvelteSpecialDirective",
       kind: "this",
@@ -532,19 +582,11 @@ function processThisAttribute(
       start: eqIndex,
       end: eqIndex + 1,
     });
-    ctx.scriptLet.addExpression(thisValue, thisDir, null, (es) => {
+    ctx.scriptLet.addExpression(expression, thisDir, null, (es) => {
       thisDir.expression = es;
     });
-    thisNode = thisDir;
-  }
 
-  const targetIndex = element.startTag.attributes.findIndex(
-    (attr) => thisNode.range[1] <= attr.range[0],
-  );
-  if (targetIndex === -1) {
-    element.startTag.attributes.push(thisNode);
-  } else {
-    element.startTag.attributes.splice(targetIndex, 0, thisNode);
+    return thisDir;
   }
 }
 
