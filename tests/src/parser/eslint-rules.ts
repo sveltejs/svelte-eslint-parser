@@ -81,8 +81,13 @@ describe("svelte-eslint-parser with ESLint rules", () => {
               null,
               2,
             );
-            const output = fs.readFileSync(outputFileName, "utf8");
-            assert.strictEqual(messagesJson, output);
+
+            if (!fs.existsSync(outputFileName)) {
+              assert.strictEqual(messagesJson, "[]");
+            } else {
+              const output = fs.readFileSync(outputFileName, "utf8");
+              assert.strictEqual(messagesJson, output);
+            }
           }
         });
       }
