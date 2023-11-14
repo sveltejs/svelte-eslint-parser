@@ -338,8 +338,8 @@ export class Context {
       element.type === "SvelteScriptElement"
         ? "script"
         : element.type === "SvelteStyleElement"
-        ? "style"
-        : (element.name as SvelteName).name.toLowerCase();
+          ? "style"
+          : (element.name as SvelteName).name.toLowerCase();
     return this.blocks.find(
       (block) =>
         block.tag === tag &&
@@ -424,8 +424,8 @@ function* extractBlocks(code: string): IterableIterator<Block> {
       lowerTag === "script"
         ? endScriptTagRe
         : lowerTag === "style"
-        ? endStyleTagRe
-        : endTemplateTagRe;
+          ? endStyleTagRe
+          : endTemplateTagRe;
     endTagRe.lastIndex = startTagEnd;
     const endTagMatch = endTagRe.exec(code);
     if (endTagMatch) {
