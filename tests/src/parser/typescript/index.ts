@@ -1,5 +1,5 @@
 import { Context } from "../../../../src/context";
-import { parseScript } from "../../../../src/parser/script";
+import { parseScriptInSvelte } from "../../../../src/parser/script";
 import { parseTemplate } from "../../../../src/parser/template";
 import { parseTypeScript } from "../../../../src/parser/typescript";
 import { generateParserOptions, listupFixtures } from "../test-utils";
@@ -42,7 +42,7 @@ describe("Check for typescript analyze result.", () => {
         const analyzedResult = parseTypeScript(code, attrs, parserOptions, {
           slots: new Set(),
         });
-        const result = parseScript(
+        const result = parseScriptInSvelte(
           code.script + code.render,
           attrs,
           parserOptions,

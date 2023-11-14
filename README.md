@@ -169,6 +169,56 @@ module.exports = {
 }
 ```
 
+### parserOptions.runes
+
+***This is an experimental feature. It may be changed or removed in minor versions without notice.***
+
+If set to `true`, Rune symbols will be parsed. In this mode, the parser also parses files other than `*.svelte`.
+
+```json
+{
+    "parser": "svelte-eslint-parser",
+    "parserOptions": {
+        "runes": true
+    }
+}
+```
+
+When using this mode in an ESLint configuration, it is recommended to set it per file pattern as below.
+
+```json
+{
+    "overrides": [
+        {
+            "files": ["*.svelte"],
+            "parser": "svelte-eslint-parser",
+            "parserOptions": {
+                "runes": true,
+                "parser": "...",
+                ...
+            }
+        },
+        {
+            "files": ["*.svelte.js"],
+            "parser": "svelte-eslint-parser",
+            "parserOptions": {
+                "runes": true,
+                ...
+            }
+        },
+        {
+            "files": ["*.svelte.ts"],
+            "parser": "svelte-eslint-parser",
+            "parserOptions": {
+                "runes": true,
+                "parser": "...(ts parser)...",
+                ...
+            }
+        }
+    ]
+}
+```
+
 ## :computer: Editor Integrations
 
 ### Visual Studio Code

@@ -5,23 +5,14 @@ import { getParser } from "./resolve-parser";
 import { isEnhancedParserObject } from "./parser-object";
 
 /**
- * Parse for script
+ * Parse for <script>
  */
-export function parseScript(
+export function parseScriptInSvelte(
   code: string,
   attrs: Record<string, string | undefined>,
   parserOptions: any = {},
 ): ESLintExtendedProgram {
-  const result = parseScriptWithoutAnalyzeScopeFromVCode(
-    code,
-    attrs,
-    parserOptions,
-  );
-
-  if (!result.scopeManager) {
-    const scopeManager = analyzeScope(result.ast, parserOptions);
-    result.scopeManager = scopeManager;
-  }
+  const result = parseScript(code, attrs, parserOptions);
 
   traverseNodes(result.ast, {
     visitorKeys: result.visitorKeys,
@@ -39,6 +30,27 @@ export function parseScript(
       //
     },
   });
+
+  return result;
+}
+/**
+ * Parse for script
+ */
+export function parseScript(
+  code: string,
+  attrs: Record<string, string | undefined>,
+  parserOptions: any = {},
+): ESLintExtendedProgram {
+  const result = parseScriptWithoutAnalyzeScopeFromVCode(
+    code,
+    attrs,
+    parserOptions,
+  );
+
+  if (!result.scopeManager) {
+    const scopeManager = analyzeScope(result.ast, parserOptions);
+    result.scopeManager = scopeManager;
+  }
 
   return result;
 }

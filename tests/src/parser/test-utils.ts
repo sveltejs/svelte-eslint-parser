@@ -208,21 +208,29 @@ function* listupFixturesImpl(dir: string): Iterable<{
       continue;
     }
 
-    if (filename.endsWith("input.svelte")) {
+    if (
+      filename.endsWith("input.svelte") ||
+      filename.endsWith("input.svelte.js") ||
+      filename.endsWith("input.svelte.ts")
+    ) {
       const outputFileName = inputFileName.replace(
-        /input\.svelte$/u,
+        /input\.svelte(?:\.[jt]s)?$/u,
         "output.json",
       );
       const typeFileName = inputFileName.replace(
-        /input\.svelte$/u,
-        "type-output.svelte",
+        /input\.svelte(\.[jt]s)?$/u,
+        "type-output.svelte$1",
       );
-      const configFileName = inputFileName.replace(
-        /input\.svelte$/u,
+      const configFileNameForFile = inputFileName.replace(
+        /input\.svelte(?:\.[jt]s)?$/u,
         "config.json",
       );
+      const configFileNameForDir = path.join(
+        path.dirname(inputFileName),
+        "_config.json",
+      );
       const requirementsFileName = inputFileName.replace(
-        /input\.svelte$/u,
+        /input\.svelte(?:\.[jt]s)?$/u,
         "requirements.json",
       );
 
@@ -230,9 +238,18 @@ function* listupFixturesImpl(dir: string): Iterable<{
       const requirements = fs.existsSync(requirementsFileName)
         ? JSON.parse(fs.readFileSync(requirementsFileName, "utf-8"))
         : {};
-      const config = fs.existsSync(configFileName)
-        ? JSON.parse(fs.readFileSync(configFileName, "utf-8"))
-        : {};
+      const config = {};
+      for (const configFileName of [
+        configFileNameForDir,
+        configFileNameForFile,
+      ]) {
+        if (fs.existsSync(configFileName)) {
+          Object.assign(
+            config,
+            JSON.parse(fs.readFileSync(configFileName, "utf-8")),
+          );
+        }
+      }
       yield {
         input,
         inputFileName,

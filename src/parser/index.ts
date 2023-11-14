@@ -10,7 +10,7 @@ import type {
 import type { Program } from "estree";
 import type { ScopeManager } from "eslint-scope";
 import { Variable } from "eslint-scope";
-import { parseScript } from "./script";
+import { parseScript, parseScriptInSvelte } from "./script";
 import type * as SvAST from "./svelte-ast-types";
 import { sortNodes } from "./sort";
 import { parseTemplate } from "./template";
@@ -59,39 +59,48 @@ export interface ESLintExtendedProgram {
   // The code used to parse the script.
   _virtualScriptCode?: string;
 }
+type ParseResult = {
+  ast: SvelteProgram;
+  services: Record<string, any> &
+    (
+      | {
+          isSvelte: true;
+          svelteRunes: boolean;
+          getSvelteHtmlAst: () => SvAST.Fragment;
+          getStyleContext: () => StyleContext;
+        }
+      | { isSvelte: false; svelteRunes: boolean }
+    );
+  visitorKeys: { [type: string]: string[] };
+  scopeManager: ScopeManager;
+};
 /**
  * Parse source code
  */
-export function parseForESLint(
-  code: string,
-  options?: any,
-): {
-  ast: SvelteProgram;
-  services: Record<string, any> & {
-    isSvelte: true;
-    getSvelteHtmlAst: () => SvAST.Fragment;
-    getStyleContext: () => StyleContext;
-  };
-  visitorKeys: { [type: string]: string[] };
-  scopeManager: ScopeManager;
-} {
-  const parserOptions = {
-    ecmaVersion: 2020,
-    sourceType: "module",
-    loc: true,
-    range: true,
-    raw: true,
-    tokens: true,
-    comment: true,
-    eslintVisitorKeys: true,
-    eslintScopeManager: true,
-    ...(options || {}),
-  };
-  parserOptions.sourceType = "module";
-  if (parserOptions.ecmaVersion <= 5 || parserOptions.ecmaVersion == null) {
-    parserOptions.ecmaVersion = 2015;
+export function parseForESLint(code: string, options?: any): ParseResult {
+  const parserOptions = normalizeParserOptions(options);
+
+  if (
+    parserOptions.filePath &&
+    !parserOptions.filePath.endsWith(".svelte") &&
+    parserOptions.runes
+  ) {
+    const trimmed = code.trim();
+    if (!trimmed.startsWith("<") && !trimmed.endsWith(">")) {
+      return parseAsScript(code, parserOptions);
+    }
   }
 
+  return parseAsSvelte(code, parserOptions);
+}
+
+/**
+ * Parse source code as svelte component
+ */
+function parseAsSvelte(
+  code: string,
+  parserOptions: NormalizedParserOptions,
+): ParseResult {
   const ctx = new Context(code, parserOptions);
   const resultTemplate = parseTemplate(
     ctx.sourceCode.template,
@@ -107,7 +116,7 @@ export function parseForESLint(
         parserOptions,
         { slots: ctx.slots },
       )
-    : parseScript(
+    : parseScriptInSvelte(
         scripts.getCurrentVirtualCode(),
         scripts.attrs,
         parserOptions,
@@ -210,6 +219,61 @@ export function parseForESLint(
   resultScript.visitorKeys = Object.assign({}, KEYS, resultScript.visitorKeys);
 
   return resultScript as any;
+}
+
+/**
+ * Parse source code as script
+ */
+function parseAsScript(
+  code: string,
+  parserOptions: NormalizedParserOptions,
+): ParseResult {
+  const lang = parserOptions.filePath?.split(".").pop() || "js";
+  // TODO support runes
+  const resultScript = parseScript(code, { lang }, parserOptions);
+  resultScript.services = Object.assign(resultScript.services || {}, {
+    isSvelte: false,
+    runes: parserOptions.runes,
+  });
+  resultScript.visitorKeys = Object.assign({}, KEYS, resultScript.visitorKeys);
+  return resultScript as any;
+}
+
+type NormalizedParserOptions = {
+  ecmaVersion: number | "latest";
+  sourceType: "module" | "script";
+  loc: boolean;
+  range: boolean;
+  raw: boolean;
+  tokens: boolean;
+  comment: boolean;
+  eslintVisitorKeys: boolean;
+  eslintScopeManager: boolean;
+  runes: boolean;
+  filePath?: string;
+};
+
+/** Normalize parserOptions */
+function normalizeParserOptions(options: any): NormalizedParserOptions {
+  const parserOptions = {
+    ecmaVersion: 2020,
+    sourceType: "module",
+    loc: true,
+    range: true,
+    raw: true,
+    tokens: true,
+    comment: true,
+    eslintVisitorKeys: true,
+    eslintScopeManager: true,
+    rune: false,
+    ...(options || {}),
+  };
+  parserOptions.sourceType = "module";
+  if (parserOptions.ecmaVersion <= 5 || parserOptions.ecmaVersion == null) {
+    parserOptions.ecmaVersion = 2015;
+  }
+
+  return parserOptions;
 }
 
 /** Extract tokens */
