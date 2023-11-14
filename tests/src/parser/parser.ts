@@ -27,7 +27,7 @@ describe("Check for AST.", () => {
     config,
     meetRequirements,
   } of listupFixtures()) {
-    if (!meetRequirements("all")) {
+    if (!meetRequirements("parse")) {
       continue;
     }
     describe(inputFileName, () => {

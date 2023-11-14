@@ -74,7 +74,7 @@ for (const {
   meetRequirements,
   getRuleOutputFileName,
 } of listupFixtures()) {
-  if (!meetRequirements("test") || !meetRequirements("all")) {
+  if (!meetRequirements("test") || !meetRequirements("parse")) {
     continue;
   }
   // if (!inputFileName.includes("test")) continue;
