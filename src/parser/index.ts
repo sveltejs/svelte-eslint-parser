@@ -32,7 +32,7 @@ import {
   styleNodeLoc,
   styleNodeRange,
 } from "./style-context";
-import { globals } from './globals';
+import { globals } from "./globals";
 
 export {
   StyleContext,
@@ -102,16 +102,16 @@ export function parseForESLint(
   const scripts = ctx.sourceCode.scripts;
   const resultScript = ctx.isTypeScript()
     ? parseTypeScript(
-      scripts.getCurrentVirtualCodeInfo(),
-      scripts.attrs,
-      parserOptions,
-      { slots: ctx.slots },
-    )
+        scripts.getCurrentVirtualCodeInfo(),
+        scripts.attrs,
+        parserOptions,
+        { slots: ctx.slots },
+      )
     : parseScript(
-      scripts.getCurrentVirtualCode(),
-      scripts.attrs,
-      parserOptions,
-    );
+        scripts.getCurrentVirtualCode(),
+        scripts.attrs,
+        parserOptions,
+      );
   ctx.scriptLet.restore(resultScript);
   ctx.tokens.push(...resultScript.ast.tokens);
   ctx.comments.push(...resultScript.ast.comments);

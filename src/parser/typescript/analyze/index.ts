@@ -16,7 +16,7 @@ import { VirtualTypeScriptContext } from "../context";
 import type { TSESParseForESLintResult } from "../types";
 import type ESTree from "estree";
 import type { SvelteAttribute, SvelteHTMLElement } from "../../../ast";
-import { globalsForSvelte5, globals } from '../../../parser/globals';
+import { globalsForSvelte5, globals } from "../../../parser/globals";
 
 export type AnalyzeTypeScriptContext = {
   slots: Set<SvelteHTMLElement>;
@@ -209,7 +209,8 @@ function analyzeDollarDollarVariables(
 
     appendDeclareVirtualScript(
       "$$slots",
-      `Record<${nameTypes.size > 0 ? [...nameTypes].join(" | ") : "any"
+      `Record<${
+        nameTypes.size > 0 ? [...nameTypes].join(" | ") : "any"
       }, boolean>`,
     );
   }
@@ -222,8 +223,16 @@ function analyzeDollarDollarVariables(
             (reference) => reference.identifier.name === svelte5Global,
           )
         ) {
-          appendDeclareVirtualScript(svelte5Global, '<T>(initial: T): T', "function");
-          appendDeclareVirtualScript(svelte5Global, '<T>(): T | undefined', "function");
+          appendDeclareVirtualScript(
+            svelte5Global,
+            "<T>(initial: T): T",
+            "function",
+          );
+          appendDeclareVirtualScript(
+            svelte5Global,
+            "<T>(): T | undefined",
+            "function",
+          );
         }
         break;
       }
@@ -233,7 +242,11 @@ function analyzeDollarDollarVariables(
             (reference) => reference.identifier.name === svelte5Global,
           )
         ) {
-          appendDeclareVirtualScript(svelte5Global, '<T>(expression: T): T', "function");
+          appendDeclareVirtualScript(
+            svelte5Global,
+            "<T>(expression: T): T",
+            "function",
+          );
         }
         break;
       }
@@ -244,7 +257,11 @@ function analyzeDollarDollarVariables(
             (reference) => reference.identifier.name === svelte5Global,
           )
         ) {
-          appendDeclareVirtualScript(svelte5Global, '(fn: () => void | (() => void)): void', "function");
+          appendDeclareVirtualScript(
+            svelte5Global,
+            "(fn: () => void | (() => void)): void",
+            "function",
+          );
         }
         break;
       }
@@ -254,20 +271,24 @@ function analyzeDollarDollarVariables(
             (reference) => reference.identifier.name === svelte5Global,
           )
         ) {
-          appendDeclareVirtualScript(svelte5Global, '<T>(): T', "function");
+          appendDeclareVirtualScript(svelte5Global, "<T>(): T", "function");
         }
         break;
       }
       default: {
         const _: never = svelte5Global;
-        throw Error(`Unknown global: ${_}`)
+        throw Error(`Unknown global: ${_}`);
       }
     }
   }
 
   /** Append declare virtual script */
-  function appendDeclareVirtualScript(name: string, type: string, letOrFunction: 'let' | 'function' = "let") {
-    if (letOrFunction === 'let') {
+  function appendDeclareVirtualScript(
+    name: string,
+    type: string,
+    letOrFunction: "let" | "function" = "let",
+  ) {
+    if (letOrFunction === "let") {
       ctx.appendVirtualScript(`declare let ${name}: ${type};`);
     } else {
       ctx.appendVirtualScript(`declare function ${name}${type};`);

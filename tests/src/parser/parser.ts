@@ -158,50 +158,63 @@ function checkLoc(ast: SvelteProgram, fileName: string, code: string) {
       );
       assert.ok(
         node.range![0] < node.range![1],
-        `No range on "${node.type} line:${node.loc!.start.line} col:${node.loc!.start.column
+        `No range on "${node.type} line:${node.loc!.start.line} col:${
+          node.loc!.start.column
         }" in ${fileName}`,
       );
 
       if (parent) {
         assert.ok(
           parent.range![0] <= node.range![0],
-          `overlap range[0] on "${parent.type} line:${parent.loc!.start.line
-          } col:${parent.loc!.start.column}" > "${node.type} line:${node.loc!.start.line
+          `overlap range[0] on "${parent.type} line:${
+            parent.loc!.start.line
+          } col:${parent.loc!.start.column}" > "${node.type} line:${
+            node.loc!.start.line
           } col:${node.loc!.start.column}" in ${fileName}`,
         );
         assert.ok(
           node.range![1] <= parent.range![1],
-          `overlap range[1] on "${parent.type} line:${parent.loc!.end.line
-          } col:${parent.loc!.end.column}" > "${node.type} line:${node.loc!.end.line
+          `overlap range[1] on "${parent.type} line:${
+            parent.loc!.end.line
+          } col:${parent.loc!.end.column}" > "${node.type} line:${
+            node.loc!.end.line
           } col:${node.loc!.end.column}" in ${fileName}`,
         );
 
         assert.ok(
           parent.loc!.start.line <= node.loc!.start.line,
-          `overlap loc.start.line on "${parent.type} line:${parent.loc!.start.line
-          } col:${parent.loc!.start.column}" > "${node.type} line:${node.loc!.start.line
+          `overlap loc.start.line on "${parent.type} line:${
+            parent.loc!.start.line
+          } col:${parent.loc!.start.column}" > "${node.type} line:${
+            node.loc!.start.line
           } col:${node.loc!.start.column}" in ${fileName}`,
         );
         if (parent.loc!.start.line === node.loc!.start.line) {
           assert.ok(
             parent.loc!.start.column <= node.loc!.start.column,
-            `overlap loc.start.column on "${parent.type} line:${parent.loc!.start.line
-            } col:${parent.loc!.start.column}" > "${node.type} line:${node.loc!.start.line
+            `overlap loc.start.column on "${parent.type} line:${
+              parent.loc!.start.line
+            } col:${parent.loc!.start.column}" > "${node.type} line:${
+              node.loc!.start.line
             } col:${node.loc!.start.column}" in ${fileName}`,
           );
         }
 
         assert.ok(
           node.loc!.end.line <= parent.loc!.end.line,
-          `overlap loc.end.line on "${parent.type} line:${parent.loc!.end.line
-          } col:${parent.loc!.end.column}" > "${node.type} line:${node.loc!.end.line
+          `overlap loc.end.line on "${parent.type} line:${
+            parent.loc!.end.line
+          } col:${parent.loc!.end.column}" > "${node.type} line:${
+            node.loc!.end.line
           } col:${node.loc!.end.column}" in ${fileName}`,
         );
         if (parent.loc!.end.line === node.loc!.end.line) {
           assert.ok(
             node.loc!.end.column <= parent.loc!.end.column,
-            `overlap loc.end.column on "${parent.type} line:${parent.loc!.end.line
-            } col:${parent.loc!.end.column}" > "${node.type} line:${node.loc!.end.line
+            `overlap loc.end.column on "${parent.type} line:${
+              parent.loc!.end.line
+            } col:${parent.loc!.end.column}" > "${node.type} line:${
+              node.loc!.end.line
             } col:${node.loc!.end.column}" in ${fileName}`,
           );
         }
