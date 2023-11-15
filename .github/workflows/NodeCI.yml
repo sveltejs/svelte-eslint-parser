@@ -35,13 +35,27 @@ jobs:
         run: pnpm install
       - name: Test
         run: pnpm run test
-  test-for-svelte-v4:
+  test-for-svelte-v5:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v2
       - name: Use Node.js
         uses: actions/setup-node@v4
+      - name: Install Packages
+        run: pnpm install
+      - name: Test
+        run: pnpm run test
+
+  test-for-svelte-v4:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v2
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
       - name: Install Svelte v4
         run: |+
           pnpm install -D svelte@4
@@ -50,6 +64,7 @@ jobs:
         run: pnpm install
       - name: Test
         run: pnpm run test
+
   test-for-svelte-v3:
     runs-on: ubuntu-latest
     strategy:
@@ -138,6 +153,10 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 18
+      - name: Install Svelte v4
+        run: |+
+          pnpm install -D svelte@4
+          rm -rf node_modules
       - name: Install Packages
         run: pnpm install
       - name: Update fixtures
