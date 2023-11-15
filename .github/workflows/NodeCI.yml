@@ -163,7 +163,7 @@ jobs:
         run: pnpm run update-fixtures
       - name: Check changes
         run: |
-          git co package.json && \
+          git checkout package.json && \
           git add --all && \
           git diff-index --cached HEAD --stat --exit-code
   test-and-coverage:
