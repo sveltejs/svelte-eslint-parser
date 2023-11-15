@@ -2,7 +2,6 @@
 import assert from "assert";
 import fs from "fs";
 import semver from "semver";
-import { VERSION as SVELTE_VERSION } from "svelte/compiler";
 
 import { traverseNodes } from "../../../src/traverse";
 import { parseForESLint } from "../../../src";
@@ -24,15 +23,11 @@ describe("Check for AST.", () => {
     input,
     inputFileName,
     outputFileName,
-    scopeFile,
     config,
+    getScopeFile,
     meetRequirements,
   } of listupFixtures()) {
     if (!meetRequirements("parse")) {
-      continue;
-    }
-    const isSvelte5Only = inputFileName.includes("/svelte5/");
-    if (isSvelte5Only && !SVELTE_VERSION.startsWith("5")) {
       continue;
     }
 
@@ -51,7 +46,7 @@ describe("Check for AST.", () => {
       if (meetRequirements("scope"))
         it("most to generate the expected scope.", () => {
           let json: any = scopeToJSON(result.scopeManager);
-          let output: any = scopeFile;
+          let output: any = getScopeFile();
 
           if (
             result.services?.program // use ts parser

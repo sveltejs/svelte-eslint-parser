@@ -34,12 +34,13 @@ export function* listupFixtures(dir?: string): Iterable<{
   input: string;
   inputFileName: string;
   outputFileName: string;
-  scopeFile: string | null;
+  scopeFileName: string;
   typeFileName: string | null;
   config: Linter.ParserOptions;
   requirements: {
     scope?: Record<string, string>;
   };
+  getScopeFile: () => string | null;
   getRuleOutputFileName: (ruleName: string) => string;
   meetRequirements: (key: "test" | "scope" | "parse") => boolean;
 }> {
@@ -85,21 +86,32 @@ function* listupFixturesImpl(dir: string): Iterable<{
   input: string;
   inputFileName: string;
   outputFileName: string;
-  scopeFile: string | null;
+  scopeFileName: string;
   typeFileName: string | null;
   config: Linter.ParserOptions;
   requirements: {
     scope?: Record<string, string>;
   };
+  getScopeFile: () => string | null;
   getRuleOutputFileName: (ruleName: string) => string;
   meetRequirements: (key: "test" | "scope" | "parse") => boolean;
 }> {
   for (const filename of fs.readdirSync(dir)) {
     const inputFileName = path.join(dir, filename);
+
+    const isSvelte5Only = inputFileName.includes("/svelte5/");
+    if (isSvelte5Only && !SVELTE_VERSION.startsWith("5")) {
+      continue;
+    }
+
     if (filename.endsWith("input.svelte")) {
       const outputFileName = inputFileName.replace(
         /input\.svelte$/u,
         "output.json",
+      );
+      const scopeFileName = inputFileName.replace(
+        /input\.svelte$/u,
+        "scope-output.json",
       );
       const typeFileName = inputFileName.replace(
         /input\.svelte$/u,
@@ -125,10 +137,11 @@ function* listupFixturesImpl(dir: string): Iterable<{
         input,
         inputFileName,
         outputFileName,
-        scopeFile: getScopeFile(inputFileName),
+        scopeFileName,
         typeFileName: fs.existsSync(typeFileName) ? typeFileName : null,
         config,
         requirements,
+        getScopeFile: () => getScopeFile(inputFileName),
         getRuleOutputFileName: (ruleName) => {
           return inputFileName.replace(
             /input\.svelte$/u,
