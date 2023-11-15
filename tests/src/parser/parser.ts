@@ -13,6 +13,7 @@ import {
 } from "./test-utils";
 import type { Comment, SvelteProgram, Token } from "../../../src/ast";
 import { sortNodes } from "../../../src/parser/sort";
+import { sortJson } from "./test-utils";
 
 function parse(code: string, filePath: string, config: any) {
   return parseForESLint(code, generateParserOptions({ filePath }, config));
@@ -61,7 +62,7 @@ describe("Check for AST.", () => {
             }
           }
 
-          assert.deepStrictEqual(json, output);
+          assert.deepStrictEqual(sortJson(json), sortJson(output));
         });
 
       it("location must be correct.", () => {

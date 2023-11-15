@@ -563,3 +563,32 @@ function normalizeObject(value: any) {
     }),
   );
 }
+
+export function sortJson(pJson: any): any {
+  function tryParse() {
+    if (Array.isArray(pJson) || typeof pJson === "object") {
+      return [true, pJson];
+    }
+    try {
+      const json = JSON.parse(pJson);
+      return [true, json];
+    } catch {
+      return [false, null];
+    }
+  }
+
+  const [isJson, json] = tryParse();
+  if (!isJson) return pJson;
+  // プロパティの順序をソートする
+  if (Array.isArray(json)) {
+    return json.map(sortJson);
+  }
+  if (json && typeof json === "object") {
+    const result: any = {};
+    for (const key of Object.keys(json).sort()) {
+      result[key] = sortJson(json[key]);
+    }
+    return result;
+  }
+  return json;
+}
