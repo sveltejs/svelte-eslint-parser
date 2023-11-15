@@ -250,8 +250,7 @@ function analyzeDollarDollarVariables(
           }
           break;
         }
-        case "$effect":
-        case "$effect.pre": {
+        case "$effect": {
           if (
             scopeManager.globalScope!.through.some(
               (reference) => reference.identifier.name === svelte5Global,
@@ -260,6 +259,10 @@ function analyzeDollarDollarVariables(
             appendDeclareFunctionVirtualScript(
               svelte5Global,
               "(fn: () => void | (() => void)): void",
+            );
+            appendDeclareNamespaceVirtualScript(
+              svelte5Global,
+              "export function pre(fn: () => void | (() => void)): void;",
             );
           }
           break;
@@ -316,6 +319,32 @@ function analyzeDollarDollarVariables(
     ctx.restoreContext.addRestoreStatementProcess((node, result) => {
       if (
         node.type !== "TSDeclareFunction" ||
+        !node.declare ||
+        node.id?.type !== "Identifier" ||
+        node.id.name !== name
+      ) {
+        return false;
+      }
+      const program = result.ast;
+      program.body.splice(program.body.indexOf(node), 1);
+
+      const scopeManager = result.scopeManager as ScopeManager;
+
+      // Remove `declare` variable
+      removeAllScopeAndVariableAndReference(node, {
+        visitorKeys: result.visitorKeys,
+        scopeManager,
+      });
+
+      return true;
+    });
+  }
+
+  function appendDeclareNamespaceVirtualScript(name: string, script: string) {
+    ctx.appendVirtualScript(`declare namespace $effect { ${script} }`);
+    ctx.restoreContext.addRestoreStatementProcess((node, result) => {
+      if (
+        node.type !== "TSModuleDeclaration" ||
         !node.declare ||
         node.id?.type !== "Identifier" ||
         node.id.name !== name

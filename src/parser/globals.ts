@@ -9,7 +9,7 @@ export const globalsForSvelte5 = [
   "$state",
   "$derived",
   "$effect",
-  "$effect.pre",
+  "$effect",
   "$props",
 ] as const;
 export const globals = SVELTE_VERSION.startsWith("5")
