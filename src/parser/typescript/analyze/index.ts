@@ -215,84 +215,76 @@ function analyzeDollarDollarVariables(
     );
   }
 
-  for (const svelte5Global of globalsForSvelte5) {
-    switch (svelte5Global) {
-      case "$state": {
-        if (
-          scopeManager.globalScope!.through.some(
-            (reference) => reference.identifier.name === svelte5Global,
-          )
-        ) {
-          appendDeclareVirtualScript(
-            svelte5Global,
-            "<T>(initial: T): T",
-            "function",
-          );
-          appendDeclareVirtualScript(
-            svelte5Global,
-            "<T>(): T | undefined",
-            "function",
-          );
+  addSvelte5Globals();
+
+  function addSvelte5Globals() {
+    for (const svelte5Global of globalsForSvelte5) {
+      switch (svelte5Global) {
+        case "$state": {
+          if (
+            scopeManager.globalScope!.through.some(
+              (reference) => reference.identifier.name === svelte5Global,
+            )
+          ) {
+            appendDeclareFunctionVirtualScript(
+              svelte5Global,
+              "<T>(initial: T): T",
+            );
+            appendDeclareFunctionVirtualScript(
+              svelte5Global,
+              "<T>(): T | undefined",
+            );
+          }
+          break;
         }
-        break;
-      }
-      case "$derived": {
-        if (
-          scopeManager.globalScope!.through.some(
-            (reference) => reference.identifier.name === svelte5Global,
-          )
-        ) {
-          appendDeclareVirtualScript(
-            svelte5Global,
-            "<T>(expression: T): T",
-            "function",
-          );
+        case "$derived": {
+          if (
+            scopeManager.globalScope!.through.some(
+              (reference) => reference.identifier.name === svelte5Global,
+            )
+          ) {
+            appendDeclareFunctionVirtualScript(
+              svelte5Global,
+              "<T>(expression: T): T",
+            );
+          }
+          break;
         }
-        break;
-      }
-      case "$effect":
-      case "$effect.pre": {
-        if (
-          scopeManager.globalScope!.through.some(
-            (reference) => reference.identifier.name === svelte5Global,
-          )
-        ) {
-          appendDeclareVirtualScript(
-            svelte5Global,
-            "(fn: () => void | (() => void)): void",
-            "function",
-          );
+        case "$effect":
+        case "$effect.pre": {
+          if (
+            scopeManager.globalScope!.through.some(
+              (reference) => reference.identifier.name === svelte5Global,
+            )
+          ) {
+            appendDeclareFunctionVirtualScript(
+              svelte5Global,
+              "(fn: () => void | (() => void)): void",
+            );
+          }
+          break;
         }
-        break;
-      }
-      case "$props": {
-        if (
-          scopeManager.globalScope!.through.some(
-            (reference) => reference.identifier.name === svelte5Global,
-          )
-        ) {
-          appendDeclareVirtualScript(svelte5Global, "<T>(): T", "function");
+        case "$props": {
+          if (
+            scopeManager.globalScope!.through.some(
+              (reference) => reference.identifier.name === svelte5Global,
+            )
+          ) {
+            appendDeclareFunctionVirtualScript(svelte5Global, "<T>(): T");
+          }
+          break;
         }
-        break;
-      }
-      default: {
-        const _: never = svelte5Global;
-        throw Error(`Unknown global: ${_}`);
+        default: {
+          const _: never = svelte5Global;
+          throw Error(`Unknown global: ${_}`);
+        }
       }
     }
   }
 
   /** Append declare virtual script */
-  function appendDeclareVirtualScript(
-    name: string,
-    type: string,
-    letOrFunction: "let" | "function" = "let",
-  ) {
-    if (letOrFunction === "let") {
-      ctx.appendVirtualScript(`declare let ${name}: ${type};`);
-    } else {
-      ctx.appendVirtualScript(`declare function ${name}${type};`);
-    }
+  function appendDeclareVirtualScript(name: string, type: string) {
+    ctx.appendVirtualScript(`declare let ${name}: ${type};`);
     ctx.restoreContext.addRestoreStatementProcess((node, result) => {
       if (
         node.type !== "VariableDeclaration" ||
@@ -300,6 +292,33 @@ function analyzeDollarDollarVariables(
         node.declarations.length !== 1 ||
         node.declarations[0].id.type !== "Identifier" ||
         node.declarations[0].id.name !== name
+      ) {
+        return false;
+      }
+      const program = result.ast;
+      program.body.splice(program.body.indexOf(node), 1);
+
+      const scopeManager = result.scopeManager as ScopeManager;
+
+      // Remove `declare` variable
+      removeAllScopeAndVariableAndReference(node, {
+        visitorKeys: result.visitorKeys,
+        scopeManager,
+      });
+
+      return true;
+    });
+  }
+
+  /** Append declare virtual script */
+  function appendDeclareFunctionVirtualScript(name: string, type: string) {
+    ctx.appendVirtualScript(`declare function ${name}${type};`);
+    ctx.restoreContext.addRestoreStatementProcess((node, result) => {
+      if (
+        node.type !== "TSDeclareFunction" ||
+        !node.declare ||
+        node.id?.type !== "Identifier" ||
+        node.id.name !== name
       ) {
         return false;
       }
