@@ -565,21 +565,20 @@ function normalizeObject(value: any) {
 }
 
 export function sortJson(pJson: any): any {
-  function tryParse() {
+  function tryParse(): { isJson: boolean; json: any | null } {
     if (Array.isArray(pJson) || typeof pJson === "object") {
-      return [true, pJson];
+      return { isJson: true, json: pJson };
     }
     try {
       const json = JSON.parse(pJson);
-      return [true, json];
+      return { isJson: true, json };
     } catch {
-      return [false, null];
+      return { isJson: false, json: null };
     }
   }
 
-  const [isJson, json] = tryParse();
+  const { isJson, json } = tryParse();
   if (!isJson) return pJson;
-  // プロパティの順序をソートする
   if (Array.isArray(json)) {
     return json.map(sortJson);
   }
