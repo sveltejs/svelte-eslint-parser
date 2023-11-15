@@ -22,50 +22,50 @@ const BASIC_PARSER_OPTIONS: Linter.ParserOptions = {
   extraFileExtensions: [".svelte"],
 };
 
-const SVELTE5_SCOPE_VARIABLES_BASE =  [
+const SVELTE5_SCOPE_VARIABLES_BASE = [
   {
-    "name": "$$slots",
-    "identifiers": [],
-    "defs": [],
-    "references": []
+    name: "$$slots",
+    identifiers: [],
+    defs: [],
+    references: [],
   },
   {
-    "name": "$$props",
-    "identifiers": [],
-    "defs": [],
-    "references": []
+    name: "$$props",
+    identifiers: [],
+    defs: [],
+    references: [],
   },
   {
-    "name": "$$restProps",
-    "identifiers": [],
-    "defs": [],
-    "references": []
+    name: "$$restProps",
+    identifiers: [],
+    defs: [],
+    references: [],
   },
   {
-    "name": "$state",
-    "identifiers": [],
-    "defs": [],
-    "references": []
+    name: "$state",
+    identifiers: [],
+    defs: [],
+    references: [],
   },
   {
-    "name": "$derived",
-    "identifiers": [],
-    "defs": [],
-    "references": []
+    name: "$derived",
+    identifiers: [],
+    defs: [],
+    references: [],
   },
   {
-    "name": "$effect",
-    "identifiers": [],
-    "defs": [],
-    "references": []
+    name: "$effect",
+    identifiers: [],
+    defs: [],
+    references: [],
   },
   {
-    "name": "$props",
-    "identifiers": [],
-    "defs": [],
-    "references": []
-  }
-]
+    name: "$props",
+    identifiers: [],
+    defs: [],
+    references: [],
+  },
+];
 
 export function generateParserOptions(
   ...options: Linter.ParserOptions[]
@@ -110,7 +110,7 @@ function getScopeFile(inputFileName: string, isSvelte5Only: boolean) {
     "scope-output-svelte5.json",
   );
   if (!fs.existsSync(scopeFileNameSvelte5)) {
-    scopeFileJson["variables"] = SVELTE5_SCOPE_VARIABLES_BASE;
+    scopeFileJson.variables = SVELTE5_SCOPE_VARIABLES_BASE;
     return JSON.stringify(scopeFileJson, null, 2);
   }
 
