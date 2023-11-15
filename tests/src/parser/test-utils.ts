@@ -34,7 +34,7 @@ export function* listupFixtures(dir?: string): Iterable<{
   input: string;
   inputFileName: string;
   outputFileName: string;
-  scopeFileName: string;
+  scopeFile: string | null;
   typeFileName: string | null;
   config: Linter.ParserOptions;
   requirements: {
@@ -46,11 +46,46 @@ export function* listupFixtures(dir?: string): Iterable<{
   yield* listupFixturesImpl(dir || AST_FIXTURE_ROOT);
 }
 
+function getScopeFile(inputFileName: string) {
+  const scopeFileName = inputFileName.replace(
+    /input\.svelte$/u,
+    "scope-output.json",
+  );
+  if (!fs.existsSync(scopeFileName)) return null;
+  const scopeFile = fs.readFileSync(scopeFileName, "utf8");
+  if (!SVELTE_VERSION.startsWith("5")) {
+    return scopeFile;
+  }
+
+  const scopeFileNameSvelte5 = inputFileName.replace(
+    /input\.svelte$/u,
+    "scope-output-svelte5.json",
+  );
+  if (!fs.existsSync(scopeFileNameSvelte5)) return scopeFile;
+
+  const scopeFileSvelte5 = fs.readFileSync(scopeFileNameSvelte5, "utf8");
+  const scopeFileJson = JSON.parse(scopeFile);
+  const scopeFileSvelte5Json = JSON.parse(scopeFileSvelte5);
+
+  for (const key of Object.keys(scopeFileJson)) {
+    if (scopeFileSvelte5Json[key]) {
+      scopeFileJson[key] = scopeFileSvelte5Json[key];
+    }
+  }
+  for (const key of Object.keys(scopeFileSvelte5Json)) {
+    if (!scopeFileJson[key]) {
+      scopeFileJson[key] = scopeFileSvelte5Json[key];
+    }
+  }
+
+  return JSON.stringify(scopeFileJson, null, 2);
+}
+
 function* listupFixturesImpl(dir: string): Iterable<{
   input: string;
   inputFileName: string;
   outputFileName: string;
-  scopeFileName: string;
+  scopeFile: string | null;
   typeFileName: string | null;
   config: Linter.ParserOptions;
   requirements: {
@@ -66,9 +101,6 @@ function* listupFixturesImpl(dir: string): Iterable<{
         /input\.svelte$/u,
         "output.json",
       );
-      const scopeFileName = SVELTE_VERSION.startsWith("5")
-        ? inputFileName.replace(/input\.svelte$/u, "scope-output-svelte5.json")
-        : inputFileName.replace(/input\.svelte$/u, "scope-output.json");
       const typeFileName = inputFileName.replace(
         /input\.svelte$/u,
         "type-output.svelte",
@@ -93,7 +125,7 @@ function* listupFixturesImpl(dir: string): Iterable<{
         input,
         inputFileName,
         outputFileName,
-        scopeFileName,
+        scopeFile: getScopeFile(inputFileName),
         typeFileName: fs.existsSync(typeFileName) ? typeFileName : null,
         config,
         requirements,
