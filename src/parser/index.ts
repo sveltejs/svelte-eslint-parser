@@ -17,6 +17,7 @@ import { parseTemplate } from "./template";
 import {
   analyzePropsScope,
   analyzeReactiveScope,
+  analyzeRunesScope,
   analyzeStoreScope,
 } from "./analyze-scope";
 import { ParseError } from "../errors";
@@ -65,11 +66,11 @@ type ParseResult = {
     (
       | {
           isSvelte: true;
-          svelteRunes: boolean;
+          svelteOptions: { runes: boolean };
           getSvelteHtmlAst: () => SvAST.Fragment;
           getStyleContext: () => StyleContext;
         }
-      | { isSvelte: false; svelteRunes: boolean }
+      | { isSvelte: false; svelteOptions: { runes: boolean } }
     );
   visitorKeys: { [type: string]: string[] };
   scopeManager: ScopeManager;
@@ -83,7 +84,7 @@ export function parseForESLint(code: string, options?: any): ParseResult {
   if (
     parserOptions.filePath &&
     !parserOptions.filePath.endsWith(".svelte") &&
-    parserOptions.runes
+    parserOptions.svelteFeatures.runes
   ) {
     const trimmed = code.trim();
     if (!trimmed.startsWith("<") && !trimmed.endsWith(">")) {
@@ -107,6 +108,8 @@ function parseAsSvelte(
     ctx,
     parserOptions,
   );
+
+  const runes = ctx.runes ?? parserOptions.svelteFeatures.runes;
 
   const scripts = ctx.sourceCode.scripts;
   const resultScript = ctx.isTypeScript()
@@ -132,8 +135,9 @@ function parseAsSvelte(
   analyzeStoreScope(resultScript.scopeManager!); // for reactive vars
 
   // Add $$xxx variable
+  const globalScope = resultScript.scopeManager!.globalScope;
   for (const $$name of globals) {
-    const globalScope = resultScript.scopeManager!.globalScope;
+    if (globalScope.set.has($$name)) continue;
     const variable = new Variable();
     variable.name = $$name;
     (variable as any).scope = globalScope;
@@ -149,6 +153,10 @@ function parseAsSvelte(
       }
       return true;
     });
+  }
+
+  if (runes) {
+    analyzeRunesScope(resultScript.scopeManager!);
   }
 
   const ast = resultTemplate.ast;
@@ -204,6 +212,7 @@ function parseAsSvelte(
   resultScript.ast = ast as any;
   resultScript.services = Object.assign(resultScript.services || {}, {
     isSvelte: true,
+    svelteOptions: { runes },
     getSvelteHtmlAst() {
       return resultTemplate.svelteAst.html;
     },
@@ -229,11 +238,11 @@ function parseAsScript(
   parserOptions: NormalizedParserOptions,
 ): ParseResult {
   const lang = parserOptions.filePath?.split(".").pop() || "js";
-  // TODO support runes
   const resultScript = parseScript(code, { lang }, parserOptions);
+  analyzeRunesScope(resultScript.scopeManager!);
   resultScript.services = Object.assign(resultScript.services || {}, {
     isSvelte: false,
-    runes: parserOptions.runes,
+    svelteOptions: { runes: true },
   });
   resultScript.visitorKeys = Object.assign({}, KEYS, resultScript.visitorKeys);
   return resultScript as any;
@@ -249,7 +258,7 @@ type NormalizedParserOptions = {
   comment: boolean;
   eslintVisitorKeys: boolean;
   eslintScopeManager: boolean;
-  runes: boolean;
+  svelteFeatures: { runes: boolean };
   filePath?: string;
 };
 
@@ -265,7 +274,10 @@ function normalizeParserOptions(options: any): NormalizedParserOptions {
     comment: true,
     eslintVisitorKeys: true,
     eslintScopeManager: true,
-    rune: false,
+    svelteFeatures: {
+      rune: false,
+      ...(options?.svelteFeatures || {}),
+    },
     ...(options || {}),
   };
   parserOptions.sourceType = "module";

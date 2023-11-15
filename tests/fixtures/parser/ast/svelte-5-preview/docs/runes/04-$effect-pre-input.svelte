@@ -22,7 +22,7 @@
 </script>
 
 <div bind:this={div}>
-	{#each message as message}
+	{#each messages as message}
 		<p>{message}</p>
 	{/each}
 </div>

@@ -217,6 +217,30 @@ export function analyzePropsScope(
   }
 }
 
+/**  Analyze Runes. e.g. $state() */
+export function analyzeRunesScope(scopeManager: ScopeManager): void {
+  const globalScope = scopeManager.globalScope;
+  // https://svelte-5-preview.vercel.app/docs/runes
+  for (const $name of ["$state", "$derived", "$effect", "$props"]) {
+    if (globalScope.set.has($name)) continue;
+    const variable = new Variable();
+    variable.name = $name;
+    (variable as any).scope = globalScope;
+    globalScope.variables.push(variable);
+    globalScope.set.set($name, variable);
+    globalScope.through = globalScope.through.filter((reference) => {
+      if (reference.identifier.name === $name) {
+        // Links the variable and the reference.
+        // And this reference is removed from `Scope#through`.
+        reference.resolved = variable;
+        addReference(variable.references, reference);
+        return false;
+      }
+      return true;
+    });
+  }
+}
+
 /** Remove reference from through */
 function removeReferenceFromThrough(reference: Reference, baseScope: Scope) {
   const variable = reference.resolved!;

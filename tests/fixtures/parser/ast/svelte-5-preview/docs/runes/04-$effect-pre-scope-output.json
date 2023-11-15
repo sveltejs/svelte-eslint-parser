@@ -18,6 +18,54 @@
       "identifiers": [],
       "defs": [],
       "references": []
+    },
+    {
+      "name": "$state",
+      "identifiers": [],
+      "defs": [],
+      "references": []
+    },
+    {
+      "name": "$derived",
+      "identifiers": [],
+      "defs": [],
+      "references": []
+    },
+    {
+      "name": "$effect",
+      "identifiers": [],
+      "defs": [],
+      "references": [
+        {
+          "identifier": {
+            "type": "Identifier",
+            "name": "$effect",
+            "range": [
+              83,
+              90
+            ],
+            "loc": {
+              "start": {
+                "line": 9,
+                "column": 1
+              },
+              "end": {
+                "line": 9,
+                "column": 8
+              }
+            }
+          },
+          "from": "module",
+          "init": null,
+          "resolved": null
+        }
+      ]
+    },
+    {
+      "name": "$props",
+      "identifiers": [],
+      "defs": [],
+      "references": []
     }
   ],
   "references": [],
@@ -708,6 +756,46 @@
                   }
                 }
               }
+            },
+            {
+              "identifier": {
+                "type": "Identifier",
+                "name": "messages",
+                "range": [
+                  457,
+                  465
+                ],
+                "loc": {
+                  "start": {
+                    "line": 25,
+                    "column": 8
+                  },
+                  "end": {
+                    "line": 25,
+                    "column": 16
+                  }
+                }
+              },
+              "from": "module",
+              "init": null,
+              "resolved": {
+                "type": "Identifier",
+                "name": "messages",
+                "range": [
+                  57,
+                  65
+                ],
+                "loc": {
+                  "start": {
+                    "line": 5,
+                    "column": 5
+                  },
+                  "end": {
+                    "line": 5,
+                    "column": 13
+                  }
+                }
+              }
             }
           ]
         }
@@ -819,10 +907,10 @@
         {
           "identifier": {
             "type": "Identifier",
-            "name": "message",
+            "name": "messages",
             "range": [
               457,
-              464
+              465
             ],
             "loc": {
               "start": {
@@ -831,13 +919,30 @@
               },
               "end": {
                 "line": 25,
-                "column": 15
+                "column": 16
               }
             }
           },
           "from": "module",
           "init": null,
-          "resolved": null
+          "resolved": {
+            "type": "Identifier",
+            "name": "messages",
+            "range": [
+              57,
+              65
+            ],
+            "loc": {
+              "start": {
+                "line": 5,
+                "column": 5
+              },
+              "end": {
+                "line": 5,
+                "column": 13
+              }
+            }
+          }
         }
       ],
       "childScopes": [
@@ -1720,17 +1825,17 @@
                   "type": "Identifier",
                   "name": "message",
                   "range": [
-                    468,
-                    475
+                    469,
+                    476
                   ],
                   "loc": {
                     "start": {
                       "line": 25,
-                      "column": 19
+                      "column": 20
                     },
                     "end": {
                       "line": 25,
-                      "column": 26
+                      "column": 27
                     }
                   }
                 }
@@ -1742,17 +1847,17 @@
                     "type": "Identifier",
                     "name": "message",
                     "range": [
-                      468,
-                      475
+                      469,
+                      476
                     ],
                     "loc": {
                       "start": {
                         "line": 25,
-                        "column": 19
+                        "column": 20
                       },
                       "end": {
                         "line": 25,
-                        "column": 26
+                        "column": 27
                       }
                     }
                   },
@@ -1760,10 +1865,10 @@
                     "type": "SvelteEachBlock",
                     "expression": {
                       "type": "Identifier",
-                      "name": "message",
+                      "name": "messages",
                       "range": [
                         457,
-                        464
+                        465
                       ],
                       "loc": {
                         "start": {
@@ -1772,7 +1877,7 @@
                         },
                         "end": {
                           "line": 25,
-                          "column": 15
+                          "column": 16
                         }
                       }
                     },
@@ -1780,17 +1885,17 @@
                       "type": "Identifier",
                       "name": "message",
                       "range": [
-                        468,
-                        475
+                        469,
+                        476
                       ],
                       "loc": {
                         "start": {
                           "line": 25,
-                          "column": 19
+                          "column": 20
                         },
                         "end": {
                           "line": 25,
-                          "column": 26
+                          "column": 27
                         }
                       }
                     },
@@ -1804,8 +1909,8 @@
                           "type": "SvelteName",
                           "name": "p",
                           "range": [
-                            480,
-                            481
+                            481,
+                            482
                           ],
                           "loc": {
                             "start": {
@@ -1823,8 +1928,8 @@
                           "attributes": [],
                           "selfClosing": false,
                           "range": [
-                            479,
-                            482
+                            480,
+                            483
                           ],
                           "loc": {
                             "start": {
@@ -1845,8 +1950,8 @@
                               "type": "Identifier",
                               "name": "message",
                               "range": [
-                                483,
-                                490
+                                484,
+                                491
                               ],
                               "loc": {
                                 "start": {
@@ -1860,8 +1965,8 @@
                               }
                             },
                             "range": [
-                              482,
-                              491
+                              483,
+                              492
                             ],
                             "loc": {
                               "start": {
@@ -1878,8 +1983,8 @@
                         "endTag": {
                           "type": "SvelteEndTag",
                           "range": [
-                            491,
-                            495
+                            492,
+                            496
                           ],
                           "loc": {
                             "start": {
@@ -1893,8 +1998,8 @@
                           }
                         },
                         "range": [
-                          479,
-                          495
+                          480,
+                          496
                         ],
                         "loc": {
                           "start": {
@@ -1911,7 +2016,7 @@
                     "else": null,
                     "range": [
                       450,
-                      504
+                      505
                     ],
                     "loc": {
                       "start": {
@@ -1932,8 +2037,8 @@
                     "type": "Identifier",
                     "name": "message",
                     "range": [
-                      483,
-                      490
+                      484,
+                      491
                     ],
                     "loc": {
                       "start": {
@@ -1952,17 +2057,17 @@
                     "type": "Identifier",
                     "name": "message",
                     "range": [
-                      468,
-                      475
+                      469,
+                      476
                     ],
                     "loc": {
                       "start": {
                         "line": 25,
-                        "column": 19
+                        "column": 20
                       },
                       "end": {
                         "line": 25,
-                        "column": 26
+                        "column": 27
                       }
                     }
                   }
@@ -1976,8 +2081,8 @@
                 "type": "Identifier",
                 "name": "message",
                 "range": [
-                  483,
-                  490
+                  484,
+                  491
                 ],
                 "loc": {
                   "start": {
@@ -1996,17 +2101,17 @@
                 "type": "Identifier",
                 "name": "message",
                 "range": [
-                  468,
-                  475
+                  469,
+                  476
                 ],
                 "loc": {
                   "start": {
                     "line": 25,
-                    "column": 19
+                    "column": 20
                   },
                   "end": {
                     "line": 25,
-                    "column": 26
+                    "column": 27
                   }
                 }
               }
@@ -2039,79 +2144,9 @@
           "from": "module",
           "init": null,
           "resolved": null
-        },
-        {
-          "identifier": {
-            "type": "Identifier",
-            "name": "message",
-            "range": [
-              457,
-              464
-            ],
-            "loc": {
-              "start": {
-                "line": 25,
-                "column": 8
-              },
-              "end": {
-                "line": 25,
-                "column": 15
-              }
-            }
-          },
-          "from": "module",
-          "init": null,
-          "resolved": null
         }
       ]
     }
   ],
-  "through": [
-    {
-      "identifier": {
-        "type": "Identifier",
-        "name": "$effect",
-        "range": [
-          83,
-          90
-        ],
-        "loc": {
-          "start": {
-            "line": 9,
-            "column": 1
-          },
-          "end": {
-            "line": 9,
-            "column": 8
-          }
-        }
-      },
-      "from": "module",
-      "init": null,
-      "resolved": null
-    },
-    {
-      "identifier": {
-        "type": "Identifier",
-        "name": "message",
-        "range": [
-          457,
-          464
-        ],
-        "loc": {
-          "start": {
-            "line": 25,
-            "column": 8
-          },
-          "end": {
-            "line": 25,
-            "column": 15
-          }
-        }
-      },
-      "from": "module",
-      "init": null,
-      "resolved": null
-    }
-  ]
+  "through": []
 }
