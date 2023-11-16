@@ -86,7 +86,10 @@ describe("svelte-eslint-parser with ESLint rules", () => {
               assert.strictEqual(messagesJson, "[]");
             } else {
               const output = fs.readFileSync(outputFileName, "utf8");
-              assert.strictEqual(messagesJson, output);
+              assert.strictEqual(
+                JSON.stringify(JSON.parse(messagesJson), null, 2),
+                JSON.stringify(JSON.parse(output), null, 2),
+              );
             }
           }
         });
