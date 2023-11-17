@@ -1,5 +1,13 @@
 # svelte-eslint-parser
 
+## 0.34.0-next.1
+
+### Minor Changes
+
+- [#425](https://github.com/sveltejs/svelte-eslint-parser/pull/425) [`ff242c4`](https://github.com/sveltejs/svelte-eslint-parser/commit/ff242c4abc322fd6bc93fda9fb30da14d73a847e) Thanks [@baseballyama](https://github.com/baseballyama)! - feat: Support runes
+
+- [#426](https://github.com/sveltejs/svelte-eslint-parser/pull/426) [`9793cb0`](https://github.com/sveltejs/svelte-eslint-parser/commit/9793cb0d4520b1d5ae9e1f0aa5aff1c8b84cebb6) Thanks [@ota-meshi](https://github.com/ota-meshi)! - feat: apply runes to `*.svelte.js` and `*.svelte.ts`.
+
 ## 0.34.0-next.0
 
 ### Minor Changes
