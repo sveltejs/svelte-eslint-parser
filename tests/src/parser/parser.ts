@@ -141,23 +141,27 @@ function checkLoc(ast: SvelteProgram, fileName: string, code: string) {
         );
       }
       set.add(node);
+      const nodeParent = (node as any).parent;
       if (parent?.type.startsWith("Svelte")) {
         assert.ok(
-          (node as any).parent?.type === parent?.type,
-          `Parent type mismatch [${(node as any).parent
-            ?.type} : ${parent?.type}] @${astToJson(node)}`,
+          nodeParent?.type === parent?.type,
+          `Parent type mismatch [${nodeParent?.type} : ${parent?.type}] @${astToJson(
+            node,
+          )}`,
         );
       }
-      assert.ok(
-        (node as any).parent?.range?.[0] === parent?.range![0],
-        `Parent range mismatch [${(node as any).parent
-          ?.range?.[0]} : ${parent?.range![0]}] @${astToJson(node)}`,
-      );
-      assert.ok(
-        (node as any).parent?.range?.[1] === parent?.range![1],
-        `Parent range mismatch [${(node as any).parent
-          ?.range?.[1]} : ${parent?.range![1]}] @${astToJson(node)}`,
-      );
+      if (nodeParent) {
+        assert.ok(
+          nodeParent.range?.[0] === parent?.range![0],
+          `Parent range mismatch [${nodeParent
+            ?.range?.[0]} : ${parent?.range![0]}] @${astToJson(node)}`,
+        );
+        assert.ok(
+          nodeParent.range?.[1] === parent?.range![1],
+          `Parent range mismatch [${nodeParent
+            ?.range?.[1]} : ${parent?.range![1]}] @${astToJson(node)}`,
+        );
+      }
       assert.ok(
         node.range![0] < node.range![1],
         `No range on "${node.type} line:${node.loc!.start.line} col:${

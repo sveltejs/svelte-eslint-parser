@@ -41,7 +41,7 @@
     "release": "changeset publish",
     "test": "pnpm run mocha \"tests/src/**/*.ts\" --reporter dot --timeout 60000",
     "ts": "node -r esbuild-register",
-    "update-fixtures": "pnpm i -D svelte@4 && pnpm run run-update-fixtures && git checkout package.json && pnpm i && pnpm run run-update-fixtures",
+    "update-fixtures": "git add package.json && pnpm i -D svelte@4 && git checkout package.json && pnpm run run-update-fixtures && pnpm i && pnpm run run-update-fixtures",
     "run-update-fixtures": "pnpm run ts ./tools/update-fixtures.ts",
     "version:ci": "env-cmd -e version-ci pnpm run build:meta && changeset version"
   },

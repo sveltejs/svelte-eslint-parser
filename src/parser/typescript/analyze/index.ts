@@ -16,21 +16,22 @@ import { VirtualTypeScriptContext } from "../context";
 import type { TSESParseForESLintResult } from "../types";
 import type ESTree from "estree";
 import type { SvelteAttribute, SvelteHTMLElement } from "../../../ast";
-import { globalsForSvelte5, globals } from "../../../parser/globals";
+import { globals, globalsForRunes } from "../../../parser/globals";
+import type { NormalizedParserOptions } from "../../parser-options";
 
 export type AnalyzeTypeScriptContext = {
   slots: Set<SvelteHTMLElement>;
 };
 
 /**
- * Analyze TypeScript source code.
- * Generate virtual code to provide correct type information for Svelte store reference namess and scopes.
+ * Analyze TypeScript source code in <script>.
+ * Generate virtual code to provide correct type information for Svelte store reference names, scopes, and runes.
  * See https://github.com/sveltejs/svelte-eslint-parser/blob/main/docs/internal-mechanism.md#scope-types
  */
-export function analyzeTypeScript(
+export function analyzeTypeScriptInSvelte(
   code: { script: string; render: string },
   attrs: Record<string, string | undefined>,
-  parserOptions: any,
+  parserOptions: NormalizedParserOptions,
   context: AnalyzeTypeScriptContext,
 ): VirtualTypeScriptContext {
   const ctx = new VirtualTypeScriptContext(code.script + code.render);
@@ -52,9 +53,38 @@ export function analyzeTypeScript(
 
   analyzeDollarDollarVariables(result, ctx, context.slots);
 
+  analyzeRuneVariables(result, ctx);
+
   analyzeReactiveScopes(result, ctx);
 
   analyzeRenderScopes(code, ctx);
+
+  return ctx;
+}
+/**
+ * Analyze TypeScript source code.
+ * Generate virtual code to provide correct type information for Svelte runes.
+ * See https://github.com/sveltejs/svelte-eslint-parser/blob/main/docs/internal-mechanism.md#scope-types
+ */
+export function analyzeTypeScript(
+  code: string,
+  attrs: Record<string, string | undefined>,
+  parserOptions: NormalizedParserOptions,
+): VirtualTypeScriptContext {
+  const ctx = new VirtualTypeScriptContext(code);
+  ctx.appendOriginal(/^\s*/u.exec(code)![0].length);
+
+  const result = parseScriptWithoutAnalyzeScope(code, attrs, {
+    ...parserOptions,
+    // Without typings
+    project: null,
+  }) as unknown as TSESParseForESLintResult;
+
+  ctx._beforeResult = result;
+
+  analyzeRuneVariables(result, ctx);
+
+  ctx.appendOriginalToEnd();
 
   return ctx;
 }
@@ -76,7 +106,7 @@ function analyzeStoreReferenceNames(
       // Begin with `$`.
       reference.identifier.name.startsWith("$") &&
       // Ignore globals
-      !globals.includes(reference.identifier.name) &&
+      !globals.includes(reference.identifier.name as never) &&
       // Ignore if it is already defined.
       !programScope.set.has(reference.identifier.name)
     ) {
@@ -156,114 +186,70 @@ function analyzeDollarDollarVariables(
   slots: Set<SvelteHTMLElement>,
 ) {
   const scopeManager = result.scopeManager;
-
-  if (
-    scopeManager.globalScope!.through.some(
-      (reference) => reference.identifier.name === "$$props",
-    )
-  ) {
-    appendDeclareVirtualScript("$$props", `{ [index: string]: any }`);
-  }
-  if (
-    scopeManager.globalScope!.through.some(
-      (reference) => reference.identifier.name === "$$restProps",
-    )
-  ) {
-    appendDeclareVirtualScript("$$restProps", `{ [index: string]: any }`);
-  }
-  if (
-    scopeManager.globalScope!.through.some(
-      (reference) => reference.identifier.name === "$$slots",
-    )
-  ) {
-    const nameTypes = new Set<string>();
-    for (const slot of slots) {
-      const nameAttr = slot.startTag.attributes.find(
-        (attr): attr is SvelteAttribute =>
-          attr.type === "SvelteAttribute" && attr.key.name === "name",
-      );
-      if (!nameAttr || nameAttr.value.length === 0) {
-        nameTypes.add('"default"');
-        continue;
-      }
-
-      if (nameAttr.value.length === 1) {
-        const value = nameAttr.value[0];
-        if (value.type === "SvelteLiteral") {
-          nameTypes.add(JSON.stringify(value.value));
-        } else {
-          nameTypes.add("string");
-        }
-        continue;
-      }
-      nameTypes.add(
-        `\`${nameAttr.value
-          .map((value) =>
-            value.type === "SvelteLiteral"
-              ? value.value.replace(/([$`])/gu, "\\$1")
-              : "${string}",
-          )
-          .join("")}\``,
-      );
+  for (const globalName of globals) {
+    if (
+      !scopeManager.globalScope!.through.some(
+        (reference) => reference.identifier.name === globalName,
+      )
+    ) {
+      continue;
     }
+    switch (globalName) {
+      case "$$props":
+        appendDeclareVirtualScript(globalName, `{ [index: string]: any }`);
+        break;
+      case "$$restProps":
+        appendDeclareVirtualScript(globalName, `{ [index: string]: any }`);
+        break;
+      case "$$slots": {
+        const nameTypes = new Set<string>();
+        for (const slot of slots) {
+          const nameAttr = slot.startTag.attributes.find(
+            (attr): attr is SvelteAttribute =>
+              attr.type === "SvelteAttribute" && attr.key.name === "name",
+          );
+          if (!nameAttr || nameAttr.value.length === 0) {
+            nameTypes.add('"default"');
+            continue;
+          }
 
-    appendDeclareVirtualScript(
-      "$$slots",
-      `Record<${
-        nameTypes.size > 0 ? [...nameTypes].join(" | ") : "any"
-      }, boolean>`,
-    );
-  }
+          if (nameAttr.value.length === 1) {
+            const value = nameAttr.value[0];
+            if (value.type === "SvelteLiteral") {
+              nameTypes.add(JSON.stringify(value.value));
+            } else {
+              nameTypes.add("string");
+            }
+            continue;
+          }
+          nameTypes.add(
+            `\`${nameAttr.value
+              .map((value) =>
+                value.type === "SvelteLiteral"
+                  ? value.value.replace(/([$`])/gu, "\\$1")
+                  : "${string}",
+              )
+              .join("")}\``,
+          );
+        }
 
-  addSvelte5Globals();
-
-  function addSvelte5Globals() {
-    for (const svelte5Global of globalsForSvelte5) {
-      if (
-        !scopeManager.globalScope!.through.some(
-          (reference) => reference.identifier.name === svelte5Global,
-        )
-      ) {
-        continue;
+        appendDeclareVirtualScript(
+          globalName,
+          `Record<${
+            nameTypes.size > 0 ? [...nameTypes].join(" | ") : "any"
+          }, boolean>`,
+        );
+        break;
       }
-      switch (svelte5Global) {
-        case "$state": {
-          appendDeclareFunctionVirtualScript(
-            svelte5Global,
-            "<T>(initial: T): T",
-          );
-          appendDeclareFunctionVirtualScript(
-            svelte5Global,
-            "<T>(): T | undefined",
-          );
-          break;
-        }
-        case "$derived": {
-          appendDeclareFunctionVirtualScript(
-            svelte5Global,
-            "<T>(expression: T): T",
-          );
-          break;
-        }
-        case "$effect": {
-          appendDeclareFunctionVirtualScript(
-            svelte5Global,
-            "(fn: () => void | (() => void)): void",
-          );
-          appendDeclareNamespaceVirtualScript(
-            svelte5Global,
-            "export function pre(fn: () => void | (() => void)): void;",
-          );
-          break;
-        }
-        case "$props": {
-          appendDeclareFunctionVirtualScript(svelte5Global, "<T>(): T");
-          break;
-        }
-        default: {
-          const _: never = svelte5Global;
-          throw Error(`Unknown global: ${_}`);
-        }
+      case "$state":
+      case "$derived":
+      case "$effect":
+      case "$props":
+        // Processed by `analyzeRuneVariables`.
+        break;
+      default: {
+        const _: never = globalName;
+        throw Error(`Unknown global: ${_}`);
       }
     }
   }
@@ -294,6 +280,56 @@ function analyzeDollarDollarVariables(
 
       return true;
     });
+  }
+}
+
+/**
+ * Analyze Runes.
+ * Insert type definitions code to provide correct type information for Runes.
+ */
+function analyzeRuneVariables(
+  result: TSESParseForESLintResult,
+  ctx: VirtualTypeScriptContext,
+) {
+  const scopeManager = result.scopeManager;
+  for (const globalName of globalsForRunes) {
+    if (
+      !scopeManager.globalScope!.through.some(
+        (reference) => reference.identifier.name === globalName,
+      )
+    ) {
+      continue;
+    }
+    switch (globalName) {
+      case "$state": {
+        appendDeclareFunctionVirtualScript(globalName, "<T>(initial: T): T");
+        appendDeclareFunctionVirtualScript(globalName, "<T>(): T | undefined");
+        break;
+      }
+      case "$derived": {
+        appendDeclareFunctionVirtualScript(globalName, "<T>(expression: T): T");
+        break;
+      }
+      case "$effect": {
+        appendDeclareFunctionVirtualScript(
+          globalName,
+          "(fn: () => void | (() => void)): void",
+        );
+        appendDeclareNamespaceVirtualScript(
+          globalName,
+          "export function pre(fn: () => void | (() => void)): void;",
+        );
+        break;
+      }
+      case "$props": {
+        appendDeclareFunctionVirtualScript(globalName, "<T>(): T");
+        break;
+      }
+      default: {
+        const _: never = globalName;
+        throw Error(`Unknown global: ${_}`);
+      }
+    }
   }
 
   /** Append declare virtual script */

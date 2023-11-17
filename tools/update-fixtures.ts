@@ -88,7 +88,11 @@ for (const {
     writeScopeFile(scopeJson);
 
     if (typeFileName) {
-      fs.writeFileSync(typeFileName, buildTypes(input, result), "utf8");
+      fs.writeFileSync(
+        typeFileName,
+        buildTypes(input, result, inputFileName),
+        "utf8",
+      );
     }
   } catch (e) {
     // eslint-disable-next-line no-console -- ignore
@@ -159,6 +163,7 @@ for (const { input, inputFileName, outputFileName, config } of listupFixtures(
   STYLE_LOCATION_FIXTURE_ROOT,
 )) {
   const services = parse(input, inputFileName, config).services;
+  if (!services.isSvelte) continue;
   const styleContext = services.getStyleContext();
   if (styleContext.status !== "success") {
     continue;
@@ -200,28 +205,33 @@ function buildTypes(
     services: Record<string, any>;
     visitorKeys: { [type: string]: string[] };
   },
+  inputFileName: string,
 ): string {
   const scriptLineRange: [number, number][] = [];
-  parser.traverseNodes(result.ast, {
-    enterNode(node) {
-      if (node.type === "SvelteScriptElement" && node.body.length) {
-        scriptLineRange.push([
-          node.body[0].loc!.start.line - 1,
-          node.body[node.body.length - 1].loc!.end.line - 1,
-        ]);
-      }
-      if (node.type === "SvelteDirective" && node.expression) {
-        if (node.expression.loc!.start.line !== node.expression.loc!.end.line)
+  if (inputFileName.endsWith(".svelte")) {
+    parser.traverseNodes(result.ast, {
+      enterNode(node) {
+        if (node.type === "SvelteScriptElement" && node.body.length) {
           scriptLineRange.push([
-            node.expression.loc!.start.line - 1,
-            node.expression.loc!.end.line - 2,
+            node.body[0].loc!.start.line - 1,
+            node.body[node.body.length - 1].loc!.end.line - 1,
           ]);
-      }
-    },
-    leaveNode() {
-      // noop
-    },
-  });
+        }
+        if (node.type === "SvelteDirective" && node.expression) {
+          if (node.expression.loc!.start.line !== node.expression.loc!.end.line)
+            scriptLineRange.push([
+              node.expression.loc!.start.line - 1,
+              node.expression.loc!.end.line - 2,
+            ]);
+        }
+      },
+      leaveNode() {
+        // noop
+      },
+    });
+  } else {
+    scriptLineRange.push([0, Infinity]);
+  }
 
   const tsNodeMap: ReadonlyMap<any, ts.Node> =
     result.services.esTreeNodeToTSNodeMap;

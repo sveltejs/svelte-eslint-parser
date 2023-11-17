@@ -2,7 +2,7 @@ import { getEspree } from "./espree";
 import type { ParserObject } from "./parser-object";
 import { isParserObject } from "./parser-object";
 
-type UserOptionParser =
+export type UserOptionParser =
   | string
   | ParserObject
   | Record<string, string | ParserObject | undefined>
@@ -10,7 +10,7 @@ type UserOptionParser =
 
 /** Get parser for script lang */
 export function getParserForLang(
-  attrs: Record<string, string | undefined>,
+  lang: string | undefined | null,
   parser: UserOptionParser,
 ): string | ParserObject {
   if (parser) {
@@ -18,7 +18,7 @@ export function getParserForLang(
       return parser;
     }
     if (typeof parser === "object") {
-      const value = parser[attrs.lang || "js"];
+      const value = parser[lang || "js"];
       if (typeof value === "string" || isParserObject(value)) {
         return value;
       }
@@ -32,7 +32,7 @@ export function getParser(
   attrs: Record<string, string | undefined>,
   parser: UserOptionParser,
 ): ParserObject {
-  const parserValue = getParserForLang(attrs, parser);
+  const parserValue = getParserForLang(attrs.lang, parser);
   if (isParserObject(parserValue)) {
     return parserValue;
   }

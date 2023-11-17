@@ -1,5 +1,4 @@
 /* global require -- node */
-import { VERSION as SVELTE_VERSION } from "svelte/compiler";
 import path from "path";
 import fs from "fs";
 import semver from "semver";
@@ -10,6 +9,8 @@ import type * as TSESScopes from "@typescript-eslint/scope-manager";
 import type { SvelteNode } from "../../../src/ast";
 import type { StyleContext } from "../../../src";
 import { TS_GLOBALS } from "./ts-vars";
+import { svelteVersion } from "../../../src/parser/svelte-version";
+import type { NormalizedParserOptions } from "../../../src/parser/parser-options";
 
 const AST_FIXTURE_ROOT = path.resolve(__dirname, "../../fixtures/parser/ast");
 const BASIC_PARSER_OPTIONS: Linter.ParserOptions = {
@@ -66,11 +67,18 @@ const SVELTE5_SCOPE_VARIABLES_BASE = [
     references: [],
   },
 ];
-
 export function generateParserOptions(
   ...options: Linter.ParserOptions[]
-): Linter.ParserOptions {
-  let result = { ...BASIC_PARSER_OPTIONS };
+): Linter.ParserOptions;
+export function generateParserOptions(
+  ...options: (Linter.ParserOptions | NormalizedParserOptions)[]
+): NormalizedParserOptions;
+export function generateParserOptions(
+  ...options: (Linter.ParserOptions | NormalizedParserOptions)[]
+): Linter.ParserOptions | NormalizedParserOptions {
+  let result: Linter.ParserOptions | NormalizedParserOptions = {
+    ...BASIC_PARSER_OPTIONS,
+  };
   for (const option of options) {
     result = { ...result, ...option };
   }
@@ -100,7 +108,7 @@ function getScopeFile(inputFileName: string, isSvelte5Only: boolean) {
   );
   if (!fs.existsSync(scopeFileName)) return null;
   const scopeFile = fs.readFileSync(scopeFileName, "utf8");
-  if (!SVELTE_VERSION.startsWith("5") || isSvelte5Only) {
+  if (!svelteVersion.gte(5) || isSvelte5Only) {
     return scopeFile;
   }
 
@@ -140,7 +148,7 @@ function writeScopeFile(
     /input\.svelte(?:\.[jt]s)?$/u,
     "scope-output.json",
   );
-  if (!SVELTE_VERSION.startsWith("5")) {
+  if (!svelteVersion.gte(5)) {
     // v4
     if (isSvelte5Only) return;
     fs.writeFileSync(scopeFileName, json, "utf8");
@@ -204,25 +212,33 @@ function* listupFixturesImpl(dir: string): Iterable<{
     const inputFileName = path.join(dir, filename);
 
     const isSvelte5Only = inputFileName.includes("/svelte5/");
-    if (isSvelte5Only && !SVELTE_VERSION.startsWith("5")) {
+    if (isSvelte5Only && !svelteVersion.gte(5)) {
       continue;
     }
 
-    if (filename.endsWith("input.svelte")) {
+    if (
+      filename.endsWith("input.svelte") ||
+      filename.endsWith("input.svelte.js") ||
+      filename.endsWith("input.svelte.ts")
+    ) {
       const outputFileName = inputFileName.replace(
-        /input\.svelte$/u,
+        /input\.svelte(?:\.[jt]s)?$/u,
         "output.json",
       );
       const typeFileName = inputFileName.replace(
-        /input\.svelte$/u,
-        "type-output.svelte",
+        /input\.svelte(\.[jt]s)?$/u,
+        "type-output.svelte$1",
       );
-      const configFileName = inputFileName.replace(
-        /input\.svelte$/u,
+      const configFileNameForFile = inputFileName.replace(
+        /input\.svelte(?:\.[jt]s)?$/u,
         "config.json",
       );
+      const configFileNameForDir = path.join(
+        path.dirname(inputFileName),
+        "_config.json",
+      );
       const requirementsFileName = inputFileName.replace(
-        /input\.svelte$/u,
+        /input\.svelte(?:\.[jt]s)?$/u,
         "requirements.json",
       );
 
@@ -230,9 +246,18 @@ function* listupFixturesImpl(dir: string): Iterable<{
       const requirements = fs.existsSync(requirementsFileName)
         ? JSON.parse(fs.readFileSync(requirementsFileName, "utf-8"))
         : {};
-      const config = fs.existsSync(configFileName)
-        ? JSON.parse(fs.readFileSync(configFileName, "utf-8"))
-        : {};
+      const config = {};
+      for (const configFileName of [
+        configFileNameForDir,
+        configFileNameForFile,
+      ]) {
+        if (fs.existsSync(configFileName)) {
+          Object.assign(
+            config,
+            JSON.parse(fs.readFileSync(configFileName, "utf-8")),
+          );
+        }
+      }
       yield {
         input,
         inputFileName,

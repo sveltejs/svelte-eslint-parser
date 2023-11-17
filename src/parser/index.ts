@@ -10,7 +10,7 @@ import type {
 import type { Program } from "estree";
 import type { ScopeManager } from "eslint-scope";
 import { Variable } from "eslint-scope";
-import { parseScript } from "./script";
+import { parseScript, parseScriptInSvelte } from "./script";
 import type * as SvAST from "./svelte-ast-types";
 import { sortNodes } from "./sort";
 import { parseTemplate } from "./template";
@@ -20,7 +20,7 @@ import {
   analyzeStoreScope,
 } from "./analyze-scope";
 import { ParseError } from "../errors";
-import { parseTypeScript } from "./typescript";
+import { parseTypeScript, parseTypeScriptInSvelte } from "./typescript";
 import { addReference } from "../scope";
 import {
   parseStyleContext,
@@ -32,7 +32,10 @@ import {
   styleNodeLoc,
   styleNodeRange,
 } from "./style-context";
-import { globals } from "./globals";
+import { globals, globalsForSvelteScript } from "./globals";
+import { svelteVersion } from "./svelte-version";
+import type { NormalizedParserOptions } from "./parser-options";
+import { isTypeScript, normalizeParserOptions } from "./parser-options";
 
 export {
   StyleContext,
@@ -59,39 +62,48 @@ export interface ESLintExtendedProgram {
   // The code used to parse the script.
   _virtualScriptCode?: string;
 }
+type ParseResult = {
+  ast: SvelteProgram;
+  services: Record<string, any> &
+    (
+      | {
+          isSvelte: true;
+          isSvelteScript: false;
+          getSvelteHtmlAst: () => SvAST.Fragment;
+          getStyleContext: () => StyleContext;
+        }
+      | { isSvelte: false; isSvelteScript: true }
+    );
+  visitorKeys: { [type: string]: string[] };
+  scopeManager: ScopeManager;
+};
 /**
  * Parse source code
  */
-export function parseForESLint(
-  code: string,
-  options?: any,
-): {
-  ast: SvelteProgram;
-  services: Record<string, any> & {
-    isSvelte: true;
-    getSvelteHtmlAst: () => SvAST.Fragment;
-    getStyleContext: () => StyleContext;
-  };
-  visitorKeys: { [type: string]: string[] };
-  scopeManager: ScopeManager;
-} {
-  const parserOptions = {
-    ecmaVersion: 2020,
-    sourceType: "module",
-    loc: true,
-    range: true,
-    raw: true,
-    tokens: true,
-    comment: true,
-    eslintVisitorKeys: true,
-    eslintScopeManager: true,
-    ...(options || {}),
-  };
-  parserOptions.sourceType = "module";
-  if (parserOptions.ecmaVersion <= 5 || parserOptions.ecmaVersion == null) {
-    parserOptions.ecmaVersion = 2015;
+export function parseForESLint(code: string, options?: any): ParseResult {
+  const parserOptions = normalizeParserOptions(options);
+
+  if (
+    svelteVersion.hasRunes &&
+    parserOptions.filePath &&
+    !parserOptions.filePath.endsWith(".svelte")
+  ) {
+    const trimmed = code.trim();
+    if (!trimmed.startsWith("<") && !trimmed.endsWith(">")) {
+      return parseAsScript(code, parserOptions);
+    }
   }
 
+  return parseAsSvelte(code, parserOptions);
+}
+
+/**
+ * Parse source code as svelte component
+ */
+function parseAsSvelte(
+  code: string,
+  parserOptions: NormalizedParserOptions,
+): ParseResult {
   const ctx = new Context(code, parserOptions);
   const resultTemplate = parseTemplate(
     ctx.sourceCode.template,
@@ -101,13 +113,13 @@ export function parseForESLint(
 
   const scripts = ctx.sourceCode.scripts;
   const resultScript = ctx.isTypeScript()
-    ? parseTypeScript(
+    ? parseTypeScriptInSvelte(
         scripts.getCurrentVirtualCodeInfo(),
         scripts.attrs,
         parserOptions,
         { slots: ctx.slots },
       )
-    : parseScript(
+    : parseScriptInSvelte(
         scripts.getCurrentVirtualCode(),
         scripts.attrs,
         parserOptions,
@@ -123,24 +135,7 @@ export function parseForESLint(
   analyzeStoreScope(resultScript.scopeManager!); // for reactive vars
 
   // Add $$xxx variable
-  for (const $$name of globals) {
-    const globalScope = resultScript.scopeManager!.globalScope;
-    const variable = new Variable();
-    variable.name = $$name;
-    (variable as any).scope = globalScope;
-    globalScope.variables.push(variable);
-    globalScope.set.set($$name, variable);
-    globalScope.through = globalScope.through.filter((reference) => {
-      if (reference.identifier.name === $$name) {
-        // Links the variable and the reference.
-        // And this reference is removed from `Scope#through`.
-        reference.resolved = variable;
-        addReference(variable.references, reference);
-        return false;
-      }
-      return true;
-    });
-  }
+  addGlobalVariables(resultScript.scopeManager!, globals);
 
   const ast = resultTemplate.ast;
 
@@ -195,6 +190,7 @@ export function parseForESLint(
   resultScript.ast = ast as any;
   resultScript.services = Object.assign(resultScript.services || {}, {
     isSvelte: true,
+    isSvelteScript: false,
     getSvelteHtmlAst() {
       return resultTemplate.svelteAst.html;
     },
@@ -210,6 +206,54 @@ export function parseForESLint(
   resultScript.visitorKeys = Object.assign({}, KEYS, resultScript.visitorKeys);
 
   return resultScript as any;
+}
+
+/**
+ * Parse source code as script
+ */
+function parseAsScript(
+  code: string,
+  parserOptions: NormalizedParserOptions,
+): ParseResult {
+  const lang = parserOptions.filePath?.split(".").pop();
+  const resultScript = isTypeScript(parserOptions, lang)
+    ? parseTypeScript(code, { lang }, parserOptions)
+    : parseScript(code, { lang }, parserOptions);
+
+  // Add $$xxx variable
+  addGlobalVariables(resultScript.scopeManager!, globalsForSvelteScript);
+
+  resultScript.services = Object.assign(resultScript.services || {}, {
+    isSvelte: false,
+    isSvelteScript: true,
+  });
+  resultScript.visitorKeys = Object.assign({}, KEYS, resultScript.visitorKeys);
+  return resultScript as any;
+}
+
+function addGlobalVariables(
+  scopeManager: ScopeManager,
+  globals: readonly string[],
+) {
+  const globalScope = scopeManager.globalScope;
+  for (const globalName of globals) {
+    if (globalScope.set.has(globalName)) continue;
+    const variable = new Variable();
+    variable.name = globalName;
+    (variable as any).scope = globalScope;
+    globalScope.variables.push(variable);
+    globalScope.set.set(globalName, variable);
+    globalScope.through = globalScope.through.filter((reference) => {
+      if (reference.identifier.name === globalName) {
+        // Links the variable and the reference.
+        // And this reference is removed from `Scope#through`.
+        reference.resolved = variable;
+        addReference(variable.references, reference);
+        return false;
+      }
+      return true;
+    });
+  }
 }
 
 /** Extract tokens */
