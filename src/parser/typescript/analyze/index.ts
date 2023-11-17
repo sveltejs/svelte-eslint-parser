@@ -16,7 +16,7 @@ import { VirtualTypeScriptContext } from "../context";
 import type { TSESParseForESLintResult } from "../types";
 import type ESTree from "estree";
 import type { SvelteAttribute, SvelteHTMLElement } from "../../../ast";
-import { globalsForSvelte5, globals } from "../../../parser/globals";
+import { globalsForRunes, globals } from "../../../parser/globals";
 
 export type AnalyzeTypeScriptContext = {
   slots: Set<SvelteHTMLElement>;
@@ -215,10 +215,10 @@ function analyzeDollarDollarVariables(
     );
   }
 
-  addSvelte5Globals();
+  addSvelteRuneGlobals();
 
-  function addSvelte5Globals() {
-    for (const svelte5Global of globalsForSvelte5) {
+  function addSvelteRuneGlobals() {
+    for (const svelte5Global of globalsForRunes) {
       if (
         !scopeManager.globalScope!.through.some(
           (reference) => reference.identifier.name === svelte5Global,

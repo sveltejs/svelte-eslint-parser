@@ -2,4 +2,4 @@
 "svelte-eslint-parser": minor
 ---
 
-feat: add `svelteFeatures.runes` option and add rune symbols to global scope
+feat: apply runes to `*.svelte.js` and  `*.svelte.ts`.

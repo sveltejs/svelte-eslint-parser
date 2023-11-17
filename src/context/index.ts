@@ -136,8 +136,6 @@ export class Context {
 
   public readonly slots = new Set<SvelteHTMLElement>();
 
-  public runes: boolean | null = null;
-
   public readonly elements = new Map<
     SvelteElement,
     | SvAST.InlineComponent

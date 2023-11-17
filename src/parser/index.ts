@@ -17,7 +17,6 @@ import { parseTemplate } from "./template";
 import {
   analyzePropsScope,
   analyzeReactiveScope,
-  analyzeRunesScope,
   analyzeStoreScope,
 } from "./analyze-scope";
 import { ParseError } from "../errors";
@@ -33,7 +32,8 @@ import {
   styleNodeLoc,
   styleNodeRange,
 } from "./style-context";
-import { globals } from "./globals";
+import { globals, globalsForSvelteScript } from "./globals";
+import { svelteVersion } from "./svelte-version";
 
 export {
   StyleContext,
@@ -66,11 +66,11 @@ type ParseResult = {
     (
       | {
           isSvelte: true;
-          svelteOptions: { runes: boolean };
+          isSvelteScript: false;
           getSvelteHtmlAst: () => SvAST.Fragment;
           getStyleContext: () => StyleContext;
         }
-      | { isSvelte: false; svelteOptions: { runes: boolean } }
+      | { isSvelte: false; isSvelteScript: true }
     );
   visitorKeys: { [type: string]: string[] };
   scopeManager: ScopeManager;
@@ -82,9 +82,9 @@ export function parseForESLint(code: string, options?: any): ParseResult {
   const parserOptions = normalizeParserOptions(options);
 
   if (
+    svelteVersion.hasRunes &&
     parserOptions.filePath &&
-    !parserOptions.filePath.endsWith(".svelte") &&
-    parserOptions.svelteFeatures.runes
+    !parserOptions.filePath.endsWith(".svelte")
   ) {
     const trimmed = code.trim();
     if (!trimmed.startsWith("<") && !trimmed.endsWith(">")) {
@@ -108,8 +108,6 @@ function parseAsSvelte(
     ctx,
     parserOptions,
   );
-
-  const runes = ctx.runes ?? parserOptions.svelteFeatures.runes;
 
   const scripts = ctx.sourceCode.scripts;
   const resultScript = ctx.isTypeScript()
@@ -153,10 +151,6 @@ function parseAsSvelte(
       }
       return true;
     });
-  }
-
-  if (runes) {
-    analyzeRunesScope(resultScript.scopeManager!);
   }
 
   const ast = resultTemplate.ast;
@@ -212,7 +206,7 @@ function parseAsSvelte(
   resultScript.ast = ast as any;
   resultScript.services = Object.assign(resultScript.services || {}, {
     isSvelte: true,
-    svelteOptions: { runes },
+    isSvelteScript: false,
     getSvelteHtmlAst() {
       return resultTemplate.svelteAst.html;
     },
@@ -239,10 +233,31 @@ function parseAsScript(
 ): ParseResult {
   const lang = parserOptions.filePath?.split(".").pop() || "js";
   const resultScript = parseScript(code, { lang }, parserOptions);
-  analyzeRunesScope(resultScript.scopeManager!);
+
+  // Add $$xxx variable
+  const globalScope = resultScript.scopeManager!.globalScope;
+  for (const $$name of globalsForSvelteScript) {
+    if (globalScope.set.has($$name)) continue;
+    const variable = new Variable();
+    variable.name = $$name;
+    (variable as any).scope = globalScope;
+    globalScope.variables.push(variable);
+    globalScope.set.set($$name, variable);
+    globalScope.through = globalScope.through.filter((reference) => {
+      if (reference.identifier.name === $$name) {
+        // Links the variable and the reference.
+        // And this reference is removed from `Scope#through`.
+        reference.resolved = variable;
+        addReference(variable.references, reference);
+        return false;
+      }
+      return true;
+    });
+  }
+
   resultScript.services = Object.assign(resultScript.services || {}, {
     isSvelte: false,
-    svelteOptions: { runes: true },
+    isSvelteScript: true,
   });
   resultScript.visitorKeys = Object.assign({}, KEYS, resultScript.visitorKeys);
   return resultScript as any;
@@ -258,7 +273,6 @@ type NormalizedParserOptions = {
   comment: boolean;
   eslintVisitorKeys: boolean;
   eslintScopeManager: boolean;
-  svelteFeatures: { runes: boolean };
   filePath?: string;
 };
 
@@ -274,10 +288,6 @@ function normalizeParserOptions(options: any): NormalizedParserOptions {
     comment: true,
     eslintVisitorKeys: true,
     eslintScopeManager: true,
-    svelteFeatures: {
-      rune: false,
-      ...(options?.svelteFeatures || {}),
-    },
     ...(options || {}),
   };
   parserOptions.sourceType = "module";

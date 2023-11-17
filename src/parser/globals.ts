@@ -1,16 +1,20 @@
-import { VERSION as SVELTE_VERSION } from "svelte/compiler";
+import { svelteVersion } from "./svelte-version";
 
 const globalsForSvelte4: Readonly<string[]> = [
   "$$slots",
   "$$props",
   "$$restProps",
 ] as const;
-export const globalsForSvelte5 = [
+export const globalsForRunes = [
   "$state",
   "$derived",
   "$effect",
   "$props",
 ] as const;
-export const globals = SVELTE_VERSION.startsWith("5")
-  ? [...globalsForSvelte4, ...globalsForSvelte5]
+const globalsForSvelte5 = [...globalsForSvelte4, ...globalsForRunes];
+export const globals = svelteVersion.gte(5)
+  ? globalsForSvelte5
   : globalsForSvelte4;
+export const globalsForSvelteScript = svelteVersion.gte(5)
+  ? globalsForRunes
+  : [];

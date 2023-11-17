@@ -169,37 +169,11 @@ module.exports = {
 }
 ```
 
-### parserOptions.svelteFeatures
-
-You can use `parserOptions.svelteFeatures` property to specify how to parse related to Svelte features. For example:
-
-```json
-{
-    "parser": "svelte-eslint-parser",
-    "parserOptions": {
-        "svelteFeatures": {
-            "runes": false
-        }
-    }
-}
-```
-
-#### parserOptions.svelteFeatures.runes
+### Runes support
 
 ***This is an experimental feature. It may be changed or removed in minor versions without notice.***
 
-If set to `true`, Rune symbols will be parsed. In this mode, the parser also parses files other than `*.svelte`.
-
-```json
-{
-    "parser": "svelte-eslint-parser",
-    "parserOptions": {
-        "svelteFeatures": {
-            "runes": true // Default `false`
-        }
-    }
-}
-```
+If you install Svelte v5 the parser will be able to parse runes, and will also be able to parse `*.js` and `*.ts` files.
 
 When using this mode in an ESLint configuration, it is recommended to set it per file pattern as below.
 
@@ -210,9 +184,6 @@ When using this mode in an ESLint configuration, it is recommended to set it per
             "files": ["*.svelte"],
             "parser": "svelte-eslint-parser",
             "parserOptions": {
-                "svelteFeatures": {
-                    "runes": true,
-                },
                 "parser": "...",
                 ...
             }
@@ -221,9 +192,6 @@ When using this mode in an ESLint configuration, it is recommended to set it per
             "files": ["*.svelte.js"],
             "parser": "svelte-eslint-parser",
             "parserOptions": {
-                "svelteFeatures": {
-                    "runes": true,
-                },
                 ...
             }
         },
@@ -231,27 +199,12 @@ When using this mode in an ESLint configuration, it is recommended to set it per
             "files": ["*.svelte.ts"],
             "parser": "svelte-eslint-parser",
             "parserOptions": {
-                "svelteFeatures": {
-                    "runes": true,
-                },
                 "parser": "...(ts parser)...",
                 ...
             }
         }
     ]
 }
-```
-
-Even if `runes` is not set to `true`, if it is enabled in the `<svelte:option>` of the `*.svelte` file, it will be parsed as `runes` mode is enabled
-
-```svelte
-<svelte:options runes={true} />
-```
-
-Also, even if `runes` is set to `true`, if it is disabled in the `<svelte:option>` of the `*.svelte` file, it will be parsed as `runes` mode is disabled.
-
-```svelte
-<svelte:options runes={false} />
 ```
 
 ## :computer: Editor Integrations

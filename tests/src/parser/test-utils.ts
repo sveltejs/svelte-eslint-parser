@@ -1,5 +1,4 @@
 /* global require -- node */
-import { VERSION as SVELTE_VERSION } from "svelte/compiler";
 import path from "path";
 import fs from "fs";
 import semver from "semver";
@@ -10,6 +9,7 @@ import type * as TSESScopes from "@typescript-eslint/scope-manager";
 import type { SvelteNode } from "../../../src/ast";
 import type { StyleContext } from "../../../src";
 import { TS_GLOBALS } from "./ts-vars";
+import { svelteVersion } from "../../../src/parser/svelte-version";
 
 const AST_FIXTURE_ROOT = path.resolve(__dirname, "../../fixtures/parser/ast");
 const BASIC_PARSER_OPTIONS: Linter.ParserOptions = {
@@ -100,7 +100,7 @@ function getScopeFile(inputFileName: string, isSvelte5Only: boolean) {
   );
   if (!fs.existsSync(scopeFileName)) return null;
   const scopeFile = fs.readFileSync(scopeFileName, "utf8");
-  if (!SVELTE_VERSION.startsWith("5") || isSvelte5Only) {
+  if (!svelteVersion.gte(5) || isSvelte5Only) {
     return scopeFile;
   }
 
@@ -140,7 +140,7 @@ function writeScopeFile(
     /input\.svelte(?:\.[jt]s)?$/u,
     "scope-output.json",
   );
-  if (!SVELTE_VERSION.startsWith("5")) {
+  if (!svelteVersion.gte(5)) {
     // v4
     if (isSvelte5Only) return;
     fs.writeFileSync(scopeFileName, json, "utf8");
@@ -204,7 +204,7 @@ function* listupFixturesImpl(dir: string): Iterable<{
     const inputFileName = path.join(dir, filename);
 
     const isSvelte5Only = inputFileName.includes("/svelte5/");
-    if (isSvelte5Only && !SVELTE_VERSION.startsWith("5")) {
+    if (isSvelte5Only && !svelteVersion.gte(5)) {
       continue;
     }
 

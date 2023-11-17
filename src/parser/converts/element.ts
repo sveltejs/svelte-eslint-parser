@@ -810,27 +810,7 @@ function convertOptionsElement(
   parent: SvelteSpecialElement["parent"],
   ctx: Context,
 ): SvelteSpecialElement {
-  const element = convertSpecialElement(node, parent, ctx);
-
-  // Extract rune mode from options.
-  for (const attr of node.attributes) {
-    if (attr.type === "Attribute" && attr.name === "runes") {
-      if (attr.value === true) {
-        ctx.runes = true;
-      } else if (attr.value.length === 1) {
-        const val = attr.value[0];
-        if (
-          val.type === "MustacheTag" &&
-          val.expression.type === "Literal" &&
-          typeof val.expression.value === "boolean"
-        ) {
-          ctx.runes = val.expression.value;
-        }
-      }
-    }
-  }
-
-  return element;
+  return convertSpecialElement(node, parent, ctx);
 }
 
 /** Convert for <svelte:fragment> element. */
