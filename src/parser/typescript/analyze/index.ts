@@ -84,6 +84,8 @@ export function analyzeTypeScript(
 
   analyzeRuneVariables(result, ctx);
 
+  ctx.appendOriginalToEnd();
+
   return ctx;
 }
 
