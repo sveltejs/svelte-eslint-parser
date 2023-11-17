@@ -135,25 +135,7 @@ function parseAsSvelte(
   analyzeStoreScope(resultScript.scopeManager!); // for reactive vars
 
   // Add $$xxx variable
-  const globalScope = resultScript.scopeManager!.globalScope;
-  for (const $$name of globals) {
-    if (globalScope.set.has($$name)) continue;
-    const variable = new Variable();
-    variable.name = $$name;
-    (variable as any).scope = globalScope;
-    globalScope.variables.push(variable);
-    globalScope.set.set($$name, variable);
-    globalScope.through = globalScope.through.filter((reference) => {
-      if (reference.identifier.name === $$name) {
-        // Links the variable and the reference.
-        // And this reference is removed from `Scope#through`.
-        reference.resolved = variable;
-        addReference(variable.references, reference);
-        return false;
-      }
-      return true;
-    });
-  }
+  addGlobalVariables(resultScript.scopeManager!, globals);
 
   const ast = resultTemplate.ast;
 
@@ -239,16 +221,30 @@ function parseAsScript(
     : parseScript(code, { lang }, parserOptions);
 
   // Add $$xxx variable
-  const globalScope = resultScript.scopeManager!.globalScope;
-  for (const $$name of globalsForSvelteScript) {
-    if (globalScope.set.has($$name)) continue;
+  addGlobalVariables(resultScript.scopeManager!, globalsForSvelteScript);
+
+  resultScript.services = Object.assign(resultScript.services || {}, {
+    isSvelte: false,
+    isSvelteScript: true,
+  });
+  resultScript.visitorKeys = Object.assign({}, KEYS, resultScript.visitorKeys);
+  return resultScript as any;
+}
+
+function addGlobalVariables(
+  scopeManager: ScopeManager,
+  globals: readonly string[],
+) {
+  const globalScope = scopeManager.globalScope;
+  for (const globalName of globals) {
+    if (globalScope.set.has(globalName)) continue;
     const variable = new Variable();
-    variable.name = $$name;
+    variable.name = globalName;
     (variable as any).scope = globalScope;
     globalScope.variables.push(variable);
-    globalScope.set.set($$name, variable);
+    globalScope.set.set(globalName, variable);
     globalScope.through = globalScope.through.filter((reference) => {
-      if (reference.identifier.name === $$name) {
+      if (reference.identifier.name === globalName) {
         // Links the variable and the reference.
         // And this reference is removed from `Scope#through`.
         reference.resolved = variable;
@@ -258,13 +254,6 @@ function parseAsScript(
       return true;
     });
   }
-
-  resultScript.services = Object.assign(resultScript.services || {}, {
-    isSvelte: false,
-    isSvelteScript: true,
-  });
-  resultScript.visitorKeys = Object.assign({}, KEYS, resultScript.visitorKeys);
-  return resultScript as any;
 }
 
 /** Extract tokens */
