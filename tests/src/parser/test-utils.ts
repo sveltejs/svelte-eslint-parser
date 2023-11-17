@@ -1,4 +1,5 @@
 /* global require -- node */
+import { VERSION as SVELTE_VERSION } from "svelte/compiler";
 import path from "path";
 import fs from "fs";
 import semver from "semver";
@@ -20,6 +21,52 @@ const BASIC_PARSER_OPTIONS: Linter.ParserOptions = {
   project: require.resolve("../../fixtures/tsconfig.test.json"),
   extraFileExtensions: [".svelte"],
 };
+
+const SVELTE5_SCOPE_VARIABLES_BASE = [
+  {
+    name: "$$slots",
+    identifiers: [],
+    defs: [],
+    references: [],
+  },
+  {
+    name: "$$props",
+    identifiers: [],
+    defs: [],
+    references: [],
+  },
+  {
+    name: "$$restProps",
+    identifiers: [],
+    defs: [],
+    references: [],
+  },
+  {
+    name: "$state",
+    identifiers: [],
+    defs: [],
+    references: [],
+  },
+  {
+    name: "$derived",
+    identifiers: [],
+    defs: [],
+    references: [],
+  },
+  {
+    name: "$effect",
+    identifiers: [],
+    defs: [],
+    references: [],
+  },
+  {
+    name: "$props",
+    identifiers: [],
+    defs: [],
+    references: [],
+  },
+];
+
 export function generateParserOptions(
   ...options: Linter.ParserOptions[]
 ): Linter.ParserOptions {
@@ -39,10 +86,49 @@ export function* listupFixtures(dir?: string): Iterable<{
   requirements: {
     scope?: Record<string, string>;
   };
+  getScopeFile: () => string | null;
   getRuleOutputFileName: (ruleName: string) => string;
   meetRequirements: (key: "test" | "scope" | "parse") => boolean;
 }> {
   yield* listupFixturesImpl(dir || AST_FIXTURE_ROOT);
+}
+
+function getScopeFile(inputFileName: string, isSvelte5Only: boolean) {
+  const scopeFileName = inputFileName.replace(
+    /input\.svelte$/u,
+    "scope-output.json",
+  );
+  if (!fs.existsSync(scopeFileName)) return null;
+  const scopeFile = fs.readFileSync(scopeFileName, "utf8");
+  if (!SVELTE_VERSION.startsWith("5") || isSvelte5Only) {
+    return scopeFile;
+  }
+
+  const scopeFileJson = JSON.parse(scopeFile);
+  const scopeFileNameSvelte5 = inputFileName.replace(
+    /input\.svelte$/u,
+    "scope-output-svelte5.json",
+  );
+  if (!fs.existsSync(scopeFileNameSvelte5)) {
+    scopeFileJson.variables = SVELTE5_SCOPE_VARIABLES_BASE;
+    return JSON.stringify(scopeFileJson, null, 2);
+  }
+
+  const scopeFileSvelte5 = fs.readFileSync(scopeFileNameSvelte5, "utf8");
+  const scopeFileSvelte5Json = JSON.parse(scopeFileSvelte5);
+
+  for (const key of Object.keys(scopeFileJson)) {
+    if (scopeFileSvelte5Json[key]) {
+      scopeFileJson[key] = scopeFileSvelte5Json[key];
+    }
+  }
+  for (const key of Object.keys(scopeFileSvelte5Json)) {
+    if (!scopeFileJson[key]) {
+      scopeFileJson[key] = scopeFileSvelte5Json[key];
+    }
+  }
+
+  return JSON.stringify(scopeFileJson, null, 2);
 }
 
 function* listupFixturesImpl(dir: string): Iterable<{
@@ -55,11 +141,18 @@ function* listupFixturesImpl(dir: string): Iterable<{
   requirements: {
     scope?: Record<string, string>;
   };
+  getScopeFile: () => string | null;
   getRuleOutputFileName: (ruleName: string) => string;
   meetRequirements: (key: "test" | "scope" | "parse") => boolean;
 }> {
   for (const filename of fs.readdirSync(dir)) {
     const inputFileName = path.join(dir, filename);
+
+    const isSvelte5Only = inputFileName.includes("/svelte5/");
+    if (isSvelte5Only && !SVELTE_VERSION.startsWith("5")) {
+      continue;
+    }
+
     if (filename.endsWith("input.svelte")) {
       const outputFileName = inputFileName.replace(
         /input\.svelte$/u,
@@ -97,6 +190,7 @@ function* listupFixturesImpl(dir: string): Iterable<{
         typeFileName: fs.existsSync(typeFileName) ? typeFileName : null,
         config,
         requirements,
+        getScopeFile: () => getScopeFile(inputFileName, isSvelte5Only),
         getRuleOutputFileName: (ruleName) => {
           return inputFileName.replace(
             /input\.svelte$/u,
@@ -517,4 +611,32 @@ function normalizeObject(value: any) {
       return a < b ? -1 : a > b ? 1 : 0;
     }),
   );
+}
+
+export function sortJson(pJson: any): any {
+  function tryParse(): { isJson: boolean; json: any | null } {
+    if (Array.isArray(pJson) || typeof pJson === "object") {
+      return { isJson: true, json: pJson };
+    }
+    try {
+      const json = JSON.parse(pJson);
+      return { isJson: true, json };
+    } catch {
+      return { isJson: false, json: null };
+    }
+  }
+
+  const { isJson, json } = tryParse();
+  if (!isJson) return pJson;
+  if (Array.isArray(json)) {
+    return json.map(sortJson);
+  }
+  if (json && typeof json === "object") {
+    const result: any = {};
+    for (const key of Object.keys(json).sort()) {
+      result[key] = sortJson(json[key]);
+    }
+    return result;
+  }
+  return json;
 }

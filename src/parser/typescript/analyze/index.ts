@@ -16,12 +16,12 @@ import { VirtualTypeScriptContext } from "../context";
 import type { TSESParseForESLintResult } from "../types";
 import type ESTree from "estree";
 import type { SvelteAttribute, SvelteHTMLElement } from "../../../ast";
+import { globalsForSvelte5, globals } from "../../../parser/globals";
 
 export type AnalyzeTypeScriptContext = {
   slots: Set<SvelteHTMLElement>;
 };
 
-const RESERVED_NAMES = new Set<string>(["$$props", "$$restProps", "$$slots"]);
 /**
  * Analyze TypeScript source code.
  * Generate virtual code to provide correct type information for Svelte store reference namess and scopes.
@@ -75,8 +75,8 @@ function analyzeStoreReferenceNames(
     if (
       // Begin with `$`.
       reference.identifier.name.startsWith("$") &&
-      // Ignore it is a reserved variable.
-      !RESERVED_NAMES.has(reference.identifier.name) &&
+      // Ignore globals
+      !globals.includes(reference.identifier.name) &&
       // Ignore if it is already defined.
       !programScope.set.has(reference.identifier.name)
     ) {
@@ -215,6 +215,59 @@ function analyzeDollarDollarVariables(
     );
   }
 
+  addSvelte5Globals();
+
+  function addSvelte5Globals() {
+    for (const svelte5Global of globalsForSvelte5) {
+      if (
+        !scopeManager.globalScope!.through.some(
+          (reference) => reference.identifier.name === svelte5Global,
+        )
+      ) {
+        continue;
+      }
+      switch (svelte5Global) {
+        case "$state": {
+          appendDeclareFunctionVirtualScript(
+            svelte5Global,
+            "<T>(initial: T): T",
+          );
+          appendDeclareFunctionVirtualScript(
+            svelte5Global,
+            "<T>(): T | undefined",
+          );
+          break;
+        }
+        case "$derived": {
+          appendDeclareFunctionVirtualScript(
+            svelte5Global,
+            "<T>(expression: T): T",
+          );
+          break;
+        }
+        case "$effect": {
+          appendDeclareFunctionVirtualScript(
+            svelte5Global,
+            "(fn: () => void | (() => void)): void",
+          );
+          appendDeclareNamespaceVirtualScript(
+            svelte5Global,
+            "export function pre(fn: () => void | (() => void)): void;",
+          );
+          break;
+        }
+        case "$props": {
+          appendDeclareFunctionVirtualScript(svelte5Global, "<T>(): T");
+          break;
+        }
+        default: {
+          const _: never = svelte5Global;
+          throw Error(`Unknown global: ${_}`);
+        }
+      }
+    }
+  }
+
   /** Append declare virtual script */
   function appendDeclareVirtualScript(name: string, type: string) {
     ctx.appendVirtualScript(`declare let ${name}: ${type};`);
@@ -225,6 +278,59 @@ function analyzeDollarDollarVariables(
         node.declarations.length !== 1 ||
         node.declarations[0].id.type !== "Identifier" ||
         node.declarations[0].id.name !== name
+      ) {
+        return false;
+      }
+      const program = result.ast;
+      program.body.splice(program.body.indexOf(node), 1);
+
+      const scopeManager = result.scopeManager as ScopeManager;
+
+      // Remove `declare` variable
+      removeAllScopeAndVariableAndReference(node, {
+        visitorKeys: result.visitorKeys,
+        scopeManager,
+      });
+
+      return true;
+    });
+  }
+
+  /** Append declare virtual script */
+  function appendDeclareFunctionVirtualScript(name: string, type: string) {
+    ctx.appendVirtualScript(`declare function ${name}${type};`);
+    ctx.restoreContext.addRestoreStatementProcess((node, result) => {
+      if (
+        node.type !== "TSDeclareFunction" ||
+        !node.declare ||
+        node.id?.type !== "Identifier" ||
+        node.id.name !== name
+      ) {
+        return false;
+      }
+      const program = result.ast;
+      program.body.splice(program.body.indexOf(node), 1);
+
+      const scopeManager = result.scopeManager as ScopeManager;
+
+      // Remove `declare` variable
+      removeAllScopeAndVariableAndReference(node, {
+        visitorKeys: result.visitorKeys,
+        scopeManager,
+      });
+
+      return true;
+    });
+  }
+
+  function appendDeclareNamespaceVirtualScript(name: string, script: string) {
+    ctx.appendVirtualScript(`declare namespace $effect { ${script} }`);
+    ctx.restoreContext.addRestoreStatementProcess((node, result) => {
+      if (
+        node.type !== "TSModuleDeclaration" ||
+        !node.declare ||
+        node.id?.type !== "Identifier" ||
+        node.id.name !== name
       ) {
         return false;
       }

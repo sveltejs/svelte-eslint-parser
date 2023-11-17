@@ -185,7 +185,6 @@ for (const { input, inputFileName, outputFileName, config } of listupFixtures(
   );
 }
 
-// eslint-disable-next-line require-jsdoc -- X
 function createLinter() {
   const linter = new Linter();
 
@@ -194,7 +193,6 @@ function createLinter() {
   return linter;
 }
 
-// eslint-disable-next-line require-jsdoc -- X
 function buildTypes(
   input: string,
   result: {
@@ -235,7 +233,6 @@ function buildTypes(
   const lines = input.split(/\r?\n/);
   const types: string[][] = [];
 
-  // eslint-disable-next-line require-jsdoc -- X
   function addType(node: ESTree.Expression) {
     const tsNode = tsNodeMap.get(node);
     if (!tsNode) {

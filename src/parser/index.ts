@@ -32,6 +32,7 @@ import {
   styleNodeLoc,
   styleNodeRange,
 } from "./style-context";
+import { globals } from "./globals";
 
 export {
   StyleContext,
@@ -122,7 +123,7 @@ export function parseForESLint(
   analyzeStoreScope(resultScript.scopeManager!); // for reactive vars
 
   // Add $$xxx variable
-  for (const $$name of ["$$slots", "$$props", "$$restProps"]) {
+  for (const $$name of globals) {
     const globalScope = resultScript.scopeManager!.globalScope;
     const variable = new Variable();
     variable.name = $$name;

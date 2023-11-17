@@ -13,6 +13,7 @@ import {
 } from "./test-utils";
 import type { Comment, SvelteProgram, Token } from "../../../src/ast";
 import { sortNodes } from "../../../src/parser/sort";
+import { sortJson } from "./test-utils";
 
 function parse(code: string, filePath: string, config: any) {
   return parseForESLint(code, generateParserOptions({ filePath }, config));
@@ -23,13 +24,14 @@ describe("Check for AST.", () => {
     input,
     inputFileName,
     outputFileName,
-    scopeFileName,
     config,
+    getScopeFile,
     meetRequirements,
   } of listupFixtures()) {
     if (!meetRequirements("parse")) {
       continue;
     }
+
     describe(inputFileName, () => {
       let result: any;
 
@@ -45,7 +47,7 @@ describe("Check for AST.", () => {
       if (meetRequirements("scope"))
         it("most to generate the expected scope.", () => {
           let json: any = scopeToJSON(result.scopeManager);
-          let output: any = fs.readFileSync(scopeFileName, "utf8");
+          let output: any = getScopeFile();
 
           if (
             result.services?.program // use ts parser
@@ -60,7 +62,7 @@ describe("Check for AST.", () => {
             }
           }
 
-          assert.deepStrictEqual(json, output);
+          assert.deepStrictEqual(sortJson(json), sortJson(output));
         });
 
       it("location must be correct.", () => {
