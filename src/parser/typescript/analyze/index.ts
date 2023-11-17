@@ -219,62 +219,45 @@ function analyzeDollarDollarVariables(
 
   function addSvelte5Globals() {
     for (const svelte5Global of globalsForSvelte5) {
+      if (
+        !scopeManager.globalScope!.through.some(
+          (reference) => reference.identifier.name === svelte5Global,
+        )
+      ) {
+        continue;
+      }
       switch (svelte5Global) {
         case "$state": {
-          if (
-            scopeManager.globalScope!.through.some(
-              (reference) => reference.identifier.name === svelte5Global,
-            )
-          ) {
-            appendDeclareFunctionVirtualScript(
-              svelte5Global,
-              "<T>(initial: T): T",
-            );
-            appendDeclareFunctionVirtualScript(
-              svelte5Global,
-              "<T>(): T | undefined",
-            );
-          }
+          appendDeclareFunctionVirtualScript(
+            svelte5Global,
+            "<T>(initial: T): T",
+          );
+          appendDeclareFunctionVirtualScript(
+            svelte5Global,
+            "<T>(): T | undefined",
+          );
           break;
         }
         case "$derived": {
-          if (
-            scopeManager.globalScope!.through.some(
-              (reference) => reference.identifier.name === svelte5Global,
-            )
-          ) {
-            appendDeclareFunctionVirtualScript(
-              svelte5Global,
-              "<T>(expression: T): T",
-            );
-          }
+          appendDeclareFunctionVirtualScript(
+            svelte5Global,
+            "<T>(expression: T): T",
+          );
           break;
         }
         case "$effect": {
-          if (
-            scopeManager.globalScope!.through.some(
-              (reference) => reference.identifier.name === svelte5Global,
-            )
-          ) {
-            appendDeclareFunctionVirtualScript(
-              svelte5Global,
-              "(fn: () => void | (() => void)): void",
-            );
-            appendDeclareNamespaceVirtualScript(
-              svelte5Global,
-              "export function pre(fn: () => void | (() => void)): void;",
-            );
-          }
+          appendDeclareFunctionVirtualScript(
+            svelte5Global,
+            "(fn: () => void | (() => void)): void",
+          );
+          appendDeclareNamespaceVirtualScript(
+            svelte5Global,
+            "export function pre(fn: () => void | (() => void)): void;",
+          );
           break;
         }
         case "$props": {
-          if (
-            scopeManager.globalScope!.through.some(
-              (reference) => reference.identifier.name === svelte5Global,
-            )
-          ) {
-            appendDeclareFunctionVirtualScript(svelte5Global, "<T>(): T");
-          }
+          appendDeclareFunctionVirtualScript(svelte5Global, "<T>(): T");
           break;
         }
         default: {
