@@ -1,6 +1,6 @@
 import type { ESLintExtendedProgram } from "..";
 import type { NormalizedParserOptions } from "../parser-options";
-import { parseScriptInSvelte } from "../script";
+import { parseScript, parseScriptInSvelte } from "../script";
 import type { AnalyzeTypeScriptContext } from "./analyze";
 import { analyzeTypeScript, analyzeTypeScriptInSvelte } from "./analyze";
 import type { TSESParseForESLintResult } from "./types";
@@ -32,7 +32,7 @@ export function parseTypeScript(
 ): ESLintExtendedProgram {
   const tsCtx = analyzeTypeScript(code, attrs, parserOptions);
 
-  const result = parseScriptInSvelte(tsCtx.script, attrs, parserOptions);
+  const result = parseScript(tsCtx.script, attrs, parserOptions);
 
   tsCtx.restoreContext.restore(result as unknown as TSESParseForESLintResult);
 
