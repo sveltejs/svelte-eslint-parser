@@ -1,0 +1,1 @@
+<button onclickcapture={a}>...</button>
