@@ -3,6 +3,7 @@ import { analyzeScope } from "./analyze-scope";
 import { traverseNodes } from "../traverse";
 import { getParser } from "./resolve-parser";
 import { isEnhancedParserObject } from "./parser-object";
+import type { NormalizedParserOptions } from "./parser-options";
 
 /**
  * Parse for <script>
@@ -10,7 +11,7 @@ import { isEnhancedParserObject } from "./parser-object";
 export function parseScriptInSvelte(
   code: string,
   attrs: Record<string, string | undefined>,
-  parserOptions: any = {},
+  parserOptions: NormalizedParserOptions,
 ): ESLintExtendedProgram {
   const result = parseScript(code, attrs, parserOptions);
 
@@ -39,7 +40,7 @@ export function parseScriptInSvelte(
 export function parseScript(
   code: string,
   attrs: Record<string, string | undefined>,
-  parserOptions: any = {},
+  parserOptions: NormalizedParserOptions,
 ): ESLintExtendedProgram {
   const result = parseScriptWithoutAnalyzeScopeFromVCode(
     code,
@@ -61,7 +62,7 @@ export function parseScript(
 export function parseScriptWithoutAnalyzeScope(
   code: string,
   attrs: Record<string, string | undefined>,
-  options: any,
+  options: NormalizedParserOptions,
 ): ESLintExtendedProgram {
   const parser = getParser(attrs, options.parser);
 
@@ -81,7 +82,7 @@ export function parseScriptWithoutAnalyzeScope(
 function parseScriptWithoutAnalyzeScopeFromVCode(
   code: string,
   attrs: Record<string, string | undefined>,
-  options: any,
+  options: NormalizedParserOptions,
 ): ESLintExtendedProgram {
   const result = parseScriptWithoutAnalyzeScope(code, attrs, options);
   result._virtualScriptCode = code;

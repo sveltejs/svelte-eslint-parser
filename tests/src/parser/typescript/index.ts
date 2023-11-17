@@ -1,7 +1,8 @@
 import { Context } from "../../../../src/context";
+import type { NormalizedParserOptions } from "../../../../src/parser/parser-options";
 import { parseScriptInSvelte } from "../../../../src/parser/script";
 import { parseTemplate } from "../../../../src/parser/template";
-import { parseTypeScript } from "../../../../src/parser/typescript";
+import { parseTypeScriptInSvelte } from "../../../../src/parser/typescript";
 import { generateParserOptions, listupFixtures } from "../test-utils";
 import { assertResult } from "./assert-result";
 
@@ -27,7 +28,7 @@ describe("Check for typescript analyze result.", () => {
         eslintVisitorKeys: true,
         eslintScopeManager: true,
         filePath: inputFileName,
-      });
+      } as NormalizedParserOptions);
       const ctx = new Context(input, parserOptions);
       parseTemplate(ctx.sourceCode.template, ctx, parserOptions);
 
@@ -39,9 +40,14 @@ describe("Check for typescript analyze result.", () => {
         if (!meetRequirements("test")) {
           return;
         }
-        const analyzedResult = parseTypeScript(code, attrs, parserOptions, {
-          slots: new Set(),
-        });
+        const analyzedResult = parseTypeScriptInSvelte(
+          code,
+          attrs,
+          parserOptions,
+          {
+            slots: new Set(),
+          },
+        );
         const result = parseScriptInSvelte(
           code.script + code.render,
           attrs,

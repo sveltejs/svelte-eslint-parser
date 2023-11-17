@@ -6,6 +6,7 @@ import { convertSvelteRoot } from "./converts/index";
 import { sortNodes } from "./sort";
 import type { SvelteProgram } from "../ast";
 import { ParseError } from "..";
+import type { NormalizedParserOptions } from "./parser-options";
 
 /**
  * Parse for template
@@ -13,7 +14,7 @@ import { ParseError } from "..";
 export function parseTemplate(
   code: string,
   ctx: Context,
-  parserOptions: any = {},
+  parserOptions: NormalizedParserOptions,
 ): {
   ast: SvelteProgram;
   svelteAst: SvAST.Ast;

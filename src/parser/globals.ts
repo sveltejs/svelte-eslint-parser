@@ -1,10 +1,6 @@
 import { svelteVersion } from "./svelte-version";
 
-const globalsForSvelte4: Readonly<string[]> = [
-  "$$slots",
-  "$$props",
-  "$$restProps",
-] as const;
+const globalsForSvelte4 = ["$$slots", "$$props", "$$restProps"] as const;
 export const globalsForRunes = [
   "$state",
   "$derived",

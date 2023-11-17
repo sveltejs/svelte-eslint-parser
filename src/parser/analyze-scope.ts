@@ -5,12 +5,13 @@ import { getFallbackKeys } from "../traverse";
 import type { SvelteReactiveStatement, SvelteScriptElement } from "../ast";
 import { addReference, addVariable } from "../scope";
 import { addElementToSortedArray } from "../utils";
+import type { NormalizedParserOptions } from "./parser-options";
 /**
  * Analyze scope
  */
 export function analyzeScope(
   node: ESTree.Node,
-  parserOptions: any = {},
+  parserOptions: NormalizedParserOptions,
 ): ScopeManager {
   const ecmaVersion = parserOptions.ecmaVersion || 2020;
   const ecmaFeatures = parserOptions.ecmaFeatures || {};

@@ -20,7 +20,7 @@ import {
   analyzeStoreScope,
 } from "./analyze-scope";
 import { ParseError } from "../errors";
-import { parseTypeScript } from "./typescript";
+import { parseTypeScript, parseTypeScriptInSvelte } from "./typescript";
 import { addReference } from "../scope";
 import {
   parseStyleContext,
@@ -34,6 +34,8 @@ import {
 } from "./style-context";
 import { globals, globalsForSvelteScript } from "./globals";
 import { svelteVersion } from "./svelte-version";
+import type { NormalizedParserOptions } from "./parser-options";
+import { isTypeScript, normalizeParserOptions } from "./parser-options";
 
 export {
   StyleContext,
@@ -111,7 +113,7 @@ function parseAsSvelte(
 
   const scripts = ctx.sourceCode.scripts;
   const resultScript = ctx.isTypeScript()
-    ? parseTypeScript(
+    ? parseTypeScriptInSvelte(
         scripts.getCurrentVirtualCodeInfo(),
         scripts.attrs,
         parserOptions,
@@ -231,8 +233,10 @@ function parseAsScript(
   code: string,
   parserOptions: NormalizedParserOptions,
 ): ParseResult {
-  const lang = parserOptions.filePath?.split(".").pop() || "js";
-  const resultScript = parseScript(code, { lang }, parserOptions);
+  const lang = parserOptions.filePath?.split(".").pop();
+  const resultScript = isTypeScript(parserOptions, lang)
+    ? parseTypeScript(code, { lang }, parserOptions)
+    : parseScript(code, { lang }, parserOptions);
 
   // Add $$xxx variable
   const globalScope = resultScript.scopeManager!.globalScope;
@@ -261,41 +265,6 @@ function parseAsScript(
   });
   resultScript.visitorKeys = Object.assign({}, KEYS, resultScript.visitorKeys);
   return resultScript as any;
-}
-
-type NormalizedParserOptions = {
-  ecmaVersion: number | "latest";
-  sourceType: "module" | "script";
-  loc: boolean;
-  range: boolean;
-  raw: boolean;
-  tokens: boolean;
-  comment: boolean;
-  eslintVisitorKeys: boolean;
-  eslintScopeManager: boolean;
-  filePath?: string;
-};
-
-/** Normalize parserOptions */
-function normalizeParserOptions(options: any): NormalizedParserOptions {
-  const parserOptions = {
-    ecmaVersion: 2020,
-    sourceType: "module",
-    loc: true,
-    range: true,
-    raw: true,
-    tokens: true,
-    comment: true,
-    eslintVisitorKeys: true,
-    eslintScopeManager: true,
-    ...(options || {}),
-  };
-  parserOptions.sourceType = "module";
-  if (parserOptions.ecmaVersion <= 5 || parserOptions.ecmaVersion == null) {
-    parserOptions.ecmaVersion = 2015;
-  }
-
-  return parserOptions;
 }
 
 /** Extract tokens */

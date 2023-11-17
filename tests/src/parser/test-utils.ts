@@ -10,6 +10,7 @@ import type { SvelteNode } from "../../../src/ast";
 import type { StyleContext } from "../../../src";
 import { TS_GLOBALS } from "./ts-vars";
 import { svelteVersion } from "../../../src/parser/svelte-version";
+import type { NormalizedParserOptions } from "../../../src/parser/parser-options";
 
 const AST_FIXTURE_ROOT = path.resolve(__dirname, "../../fixtures/parser/ast");
 const BASIC_PARSER_OPTIONS: Linter.ParserOptions = {
@@ -66,11 +67,18 @@ const SVELTE5_SCOPE_VARIABLES_BASE = [
     references: [],
   },
 ];
-
 export function generateParserOptions(
   ...options: Linter.ParserOptions[]
-): Linter.ParserOptions {
-  let result = { ...BASIC_PARSER_OPTIONS };
+): Linter.ParserOptions;
+export function generateParserOptions(
+  ...options: (Linter.ParserOptions | NormalizedParserOptions)[]
+): NormalizedParserOptions;
+export function generateParserOptions(
+  ...options: (Linter.ParserOptions | NormalizedParserOptions)[]
+): Linter.ParserOptions | NormalizedParserOptions {
+  let result: Linter.ParserOptions | NormalizedParserOptions = {
+    ...BASIC_PARSER_OPTIONS,
+  };
   for (const option of options) {
     result = { ...result, ...option };
   }
