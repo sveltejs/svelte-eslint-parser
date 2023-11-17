@@ -52,10 +52,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v2
-      - name: Use Node.js ${{ matrix.node-version }}
+      - name: Use Node.js
         uses: actions/setup-node@v4
-        with:
-          node-version: ${{ matrix.node-version }}
       - name: Install Svelte v4
         run: |+
           pnpm install -D svelte@4
@@ -153,17 +151,12 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 18
-      - name: Install Svelte v4
-        run: |+
-          pnpm install -D svelte@4
-          rm -rf node_modules
       - name: Install Packages
         run: pnpm install
       - name: Update fixtures
         run: pnpm run update-fixtures
       - name: Check changes
         run: |
-          git checkout package.json && \
           git add --all && \
           git diff-index --cached HEAD --stat --exit-code
   test-and-coverage:

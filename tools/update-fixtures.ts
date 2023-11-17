@@ -68,7 +68,7 @@ for (const {
   input,
   inputFileName,
   outputFileName,
-  scopeFileName,
+  writeScopeFile,
   typeFileName,
   config,
   meetRequirements,
@@ -85,7 +85,7 @@ for (const {
     const astJson = astToJson(result.ast);
     fs.writeFileSync(outputFileName, astJson, "utf8");
     const scopeJson = scopeToJSON(result.scopeManager);
-    fs.writeFileSync(scopeFileName, scopeJson, "utf8");
+    writeScopeFile(scopeJson);
 
     if (typeFileName) {
       fs.writeFileSync(typeFileName, buildTypes(input, result), "utf8");
