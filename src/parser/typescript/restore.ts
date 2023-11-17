@@ -55,9 +55,7 @@ export class RestoreContext {
   public addRestoreExpressionProcess<T extends TSESTree.Expression>(
     process: RestoreExpressionProcess<T>,
   ): void {
-    this.restoreExpressionProcesses.push(
-      process as RestoreExpressionProcess<TSESTree.Expression>,
-    );
+    this.restoreExpressionProcesses.push(process as never);
   }
 
   public addOffset(offset: { original: number; dist: number }): void {

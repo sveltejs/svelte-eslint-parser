@@ -14,7 +14,6 @@ import {
 } from "../tests/src/parser/test-utils";
 import type ts from "typescript";
 import type ESTree from "estree";
-import * as tsESLintParser from "@typescript-eslint/parser";
 import type { SourceLocation } from "../src/ast";
 
 const ERROR_FIXTURE_ROOT = path.resolve(
@@ -46,21 +45,10 @@ const RULES = [
   "template-curly-spacing",
 ];
 
-let beforeFilePath: string | undefined;
-
 /**
  * Parse
  */
 function parse(code: string, filePath: string, config: any) {
-  if (beforeFilePath) {
-    // Clear type info cache
-    tsESLintParser.parseForESLint(
-      "",
-      generateParserOptions({ filePath: beforeFilePath }, config),
-    );
-  }
-
-  beforeFilePath = filePath;
   return parseForESLint(code, generateParserOptions({ filePath }, config));
 }
 

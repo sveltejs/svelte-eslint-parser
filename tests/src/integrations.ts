@@ -9,7 +9,6 @@ import {
   listupFixtures,
 } from "./parser/test-utils";
 import path from "path";
-import * as tsESLintParser from "@typescript-eslint/parser";
 
 const FIXTURE_ROOT = path.resolve(__dirname, "../fixtures/integrations");
 
@@ -22,9 +21,16 @@ function createLinter() {
 }
 
 describe("Integration tests.", () => {
-  for (const { input, inputFileName, outputFileName, config } of listupFixtures(
-    FIXTURE_ROOT,
-  )) {
+  for (const {
+    input,
+    inputFileName,
+    outputFileName,
+    config,
+    meetRequirements,
+  } of listupFixtures(FIXTURE_ROOT)) {
+    if (!meetRequirements("parse")) {
+      continue;
+    }
     it(inputFileName, () => {
       const setupFileName = inputFileName.replace(
         /input\.svelte(?:\.[jt]s)?$/u,
@@ -59,19 +65,11 @@ describe("Integration tests.", () => {
         2,
       );
 
-      try {
-        if (fs.existsSync(outputFileName)) {
-          const output = fs.readFileSync(outputFileName, "utf8");
-          assert.strictEqual(messagesJson, output);
-        } else {
-          fs.writeFileSync(outputFileName, messagesJson, "utf8");
-        }
-      } finally {
-        // Clear type info cache
-        tsESLintParser.parseForESLint(
-          "",
-          generateParserOptions({ filePath: inputFileName }, config),
-        );
+      if (fs.existsSync(outputFileName)) {
+        const output = fs.readFileSync(outputFileName, "utf8");
+        assert.strictEqual(messagesJson, output);
+      } else {
+        fs.writeFileSync(outputFileName, messagesJson, "utf8");
       }
     });
   }
