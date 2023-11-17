@@ -80,13 +80,13 @@ export function* listupFixtures(dir?: string): Iterable<{
   input: string;
   inputFileName: string;
   outputFileName: string;
-  scopeFileName: string;
   typeFileName: string | null;
   config: Linter.ParserOptions;
   requirements: {
     scope?: Record<string, string>;
   };
   getScopeFile: () => string | null;
+  writeScopeFile: (json: string) => void;
   getRuleOutputFileName: (ruleName: string) => string;
   meetRequirements: (key: "test" | "scope" | "parse") => boolean;
 }> {
@@ -95,7 +95,7 @@ export function* listupFixtures(dir?: string): Iterable<{
 
 function getScopeFile(inputFileName: string, isSvelte5Only: boolean) {
   const scopeFileName = inputFileName.replace(
-    /input\.svelte$/u,
+    /input\.svelte(?:\.[jt]s)?$/u,
     "scope-output.json",
   );
   if (!fs.existsSync(scopeFileName)) return null;
@@ -106,7 +106,7 @@ function getScopeFile(inputFileName: string, isSvelte5Only: boolean) {
 
   const scopeFileJson = JSON.parse(scopeFile);
   const scopeFileNameSvelte5 = inputFileName.replace(
-    /input\.svelte$/u,
+    /input\.svelte(?:\.[jt]s)?$/u,
     "scope-output-svelte5.json",
   );
   if (!fs.existsSync(scopeFileNameSvelte5)) {
@@ -131,17 +131,72 @@ function getScopeFile(inputFileName: string, isSvelte5Only: boolean) {
   return JSON.stringify(scopeFileJson, null, 2);
 }
 
+function writeScopeFile(
+  inputFileName: string,
+  json: string,
+  isSvelte5Only: boolean,
+) {
+  const scopeFileName = inputFileName.replace(
+    /input\.svelte(?:\.[jt]s)?$/u,
+    "scope-output.json",
+  );
+  if (!SVELTE_VERSION.startsWith("5")) {
+    // v4
+    if (isSvelte5Only) return;
+    fs.writeFileSync(scopeFileName, json, "utf8");
+    return;
+  }
+
+  // v5
+  if (isSvelte5Only) {
+    fs.writeFileSync(scopeFileName, json, "utf8");
+    return;
+  }
+  const scopeFileNameSvelte5 = inputFileName.replace(
+    /input\.svelte(?:\.[jt]s)?$/u,
+    "scope-output-svelte5.json",
+  );
+  if (!fs.existsSync(scopeFileName)) {
+    fs.writeFileSync(scopeFileNameSvelte5, json, "utf8");
+    return;
+  }
+  const baseScope = JSON.parse(fs.readFileSync(scopeFileName, "utf8"));
+  const scope = JSON.parse(json);
+  if (
+    JSON.stringify({
+      ...baseScope,
+      variables: SVELTE5_SCOPE_VARIABLES_BASE,
+    }) === JSON.stringify(scope)
+  ) {
+    return;
+  }
+
+  for (const key of Object.keys(scope)) {
+    if (
+      baseScope[key] &&
+      JSON.stringify(baseScope[key]) === JSON.stringify(scope[key])
+    ) {
+      delete scope[key];
+    }
+  }
+  fs.writeFileSync(
+    scopeFileNameSvelte5,
+    JSON.stringify(scope, null, 2),
+    "utf8",
+  );
+}
+
 function* listupFixturesImpl(dir: string): Iterable<{
   input: string;
   inputFileName: string;
   outputFileName: string;
-  scopeFileName: string;
   typeFileName: string | null;
   config: Linter.ParserOptions;
   requirements: {
     scope?: Record<string, string>;
   };
   getScopeFile: () => string | null;
+  writeScopeFile: (json: string) => void;
   getRuleOutputFileName: (ruleName: string) => string;
   meetRequirements: (key: "test" | "scope" | "parse") => boolean;
 }> {
@@ -157,10 +212,6 @@ function* listupFixturesImpl(dir: string): Iterable<{
       const outputFileName = inputFileName.replace(
         /input\.svelte$/u,
         "output.json",
-      );
-      const scopeFileName = inputFileName.replace(
-        /input\.svelte$/u,
-        "scope-output.json",
       );
       const typeFileName = inputFileName.replace(
         /input\.svelte$/u,
@@ -186,14 +237,15 @@ function* listupFixturesImpl(dir: string): Iterable<{
         input,
         inputFileName,
         outputFileName,
-        scopeFileName,
         typeFileName: fs.existsSync(typeFileName) ? typeFileName : null,
         config,
         requirements,
         getScopeFile: () => getScopeFile(inputFileName, isSvelte5Only),
+        writeScopeFile: (json: string) =>
+          writeScopeFile(inputFileName, json, isSvelte5Only),
         getRuleOutputFileName: (ruleName) => {
           return inputFileName.replace(
-            /input\.svelte$/u,
+            /input\.svelte(?:\.[jt]s)?$/u,
             `${ruleName}-result.json`,
           );
         },
