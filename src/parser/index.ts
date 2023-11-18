@@ -17,6 +17,7 @@ import { parseTemplate } from "./template";
 import {
   analyzePropsScope,
   analyzeReactiveScope,
+  analyzeSnippetsScope,
   analyzeStoreScope,
 } from "./analyze-scope";
 import { ParseError } from "../errors";
@@ -133,6 +134,7 @@ function parseAsSvelte(
   analyzeStoreScope(resultScript.scopeManager!);
   analyzeReactiveScope(resultScript.scopeManager!);
   analyzeStoreScope(resultScript.scopeManager!); // for reactive vars
+  analyzeSnippetsScope(ctx.snippets, resultScript.scopeManager!); // for reactive vars
 
   // Add $$xxx variable
   addGlobalVariables(resultScript.scopeManager!, globals);

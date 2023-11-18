@@ -14,6 +14,7 @@ import type {
   SvelteIfBlockAlone,
   SvelteIfBlockElseIf,
   SvelteKeyBlock,
+  SvelteSnippetBlock,
 } from "../../ast";
 import type { Context } from "../../context";
 import { convertChildren } from "./element";
@@ -433,6 +434,46 @@ export function convertKeyBlock(
   return keyBlock;
 }
 
+/** Convert for SnippetBlock */
+export function convertSnippetBlock(
+  node: SvAST.SnippetBlock,
+  parent: SvelteSnippetBlock["parent"],
+  ctx: Context,
+): SvelteSnippetBlock {
+  // {#snippet x(args)}...{/snippet}
+  const snippetBlock: SvelteSnippetBlock = {
+    type: "SvelteSnippetBlock",
+    id: null as any,
+    context: null as any,
+    children: [],
+    parent,
+    ...ctx.getConvertLocation(node),
+  };
+
+  const closeParenIndex = ctx.code.indexOf(
+    ")",
+    getWithLoc(node.context || node.expression).end,
+  );
+
+  ctx.scriptLet.nestSnippetBlock(
+    node.expression,
+    closeParenIndex,
+    snippetBlock,
+    (id, context) => {
+      snippetBlock.id = id;
+      snippetBlock.context = context;
+    },
+  );
+
+  snippetBlock.children.push(...convertChildren(node, snippetBlock, ctx));
+
+  ctx.scriptLet.closeScope();
+  extractMustacheBlockTokens(snippetBlock, ctx);
+
+  ctx.snippets.push(snippetBlock);
+  return snippetBlock;
+}
+
 /** Extract mustache block tokens */
 function extractMustacheBlockTokens(
   node:
@@ -442,7 +483,8 @@ function extractMustacheBlockTokens(
     | SvelteAwaitBlock
     | SvelteAwaitThenBlock
     | SvelteAwaitCatchBlock
-    | SvelteKeyBlock,
+    | SvelteKeyBlock
+    | SvelteSnippetBlock,
   ctx: Context,
   option?: { startOnly?: true },
 ) {

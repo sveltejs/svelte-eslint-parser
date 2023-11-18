@@ -19,7 +19,9 @@ import type {
   SvelteMustacheTag,
   SvelteName,
   SvelteProgram,
+  SvelteRenderTag,
   SvelteScriptElement,
+  SvelteSnippetBlock,
   SvelteSpecialDirective,
   SvelteSpecialElement,
   SvelteStyleElement,
@@ -34,6 +36,7 @@ import {
   convertEachBlock,
   convertIfBlock,
   convertKeyBlock,
+  convertSnippetBlock,
 } from "./block";
 import { getWithLoc, indexOf } from "./common";
 import {
@@ -47,6 +50,7 @@ import { convertConstTag } from "./const";
 import { sortNodes } from "../sort";
 import type { ScriptLetBlockParam } from "../../context/script-let";
 import { ParseError } from "../..";
+import { convertRenderTag } from "./render";
 
 /* eslint-disable complexity -- X */
 /** Convert for Fragment or Element or ... */
@@ -62,7 +66,8 @@ export function* convertChildren(
     | SvelteAwaitPendingBlock
     | SvelteAwaitThenBlock
     | SvelteAwaitCatchBlock
-    | SvelteKeyBlock,
+    | SvelteKeyBlock
+    | SvelteSnippetBlock,
   ctx: Context,
 ): IterableIterator<
   | SvelteText
@@ -70,10 +75,12 @@ export function* convertChildren(
   | SvelteMustacheTag
   | SvelteDebugTag
   | SvelteConstTag
+  | SvelteRenderTag
   | SvelteIfBlockAlone
   | SvelteEachBlock
   | SvelteAwaitBlock
   | SvelteKeyBlock
+  | SvelteSnippetBlock
   | SvelteHTMLComment
 > {
   if (!fragment.children) return;
@@ -137,6 +144,11 @@ export function* convertChildren(
       yield convertKeyBlock(child, parent, ctx);
       continue;
     }
+    if (child.type === "SnippetBlock") {
+      // {#snippet x(args)}...{/snippet}
+      yield convertSnippetBlock(child, parent, ctx);
+      continue;
+    }
     if (child.type === "Window") {
       yield convertWindowElement(child, parent, ctx);
       continue;
@@ -167,6 +179,10 @@ export function* convertChildren(
     }
     if (child.type === "ConstTag") {
       yield convertConstTag(child, parent, ctx);
+      continue;
+    }
+    if (child.type === "RenderTag") {
+      yield convertRenderTag(child, parent, ctx);
       continue;
     }
     if (child.type === "Document") {
@@ -205,6 +221,9 @@ function needScopeByChildren(fragment: {
   if (!fragment.children) return false;
   for (const child of fragment.children) {
     if (child.type === "ConstTag") {
+      return true;
+    }
+    if (child.type === "SnippetBlock") {
       return true;
     }
   }

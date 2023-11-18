@@ -6,6 +6,7 @@ import type {
   SvelteHTMLElement,
   SvelteName,
   SvelteScriptElement,
+  SvelteSnippetBlock,
   SvelteStyleElement,
   Token,
 } from "../ast";
@@ -141,6 +142,8 @@ export class Context {
     | SvAST.Slot
     | SvAST.Title
   >();
+
+  public readonly snippets: SvelteSnippetBlock[] = [];
 
   // ----- States ------
   private readonly state: { isTypeScript?: boolean } = {};

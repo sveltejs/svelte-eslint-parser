@@ -10,6 +10,7 @@ import type {
   SvelteIfBlock,
   SvelteName,
   SvelteNode,
+  SvelteSnippetBlock,
   Token,
 } from "../ast";
 import type { ESLintExtendedProgram } from "../parser";
@@ -148,6 +149,15 @@ export class ScriptLetContext {
     ...callbacks: ScriptLetCallback<E>[]
   ): ScriptLetCallback<E>[] {
     const range = getNodeRange(expression);
+    return this.addExpressionFromRange(range, parent, typing, ...callbacks);
+  }
+
+  public addExpressionFromRange<E extends ESTree.Expression>(
+    range: [number, number],
+    parent: SvelteNode,
+    typing?: string | null,
+    ...callbacks: ScriptLetCallback<E>[]
+  ): ScriptLetCallback<E>[] {
     const part = this.ctx.code.slice(...range);
     const isTS = typing && this.ctx.isTypeScript();
     this.appendScript(
@@ -412,6 +422,45 @@ export class ScriptLetContext {
       },
     );
     this.pushScope(restore, "});");
+  }
+
+  public nestSnippetBlock(
+    id: ESTree.Identifier,
+    closeParentIndex: number,
+    snippetBlock: SvelteSnippetBlock,
+    callback: (id: ESTree.Identifier, ctx: ESTree.Pattern | null) => void,
+  ): void {
+    const idRange = getNodeRange(id);
+    const part = this.ctx.code.slice(idRange[0], closeParentIndex + 1);
+    const restore = this.appendScript(
+      `function ${part}{`,
+      idRange[0] - 9,
+      (st, tokens, _comments, result) => {
+        const fnDecl = st as ESTree.FunctionDeclaration;
+        const idNode = fnDecl.id!;
+        const context = fnDecl.params.length > 0 ? fnDecl.params[0] : null;
+        const scope = result.getScope(fnDecl);
+
+        // Process for nodes
+        callback(idNode, context);
+        (idNode as any).parent = snippetBlock;
+        if (context) {
+          (context as any).parent = snippetBlock;
+        }
+
+        // Process for scope
+        result.registerNodeToScope(snippetBlock, scope);
+
+        tokens.shift(); // function
+        tokens.pop(); // {
+        tokens.pop(); // }
+
+        // Disconnect the tree structure.
+        fnDecl.id = null as never;
+        fnDecl.params = [];
+      },
+    );
+    this.pushScope(restore, "}");
   }
 
   public nestBlock(
