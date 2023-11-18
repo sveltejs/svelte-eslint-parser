@@ -437,7 +437,7 @@ export class ScriptLetContext {
       idRange[0] - 9,
       (st, tokens, _comments, result) => {
         const fnDecl = st as ESTree.FunctionDeclaration;
-        const idNode = fnDecl.id!;
+        const idNode = fnDecl.id;
         const context = fnDecl.params.length > 0 ? fnDecl.params[0] : null;
         const scope = result.getScope(fnDecl);
 
