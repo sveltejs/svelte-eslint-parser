@@ -1,5 +1,13 @@
 # svelte-eslint-parser
 
+## 0.34.0-next.2
+
+### Minor Changes
+
+- [#430](https://github.com/sveltejs/svelte-eslint-parser/pull/430) [`af1bae5`](https://github.com/sveltejs/svelte-eslint-parser/commit/af1bae5d4eb9c9605e4f2ad66590b14f1bfa9a55) Thanks [@ota-meshi](https://github.com/ota-meshi)! - feat: apply correct type information to `$derived` argument expression
+
+- [#431](https://github.com/sveltejs/svelte-eslint-parser/pull/431) [`ab13a46`](https://github.com/sveltejs/svelte-eslint-parser/commit/ab13a4662410014ad7d53fc7664bd5b464f15cbe) Thanks [@ota-meshi](https://github.com/ota-meshi)! - feat: add support for `{#snippet}` and `{@render}`
+
 ## 0.34.0-next.1
 
 ### Minor Changes
