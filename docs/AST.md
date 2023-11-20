@@ -210,7 +210,19 @@ interface SvelteAttribute extends Node {
   type: "SvelteAttribute";
   key: SvelteName;
   boolean: boolean;
-  value: (SvelteLiteral | SvelteMustacheTagText)[];
+  value: SvelteLiteral | SvelteMustacheTagText | SvelteAttributeTemplateValue | null;
+}
+```
+
+### SvelteAttributeTemplateValue
+
+If the value of the attribute becomes a template, this node is set to the `value`.
+
+```ts
+interface SvelteAttributeTemplateValue extends Node {
+  type: "SvelteAttributeTemplateValue";
+  values: (SvelteLiteral | SvelteMustacheTagText)[];
+  parent: SvelteAttribute | SvelteStyleDirective;
 }
 ```
 
@@ -321,7 +333,7 @@ interface SvelteStyleDirective extends Node {
   type: "SvelteStyleDirective";
   key: SvelteDirectiveKey;
   shorthand: boolean;
-  value: (SvelteLiteral | SvelteMustacheTagText)[];
+  value: SvelteLiteral | SvelteMustacheTagText | SvelteAttributeTemplateValue | null;
 }
 ```
 

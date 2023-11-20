@@ -204,33 +204,7 @@ function analyzeDollarDollarVariables(
       case "$$slots": {
         const nameTypes = new Set<string>();
         for (const slot of slots) {
-          const nameAttr = slot.startTag.attributes.find(
-            (attr): attr is SvelteAttribute =>
-              attr.type === "SvelteAttribute" && attr.key.name === "name",
-          );
-          if (!nameAttr || nameAttr.value.length === 0) {
-            nameTypes.add('"default"');
-            continue;
-          }
-
-          if (nameAttr.value.length === 1) {
-            const value = nameAttr.value[0];
-            if (value.type === "SvelteLiteral") {
-              nameTypes.add(JSON.stringify(value.value));
-            } else {
-              nameTypes.add("string");
-            }
-            continue;
-          }
-          nameTypes.add(
-            `\`${nameAttr.value
-              .map((value) =>
-                value.type === "SvelteLiteral"
-                  ? value.value.replace(/([$`])/gu, "\\$1")
-                  : "${string}",
-              )
-              .join("")}\``,
-          );
+          nameTypes.add(extractSlotTypes(slot));
         }
 
         appendDeclareVirtualScript(
@@ -252,6 +226,34 @@ function analyzeDollarDollarVariables(
         throw Error(`Unknown global: ${_}`);
       }
     }
+  }
+
+  /** Extract slot name type from given the slot element  */
+  function extractSlotTypes(slot: SvelteHTMLElement) {
+    const nameAttr = slot.startTag.attributes.find(
+      (attr): attr is SvelteAttribute =>
+        attr.type === "SvelteAttribute" && attr.key.name === "name",
+    );
+    if (!nameAttr || nameAttr.boolean || nameAttr.value == null) {
+      return '"default"';
+    }
+
+    if (nameAttr.value.type === "SvelteLiteral") {
+      return JSON.stringify(nameAttr.value.value);
+    }
+    if (nameAttr.value.type === "SvelteMustacheTag") {
+      return "string";
+    }
+    if (nameAttr.value.type === "SvelteAttributeTemplateValue") {
+      return `\`${nameAttr.value.values
+        .map((value) =>
+          value.type === "SvelteLiteral"
+            ? value.value.replace(/([$`])/gu, "\\$1")
+            : "${string}",
+        )
+        .join("")}\``;
+    }
+    throw Error(`Unknown attr value type: ${(nameAttr.value as any).type}`);
   }
 
   /** Append declare virtual script */

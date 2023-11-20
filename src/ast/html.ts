@@ -25,6 +25,7 @@ export type SvelteHTMLNode =
   | SvelteAwaitCatchBlock
   | SvelteKeyBlock
   | SvelteAttribute
+  | SvelteAttributeTemplateValue
   | SvelteShorthandAttribute
   | SvelteSpreadAttribute
   | SvelteDirective
@@ -200,7 +201,7 @@ export interface SvelteText extends BaseNode {
 export interface SvelteLiteral extends BaseNode {
   type: "SvelteLiteral";
   value: string;
-  parent: SvelteAttribute | SvelteStyleDirective;
+  parent: SvelteAttribute | SvelteStyleDirective | SvelteAttributeTemplateValue;
 }
 
 /** Node of mustache tag. e.g. `{...}`, `{@html ...}`. Like JSXExpressionContainer */
@@ -220,6 +221,7 @@ interface BaseSvelteMustacheTag extends BaseNode {
     | SvelteAwaitCatchBlock
     | SvelteKeyBlock
     | SvelteAttribute
+    | SvelteAttributeTemplateValue
     | SvelteStyleDirective;
 }
 /** Node of mustache tag. e.g. `{...}``. Like JSXExpressionContainer */
@@ -460,12 +462,30 @@ export interface SvelteHTMLComment extends BaseNode {
     | SvelteKeyBlock;
 }
 /** Node of HTML attribute. */
-export interface SvelteAttribute extends BaseNode {
+export type SvelteAttribute = SvelteAttributeBoolean | SvelteAttributeWithValue;
+interface BaseSvelteAttribute extends BaseNode {
   type: "SvelteAttribute";
   key: SvelteName;
   boolean: boolean;
-  value: (SvelteLiteral | SvelteMustacheTagText)[];
+  value:
+    | SvelteLiteral
+    | SvelteMustacheTagText
+    | SvelteAttributeTemplateValue
+    | null;
   parent: SvelteStartTag;
+}
+export interface SvelteAttributeBoolean extends BaseSvelteAttribute {
+  boolean: true;
+  value: null;
+}
+export interface SvelteAttributeWithValue extends BaseSvelteAttribute {
+  boolean: false;
+  value: SvelteLiteral | SvelteMustacheTagText | SvelteAttributeTemplateValue;
+}
+export interface SvelteAttributeTemplateValue extends BaseNode {
+  type: "SvelteAttributeTemplateValue";
+  values: (SvelteLiteral | SvelteMustacheTagText)[];
+  parent: SvelteAttributeWithValue | SvelteStyleDirectiveLongform;
 }
 /** Node of shorthand attribute. e.g. `<img {src}>` */
 export interface SvelteShorthandAttribute extends BaseNode {
@@ -574,19 +594,23 @@ export type SvelteStyleDirective =
 interface BaseSvelteStyleDirective extends BaseNode {
   type: "SvelteStyleDirective";
   key: SvelteDirectiveKeyTextName | SvelteDirectiveKeyForStyleShorthand;
-  value: (SvelteLiteral | SvelteMustacheTagText)[];
+  value:
+    | SvelteLiteral
+    | SvelteMustacheTagText
+    | SvelteAttributeTemplateValue
+    | null;
   parent: SvelteStartTag;
 }
 export interface SvelteStyleDirectiveShorthand
   extends BaseSvelteStyleDirective {
   key: SvelteDirectiveKeyForStyleShorthand;
   shorthand: true;
-  value: [];
+  value: null;
 }
 export interface SvelteStyleDirectiveLongform extends BaseSvelteStyleDirective {
   key: SvelteDirectiveKeyTextName;
   shorthand: false;
-  value: (SvelteLiteral | SvelteMustacheTagText)[];
+  value: SvelteLiteral | SvelteMustacheTagText | SvelteAttributeTemplateValue;
 }
 export interface SvelteSpecialDirectiveKey extends BaseNode {
   type: "SvelteSpecialDirectiveKey";

@@ -476,7 +476,7 @@ function processThisAttribute(
         type: "SvelteAttribute",
         key: null as any,
         boolean: false,
-        value: [],
+        value: null as any,
         parent: element.startTag,
         ...ctx.getConvertLocation({ start: startIndex, end: endIndex }),
       };
@@ -486,7 +486,7 @@ function processThisAttribute(
         parent: thisAttr,
         ...ctx.getConvertLocation({ start: startIndex, end: eqIndex }),
       };
-      thisAttr.value.push({
+      thisAttr.value = {
         type: "SvelteLiteral",
         value: thisValue,
         parent: thisAttr,
@@ -494,7 +494,7 @@ function processThisAttribute(
           start: literalStartIndex,
           end: literalEndIndex,
         }),
-      });
+      };
       // this
       ctx.addToken("HTMLIdentifier", {
         start: startIndex,

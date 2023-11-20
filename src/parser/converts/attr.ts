@@ -20,6 +20,9 @@ import type {
   SvelteStyleElement,
   SvelteElseBlock,
   SvelteAwaitBlock,
+  SvelteLiteral,
+  SvelteMustacheTagText,
+  SvelteAttributeWithValue,
 } from "../../ast";
 import type ESTree from "estree";
 import type { Context } from "../../context";
@@ -114,9 +117,9 @@ export function* convertAttributeTokens(
   for (const attr of attributes) {
     const attribute: SvelteAttribute = {
       type: "SvelteAttribute",
-      boolean: false,
+      boolean: false as boolean,
       key: null as any,
-      value: [],
+      value: null as any,
       parent,
       ...ctx.getConvertLocation({
         start: attr.key.start,
@@ -133,8 +136,10 @@ export function* convertAttributeTokens(
     if (attr.value == null) {
       attribute.boolean = true;
     } else {
-      attribute.value.push(
-        convertAttributeValueTokenToLiteral(attr.value, attribute, ctx),
+      attribute.value = convertAttributeValueTokenToLiteral(
+        attr.value,
+        attribute,
+        ctx,
       );
     }
     yield attribute;
@@ -149,9 +154,9 @@ function convertAttribute(
 ): SvelteAttribute | SvelteShorthandAttribute {
   const attribute: SvelteAttribute = {
     type: "SvelteAttribute",
-    boolean: false,
+    boolean: false as boolean,
     key: null as any,
-    value: [],
+    value: null as any,
     parent,
     ...ctx.getConvertLocation(node),
   };
@@ -215,6 +220,7 @@ function processAttributeValue(
   attribute: SvelteAttribute | SvelteStyleDirectiveLongform,
   ctx: Context,
 ) {
+  const values: (SvelteLiteral | SvelteMustacheTagText)[] = [];
   for (let index = 0; index < nodeValue.length; index++) {
     const v = nodeValue[index];
     if (v.type === "Text") {
@@ -229,12 +235,12 @@ function processAttributeValue(
         // console.log(ctx.getText(v), v.data)
         v.end = next.start;
       }
-      attribute.value.push(convertTextToLiteral(v, attribute, ctx));
+      values.push(convertTextToLiteral(v, attribute, ctx));
       continue;
     }
     if (v.type === "MustacheTag") {
       const mustache = convertMustacheTag(v, attribute, ctx);
-      attribute.value.push(mustache);
+      values.push(mustache);
       continue;
     }
     const u: any = v;
@@ -243,6 +249,29 @@ function processAttributeValue(
       u.start,
       ctx,
     );
+  }
+  if (values.length === 1) {
+    attribute.value = values[0];
+  } else if (values.length === 0) {
+    attribute.value = null;
+  } else {
+    const first = values[0];
+    const last = values[values.length - 1];
+    attribute.value = {
+      type: "SvelteAttributeTemplateValue",
+      values,
+      parent: attribute as
+        | SvelteAttributeWithValue
+        | SvelteStyleDirectiveLongform,
+      loc: {
+        start: { ...first.loc.start },
+        end: { ...last.loc.end },
+      },
+      range: [first.range[0], last.range[1]],
+    };
+    for (const value of values) {
+      value.parent = attribute.value;
+    }
   }
 }
 
@@ -458,7 +487,7 @@ function convertStyleDirective(
     type: "SvelteStyleDirective",
     key: null as any,
     shorthand: false,
-    value: [],
+    value: null as any,
     parent,
     ...ctx.getConvertLocation(node),
   };

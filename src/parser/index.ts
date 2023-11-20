@@ -166,9 +166,9 @@ function parseAsSvelte(
         (attr) =>
           attr.type === "SvelteAttribute" &&
           attr.key.name === "context" &&
-          attr.value.length === 1 &&
-          attr.value[0].type === "SvelteLiteral" &&
-          attr.value[0].value === "module",
+          attr.value &&
+          attr.value.type === "SvelteLiteral" &&
+          attr.value.value === "module",
       )
     ) {
       analyzePropsScope(body, resultScript.scopeManager!);

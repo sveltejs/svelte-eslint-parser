@@ -1024,98 +1024,82 @@
               }
             },
             "boolean": false,
-            "value": [
-              {
-                "type": "SvelteMustacheTag",
-                "kind": "text",
-                "expression": {
-                  "type": "ConditionalExpression",
-                  "alternate": {
-                    "type": "Literal",
-                    "raw": "''",
-                    "value": "",
-                    "range": [
-                      397,
-                      399
-                    ],
-                    "loc": {
-                      "start": {
-                        "line": 27,
-                        "column": 42
-                      },
-                      "end": {
-                        "line": 27,
-                        "column": 44
-                      }
-                    }
-                  },
-                  "consequent": {
-                    "type": "Literal",
-                    "raw": "'selected'",
-                    "value": "selected",
-                    "range": [
-                      384,
-                      394
-                    ],
-                    "loc": {
-                      "start": {
-                        "line": 27,
-                        "column": 29
-                      },
-                      "end": {
-                        "line": 27,
-                        "column": 39
-                      }
-                    }
-                  },
-                  "test": {
-                    "type": "BinaryExpression",
-                    "left": {
-                      "type": "Identifier",
-                      "name": "current",
-                      "range": [
-                        364,
-                        371
-                      ],
-                      "loc": {
-                        "start": {
-                          "line": 27,
-                          "column": 9
-                        },
-                        "end": {
-                          "line": 27,
-                          "column": 16
-                        }
-                      }
+            "value": {
+              "type": "SvelteMustacheTag",
+              "kind": "text",
+              "expression": {
+                "type": "ConditionalExpression",
+                "alternate": {
+                  "type": "Literal",
+                  "raw": "''",
+                  "value": "",
+                  "range": [
+                    397,
+                    399
+                  ],
+                  "loc": {
+                    "start": {
+                      "line": 27,
+                      "column": 42
                     },
-                    "operator": "===",
-                    "right": {
-                      "type": "Literal",
-                      "raw": "'baz'",
-                      "value": "baz",
-                      "range": [
-                        376,
-                        381
-                      ],
-                      "loc": {
-                        "start": {
-                          "line": 27,
-                          "column": 21
-                        },
-                        "end": {
-                          "line": 27,
-                          "column": 26
-                        }
-                      }
+                    "end": {
+                      "line": 27,
+                      "column": 44
+                    }
+                  }
+                },
+                "consequent": {
+                  "type": "Literal",
+                  "raw": "'selected'",
+                  "value": "selected",
+                  "range": [
+                    384,
+                    394
+                  ],
+                  "loc": {
+                    "start": {
+                      "line": 27,
+                      "column": 29
                     },
+                    "end": {
+                      "line": 27,
+                      "column": 39
+                    }
+                  }
+                },
+                "test": {
+                  "type": "BinaryExpression",
+                  "left": {
+                    "type": "Identifier",
+                    "name": "current",
                     "range": [
                       364,
-                      381
+                      371
                     ],
                     "loc": {
                       "start": {
                         "line": 27,
                         "column": 9
+                      },
+                      "end": {
+                        "line": 27,
+                        "column": 16
+                      }
+                    }
+                  },
+                  "operator": "===",
+                  "right": {
+                    "type": "Literal",
+                    "raw": "'baz'",
+                    "value": "baz",
+                    "range": [
+                      376,
+                      381
+                    ],
+                    "loc": {
+                      "start": {
+                        "line": 27,
+                        "column": 21
                       },
                       "end": {
                         "line": 27,
@@ -1125,7 +1109,7 @@
                   },
                   "range": [
                     364,
-                    399
+                    381
                   ],
                   "loc": {
                     "start": {
@@ -1134,26 +1118,40 @@
                     },
                     "end": {
                       "line": 27,
-                      "column": 44
+                      "column": 26
                     }
                   }
                 },
                 "range": [
-                  363,
-                  400
+                  364,
+                  399
                 ],
                 "loc": {
                   "start": {
                     "line": 27,
-                    "column": 8
+                    "column": 9
                   },
                   "end": {
                     "line": 27,
-                    "column": 45
+                    "column": 44
                   }
                 }
+              },
+              "range": [
+                363,
+                400
+              ],
+              "loc": {
+                "start": {
+                  "line": 27,
+                  "column": 8
+                },
+                "end": {
+                  "line": 27,
+                  "column": 45
+                }
               }
-            ],
+            },
             "range": [
               356,
               401

@@ -47,10 +47,10 @@ export function parseStyleContext(
     if (
       attribute.type === "SvelteAttribute" &&
       attribute.key.name === "lang" &&
-      attribute.value.length > 0 &&
-      attribute.value[0].type === "SvelteLiteral"
+      attribute.value &&
+      attribute.value.type === "SvelteLiteral"
     ) {
-      sourceLang = attribute.value[0].value;
+      sourceLang = attribute.value.value;
     }
   }
   let parseFn: Parser<Root>, sourceAst: Root;
