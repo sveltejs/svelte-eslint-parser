@@ -17,6 +17,20 @@ type RestoreStatementProcess = (
   node: TSESTree.Statement,
   result: TSESParseForESLintResult,
 ) => boolean;
+/**
+ * A function that restores the expression.
+ * @param node The node to restore.
+ * @param result The result of parsing.
+ * @returns
+ *   If `false`, it indicates that the specified node was not processed.
+ *
+ *   If `true`, it indicates that the specified node was processed for processing.
+ *   This process will no longer be called.
+ */
+type RestoreExpressionProcess<T extends TSESTree.Expression> = {
+  target: T["type"];
+  restore: (node: T, result: TSESParseForESLintResult) => boolean;
+};
 
 export class RestoreContext {
   private readonly originalLocs: LinesAndColumns;
@@ -27,12 +41,21 @@ export class RestoreContext {
 
   private readonly restoreStatementProcesses: RestoreStatementProcess[] = [];
 
+  private readonly restoreExpressionProcesses: RestoreExpressionProcess<TSESTree.Expression>[] =
+    [];
+
   public constructor(code: string) {
     this.originalLocs = new LinesAndColumns(code);
   }
 
   public addRestoreStatementProcess(process: RestoreStatementProcess): void {
     this.restoreStatementProcesses.push(process);
+  }
+
+  public addRestoreExpressionProcess<T extends TSESTree.Expression>(
+    process: RestoreExpressionProcess<T>,
+  ): void {
+    this.restoreExpressionProcesses.push(process as never);
   }
 
   public addOffset(offset: { original: number; dist: number }): void {
@@ -61,6 +84,7 @@ export class RestoreContext {
     });
 
     restoreStatements(result, this.restoreStatementProcesses);
+    restoreExpressions(result, this.restoreExpressionProcesses);
 
     // Adjust program node location
     const firstOffset = Math.min(
@@ -151,9 +175,10 @@ function remapLocations(
   // remap locations
   traverseNodes(result.ast, {
     visitorKeys: result.visitorKeys,
-    enterNode: (node, p) => {
+    enterNode: (node, parent) => {
+      (node as any).parent = parent;
       if (!traversed.has(node)) {
-        traversed.set(node, p);
+        traversed.set(node, parent);
 
         remapLocation(node);
       }
@@ -193,4 +218,29 @@ function restoreStatements(
       }
     }
   }
+}
+
+/** Restore expression nodes */
+function restoreExpressions(
+  result: TSESParseForESLintResult,
+  restoreExpressionProcesses: RestoreExpressionProcess<TSESTree.Expression>[],
+) {
+  if (restoreExpressionProcesses.length === 0) return;
+  const restoreExpressionProcessesSet = new Set(restoreExpressionProcesses);
+  traverseNodes(result.ast, {
+    visitorKeys: result.visitorKeys,
+    enterNode(node) {
+      for (const proc of restoreExpressionProcessesSet) {
+        if (proc.target === node.type) {
+          if (proc.restore(node as any, result)) {
+            restoreExpressionProcessesSet.delete(proc);
+          }
+          break;
+        }
+      }
+    },
+    leaveNode() {
+      /* noop */
+    },
+  });
 }

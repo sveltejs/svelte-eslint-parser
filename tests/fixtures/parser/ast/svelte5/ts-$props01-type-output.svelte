@@ -9,6 +9,6 @@
 </script>
 
 {a} <!-- a: number -->
-{b} <!-- b: Promise<{ x: number; }> -->
-{c} <!-- c: Promise<{ x: number; }> -->
+{b} <!-- b: string -->
+{c} <!-- c: boolean -->
 {everythingElse} <!-- everythingElse: { d: number; } -->

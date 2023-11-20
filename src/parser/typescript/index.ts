@@ -1,9 +1,9 @@
 import type { ESLintExtendedProgram } from "..";
-import { traverseNodes } from "../..";
 import type { NormalizedParserOptions } from "../parser-options";
 import { parseScript, parseScriptInSvelte } from "../script";
 import type { AnalyzeTypeScriptContext } from "./analyze";
 import { analyzeTypeScript, analyzeTypeScriptInSvelte } from "./analyze";
+import { setParent } from "./set-parent";
 import type { TSESParseForESLintResult } from "./types";
 
 /**
@@ -34,15 +34,7 @@ export function parseTypeScript(
   const tsCtx = analyzeTypeScript(code, attrs, parserOptions);
 
   const result = parseScript(tsCtx.script, attrs, parserOptions);
-  traverseNodes(result.ast, {
-    visitorKeys: result.visitorKeys,
-    enterNode(node, parent) {
-      (node as any).parent = parent;
-    },
-    leaveNode() {
-      //
-    },
-  });
+  setParent(result);
 
   tsCtx.restoreContext.restore(result as unknown as TSESParseForESLintResult);
 
