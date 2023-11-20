@@ -87,7 +87,9 @@ export function parseForESLint(code: string, options?: any): ParseResult {
   if (
     svelteVersion.hasRunes &&
     parserOptions.filePath &&
-    !parserOptions.filePath.endsWith(".svelte")
+    !parserOptions.filePath.endsWith(".svelte") &&
+    // If no `filePath` is set in ESLint, "<input>" will be specified.
+    parserOptions.filePath !== "<input>"
   ) {
     const trimmed = code.trim();
     if (!trimmed.startsWith("<") && !trimmed.endsWith(">")) {

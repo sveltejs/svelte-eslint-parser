@@ -94,6 +94,7 @@
 			renderValidationDecorations: 'on',
 			renderWhitespace: 'boundary',
 			scrollBeyondLastLine: false,
+			useInlineViewWhenSpaceIsLimited: false,
 			...editorOptions
 		};
 
