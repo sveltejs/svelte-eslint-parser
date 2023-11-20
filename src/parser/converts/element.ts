@@ -117,7 +117,7 @@ export function* convertChildren(
       continue;
     }
     if (child.type === "MustacheTag") {
-      yield convertMustacheTag(child, parent, ctx);
+      yield convertMustacheTag(child, parent, null, ctx);
       continue;
     }
     if (child.type === "RawMustacheTag") {
