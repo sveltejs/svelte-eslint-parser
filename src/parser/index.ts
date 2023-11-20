@@ -17,6 +17,7 @@ import { parseTemplate } from "./template";
 import {
   analyzePropsScope,
   analyzeReactiveScope,
+  analyzeSnippetsScope,
   analyzeStoreScope,
 } from "./analyze-scope";
 import { ParseError } from "../errors";
@@ -86,7 +87,9 @@ export function parseForESLint(code: string, options?: any): ParseResult {
   if (
     svelteVersion.hasRunes &&
     parserOptions.filePath &&
-    !parserOptions.filePath.endsWith(".svelte")
+    !parserOptions.filePath.endsWith(".svelte") &&
+    // If no `filePath` is set in ESLint, "<input>" will be specified.
+    parserOptions.filePath !== "<input>"
   ) {
     const trimmed = code.trim();
     if (!trimmed.startsWith("<") && !trimmed.endsWith(">")) {
@@ -133,6 +136,7 @@ function parseAsSvelte(
   analyzeStoreScope(resultScript.scopeManager!);
   analyzeReactiveScope(resultScript.scopeManager!);
   analyzeStoreScope(resultScript.scopeManager!); // for reactive vars
+  analyzeSnippetsScope(ctx.snippets, resultScript.scopeManager!); // for reactive vars
 
   // Add $$xxx variable
   addGlobalVariables(resultScript.scopeManager!, globals);
