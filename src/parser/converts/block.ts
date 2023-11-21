@@ -437,7 +437,12 @@ export function convertAwaitBlock(
       ...ctx.getConvertLocation({
         start: thenStart,
         end: endIndexFromFragment(then, () => {
-          return awaitBlock.pending?.range[1] ?? node.end;
+          return (
+            ctx.code.indexOf(
+              "}",
+              node.value ? getWithLoc(node.value).end : thenStart + 5,
+            ) + 1
+          );
         }),
       }),
     };
@@ -518,13 +523,13 @@ export function convertAwaitBlock(
       (awaitBlock as SvelteAwaitBlockAwaitCatch).kind = "await-catch";
     }
     const catchStart =
-      awaitBlock.pending || awaitBlock.then
+      awaitBlock.then || awaitBlock.pending
         ? startBlockIndex(
             ctx.code,
             node.error
               ? getWithLoc(node.error).start
               : startIndexFromFragment(catchFragment, () => {
-                  return (awaitBlock.pending || awaitBlock.then).range[1];
+                  return (awaitBlock.then || awaitBlock.pending).range[1];
                 }),
             ":catch",
           )
@@ -538,7 +543,12 @@ export function convertAwaitBlock(
       ...ctx.getConvertLocation({
         start: catchStart,
         end: endIndexFromFragment(catchFragment, () => {
-          return (awaitBlock.pending || awaitBlock.then)?.range[1] ?? node.end;
+          return (
+            ctx.code.indexOf(
+              "}",
+              node.error ? getWithLoc(node.error).end : catchStart + 6,
+            ) + 1
+          );
         }),
       }),
     } as SvelteAwaitCatchBlock;
