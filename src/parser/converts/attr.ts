@@ -60,35 +60,19 @@ export function* convertAttributes(
       yield convertAttribute(attr, parent, ctx);
       continue;
     }
-    if (attr.type === "SpreadAttribute") {
+    if (attr.type === "SpreadAttribute" || attr.type === "Spread") {
       yield convertSpreadAttribute(attr, parent, ctx);
       continue;
     }
-    if (attr.type === "Spread") {
-      yield convertSpreadAttribute(attr, parent, ctx);
-      continue;
-    }
-    if (attr.type === "BindDirective") {
+    if (attr.type === "BindDirective" || attr.type === "Binding") {
       yield convertBindingDirective(attr, parent, ctx);
       continue;
     }
-    if (attr.type === "Binding") {
-      yield convertBindingDirective(attr, parent, ctx);
-      continue;
-    }
-    if (attr.type === "OnDirective") {
+    if (attr.type === "OnDirective" || attr.type === "EventHandler") {
       yield convertEventHandlerDirective(attr, parent, ctx);
       continue;
     }
-    if (attr.type === "EventHandler") {
-      yield convertEventHandlerDirective(attr, parent, ctx);
-      continue;
-    }
-    if (attr.type === "ClassDirective") {
-      yield convertClassDirective(attr, parent, ctx);
-      continue;
-    }
-    if (attr.type === "Class") {
+    if (attr.type === "ClassDirective" || attr.type === "Class") {
       yield convertClassDirective(attr, parent, ctx);
       continue;
     }
@@ -96,35 +80,19 @@ export function* convertAttributes(
       yield convertStyleDirective(attr, parent, ctx);
       continue;
     }
-    if (attr.type === "TransitionDirective") {
+    if (attr.type === "TransitionDirective" || attr.type === "Transition") {
       yield convertTransitionDirective(attr, parent, ctx);
       continue;
     }
-    if (attr.type === "Transition") {
-      yield convertTransitionDirective(attr, parent, ctx);
-      continue;
-    }
-    if (attr.type === "AnimateDirective") {
+    if (attr.type === "AnimateDirective" || attr.type === "Animation") {
       yield convertAnimationDirective(attr, parent, ctx);
       continue;
     }
-    if (attr.type === "Animation") {
-      yield convertAnimationDirective(attr, parent, ctx);
-      continue;
-    }
-    if (attr.type === "UseDirective") {
+    if (attr.type === "UseDirective" || attr.type === "Action") {
       yield convertActionDirective(attr, parent, ctx);
       continue;
     }
-    if (attr.type === "Action") {
-      yield convertActionDirective(attr, parent, ctx);
-      continue;
-    }
-    if (attr.type === "LetDirective") {
-      yield convertLetDirective(attr, parent, ctx);
-      continue;
-    }
-    if (attr.type === "Let") {
+    if (attr.type === "LetDirective" || attr.type === "Let") {
       yield convertLetDirective(attr, parent, ctx);
       continue;
     }
