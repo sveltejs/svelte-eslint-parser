@@ -96,7 +96,15 @@ export function convertIfBlock(
     return ifBlock;
   }
 
-  const elseStart = startBlockIndex(ctx.code, node.else.start - 1, ":else");
+  let baseStart = node.else.start;
+  if (node.else.children.length === 1) {
+    const c = node.else.children[0];
+    if (c.type === "IfBlock" && c.elseif) {
+      baseStart = Math.min(baseStart, c.start, getWithLoc(c.expression).start);
+    }
+  }
+
+  const elseStart = startBlockIndex(ctx.code, baseStart - 1, ":else");
 
   if (node.else.children.length === 1) {
     const c = node.else.children[0];
