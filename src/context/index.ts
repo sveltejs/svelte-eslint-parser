@@ -12,6 +12,7 @@ import type {
 } from "../ast";
 import type ESTree from "estree";
 import type * as SvAST from "../parser/svelte-ast-types";
+import type * as Compiler from "svelte/compiler";
 import { ScriptLetContext } from "./script-let";
 import { LetDirectiveCollections } from "./let-directive-collection";
 import type { AttributeToken } from "../parser/html";
@@ -164,6 +165,19 @@ export class Context {
     | SvAST.SlotTemplate
     | SvAST.Slot
     | SvAST.Title
+    | Compiler.RegularElement
+    | Compiler.Component
+    | Compiler.SvelteComponent
+    | Compiler.SvelteElement
+    | Compiler.SvelteWindow
+    | Compiler.SvelteBody
+    | Compiler.SvelteHead
+    | Compiler.SvelteDocument
+    | Compiler.SvelteFragment
+    | Compiler.SvelteSelf
+    | Compiler.SvelteOptionsRaw
+    | Compiler.SlotElement
+    | Compiler.TitleElement
   >();
 
   public readonly snippets: SvelteSnippetBlock[] = [];

@@ -1,4 +1,3 @@
-/* eslint complexity: 0 -- debug */
 /** Assert equals */
 export function assertResult(
   aRoot: unknown,

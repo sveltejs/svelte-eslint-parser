@@ -7,6 +7,7 @@ import { sortNodes } from "./sort";
 import type { SvelteProgram } from "../ast";
 import { ParseError } from "..";
 import type { NormalizedParserOptions } from "./parser-options";
+import { svelteVersion } from "./svelte-version";
 
 /**
  * Parse for template
@@ -17,12 +18,13 @@ export function parseTemplate(
   parserOptions: NormalizedParserOptions,
 ): {
   ast: SvelteProgram;
-  svelteAst: SvAST.Ast;
+  svelteAst: SvAST.Ast | SvAST.AstLegacy;
 } {
   try {
     const svelteAst = parse(code, {
       filename: parserOptions.filePath,
-    }) as never as SvAST.Ast;
+      ...(svelteVersion.gte(5) ? { modern: true } : {}),
+    }) as never as SvAST.Ast | SvAST.AstLegacy;
     const ast = convertSvelteRoot(svelteAst, ctx);
     sortNodes(ast.body);
 

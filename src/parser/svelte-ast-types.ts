@@ -1,13 +1,19 @@
 import type ESTree from "estree";
+import type * as Compiler from "svelte/compiler";
 interface BaseNode {
   start: number;
   end: number;
 }
 export interface Ast {
-  html: Fragment;
-  css: Style;
-  instance: Script;
-  module: Script;
+  fragment?: Compiler.Fragment;
+  js: Compiler.Script[];
+  css?: Compiler.Style;
+}
+export interface AstLegacy {
+  html?: Fragment;
+  css?: Style;
+  instance?: Script;
+  module?: Script;
 }
 export declare type TemplateNode =
   | Text

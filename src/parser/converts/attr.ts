@@ -24,6 +24,7 @@ import type {
 import type ESTree from "estree";
 import type { Context } from "../../context";
 import type * as SvAST from "../svelte-ast-types";
+import type * as Compiler from "svelte/compiler";
 import { getWithLoc, indexOf } from "./common";
 import { convertMustacheTag } from "./mustache";
 import {
@@ -35,10 +36,16 @@ import type { ScriptLetCallback } from "../../context/script-let";
 import type { AttributeToken } from "../html";
 import { svelteVersion } from "../svelte-version";
 import { hasTypeInfo } from "../../utils";
+import { getModifiers } from "../compat";
 
 /** Convert for Attributes */
 export function* convertAttributes(
-  attributes: SvAST.AttributeOrDirective[],
+  attributes: (
+    | SvAST.AttributeOrDirective
+    | Compiler.Attribute
+    | Compiler.SpreadAttribute
+    | Compiler.Directive
+  )[],
   parent: SvelteStartTag,
   ctx: Context,
 ): IterableIterator<
@@ -53,16 +60,32 @@ export function* convertAttributes(
       yield convertAttribute(attr, parent, ctx);
       continue;
     }
+    if (attr.type === "SpreadAttribute") {
+      yield convertSpreadAttribute(attr, parent, ctx);
+      continue;
+    }
     if (attr.type === "Spread") {
       yield convertSpreadAttribute(attr, parent, ctx);
+      continue;
+    }
+    if (attr.type === "BindDirective") {
+      yield convertBindingDirective(attr, parent, ctx);
       continue;
     }
     if (attr.type === "Binding") {
       yield convertBindingDirective(attr, parent, ctx);
       continue;
     }
+    if (attr.type === "OnDirective") {
+      yield convertEventHandlerDirective(attr, parent, ctx);
+      continue;
+    }
     if (attr.type === "EventHandler") {
       yield convertEventHandlerDirective(attr, parent, ctx);
+      continue;
+    }
+    if (attr.type === "ClassDirective") {
+      yield convertClassDirective(attr, parent, ctx);
       continue;
     }
     if (attr.type === "Class") {
@@ -73,16 +96,32 @@ export function* convertAttributes(
       yield convertStyleDirective(attr, parent, ctx);
       continue;
     }
+    if (attr.type === "TransitionDirective") {
+      yield convertTransitionDirective(attr, parent, ctx);
+      continue;
+    }
     if (attr.type === "Transition") {
       yield convertTransitionDirective(attr, parent, ctx);
+      continue;
+    }
+    if (attr.type === "AnimateDirective") {
+      yield convertAnimationDirective(attr, parent, ctx);
       continue;
     }
     if (attr.type === "Animation") {
       yield convertAnimationDirective(attr, parent, ctx);
       continue;
     }
+    if (attr.type === "UseDirective") {
+      yield convertActionDirective(attr, parent, ctx);
+      continue;
+    }
     if (attr.type === "Action") {
       yield convertActionDirective(attr, parent, ctx);
+      continue;
+    }
+    if (attr.type === "LetDirective") {
+      yield convertLetDirective(attr, parent, ctx);
       continue;
     }
     if (attr.type === "Let") {
@@ -145,7 +184,7 @@ export function* convertAttributeTokens(
 
 /** Convert for Attribute */
 function convertAttribute(
-  node: SvAST.Attribute,
+  node: SvAST.Attribute | Compiler.Attribute,
   parent: SvelteAttribute["parent"],
   ctx: Context,
 ): SvelteAttribute | SvelteShorthandAttribute {
@@ -172,7 +211,20 @@ function convertAttribute(
     ctx.addToken("HTMLIdentifier", keyRange);
     return attribute;
   }
-  const shorthand = node.value.find((v) => v.type === "AttributeShorthand");
+  const value = node.value as (
+    | Compiler.Text
+    | Compiler.ExpressionTag
+    | SvAST.Text
+    | SvAST.MustacheTag
+    | SvAST.AttributeShorthand
+  )[];
+  const shorthand =
+    value.find((v) => v.type === "AttributeShorthand") ||
+    // for Svelte v5
+    (value.length === 1 &&
+      value[0].type === "ExpressionTag" &&
+      ctx.code[node.start] === "{" &&
+      ctx.code[node.end - 1] === "}");
   if (shorthand) {
     const key: ESTree.Identifier = {
       ...attribute.key,
@@ -200,7 +252,12 @@ function convertAttribute(
     return sAttr;
   }
   processAttributeValue(
-    node.value as (SvAST.Text | SvAST.MustacheTag)[],
+    node.value as (
+      | SvAST.Text
+      | SvAST.MustacheTag
+      | Compiler.Text
+      | Compiler.ExpressionTag
+    )[],
     attribute,
     parent,
     ctx,
@@ -214,7 +271,12 @@ function convertAttribute(
 
 /** Common process attribute value */
 function processAttributeValue(
-  nodeValue: (SvAST.Text | SvAST.MustacheTag)[],
+  nodeValue: (
+    | SvAST.Text
+    | SvAST.MustacheTag
+    | Compiler.Text
+    | Compiler.ExpressionTag
+  )[],
   attribute: SvelteAttribute | SvelteStyleDirectiveLongform,
   attributeParent: (SvelteAttribute | SvelteStyleDirectiveLongform)["parent"],
   ctx: Context,
@@ -242,7 +304,7 @@ function processAttributeValue(
     });
   if (
     nodes.length === 1 &&
-    nodes[0].type === "MustacheTag" &&
+    (nodes[0].type === "MustacheTag" || nodes[0].type === "ExpressionTag") &&
     attribute.type === "SvelteAttribute"
   ) {
     const typing = buildAttributeType(
@@ -259,7 +321,7 @@ function processAttributeValue(
       attribute.value.push(convertTextToLiteral(v, attribute, ctx));
       continue;
     }
-    if (v.type === "MustacheTag") {
+    if (v.type === "ExpressionTag" || v.type === "MustacheTag") {
       const mustache = convertMustacheTag(v, attribute, null, ctx);
       attribute.value.push(mustache);
       continue;
@@ -316,7 +378,7 @@ function buildAttributeType(
 
 /** Convert for Spread */
 function convertSpreadAttribute(
-  node: SvAST.Spread,
+  node: SvAST.Spread | Compiler.SpreadAttribute,
   parent: SvelteSpreadAttribute["parent"],
   ctx: Context,
 ): SvelteSpreadAttribute {
@@ -342,7 +404,7 @@ function convertSpreadAttribute(
 
 /** Convert for Binding Directive */
 function convertBindingDirective(
-  node: SvAST.DirectiveForExpression,
+  node: SvAST.DirectiveForExpression | Compiler.BindDirective,
   parent: SvelteDirective["parent"],
   ctx: Context,
 ): SvelteBindingDirective {
@@ -385,7 +447,7 @@ function convertBindingDirective(
 
 /** Convert for EventHandler Directive */
 function convertEventHandlerDirective(
-  node: SvAST.DirectiveForExpression,
+  node: SvAST.DirectiveForExpression | Compiler.OnDirective,
   parent: SvelteDirective["parent"],
   ctx: Context,
 ): SvelteEventHandlerDirective {
@@ -494,7 +556,7 @@ function buildEventHandlerType(
 
 /** Convert for Class Directive */
 function convertClassDirective(
-  node: SvAST.DirectiveForExpression,
+  node: SvAST.DirectiveForExpression | Compiler.ClassDirective,
   parent: SvelteDirective["parent"],
   ctx: Context,
 ): SvelteClassDirective {
@@ -518,7 +580,7 @@ function convertClassDirective(
 
 /** Convert for Style Directive */
 function convertStyleDirective(
-  node: SvAST.StyleDirective,
+  node: SvAST.StyleDirective | Compiler.StyleDirective,
   parent: SvelteStyleDirective["parent"],
   ctx: Context,
 ): SvelteStyleDirective {
@@ -566,7 +628,7 @@ function convertStyleDirective(
 
 /** Convert for Transition Directive */
 function convertTransitionDirective(
-  node: SvAST.TransitionDirective,
+  node: SvAST.TransitionDirective | Compiler.TransitionDirective,
   parent: SvelteDirective["parent"],
   ctx: Context,
 ): SvelteTransitionDirective {
@@ -599,7 +661,7 @@ function convertTransitionDirective(
 
 /** Convert for Animation Directive */
 function convertAnimationDirective(
-  node: SvAST.DirectiveForExpression,
+  node: SvAST.DirectiveForExpression | Compiler.AnimateDirective,
   parent: SvelteDirective["parent"],
   ctx: Context,
 ): SvelteAnimationDirective {
@@ -630,7 +692,7 @@ function convertAnimationDirective(
 
 /** Convert for Action Directive */
 function convertActionDirective(
-  node: SvAST.DirectiveForExpression,
+  node: SvAST.DirectiveForExpression | Compiler.UseDirective,
   parent: SvelteDirective["parent"],
   ctx: Context,
 ): SvelteActionDirective {
@@ -661,7 +723,7 @@ function convertActionDirective(
 
 /** Convert for Let Directive */
 function convertLetDirective(
-  node: SvAST.LetDirective,
+  node: SvAST.LetDirective | Compiler.LetDirective,
   parent: SvelteLetDirective["parent"],
   ctx: Context,
 ): SvelteLetDirective {
@@ -673,7 +735,7 @@ function convertLetDirective(
     parent,
     ...ctx.getConvertLocation(node),
   };
-  processDirective(node, directive, ctx, {
+  processDirective(node as any, directive, ctx, {
     processPattern(pattern) {
       return ctx.letDirCollections
         .getCollection()
@@ -715,11 +777,16 @@ function buildLetDirectiveType(
   let slotName = "default";
   let componentName: string;
   const svelteNode = ctx.elements.get(element)!;
-  const slotAttr = svelteNode.attributes.find(
-    (attr): attr is SvAST.Attribute => {
-      return attr.type === "Attribute" && attr.name === "slot";
-    },
-  );
+  const slotAttr = (
+    svelteNode.attributes as (
+      | SvAST.AttributeOrDirective
+      | Compiler.Attribute
+      | Compiler.SpreadAttribute
+      | Compiler.Directive
+    )[]
+  ).find((attr): attr is SvAST.Attribute | Compiler.Attribute => {
+    return attr.type === "Attribute" && attr.name === "slot";
+  });
   if (slotAttr) {
     if (
       Array.isArray(slotAttr.value) &&
@@ -764,7 +831,9 @@ function buildLetDirectiveType(
 }
 
 type DirectiveProcessors<
-  D extends SvAST.Directive,
+  D extends
+    | SvAST.Directive
+    | Exclude<Compiler.Directive, Compiler.StyleDirective>,
   S extends SvelteDirective,
   E extends D["expression"] & S["expression"],
 > =
@@ -791,7 +860,9 @@ type DirectiveProcessors<
 
 /** Common process for directive */
 function processDirective<
-  D extends SvAST.Directive,
+  D extends
+    | SvAST.Directive
+    | Exclude<Compiler.Directive, Compiler.StyleDirective>,
   S extends SvelteDirective,
   E extends D["expression"] & S["expression"],
 >(
@@ -806,7 +877,11 @@ function processDirective<
 
 /** Common process for directive key */
 function processDirectiveKey<
-  D extends SvAST.Directive | SvAST.StyleDirective,
+  D extends
+    | SvAST.Directive
+    | SvAST.StyleDirective
+    | Compiler.Directive
+    | Compiler.StyleDirective,
   S extends SvelteDirective | SvelteStyleDirective,
 >(node: D, directive: S, ctx: Context) {
   const colonIndex = ctx.code.indexOf(":", directive.range[0]);
@@ -846,7 +921,7 @@ function processDirectiveKey<
   const key = (directive.key = {
     type: "SvelteDirectiveKey",
     name: null as any,
-    modifiers: node.modifiers,
+    modifiers: getModifiers(node),
     parent: directive,
     ...ctx.getConvertLocation({ start: node.start, end: keyEndIndex }),
   });
@@ -862,7 +937,9 @@ function processDirectiveKey<
 
 /** Common process for directive expression */
 function processDirectiveExpression<
-  D extends SvAST.Directive,
+  D extends
+    | SvAST.Directive
+    | Exclude<Compiler.Directive, Compiler.StyleDirective>,
   S extends SvelteDirective,
   E extends D["expression"],
 >(

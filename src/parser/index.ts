@@ -12,6 +12,7 @@ import type { ScopeManager } from "eslint-scope";
 import { Variable } from "eslint-scope";
 import { parseScript, parseScriptInSvelte } from "./script";
 import type * as SvAST from "./svelte-ast-types";
+import type * as Compiler from "svelte/compiler";
 import { sortNodes } from "./sort";
 import { parseTemplate } from "./template";
 import {
@@ -37,6 +38,7 @@ import { globals, globalsForSvelteScript } from "./globals";
 import { svelteVersion } from "./svelte-version";
 import type { NormalizedParserOptions } from "./parser-options";
 import { isTypeScript, normalizeParserOptions } from "./parser-options";
+import { getFragmentFromRoot } from "./compat";
 
 export {
   StyleContext,
@@ -70,7 +72,7 @@ type ParseResult = {
       | {
           isSvelte: true;
           isSvelteScript: false;
-          getSvelteHtmlAst: () => SvAST.Fragment;
+          getSvelteHtmlAst: () => SvAST.Fragment | Compiler.Fragment;
           getStyleContext: () => StyleContext;
         }
       | { isSvelte: false; isSvelteScript: true }
@@ -196,7 +198,7 @@ function parseAsSvelte(
     isSvelte: true,
     isSvelteScript: false,
     getSvelteHtmlAst() {
-      return resultTemplate.svelteAst.html;
+      return getFragmentFromRoot(resultTemplate.svelteAst);
     },
     getStyleContext() {
       if (styleContext === null) {

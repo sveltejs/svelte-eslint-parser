@@ -7,10 +7,11 @@ import type {
 import type { Context } from "../../context";
 import type * as SvAST from "../svelte-ast-types";
 import { hasTypeInfo } from "../../utils";
+import type * as Compiler from "svelte/compiler";
 
 /** Convert for MustacheTag */
 export function convertMustacheTag(
-  node: SvAST.MustacheTag,
+  node: SvAST.MustacheTag | Compiler.ExpressionTag,
   parent: SvelteMustacheTag["parent"],
   typing: string | null,
   ctx: Context,
@@ -19,7 +20,7 @@ export function convertMustacheTag(
 }
 /** Convert for MustacheTag */
 export function convertRawMustacheTag(
-  node: SvAST.RawMustacheTag,
+  node: SvAST.RawMustacheTag | Compiler.HtmlTag,
   parent: SvelteMustacheTag["parent"],
   ctx: Context,
 ): SvelteMustacheTagRaw {
@@ -65,7 +66,11 @@ export function convertDebugTag(
 
 /** Convert to MustacheTag */
 function convertMustacheTag0<T extends SvelteMustacheTag>(
-  node: SvAST.MustacheTag | SvAST.RawMustacheTag,
+  node:
+    | SvAST.MustacheTag
+    | SvAST.RawMustacheTag
+    | Compiler.ExpressionTag
+    | Compiler.HtmlTag,
   kind: T["kind"],
   parent: T["parent"],
   typing: string | null,
