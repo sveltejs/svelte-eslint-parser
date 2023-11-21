@@ -1,12 +1,12 @@
 import type * as ESTree from "estree";
 import type { SvelteRenderTag } from "../../ast";
 import type { Context } from "../../context";
-import type * as SvAST from "../svelte-ast-types";
 import { getWithLoc } from "./common";
+import type * as Compiler from "svelte/compiler";
 
 /** Convert for RenderTag */
 export function convertRenderTag(
-  node: SvAST.RenderTag,
+  node: Compiler.RenderTag,
   parent: SvelteRenderTag["parent"],
   ctx: Context,
 ): SvelteRenderTag {

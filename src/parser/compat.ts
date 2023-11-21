@@ -179,15 +179,6 @@ export function getFallbackFromEachBlock(
   }
   return (block as SvAST.EachBlock).else ?? null;
 }
-// SnippetBlock
-export function getBodyFromSnippetBlock(
-  block: SvAST.SnippetBlock | Compiler.SnippetBlock,
-): Compiler.Fragment | SvAST.SnippetBlock {
-  if ((block as Compiler.SnippetBlock).body) {
-    return (block as Compiler.SnippetBlock).body;
-  }
-  return block as SvAST.SnippetBlock;
-}
 // AwaitBlock
 export function getPendingFromAwaitBlock(
   block: SvAST.AwaitBlock | Compiler.AwaitBlock,

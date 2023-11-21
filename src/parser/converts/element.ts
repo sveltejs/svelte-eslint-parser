@@ -239,7 +239,7 @@ function extractLetDirectives(fragment: {
     SvAST.LetDirective | Compiler.LetDirective
   >[] = [];
   for (const attr of fragment.attributes) {
-    if (attr.type === "Let" || attr.type === "LetDirective") {
+    if (attr.type === "LetDirective" || attr.type === "Let") {
       letDirectives.push(attr);
     } else {
       attributes.push(attr);

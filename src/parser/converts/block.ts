@@ -24,7 +24,6 @@ import type * as ESTree from "estree";
 import {
   getAlternateFromIfBlock,
   getBodyFromEachBlock,
-  getBodyFromSnippetBlock,
   getCatchFromAwaitBlock,
   getChildren,
   getConsequentFromIfBlock,
@@ -622,7 +621,7 @@ export function convertKeyBlock(
 
 /** Convert for SnippetBlock */
 export function convertSnippetBlock(
-  node: SvAST.SnippetBlock | Compiler.SnippetBlock,
+  node: Compiler.SnippetBlock,
   parent: SvelteSnippetBlock["parent"],
   ctx: Context,
 ): SvelteSnippetBlock {
@@ -656,13 +655,12 @@ export function convertSnippetBlock(
     },
   );
 
-  const body = getBodyFromSnippetBlock(node);
   snippetBlock.children.push(
     ...convertChildren(
       {
         nodes:
           // Adjust for Svelte v5
-          trimChildren(getChildren(body)),
+          trimChildren(node.body.nodes),
       },
       snippetBlock,
       ctx,

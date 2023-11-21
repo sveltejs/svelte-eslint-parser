@@ -38,6 +38,13 @@ import { svelteVersion } from "../svelte-version";
 import { hasTypeInfo } from "../../utils";
 import { getModifiers } from "../compat";
 
+type LetDirective = Omit<Compiler.LetDirective, "expression"> & {
+  expression: SvAST.LetDirective["expression"];
+};
+type StandardDirective =
+  | Exclude<Compiler.Directive, Compiler.StyleDirective | Compiler.LetDirective>
+  | LetDirective;
+
 /** Convert for Attributes */
 export function* convertAttributes(
   attributes: (
@@ -92,7 +99,11 @@ export function* convertAttributes(
       yield convertActionDirective(attr, parent, ctx);
       continue;
     }
-    if (attr.type === "LetDirective" || attr.type === "Let") {
+    if (attr.type === "LetDirective") {
+      yield convertLetDirective(attr as LetDirective, parent, ctx);
+      continue;
+    }
+    if (attr.type === "Let") {
       yield convertLetDirective(attr, parent, ctx);
       continue;
     }
@@ -272,7 +283,7 @@ function processAttributeValue(
     });
   if (
     nodes.length === 1 &&
-    (nodes[0].type === "MustacheTag" || nodes[0].type === "ExpressionTag") &&
+    (nodes[0].type === "ExpressionTag" || nodes[0].type === "MustacheTag") &&
     attribute.type === "SvelteAttribute"
   ) {
     const typing = buildAttributeType(
@@ -691,7 +702,7 @@ function convertActionDirective(
 
 /** Convert for Let Directive */
 function convertLetDirective(
-  node: SvAST.LetDirective | Compiler.LetDirective,
+  node: SvAST.LetDirective | LetDirective,
   parent: SvelteLetDirective["parent"],
   ctx: Context,
 ): SvelteLetDirective {
@@ -703,7 +714,7 @@ function convertLetDirective(
     parent,
     ...ctx.getConvertLocation(node),
   };
-  processDirective(node as any, directive, ctx, {
+  processDirective(node, directive, ctx, {
     processPattern(pattern) {
       return ctx.letDirCollections
         .getCollection()
@@ -799,9 +810,7 @@ function buildLetDirectiveType(
 }
 
 type DirectiveProcessors<
-  D extends
-    | SvAST.Directive
-    | Exclude<Compiler.Directive, Compiler.StyleDirective>,
+  D extends SvAST.Directive | StandardDirective,
   S extends SvelteDirective,
   E extends D["expression"] & S["expression"],
 > =
@@ -828,9 +837,7 @@ type DirectiveProcessors<
 
 /** Common process for directive */
 function processDirective<
-  D extends
-    | SvAST.Directive
-    | Exclude<Compiler.Directive, Compiler.StyleDirective>,
+  D extends SvAST.Directive | StandardDirective,
   S extends SvelteDirective,
   E extends D["expression"] & S["expression"],
 >(
@@ -848,7 +855,7 @@ function processDirectiveKey<
   D extends
     | SvAST.Directive
     | SvAST.StyleDirective
-    | Compiler.Directive
+    | StandardDirective
     | Compiler.StyleDirective,
   S extends SvelteDirective | SvelteStyleDirective,
 >(node: D, directive: S, ctx: Context) {
@@ -889,7 +896,9 @@ function processDirectiveKey<
   const key = (directive.key = {
     type: "SvelteDirectiveKey",
     name: null as any,
-    modifiers: getModifiers(node),
+    modifiers: getModifiers(
+      node as SvAST.Directive | SvAST.StyleDirective | Compiler.Directive,
+    ),
     parent: directive,
     ...ctx.getConvertLocation({ start: node.start, end: keyEndIndex }),
   });
@@ -905,9 +914,7 @@ function processDirectiveKey<
 
 /** Common process for directive expression */
 function processDirectiveExpression<
-  D extends
-    | SvAST.Directive
-    | Exclude<Compiler.Directive, Compiler.StyleDirective>,
+  D extends SvAST.Directive | StandardDirective,
   S extends SvelteDirective,
   E extends D["expression"],
 >(
