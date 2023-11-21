@@ -212,6 +212,13 @@ function buildTypes(
               node.expression.loc!.end.line - 2,
             ]);
         }
+        if (node.type === "SvelteMustacheTag") {
+          if (node.loc.start.line !== node.loc.end.line)
+            scriptLineRange.push([
+              node.loc.start.line - 1,
+              node.loc.end.line - 2,
+            ]);
+        }
       },
       leaveNode() {
         // noop

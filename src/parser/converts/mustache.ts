@@ -10,9 +10,10 @@ import type * as SvAST from "../svelte-ast-types";
 export function convertMustacheTag(
   node: SvAST.MustacheTag,
   parent: SvelteMustacheTag["parent"],
+  typing: string | null,
   ctx: Context,
 ): SvelteMustacheTagText {
-  return convertMustacheTag0(node, "text", parent, ctx);
+  return convertMustacheTag0(node, "text", parent, typing, ctx);
 }
 /** Convert for MustacheTag */
 export function convertRawMustacheTag(
@@ -24,6 +25,7 @@ export function convertRawMustacheTag(
     node,
     "raw",
     parent,
+    null,
     ctx,
   );
   const atHtmlStart = ctx.code.indexOf("@html", mustache.range[0]);
@@ -64,6 +66,7 @@ function convertMustacheTag0<T extends SvelteMustacheTag>(
   node: SvAST.MustacheTag | SvAST.RawMustacheTag,
   kind: T["kind"],
   parent: T["parent"],
+  typing: string | null,
   ctx: Context,
 ): T {
   const mustache = {
@@ -73,7 +76,7 @@ function convertMustacheTag0<T extends SvelteMustacheTag>(
     parent,
     ...ctx.getConvertLocation(node),
   } as T;
-  ctx.scriptLet.addExpression(node.expression, mustache, null, (es) => {
+  ctx.scriptLet.addExpression(node.expression, mustache, typing, (es) => {
     mustache.expression = es;
   });
   return mustache;
