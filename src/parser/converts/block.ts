@@ -22,7 +22,11 @@ import { getWithLoc, indexOf, lastIndexOf } from "./common";
 import type * as ESTree from "estree";
 
 /** Get start index of block */
-function startBlockIndex(code: string, endIndex: number): number {
+function startBlockIndex(
+  code: string,
+  endIndex: number,
+  block: string,
+): number {
   return lastIndexOf(
     code,
     (c, index) => {
@@ -34,7 +38,7 @@ function startBlockIndex(code: string, endIndex: number): number {
         if (!nextC.trim()) {
           continue;
         }
-        return code.startsWith("#if", next) || code.startsWith(":else", next);
+        return code.startsWith(block, next);
       }
       return false;
     },
@@ -62,9 +66,11 @@ export function convertIfBlock(
 ): SvelteIfBlock {
   // {#if expr} {:else} {/if}
   // {:else if expr} {/if}
-  const nodeStart = elseif
-    ? startBlockIndex(ctx.code, node.start - 1)
-    : node.start;
+  const nodeStart = startBlockIndex(
+    ctx.code,
+    elseif ? node.start - 1 : node.start,
+    elseif ? ":else" : "#if",
+  );
   const ifBlock: SvelteIfBlock = {
     type: "SvelteIfBlock",
     elseif: Boolean(elseif),
@@ -90,7 +96,15 @@ export function convertIfBlock(
     return ifBlock;
   }
 
-  const elseStart = startBlockIndex(ctx.code, node.else.start - 1);
+  let baseStart = node.else.start;
+  if (node.else.children.length === 1) {
+    const c = node.else.children[0];
+    if (c.type === "IfBlock" && c.elseif) {
+      baseStart = Math.min(baseStart, c.start, getWithLoc(c.expression).start);
+    }
+  }
+
+  const elseStart = startBlockIndex(ctx.code, baseStart - 1, ":else");
 
   if (node.else.children.length === 1) {
     const c = node.else.children[0];
@@ -145,6 +159,7 @@ export function convertEachBlock(
   ctx: Context,
 ): SvelteEachBlock {
   // {#each expr as item, index (key)} {/each}
+  const nodeStart = startBlockIndex(ctx.code, node.start, "#each");
   const eachBlock: SvelteEachBlock = {
     type: "SvelteEachBlock",
     expression: null as any,
@@ -154,7 +169,7 @@ export function convertEachBlock(
     children: [],
     else: null,
     parent,
-    ...ctx.getConvertLocation(node),
+    ...ctx.getConvertLocation({ start: nodeStart, end: node.end }),
   };
 
   let indexRange: null | { start: number; end: number } = null;
@@ -199,7 +214,7 @@ export function convertEachBlock(
     return eachBlock;
   }
 
-  const elseStart = startBlockIndex(ctx.code, node.else.start - 1);
+  const elseStart = startBlockIndex(ctx.code, node.else.start - 1, ":else");
 
   const elseBlock: SvelteElseBlockAlone = {
     type: "SvelteElseBlock",
@@ -227,6 +242,7 @@ export function convertAwaitBlock(
   parent: SvelteAwaitBlock["parent"],
   ctx: Context,
 ): SvelteAwaitBlock {
+  const nodeStart = startBlockIndex(ctx.code, node.start, "#await");
   const awaitBlock = {
     type: "SvelteAwaitBlock",
     expression: null as any,
@@ -235,7 +251,7 @@ export function convertAwaitBlock(
     then: null as any,
     catch: null as any,
     parent,
-    ...ctx.getConvertLocation(node),
+    ...ctx.getConvertLocation({ start: nodeStart, end: node.end }),
   } as SvelteAwaitBlock;
 
   ctx.scriptLet.addExpression(
@@ -413,12 +429,13 @@ export function convertKeyBlock(
   parent: SvelteKeyBlock["parent"],
   ctx: Context,
 ): SvelteKeyBlock {
+  const nodeStart = startBlockIndex(ctx.code, node.start, "#key");
   const keyBlock: SvelteKeyBlock = {
     type: "SvelteKeyBlock",
     expression: null as any,
     children: [],
     parent,
-    ...ctx.getConvertLocation(node),
+    ...ctx.getConvertLocation({ start: nodeStart, end: node.end }),
   };
 
   ctx.scriptLet.addExpression(node.expression, keyBlock, null, (expression) => {
@@ -441,13 +458,14 @@ export function convertSnippetBlock(
   ctx: Context,
 ): SvelteSnippetBlock {
   // {#snippet x(args)}...{/snippet}
+  const nodeStart = startBlockIndex(ctx.code, node.start, "#snippet");
   const snippetBlock: SvelteSnippetBlock = {
     type: "SvelteSnippetBlock",
     id: null as any,
     context: null as any,
     children: [],
     parent,
-    ...ctx.getConvertLocation(node),
+    ...ctx.getConvertLocation({ start: nodeStart, end: node.end }),
   };
 
   const closeParenIndex = ctx.code.indexOf(
