@@ -1,5 +1,15 @@
 # svelte-eslint-parser
 
+## 0.34.0-next.3
+
+### Minor Changes
+
+- [#435](https://github.com/sveltejs/svelte-eslint-parser/pull/435) [`7508680`](https://github.com/sveltejs/svelte-eslint-parser/commit/7508680b3a88c951fa3fe0bdd9b59b21d6034b27) Thanks [@ota-meshi](https://github.com/ota-meshi)! - feat: improve props type
+
+### Patch Changes
+
+- [#434](https://github.com/sveltejs/svelte-eslint-parser/pull/434) [`0ef067b`](https://github.com/sveltejs/svelte-eslint-parser/commit/0ef067b57ab8897cff03f8793c2767e6d0b83274) Thanks [@ota-meshi](https://github.com/ota-meshi)! - fix: incorrect location when there is whitespace at the beginning of block
+
 ## 0.34.0-next.2
 
 ### Minor Changes
