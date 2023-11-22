@@ -1,5 +1,11 @@
 # svelte-eslint-parser
 
+## 0.34.0-next.4
+
+### Patch Changes
+
+- [#438](https://github.com/sveltejs/svelte-eslint-parser/pull/438) [`c21b54c`](https://github.com/sveltejs/svelte-eslint-parser/commit/c21b54ced7984aaeaac6b12ff66bfc4cc0712caf) Thanks [@ota-meshi](https://github.com/ota-meshi)! - fix: incorrect location for `{ #await expr then v }` with spaces
+
 ## 0.34.0-next.3
 
 ### Minor Changes
