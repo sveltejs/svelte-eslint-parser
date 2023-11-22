@@ -286,7 +286,7 @@ export function convertAwaitBlock(
       (awaitBlock as SvelteAwaitBlockAwaitThen).kind = "await-then";
     }
 
-    const thenStart = awaitBlock.pending ? node.then.start : node.start;
+    const thenStart = awaitBlock.pending ? node.then.start : nodeStart;
     const thenBlock: SvelteAwaitThenBlock = {
       type: "SvelteAwaitThenBlock",
       awaitThen,
@@ -374,7 +374,7 @@ export function convertAwaitBlock(
       (awaitBlock as SvelteAwaitBlockAwaitCatch).kind = "await-catch";
     }
     const catchStart =
-      awaitBlock.pending || awaitBlock.then ? node.catch.start : node.start;
+      awaitBlock.pending || awaitBlock.then ? node.catch.start : nodeStart;
     const catchBlock = {
       type: "SvelteAwaitCatchBlock",
       awaitCatch,
