@@ -1,4 +1,5 @@
 import type * as SvAST from "../svelte-ast-types";
+import * as Compiler from "svelte/compiler";
 import type {
   SvelteAttribute,
   SvelteGenericsDirective,
@@ -30,7 +31,7 @@ import {
  * Convert root
  */
 export function convertSvelteRoot(
-  svelteAst: SvAST.Ast | SvAST.AstLegacy,
+  svelteAst: Compiler.Root | SvAST.AstLegacy,
   ctx: Context,
 ): SvelteProgram {
   const ast: SvelteProgram = {

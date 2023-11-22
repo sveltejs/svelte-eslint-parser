@@ -1,13 +1,7 @@
 import type ESTree from "estree";
-import type * as Compiler from "svelte/compiler";
 interface BaseNode {
   start: number;
   end: number;
-}
-export interface Ast {
-  fragment?: Compiler.Fragment;
-  js: Compiler.Script[];
-  css?: Compiler.Style;
 }
 export interface AstLegacy {
   html?: Fragment;

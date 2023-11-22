@@ -12,24 +12,24 @@ export type Child =
 type HasChildren = { children?: SvAST.TemplateNode[] };
 // Root
 export function getFragmentFromRoot(
-  svelteAst: SvAST.Ast | SvAST.AstLegacy,
+  svelteAst: Compiler.Root | SvAST.AstLegacy,
 ): SvAST.Fragment | Compiler.Fragment | undefined {
   return (
-    (svelteAst as SvAST.Ast).fragment ?? (svelteAst as SvAST.AstLegacy).html
+    (svelteAst as Compiler.Root).fragment ?? (svelteAst as SvAST.AstLegacy).html
   );
 }
 export function getInstanceFromRoot(
-  svelteAst: SvAST.Ast | SvAST.AstLegacy,
-): SvAST.Script | Compiler.Script | undefined {
-  return (svelteAst as SvAST.AstLegacy).instance;
+  svelteAst: Compiler.Root | SvAST.AstLegacy,
+): SvAST.Script | Compiler.Script | null | undefined {
+  return svelteAst.instance;
 }
 export function getModuleFromRoot(
-  svelteAst: SvAST.Ast | SvAST.AstLegacy,
-): SvAST.Script | Compiler.Script | undefined {
-  return (svelteAst as SvAST.AstLegacy).module;
+  svelteAst: Compiler.Root | SvAST.AstLegacy,
+): SvAST.Script | Compiler.Script | null | undefined {
+  return svelteAst.module;
 }
 export function getOptionsFromRoot(
-  svelteAst: SvAST.Ast | SvAST.AstLegacy,
+  svelteAst: Compiler.Root | SvAST.AstLegacy,
 ): Compiler.SvelteOptionsRaw | null {
   return (svelteAst as any).options?.__raw__ ?? null;
 }
