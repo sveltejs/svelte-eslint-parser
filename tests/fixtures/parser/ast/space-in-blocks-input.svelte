@@ -1,6 +1,4 @@
 <script>
-	import A from 'prettier-playground/a.svelte';
-
 	const foo = 'foo';
 	let text = '';
 	let value = '';
