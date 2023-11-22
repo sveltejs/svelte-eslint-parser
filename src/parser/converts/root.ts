@@ -1,5 +1,5 @@
 import type * as SvAST from "../svelte-ast-types";
-import * as Compiler from "svelte/compiler";
+import type * as Compiler from "svelte/compiler";
 import type {
   SvelteAttribute,
   SvelteGenericsDirective,
