@@ -1,6 +1,6 @@
 import type {} from "svelte"; // FIXME: Workaround to get type information for "svelte/compiler"
 import { parse } from "svelte/compiler";
-import * as Compiler from "svelte/compiler";
+import type * as Compiler from "svelte/compiler";
 import type * as SvAST from "./svelte-ast-types";
 import type { Context } from "../context";
 import { convertSvelteRoot } from "./converts/index";
