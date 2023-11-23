@@ -59,3 +59,22 @@ export function sortedLastIndex<T>(
 
   return upper;
 }
+
+export function hasTypeInfo(element: any): boolean {
+  if (element.type?.startsWith("TS")) {
+    return true;
+  }
+  for (const key of Object.keys(element)) {
+    if (key === "parent") continue;
+    const value = element[key];
+    if (value == null) continue;
+    if (typeof value === "object") {
+      if (hasTypeInfo(value)) return true;
+    } else if (Array.isArray(value)) {
+      for (const v of value) {
+        if (typeof v === "object" && hasTypeInfo(v)) return true;
+      }
+    }
+  }
+  return false;
+}

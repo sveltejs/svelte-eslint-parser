@@ -34,6 +34,7 @@ import { ParseError } from "../../errors";
 import type { ScriptLetCallback } from "../../context/script-let";
 import type { AttributeToken } from "../html";
 import { svelteVersion } from "../svelte-version";
+import { hasTypeInfo } from "../../utils";
 
 /** Convert for Attributes */
 export function* convertAttributes(
@@ -923,7 +924,7 @@ function buildProcessExpressionForExpression(
 ): (expression: ESTree.Expression) => ScriptLetCallback<ESTree.Expression>[] {
   return (expression) => {
     if (hasTypeInfo(expression)) {
-      return ctx.scriptLet.addExpression(expression, directive);
+      return ctx.scriptLet.addExpression(expression, directive, null);
     }
     return ctx.scriptLet.addExpression(expression, directive, typing);
   };
@@ -943,23 +944,4 @@ function buildExpressionTypeChecker<T extends ESTree.Expression>(
       );
     }
   };
-}
-
-function hasTypeInfo(element: any): boolean {
-  if (element.type?.startsWith("TS")) {
-    return true;
-  }
-  for (const key of Object.keys(element)) {
-    if (key === "parent") continue;
-    const value = element[key];
-    if (value == null) continue;
-    if (typeof value === "object") {
-      if (hasTypeInfo(value)) return true;
-    } else if (Array.isArray(value)) {
-      for (const v of value) {
-        if (typeof v === "object" && hasTypeInfo(v)) return true;
-      }
-    }
-  }
-  return false;
 }

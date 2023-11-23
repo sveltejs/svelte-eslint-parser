@@ -6,6 +6,8 @@ import type {
 } from "../../ast";
 import type { Context } from "../../context";
 import type * as SvAST from "../svelte-ast-types";
+import { hasTypeInfo } from "../../utils";
+
 /** Convert for MustacheTag */
 export function convertMustacheTag(
   node: SvAST.MustacheTag,
@@ -76,8 +78,14 @@ function convertMustacheTag0<T extends SvelteMustacheTag>(
     parent,
     ...ctx.getConvertLocation(node),
   } as T;
-  ctx.scriptLet.addExpression(node.expression, mustache, typing, (es) => {
-    mustache.expression = es;
-  });
+
+  ctx.scriptLet.addExpression(
+    node.expression,
+    mustache,
+    hasTypeInfo(node.expression) ? null : typing,
+    (es) => {
+      mustache.expression = es;
+    },
+  );
   return mustache;
 }
