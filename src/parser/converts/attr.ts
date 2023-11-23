@@ -946,7 +946,7 @@ function buildExpressionTypeChecker<T extends ESTree.Expression>(
 }
 
 function hasTypeInfo(element: any): boolean {
-  if (element.type.startsWith("TS")) {
+  if (element.type?.startsWith("TS")) {
     return true;
   }
   for (const key of Object.keys(element)) {
