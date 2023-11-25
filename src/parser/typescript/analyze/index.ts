@@ -313,27 +313,30 @@ function analyzeRuneVariables(
     }
     switch (globalName) {
       case "$state": {
-        appendDeclareFunctionVirtualScript(globalName, "<T>(initial: T): T");
-        appendDeclareFunctionVirtualScript(globalName, "<T>(): T | undefined");
+        appendDeclareFunctionVirtualScripts(globalName, [
+          "<T>(initial: T): T",
+          "<T>(): T | undefined",
+        ]);
         break;
       }
       case "$derived": {
-        appendDeclareFunctionVirtualScript(globalName, "<T>(expression: T): T");
+        appendDeclareFunctionVirtualScripts(globalName, [
+          "<T>(expression: T): T",
+        ]);
         break;
       }
       case "$effect": {
-        appendDeclareFunctionVirtualScript(
-          globalName,
+        appendDeclareFunctionVirtualScripts(globalName, [
           "(fn: () => void | (() => void)): void",
-        );
-        appendDeclareNamespaceVirtualScript(
-          globalName,
+        ]);
+        appendDeclareNamespaceVirtualScripts(globalName, [
           "export function pre(fn: () => void | (() => void)): void;",
-        );
+          "export function active(): boolean;",
+        ]);
         break;
       }
       case "$props": {
-        appendDeclareFunctionVirtualScript(globalName, "<T>(): T");
+        appendDeclareFunctionVirtualScripts(globalName, ["<T>(): T"]);
         break;
       }
       default: {
@@ -344,56 +347,63 @@ function analyzeRuneVariables(
   }
 
   /** Append declare virtual script */
-  function appendDeclareFunctionVirtualScript(name: string, type: string) {
-    ctx.appendVirtualScript(`declare function ${name}${type};`);
-    ctx.restoreContext.addRestoreStatementProcess((node, result) => {
-      if (
-        node.type !== "TSDeclareFunction" ||
-        !node.declare ||
-        node.id?.type !== "Identifier" ||
-        node.id.name !== name
-      ) {
-        return false;
-      }
-      const program = result.ast;
-      program.body.splice(program.body.indexOf(node), 1);
+  function appendDeclareFunctionVirtualScripts(name: string, types: string[]) {
+    for (const type of types) {
+      ctx.appendVirtualScript(`declare function ${name}${type};`);
+      ctx.restoreContext.addRestoreStatementProcess((node, result) => {
+        if (
+          node.type !== "TSDeclareFunction" ||
+          !node.declare ||
+          node.id?.type !== "Identifier" ||
+          node.id.name !== name
+        ) {
+          return false;
+        }
+        const program = result.ast;
+        program.body.splice(program.body.indexOf(node), 1);
 
-      const scopeManager = result.scopeManager as ScopeManager;
+        const scopeManager = result.scopeManager as ScopeManager;
 
-      // Remove `declare` variable
-      removeAllScopeAndVariableAndReference(node, {
-        visitorKeys: result.visitorKeys,
-        scopeManager,
+        // Remove `declare` variable
+        removeAllScopeAndVariableAndReference(node, {
+          visitorKeys: result.visitorKeys,
+          scopeManager,
+        });
+
+        return true;
       });
-
-      return true;
-    });
+    }
   }
 
-  function appendDeclareNamespaceVirtualScript(name: string, script: string) {
-    ctx.appendVirtualScript(`declare namespace $effect { ${script} }`);
-    ctx.restoreContext.addRestoreStatementProcess((node, result) => {
-      if (
-        node.type !== "TSModuleDeclaration" ||
-        !node.declare ||
-        node.id?.type !== "Identifier" ||
-        node.id.name !== name
-      ) {
-        return false;
-      }
-      const program = result.ast;
-      program.body.splice(program.body.indexOf(node), 1);
+  function appendDeclareNamespaceVirtualScripts(
+    name: string,
+    scripts: string[],
+  ) {
+    for (const script of scripts) {
+      ctx.appendVirtualScript(`declare namespace ${name} { ${script} }`);
+      ctx.restoreContext.addRestoreStatementProcess((node, result) => {
+        if (
+          node.type !== "TSModuleDeclaration" ||
+          !node.declare ||
+          node.id?.type !== "Identifier" ||
+          node.id.name !== name
+        ) {
+          return false;
+        }
+        const program = result.ast;
+        program.body.splice(program.body.indexOf(node), 1);
 
-      const scopeManager = result.scopeManager as ScopeManager;
+        const scopeManager = result.scopeManager as ScopeManager;
 
-      // Remove `declare` variable
-      removeAllScopeAndVariableAndReference(node, {
-        visitorKeys: result.visitorKeys,
-        scopeManager,
+        // Remove `declare` variable
+        removeAllScopeAndVariableAndReference(node, {
+          visitorKeys: result.visitorKeys,
+          scopeManager,
+        });
+
+        return true;
       });
-
-      return true;
-    });
+    }
   }
 }
 
