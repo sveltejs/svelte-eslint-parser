@@ -1,5 +1,13 @@
 # svelte-eslint-parser
 
+## 0.34.0-next.5
+
+### Minor Changes
+
+- [#440](https://github.com/sveltejs/svelte-eslint-parser/pull/440) [`726f21f`](https://github.com/sveltejs/svelte-eslint-parser/commit/726f21fc7a520abe8b7b0be268f2ceb9b3205531) Thanks [@baseballyama](https://github.com/baseballyama)! - feat: skip type injection if template uses TypeScript
+
+- [#441](https://github.com/sveltejs/svelte-eslint-parser/pull/441) [`34232c5`](https://github.com/sveltejs/svelte-eslint-parser/commit/34232c58b49abdb362d74d849e80ef5607d0ce52) Thanks [@baseballyama](https://github.com/baseballyama)! - feat: add type of `$effect.active`
+
 ## 0.34.0-next.4
 
 ### Patch Changes
