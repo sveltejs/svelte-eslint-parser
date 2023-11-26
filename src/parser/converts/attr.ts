@@ -34,6 +34,7 @@ import { ParseError } from "../../errors";
 import type { ScriptLetCallback } from "../../context/script-let";
 import type { AttributeToken } from "../html";
 import { svelteVersion } from "../svelte-version";
+import { hasTypeInfo } from "../../utils";
 
 /** Convert for Attributes */
 export function* convertAttributes(
@@ -922,6 +923,9 @@ function buildProcessExpressionForExpression(
   typing: string | null,
 ): (expression: ESTree.Expression) => ScriptLetCallback<ESTree.Expression>[] {
   return (expression) => {
+    if (hasTypeInfo(expression)) {
+      return ctx.scriptLet.addExpression(expression, directive, null);
+    }
     return ctx.scriptLet.addExpression(expression, directive, typing);
   };
 }
