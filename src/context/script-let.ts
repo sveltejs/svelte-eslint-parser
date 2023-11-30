@@ -246,11 +246,11 @@ export class ScriptLetContext {
   }
 
   public addVariableDeclarator(
-    expression: ESTree.AssignmentExpression,
+    declarator: ESTree.VariableDeclarator | ESTree.AssignmentExpression,
     parent: SvelteNode,
     ...callbacks: ScriptLetCallback<ESTree.VariableDeclarator>[]
   ): ScriptLetCallback<ESTree.VariableDeclarator>[] {
-    const range = getNodeRange(expression);
+    const range = getNodeRange(declarator);
     const part = this.ctx.code.slice(...range);
     this.appendScript(
       `const ${part};`,

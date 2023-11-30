@@ -204,7 +204,6 @@ export function getThenFromAwaitBlock(
   }
   return then.skip ? null : then;
 }
-
 export function getCatchFromAwaitBlock(
   block: SvAST.AwaitBlock | Compiler.AwaitBlock,
 ): Compiler.Fragment | SvAST.CatchBlock | null {
@@ -216,4 +215,16 @@ export function getCatchFromAwaitBlock(
     return catchFragment;
   }
   return catchFragment.skip ? null : catchFragment;
+}
+
+// ConstTag
+export function getDeclaratorFromConstTag(
+  node: SvAST.ConstTag | Compiler.ConstTag,
+):
+  | ESTree.AssignmentExpression
+  | Compiler.ConstTag["declaration"]["declarations"][0] {
+  return (
+    (node as Compiler.ConstTag).declaration?.declarations?.[0] ??
+    (node as SvAST.ConstTag).expression
+  );
 }
