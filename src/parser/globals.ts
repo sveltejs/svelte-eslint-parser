@@ -6,6 +6,7 @@ export const globalsForRunes = [
   "$derived",
   "$effect",
   "$props",
+  "$inspect",
 ] as const;
 const globalsForSvelte5 = [...globalsForSvelte4, ...globalsForRunes];
 export const globals = svelteVersion.gte(5)
