@@ -14,7 +14,52 @@ export type AttributeValueToken = {
   end: number;
 };
 
-const spacePattern = /\s/;
+const RE_IS_SPACE = /^\s$/u;
+
+class State {
+  public readonly code: string;
+
+  public index: number;
+
+  public curr: string | null = null;
+
+  public constructor(code: string, index: number) {
+    this.code = code;
+    this.index = index;
+    this.curr = code[index] || null;
+  }
+
+  public skipSpaces() {
+    while (this.currIsSpace()) {
+      this.index++;
+      if (this.eof()) break;
+    }
+  }
+
+  public currIsSpace() {
+    return RE_IS_SPACE.test(this.curr || "");
+  }
+
+  public currIs(expect: string): any {
+    return this.code.startsWith(expect, this.index);
+  }
+
+  public eof(): boolean {
+    return this.index >= this.code.length;
+  }
+
+  public eat<E extends string>(expect: E) {
+    if (!this.currIs(expect)) {
+      return null;
+    }
+    this.index += expect.length;
+    return expect;
+  }
+
+  public advance() {
+    return (this.curr = this.code[++this.index] || null);
+  }
+}
 
 /** Parse HTML attributes */
 export function parseAttributes(
@@ -23,182 +68,102 @@ export function parseAttributes(
 ): { attributes: AttributeToken[]; index: number } {
   const attributes: AttributeToken[] = [];
 
-  let index = startIndex;
-  while (index < code.length) {
-    const char = code[index];
-    if (spacePattern.test(char)) {
-      index++;
-      continue;
-    }
-    if (char === ">" || (char === "/" && code[index + 1] === ">")) break;
-    const attrData = parseAttribute(code, index);
-    attributes.push(attrData.attribute);
-    index = attrData.index;
+  const state = new State(code, startIndex);
+
+  while (!state.eof()) {
+    state.skipSpaces();
+    if (state.currIs(">") || state.currIs("/>") || state.eof()) break;
+    attributes.push(parseAttribute(state));
   }
 
-  return { attributes, index };
+  return { attributes, index: state.index };
 }
 
 /** Parse HTML attribute */
-function parseAttribute(
-  code: string,
-  startIndex: number,
-): { attribute: AttributeToken; index: number } {
+function parseAttribute(state: State): AttributeToken {
   // parse key
-  const keyData = parseAttributeKey(code, startIndex);
-  const key = keyData.key;
-  let index = keyData.index;
-  if (code[index] !== "=") {
+  const key = parseAttributeKey(state);
+  state.skipSpaces();
+  if (!state.eat("=")) {
     return {
-      attribute: {
-        key,
-        value: null,
-      },
-      index,
+      key,
+      value: null,
     };
   }
-
-  index++;
-
-  // skip spaces
-  while (index < code.length) {
-    const char = code[index];
-    if (spacePattern.test(char)) {
-      index++;
-      continue;
-    }
-    break;
-  }
-
-  // parse value
-  const valueData = parseAttributeValue(code, index);
-
-  return {
-    attribute: {
+  state.skipSpaces();
+  if (state.eof()) {
+    return {
       key,
-      value: valueData.value,
-    },
-    index: valueData.index,
+      value: null,
+    };
+  }
+  // parse value
+  const value = parseAttributeValue(state);
+  return {
+    key,
+    value,
   };
 }
 
 /** Parse HTML attribute key */
-function parseAttributeKey(
-  code: string,
-  startIndex: number,
-): { key: AttributeKeyToken; index: number } {
-  const key: AttributeKeyToken = {
-    name: code[startIndex],
-    start: startIndex,
-    end: startIndex + 1,
-  };
-  let index = key.end;
-  while (index < code.length) {
-    const char = code[index];
+function parseAttributeKey(state: State): AttributeKeyToken {
+  const start = state.index;
+  while (state.advance()) {
     if (
-      char === "=" ||
-      char === ">" ||
-      (char === "/" && code[index + 1] === ">")
+      state.currIs("=") ||
+      state.currIs(">") ||
+      state.currIs("/>") ||
+      state.currIsSpace()
     ) {
       break;
     }
-    if (spacePattern.test(char)) {
-      for (let i = index; i < code.length; i++) {
-        const c = code[i];
-        if (c === "=") {
-          return {
-            key,
-            index: i,
-          };
-        }
-        if (spacePattern.test(c)) {
-          continue;
-        }
-        return {
-          key,
-          index,
-        };
-      }
-      break;
-    }
-    key.name += char;
-    index++;
-    key.end = index;
   }
+  const end = state.index;
   return {
-    key,
-    index,
+    name: state.code.slice(start, end),
+    start,
+    end,
   };
 }
 
 /** Parse HTML attribute value */
-function parseAttributeValue(
-  code: string,
-  startIndex: number,
-): { value: AttributeValueToken | null; index: number } {
-  let index = startIndex;
-  const maybeQuote = code[index];
-  if (maybeQuote == null) {
-    return {
-      value: null,
-      index,
-    };
-  }
-  const quote = maybeQuote === '"' || maybeQuote === "'" ? maybeQuote : null;
+function parseAttributeValue(state: State): AttributeValueToken {
+  const start = state.index;
+  const quote = state.eat('"') || state.eat("'");
   if (quote) {
-    index++;
-  }
-  const valueFirstChar = code[index];
-  if (valueFirstChar == null) {
-    return {
-      value: {
-        value: maybeQuote,
+    if (state.eof()) {
+      return {
+        value: quote,
         quote: null,
-        start: startIndex,
-        end: index,
-      },
-      index,
-    };
-  }
-  if (valueFirstChar === quote) {
-    return {
-      value: {
-        value: "",
-        quote,
-        start: startIndex,
-        end: index + 1,
-      },
-      index: index + 1,
-    };
-  }
-  const value: AttributeValueToken = {
-    value: valueFirstChar,
-    quote,
-    start: startIndex,
-    end: index + 1,
-  };
-  index = value.end;
-  while (index < code.length) {
-    const char = code[index];
-    if (quote) {
-      if (quote === char) {
-        index++;
-        value.end = index;
+        start,
+        end: state.index,
+      };
+    }
+    let c: string | null;
+    while ((c = state.curr)) {
+      state.advance();
+      if (c === quote) {
+        const end = state.index;
+        return {
+          value: state.code.slice(start + 1, end - 1),
+          quote,
+          start,
+          end,
+        };
+      }
+    }
+  } else {
+    while (state.advance()) {
+      if (state.currIsSpace() || state.currIs(">") || state.currIs("/>")) {
         break;
       }
-    } else if (
-      spacePattern.test(char) ||
-      char === ">" ||
-      (char === "/" && code[index + 1] === ">")
-    ) {
-      break;
     }
-    value.value += char;
-    index++;
-    value.end = index;
   }
+  const end = state.index;
   return {
-    value,
-    index,
+    value: state.code.slice(start, end),
+    quote: null,
+    start,
+    end,
   };
 }
