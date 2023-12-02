@@ -1,5 +1,11 @@
 # svelte-eslint-parser
 
+## 0.34.0-next.6
+
+### Minor Changes
+
+- [#446](https://github.com/sveltejs/svelte-eslint-parser/pull/446) [`168f920`](https://github.com/sveltejs/svelte-eslint-parser/commit/168f9209e8ea9f2a1ef2fad28728f6aa0963638f) Thanks [@ota-meshi](https://github.com/ota-meshi)! - feat: add support for `$inspect` and `$effect.root`
+
 ## 0.34.0-next.5
 
 ### Minor Changes
