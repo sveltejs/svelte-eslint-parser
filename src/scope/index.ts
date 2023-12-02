@@ -90,10 +90,8 @@ export function getProgramScope(scopeManager: ScopeManager): Scope {
   );
 }
 
-/* eslint-disable complexity -- ignore X( */
 /** Remove variable */
 export function removeIdentifierVariable(
-  /* eslint-enable complexity -- ignore X( */
   node:
     | ESTree.Pattern
     | TSESTree.BindingName

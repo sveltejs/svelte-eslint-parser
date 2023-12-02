@@ -513,15 +513,10 @@ export function normalizeError(error: any): any {
   };
 }
 
-/* eslint-disable complexity -- ignore */
 /**
  * Remove `parent` properties from the given AST.
  */
-function nodeReplacer(
-  /* eslint-enable complexity -- ignore */
-  key: string,
-  value: any,
-): any {
+function nodeReplacer(key: string, value: any): any {
   if (key === "parent") {
     return undefined;
   }
