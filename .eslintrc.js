@@ -21,6 +21,7 @@ module.exports = {
     "no-shadow": "off",
     "no-warning-comments": "warn",
     "require-jsdoc": "off",
+    complexity: "off",
     "prettier/prettier": [
       "error",
       {},

@@ -647,7 +647,6 @@ function transformForDeclareReactiveVar(
   ctx.appendOriginal(statement.range[1]);
   ctx.appendVirtualScript(`}`);
 
-  // eslint-disable-next-line complexity -- ignore X(
   ctx.restoreContext.addRestoreStatementProcess((node, result) => {
     if ((node as any).type !== "SvelteReactiveStatement") {
       return false;

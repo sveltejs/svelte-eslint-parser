@@ -52,10 +52,8 @@ import type { ScriptLetBlockParam } from "../../context/script-let";
 import { ParseError } from "../..";
 import { convertRenderTag } from "./render";
 
-/* eslint-disable complexity -- X */
 /** Convert for Fragment or Element or ... */
 export function* convertChildren(
-  /* eslint-enable complexity -- X */
   fragment: { children?: SvAST.TemplateNode[] },
   parent:
     | SvelteProgram
