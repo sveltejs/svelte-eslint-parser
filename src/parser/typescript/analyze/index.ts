@@ -256,6 +256,7 @@ function analyzeDollarDollarVariables(
       case "$derived":
       case "$effect":
       case "$props":
+      case "$inspect":
         // Processed by `analyzeRuneVariables`.
         break;
       default: {
@@ -332,11 +333,18 @@ function analyzeRuneVariables(
         appendDeclareNamespaceVirtualScripts(globalName, [
           "export function pre(fn: () => void | (() => void)): void;",
           "export function active(): boolean;",
+          "export function root(fn: () => void | (() => void)): () => void;",
         ]);
         break;
       }
       case "$props": {
         appendDeclareFunctionVirtualScripts(globalName, ["<T>(): T"]);
+        break;
+      }
+      case "$inspect": {
+        appendDeclareFunctionVirtualScripts(globalName, [
+          `<T>(value: T, callback?: (value: T, type: 'init' | 'update') => void): void;`,
+        ]);
         break;
       }
       default: {
