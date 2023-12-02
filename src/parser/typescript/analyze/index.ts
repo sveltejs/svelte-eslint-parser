@@ -817,55 +817,53 @@ function transformForDollarDerived(
 
   ctx.restoreContext.addRestoreExpressionProcess<TSESTree.CallExpression>({
     target: "CallExpression" as TSESTree.AST_NODE_TYPES.CallExpression,
-    restore:
-      // eslint-disable-next-line complexity -- ignore
-      (node, result) => {
-        if (
-          node.callee.type !== "Identifier" ||
-          node.callee.name !== "$derived"
-        ) {
-          return false;
-        }
-        const arg = node.arguments[0];
-        if (
-          !arg ||
-          arg.type !== "CallExpression" ||
-          arg.arguments.length !== 0 ||
-          arg.callee.type !== "ArrowFunctionExpression" ||
-          arg.callee.body.type !== "BlockStatement" ||
-          arg.callee.body.body.length !== 2 ||
-          arg.callee.body.body[0].type !== "ReturnStatement" ||
-          arg.callee.body.body[0].argument?.type !== "CallExpression" ||
-          arg.callee.body.body[0].argument.callee.type !== "Identifier" ||
-          arg.callee.body.body[0].argument.callee.name !== functionId ||
-          arg.callee.body.body[1].type !== "FunctionDeclaration" ||
-          arg.callee.body.body[1].id.name !== functionId
-        ) {
-          return false;
-        }
-        const fnNode = arg.callee.body.body[1];
-        if (
-          fnNode.body.body.length !== 1 ||
-          fnNode.body.body[0].type !== "ReturnStatement" ||
-          !fnNode.body.body[0].argument
-        ) {
-          return false;
-        }
+    restore: (node, result) => {
+      if (
+        node.callee.type !== "Identifier" ||
+        node.callee.name !== "$derived"
+      ) {
+        return false;
+      }
+      const arg = node.arguments[0];
+      if (
+        !arg ||
+        arg.type !== "CallExpression" ||
+        arg.arguments.length !== 0 ||
+        arg.callee.type !== "ArrowFunctionExpression" ||
+        arg.callee.body.type !== "BlockStatement" ||
+        arg.callee.body.body.length !== 2 ||
+        arg.callee.body.body[0].type !== "ReturnStatement" ||
+        arg.callee.body.body[0].argument?.type !== "CallExpression" ||
+        arg.callee.body.body[0].argument.callee.type !== "Identifier" ||
+        arg.callee.body.body[0].argument.callee.name !== functionId ||
+        arg.callee.body.body[1].type !== "FunctionDeclaration" ||
+        arg.callee.body.body[1].id.name !== functionId
+      ) {
+        return false;
+      }
+      const fnNode = arg.callee.body.body[1];
+      if (
+        fnNode.body.body.length !== 1 ||
+        fnNode.body.body[0].type !== "ReturnStatement" ||
+        !fnNode.body.body[0].argument
+      ) {
+        return false;
+      }
 
-        const expr = fnNode.body.body[0].argument;
+      const expr = fnNode.body.body[0].argument;
 
-        node.arguments[0] = expr;
-        expr.parent = node;
+      node.arguments[0] = expr;
+      expr.parent = node;
 
-        const scopeManager = result.scopeManager as ScopeManager;
-        removeFunctionScope(arg.callee.body.body[1], scopeManager);
-        removeIdentifierReference(
-          arg.callee.body.body[0].argument.callee,
-          scopeManager.acquire(arg.callee)!,
-        );
-        removeFunctionScope(arg.callee, scopeManager);
-        return true;
-      },
+      const scopeManager = result.scopeManager as ScopeManager;
+      removeFunctionScope(arg.callee.body.body[1], scopeManager);
+      removeIdentifierReference(
+        arg.callee.body.body[0].argument.callee,
+        scopeManager.acquire(arg.callee)!,
+      );
+      removeFunctionScope(arg.callee, scopeManager);
+      return true;
+    },
   });
 }
 
