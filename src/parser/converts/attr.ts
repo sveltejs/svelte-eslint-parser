@@ -27,13 +27,9 @@ import type * as SvAST from "../svelte-ast-types";
 import type * as Compiler from "svelte/compiler";
 import { getWithLoc, indexOf } from "./common";
 import { convertMustacheTag } from "./mustache";
-import {
-  convertAttributeValueTokenToLiteral,
-  convertTextToLiteral,
-} from "./text";
+import { convertTextToLiteral } from "./text";
 import { ParseError } from "../../errors";
 import type { ScriptLetCallback } from "../../context/script-let";
-import type { AttributeToken } from "../html";
 import { svelteVersion } from "../svelte-version";
 import { hasTypeInfo } from "../../utils";
 import { getModifiers } from "../compat";
@@ -122,42 +118,6 @@ export function* convertAttributes(
       attr.start,
       ctx,
     );
-  }
-}
-
-/** Convert for attribute tokens */
-export function* convertAttributeTokens(
-  attributes: AttributeToken[],
-  parent: SvelteStartTag,
-  ctx: Context,
-): IterableIterator<SvelteAttribute> {
-  for (const attr of attributes) {
-    const attribute: SvelteAttribute = {
-      type: "SvelteAttribute",
-      boolean: false,
-      key: null as any,
-      value: [],
-      parent,
-      ...ctx.getConvertLocation({
-        start: attr.key.start,
-        end: attr.value?.end ?? attr.key.end,
-      }),
-    };
-    attribute.key = {
-      type: "SvelteName",
-      name: attr.key.name,
-      parent: attribute,
-      ...ctx.getConvertLocation(attr.key),
-    };
-    ctx.addToken("HTMLIdentifier", attr.key);
-    if (attr.value == null) {
-      attribute.boolean = true;
-    } else {
-      attribute.value.push(
-        convertAttributeValueTokenToLiteral(attr.value, attribute, ctx),
-      );
-    }
-    yield attribute;
   }
 }
 

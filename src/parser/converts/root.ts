@@ -12,7 +12,7 @@ import type {
 import {} from "./common";
 import type { Context } from "../../context";
 import { convertChildren, extractElementTags } from "./element";
-import { convertAttributeTokens } from "./attr";
+import { convertAttributes } from "./attr";
 import type { Scope } from "eslint-scope";
 import { parseScriptWithoutAnalyzeScope } from "../script";
 import type { TSESParseForESLintResult } from "../typescript/types";
@@ -47,7 +47,7 @@ export function convertSvelteRoot(
   const fragment = getFragmentFromRoot(svelteAst);
   if (fragment) {
     let children = getChildren(fragment);
-    const options = getOptionsFromRoot(svelteAst);
+    const options = getOptionsFromRoot(svelteAst, ctx.code);
     if (options) {
       children = [...children];
       if (
@@ -212,7 +212,7 @@ function extractAttributes(
   const block = ctx.findBlock(element);
   if (block) {
     element.startTag.attributes.push(
-      ...convertAttributeTokens(block.attrs, element.startTag, ctx),
+      ...convertAttributes(block.attrs, element.startTag, ctx),
     );
   }
 }

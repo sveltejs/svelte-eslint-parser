@@ -1,204 +1,327 @@
-export type AttributeToken = {
-  key: AttributeKeyToken;
-  value: AttributeValueToken | null;
-};
-export type AttributeKeyToken = {
-  name: string;
-  start: number;
-  end: number;
-};
-export type AttributeValueToken = {
-  value: string;
-  quote: '"' | "'" | null;
-  start: number;
-  end: number;
-};
+import type * as Compiler from "svelte/compiler";
+import type ESTree from "estree";
+import { getEspree } from "./espree";
 
-const spacePattern = /\s/;
+const RE_IS_SPACE = /^\s$/u;
+
+class State {
+  public readonly code: string;
+
+  public index: number;
+
+  public constructor(code: string, index: number) {
+    this.code = code;
+    this.index = index;
+  }
+
+  public getCurr(): string | undefined {
+    return this.code[this.index];
+  }
+
+  public skipSpaces(): void {
+    while (this.currIsSpace()) {
+      this.advance();
+      if (this.eof()) break;
+    }
+  }
+
+  public currIsSpace(): boolean {
+    return RE_IS_SPACE.test(this.getCurr() || "");
+  }
+
+  public currIs(expect: string): boolean {
+    return this.code.startsWith(expect, this.index);
+  }
+
+  public eof(): boolean {
+    return this.index >= this.code.length;
+  }
+
+  public eat<E extends string>(expect: E): E | null {
+    if (!this.currIs(expect)) {
+      return null;
+    }
+    this.index += expect.length;
+    return expect;
+  }
+
+  public advance(): string | undefined {
+    this.index++;
+    return this.getCurr();
+  }
+}
 
 /** Parse HTML attributes */
 export function parseAttributes(
   code: string,
   startIndex: number,
-): { attributes: AttributeToken[]; index: number } {
-  const attributes: AttributeToken[] = [];
+): {
+  attributes: Compiler.Attribute[];
+  index: number;
+} {
+  const attributes: Compiler.Attribute[] = [];
 
-  let index = startIndex;
-  while (index < code.length) {
-    const char = code[index];
-    if (spacePattern.test(char)) {
-      index++;
-      continue;
-    }
-    if (char === ">" || (char === "/" && code[index + 1] === ">")) break;
-    const attrData = parseAttribute(code, index);
-    attributes.push(attrData.attribute);
-    index = attrData.index;
+  const state = new State(code, startIndex);
+
+  while (!state.eof()) {
+    state.skipSpaces();
+    if (state.currIs(">") || state.currIs("/>") || state.eof()) break;
+    attributes.push(parseAttribute(state));
   }
 
-  return { attributes, index };
+  return { attributes, index: state.index };
 }
 
 /** Parse HTML attribute */
-function parseAttribute(
-  code: string,
-  startIndex: number,
-): { attribute: AttributeToken; index: number } {
+function parseAttribute(state: State): Compiler.Attribute {
+  const start = state.index;
   // parse key
-  const keyData = parseAttributeKey(code, startIndex);
-  const key = keyData.key;
-  let index = keyData.index;
-  if (code[index] !== "=") {
+  const key = parseAttributeKey(state);
+  const keyEnd = state.index;
+  state.skipSpaces();
+  if (!state.eat("=")) {
     return {
-      attribute: {
-        key,
-        value: null,
-      },
-      index,
+      type: "Attribute",
+      name: key,
+      value: true,
+      start,
+      end: keyEnd,
+      metadata: null as any,
+      parent: null,
     };
   }
-
-  index++;
-
-  // skip spaces
-  while (index < code.length) {
-    const char = code[index];
-    if (spacePattern.test(char)) {
-      index++;
-      continue;
-    }
-    break;
+  state.skipSpaces();
+  if (state.eof()) {
+    return {
+      type: "Attribute",
+      name: key,
+      value: true,
+      start,
+      end: keyEnd,
+      metadata: null as any,
+      parent: null,
+    };
   }
-
   // parse value
-  const valueData = parseAttributeValue(code, index);
-
+  const value = parseAttributeValue(state);
   return {
-    attribute: {
-      key,
-      value: valueData.value,
-    },
-    index: valueData.index,
+    type: "Attribute",
+    name: key,
+    value: [value],
+    start,
+    end: state.index,
+    metadata: null as any,
+    parent: null,
   };
 }
 
 /** Parse HTML attribute key */
-function parseAttributeKey(
-  code: string,
-  startIndex: number,
-): { key: AttributeKeyToken; index: number } {
-  const key: AttributeKeyToken = {
-    name: code[startIndex],
-    start: startIndex,
-    end: startIndex + 1,
-  };
-  let index = key.end;
-  while (index < code.length) {
-    const char = code[index];
+function parseAttributeKey(state: State): string {
+  const start = state.index;
+  while (state.advance()) {
     if (
-      char === "=" ||
-      char === ">" ||
-      (char === "/" && code[index + 1] === ">")
+      state.currIs("=") ||
+      state.currIs(">") ||
+      state.currIs("/>") ||
+      state.currIsSpace()
     ) {
       break;
     }
-    if (spacePattern.test(char)) {
-      for (let i = index; i < code.length; i++) {
-        const c = code[i];
-        if (c === "=") {
-          return {
-            key,
-            index: i,
-          };
-        }
-        if (spacePattern.test(c)) {
-          continue;
-        }
-        return {
-          key,
-          index,
-        };
-      }
-      break;
-    }
-    key.name += char;
-    index++;
-    key.end = index;
   }
-  return {
-    key,
-    index,
-  };
+  const end = state.index;
+  return state.code.slice(start, end);
 }
 
 /** Parse HTML attribute value */
 function parseAttributeValue(
-  code: string,
-  startIndex: number,
-): { value: AttributeValueToken | null; index: number } {
-  let index = startIndex;
-  const maybeQuote = code[index];
-  if (maybeQuote == null) {
-    return {
-      value: null,
-      index,
-    };
+  state: State,
+): Compiler.Text | Compiler.ExpressionTag {
+  const start = state.index;
+  const quote = state.eat('"') || state.eat("'");
+
+  const startBk = state.index;
+  const expression = parseAttributeMustache(state);
+  if (expression) {
+    if (!quote || state.eat(quote)) {
+      const end = state.index;
+      return {
+        type: "ExpressionTag",
+        expression,
+        start,
+        end,
+        metadata: null as any,
+        parent: null,
+      };
+    }
   }
-  const quote = maybeQuote === '"' || maybeQuote === "'" ? maybeQuote : null;
+  state.index = startBk;
+
   if (quote) {
-    index++;
-  }
-  const valueFirstChar = code[index];
-  if (valueFirstChar == null) {
-    return {
-      value: {
-        value: maybeQuote,
-        quote: null,
-        start: startIndex,
-        end: index,
-      },
-      index,
-    };
-  }
-  if (valueFirstChar === quote) {
-    return {
-      value: {
-        value: "",
-        quote,
-        start: startIndex,
-        end: index + 1,
-      },
-      index: index + 1,
-    };
-  }
-  const value: AttributeValueToken = {
-    value: valueFirstChar,
-    quote,
-    start: startIndex,
-    end: index + 1,
-  };
-  index = value.end;
-  while (index < code.length) {
-    const char = code[index];
-    if (quote) {
-      if (quote === char) {
-        index++;
-        value.end = index;
+    if (state.eof()) {
+      return {
+        type: "Text",
+        data: quote,
+        raw: quote,
+        start,
+        end: state.index,
+        parent: null,
+      };
+    }
+    let c: string | undefined;
+    while ((c = state.getCurr())) {
+      state.advance();
+      if (c === quote) {
+        const end = state.index;
+        const data = state.code.slice(start + 1, end - 1);
+        return {
+          type: "Text",
+          data,
+          raw: data,
+          start: start + 1,
+          end: end - 1,
+          parent: null,
+        };
+      }
+    }
+  } else {
+    while (state.advance()) {
+      if (state.currIsSpace() || state.currIs(">") || state.currIs("/>")) {
         break;
       }
-    } else if (
-      spacePattern.test(char) ||
-      char === ">" ||
-      (char === "/" && code[index + 1] === ">")
-    ) {
-      break;
     }
-    value.value += char;
-    index++;
-    value.end = index;
   }
+  const end = state.index;
+  const data = state.code.slice(start, end);
   return {
-    value,
-    index,
+    type: "Text",
+    data,
+    raw: data,
+    start,
+    end,
+    parent: null,
   };
+}
+
+/** Parse mustache */
+function parseAttributeMustache(state: State):
+  | (ESTree.Expression & {
+      start: number;
+      end: number;
+    })
+  | null {
+  if (!state.eat("{")) {
+    return null;
+  }
+  // parse simple expression
+  const leadingComments: ESTree.Comment[] = [];
+  const startBk = state.index;
+  state.skipSpaces();
+  let start = state.index;
+  while (!state.eof()) {
+    if (state.eat("//")) {
+      leadingComments.push(parseInlineComment(state.index - 2));
+      state.skipSpaces();
+      start = state.index;
+      continue;
+    }
+    if (state.eat("/*")) {
+      leadingComments.push(parseBlockComment(state.index - 2));
+      state.skipSpaces();
+      start = state.index;
+      continue;
+    }
+    const stringQuote = state.eat('"') || state.eat("'");
+    if (stringQuote) {
+      skipString(stringQuote);
+      state.skipSpaces();
+      continue;
+    }
+    const endCandidate = state.index;
+    state.skipSpaces();
+    if (state.eat("}")) {
+      const end = endCandidate;
+      try {
+        const expression = (
+          getEspree().parse(state.code.slice(start, end), {
+            ecmaVersion: "latest",
+          }).body[0] as ESTree.ExpressionStatement
+        ).expression;
+        delete expression.range;
+        return {
+          ...expression,
+          leadingComments,
+          start,
+          end,
+        };
+      } catch {
+        break;
+      }
+    }
+    state.advance();
+  }
+  state.index = startBk;
+  return null;
+
+  function parseInlineComment(tokenStart: number): ESTree.Comment & {
+    start: number;
+    end: number;
+  } {
+    const valueStart = state.index;
+    let valueEnd: number | null = null;
+    while (!state.eof()) {
+      if (state.eat("\n")) {
+        valueEnd = state.index - 1;
+        break;
+      }
+      state.advance();
+    }
+    if (valueEnd == null) {
+      valueEnd = state.index;
+    }
+
+    return {
+      type: "Line",
+      value: state.code.slice(valueStart, valueEnd),
+      start: tokenStart,
+      end: state.index,
+    };
+  }
+
+  function parseBlockComment(tokenStart: number): ESTree.Comment & {
+    start: number;
+    end: number;
+  } {
+    const valueStart = state.index;
+    let valueEnd: number | null = null;
+    while (!state.eof()) {
+      if (state.eat("*/")) {
+        valueEnd = state.index - 2;
+        break;
+      }
+      state.advance();
+    }
+    if (valueEnd == null) {
+      valueEnd = state.index;
+    }
+
+    return {
+      type: "Block",
+      value: state.code.slice(valueStart, valueEnd),
+      start: tokenStart,
+      end: state.index,
+    };
+  }
+
+  function skipString(stringQuote: string) {
+    while (!state.eof()) {
+      if (state.eat(stringQuote)) {
+        break;
+      }
+      if (state.eat("\\")) {
+        // escape
+        state.advance();
+      }
+      state.advance();
+    }
+  }
 }
