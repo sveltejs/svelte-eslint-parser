@@ -241,9 +241,11 @@ function parseAttributeMustache(state: State):
     if (state.eat("}")) {
       const end = endCandidate;
       try {
+        const espree = getEspree();
+
         const expression = (
-          getEspree().parse(state.code.slice(start, end), {
-            ecmaVersion: "latest",
+          espree.parse(state.code.slice(start, end), {
+            ecmaVersion: espree.latestEcmaVersion,
           }).body[0] as ESTree.ExpressionStatement
         ).expression;
         delete expression.range;

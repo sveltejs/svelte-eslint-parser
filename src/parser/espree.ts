@@ -19,7 +19,8 @@ const createRequire: (filename: string) => (modName: string) => any =
     return mod.exports;
   });
 
-let espreeCache: BasicParserObject | null = null;
+let espreeCache: (BasicParserObject & { latestEcmaVersion: number }) | null =
+  null;
 
 /** Checks if given path is linter path */
 function isLinterPath(p: string): boolean {
@@ -35,7 +36,7 @@ function isLinterPath(p: string): boolean {
  * Load `espree` from the loaded ESLint.
  * If the loaded ESLint was not found, just returns `require("espree")`.
  */
-export function getEspree(): BasicParserObject {
+export function getEspree(): BasicParserObject & { latestEcmaVersion: number } {
   if (!espreeCache) {
     // Lookup the loaded eslint
     const linterPath = Object.keys(require.cache || {}).find(isLinterPath);
