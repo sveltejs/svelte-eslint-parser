@@ -352,7 +352,7 @@ export class ScriptLetContext {
         const callArrayFrom = (call.callee as ESTree.MemberExpression)
           .object as ESTree.CallExpression;
         const expr = callArrayFrom.arguments[0] as ESTree.Expression;
-        const ctx = fn.params[0]!;
+        const ctx = fn.params[0];
         const idx = (fn.params[1] ?? null) as ESTree.Identifier | null;
         const scope = result.getScope(fn.body);
 
