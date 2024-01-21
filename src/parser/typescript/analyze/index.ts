@@ -343,7 +343,7 @@ function analyzeRuneVariables(
       }
       case "$inspect": {
         appendDeclareFunctionVirtualScripts(globalName, [
-          `<T extends any[]>(...values: T): { with: (fn: (type: 'init' | 'update', ...values: T) => void) => void };`,
+          `<T extends any[]>(...values: T): { with: (fn: (type: 'init' | 'update', ...values: T) => void) => void }`,
         ]);
         break;
       }
