@@ -318,6 +318,10 @@ function analyzeRuneVariables(
           "<T>(initial: T): T",
           "<T>(): T | undefined",
         ]);
+        appendDeclareNamespaceVirtualScripts(globalName, [
+          "export function frozen<T>(initial: T): Readonly<T>;",
+          "export function frozen<T>(): Readonly<T> | undefined;",
+        ]);
         break;
       }
       case "$derived": {
@@ -343,7 +347,7 @@ function analyzeRuneVariables(
       }
       case "$inspect": {
         appendDeclareFunctionVirtualScripts(globalName, [
-          `<T>(value: T, callback?: (value: T, type: 'init' | 'update') => void): void`,
+          `<T extends any[]>(...values: T): { with: (fn: (type: 'init' | 'update', ...values: T) => void) => void }`,
         ]);
         break;
       }

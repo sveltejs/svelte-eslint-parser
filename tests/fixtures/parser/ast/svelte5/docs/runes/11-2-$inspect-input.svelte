@@ -1,4 +1,4 @@
-<script lang="ts">
+<script>
   let count = $state(0);
 
   $inspect(count).with((type, count) => {
