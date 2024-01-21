@@ -318,6 +318,10 @@ function analyzeRuneVariables(
           "<T>(initial: T): T",
           "<T>(): T | undefined",
         ]);
+        appendDeclareNamespaceVirtualScripts(globalName, [
+          "export function frozen<T>(initial: T): Readonly<T>;",
+          "export function frozen<T>(): Readonly<T> | undefined;",
+        ]);
         break;
       }
       case "$derived": {
