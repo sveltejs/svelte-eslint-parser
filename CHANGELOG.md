@@ -1,5 +1,11 @@
 # svelte-eslint-parser
 
+## 0.34.0-next.8
+
+### Patch Changes
+
+- [#468](https://github.com/sveltejs/svelte-eslint-parser/pull/468) [`133cd24`](https://github.com/sveltejs/svelte-eslint-parser/commit/133cd24b47795fd104df903d2fef31904ab74710) Thanks [@baseballyama](https://github.com/baseballyama)! - chore: update Svelte 5 version
+
 ## 0.34.0-next.7
 
 ### Minor Changes
