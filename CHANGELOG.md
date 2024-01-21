@@ -1,5 +1,17 @@
 # svelte-eslint-parser
 
+## 0.34.0-next.7
+
+### Minor Changes
+
+- [#464](https://github.com/sveltejs/svelte-eslint-parser/pull/464) [`d531e4e`](https://github.com/sveltejs/svelte-eslint-parser/commit/d531e4e6552e88fe47825436ee26619039cadc7d) Thanks [@baseballyama](https://github.com/baseballyama)! - breaking: drop @typescript-eslint v4 support
+
+### Patch Changes
+
+- [#467](https://github.com/sveltejs/svelte-eslint-parser/pull/467) [`e27a3de`](https://github.com/sveltejs/svelte-eslint-parser/commit/e27a3de8d97dd934a8dc0097374eee3ad3ee61ff) Thanks [@baseballyama](https://github.com/baseballyama)! - feat: update `$inspect` types
+
+- [#466](https://github.com/sveltejs/svelte-eslint-parser/pull/466) [`d5b3322`](https://github.com/sveltejs/svelte-eslint-parser/commit/d5b3322e19b7208815ba4251d75cf46d511cd4f1) Thanks [@baseballyama](https://github.com/baseballyama)! - feat: add `$state.frozen` support
+
 ## 0.34.0-next.6
 
 ### Minor Changes
