@@ -104,10 +104,12 @@ type Child =
   | SvelteMustacheTag
   | SvelteDebugTag
   | SvelteConstTag
+  | SvelteRenderTag
   | SvelteIfBlock
   | SvelteEachBlock
   | SvelteAwaitBlock
   | SvelteKeyBlock
+  | SvelteSnippetBlock
   | SvelteHTMLComment;
 ```
 
@@ -421,6 +423,18 @@ interface SvelteConstTag extends Node {
 }
 ```
 
+### SvelteRenderTag
+
+This is the `{@render}` tag node.
+
+```ts
+interface SvelteRenderTag extends Node {
+  type: "SvelteRenderTag";
+  callee: Identifier;
+  argument: Expression | null;
+}
+```
+
 [VariableDeclarator] is a node defined in ESTree.
 
 ### SvelteIfBlock
@@ -529,6 +543,19 @@ This is the `{#key}` tag node.
 interface SvelteKeyBlock extends Node {
   type: "SvelteKeyBlock";
   expression: Expression;
+  children: Child[];
+}
+```
+
+### SvelteSnippetBlock
+
+This is the `{#snippet}` tag node.
+
+```ts
+interface SvelteSnippetBlock extends Node {
+  type: "SvelteSnippetBlock";
+  id: Identifier;
+  context: null | Pattern;
   children: Child[];
 }
 ```

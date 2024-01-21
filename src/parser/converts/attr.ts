@@ -33,6 +33,8 @@ import {
 import { ParseError } from "../../errors";
 import type { ScriptLetCallback } from "../../context/script-let";
 import type { AttributeToken } from "../html";
+import { svelteVersion } from "../svelte-version";
+import { hasTypeInfo } from "../../utils";
 
 /** Convert for Attributes */
 export function* convertAttributes(
@@ -200,6 +202,7 @@ function convertAttribute(
   processAttributeValue(
     node.value as (SvAST.Text | SvAST.MustacheTag)[],
     attribute,
+    parent,
     ctx,
   );
 
@@ -213,27 +216,51 @@ function convertAttribute(
 function processAttributeValue(
   nodeValue: (SvAST.Text | SvAST.MustacheTag)[],
   attribute: SvelteAttribute | SvelteStyleDirectiveLongform,
+  attributeParent: (SvelteAttribute | SvelteStyleDirectiveLongform)["parent"],
   ctx: Context,
 ) {
-  for (let index = 0; index < nodeValue.length; index++) {
-    const v = nodeValue[index];
-    if (v.type === "Text") {
-      if (v.start === v.end) {
-        // Empty
+  const nodes = nodeValue
+    .filter(
+      (v) =>
+        v.type !== "Text" ||
+        // ignore empty
         // https://github.com/sveltejs/svelte/pull/6539
-        continue;
+        v.start < v.end,
+    )
+    .map((v, index, array) => {
+      if (v.type === "Text") {
+        const next = array[index + 1];
+        if (next && next.start < v.end) {
+          // Maybe bug in Svelte can cause the completion index to shift.
+          return {
+            ...v,
+            end: next.start,
+          };
+        }
       }
-      const next = nodeValue[index + 1];
-      if (next && next.start < v.end) {
-        // Maybe bug in Svelte can cause the completion index to shift.
-        // console.log(ctx.getText(v), v.data)
-        v.end = next.start;
-      }
+      return v;
+    });
+  if (
+    nodes.length === 1 &&
+    nodes[0].type === "MustacheTag" &&
+    attribute.type === "SvelteAttribute"
+  ) {
+    const typing = buildAttributeType(
+      attributeParent.parent,
+      attribute.key.name,
+      ctx,
+    );
+    const mustache = convertMustacheTag(nodes[0], attribute, typing, ctx);
+    attribute.value.push(mustache);
+    return;
+  }
+  for (const v of nodes) {
+    if (v.type === "Text") {
       attribute.value.push(convertTextToLiteral(v, attribute, ctx));
       continue;
     }
     if (v.type === "MustacheTag") {
-      const mustache = convertMustacheTag(v, attribute, ctx);
+      const mustache = convertMustacheTag(v, attribute, null, ctx);
       attribute.value.push(mustache);
       continue;
     }
@@ -243,6 +270,47 @@ function processAttributeValue(
       u.start,
       ctx,
     );
+  }
+}
+
+/** Build attribute type */
+function buildAttributeType(
+  element: SvelteElement | SvelteScriptElement | SvelteStyleElement,
+  attrName: string,
+  ctx: Context,
+) {
+  if (
+    svelteVersion.gte(5) &&
+    attrName.startsWith("on") &&
+    (element.type !== "SvelteElement" || element.kind === "html")
+  ) {
+    return buildEventHandlerType(element, attrName.slice(2), ctx);
+  }
+  if (element.type !== "SvelteElement" || element.kind !== "component") {
+    return null;
+  }
+  const elementName = ctx.elements.get(element)!.name;
+  const componentPropsType = `import('svelte').ComponentProps<${elementName}>`;
+  return conditional({
+    check: `'${attrName}'`,
+    extends: `infer PROP`,
+    true: conditional({
+      check: `PROP`,
+      extends: `keyof ${componentPropsType}`,
+      true: `${componentPropsType}[PROP]`,
+      false: `never`,
+    }),
+    false: `never`,
+  });
+
+  /** Generate `C extends E ? T : F` type. */
+  function conditional(types: {
+    check: string;
+    extends: string;
+    true: string;
+    false: string;
+  }) {
+    return `${types.check} extends ${types.extends}?(${types.true}):(${types.false})`;
   }
 }
 
@@ -491,7 +559,7 @@ function convertStyleDirective(
     end: keyName.range[1],
   });
 
-  processAttributeValue(node.value, directive, ctx);
+  processAttributeValue(node.value, directive, parent, ctx);
 
   return directive;
 }
@@ -855,6 +923,9 @@ function buildProcessExpressionForExpression(
   typing: string | null,
 ): (expression: ESTree.Expression) => ScriptLetCallback<ESTree.Expression>[] {
   return (expression) => {
+    if (hasTypeInfo(expression)) {
+      return ctx.scriptLet.addExpression(expression, directive, null);
+    }
     return ctx.scriptLet.addExpression(expression, directive, typing);
   };
 }

@@ -20,7 +20,8 @@ module.exports = {
     "no-lonely-if": "off",
     "no-shadow": "off",
     "no-warning-comments": "warn",
-    "require-jsdoc": "error",
+    "require-jsdoc": "off",
+    complexity: "off",
     "prettier/prettier": [
       "error",
       {},

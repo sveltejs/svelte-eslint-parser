@@ -21,12 +21,19 @@ function createLinter() {
 }
 
 describe("Integration tests.", () => {
-  for (const { input, inputFileName, outputFileName, config } of listupFixtures(
-    FIXTURE_ROOT,
-  )) {
+  for (const {
+    input,
+    inputFileName,
+    outputFileName,
+    config,
+    meetRequirements,
+  } of listupFixtures(FIXTURE_ROOT)) {
+    if (!meetRequirements("parse")) {
+      continue;
+    }
     it(inputFileName, () => {
       const setupFileName = inputFileName.replace(
-        /input\.svelte$/u,
+        /input\.svelte(?:\.[jt]s)?$/u,
         "setup.ts",
       );
       const setup = fs.existsSync(setupFileName)

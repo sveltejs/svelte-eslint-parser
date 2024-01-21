@@ -3,25 +3,17 @@ import { analyzeScope } from "./analyze-scope";
 import { traverseNodes } from "../traverse";
 import { getParser } from "./resolve-parser";
 import { isEnhancedParserObject } from "./parser-object";
+import type { NormalizedParserOptions } from "./parser-options";
 
 /**
- * Parse for script
+ * Parse for <script>
  */
-export function parseScript(
+export function parseScriptInSvelte(
   code: string,
   attrs: Record<string, string | undefined>,
-  parserOptions: any = {},
+  parserOptions: NormalizedParserOptions,
 ): ESLintExtendedProgram {
-  const result = parseScriptWithoutAnalyzeScopeFromVCode(
-    code,
-    attrs,
-    parserOptions,
-  );
-
-  if (!result.scopeManager) {
-    const scopeManager = analyzeScope(result.ast, parserOptions);
-    result.scopeManager = scopeManager;
-  }
+  const result = parseScript(code, attrs, parserOptions);
 
   traverseNodes(result.ast, {
     visitorKeys: result.visitorKeys,
@@ -42,6 +34,27 @@ export function parseScript(
 
   return result;
 }
+/**
+ * Parse for script
+ */
+export function parseScript(
+  code: string,
+  attrs: Record<string, string | undefined>,
+  parserOptions: NormalizedParserOptions,
+): ESLintExtendedProgram {
+  const result = parseScriptWithoutAnalyzeScopeFromVCode(
+    code,
+    attrs,
+    parserOptions,
+  );
+
+  if (!result.scopeManager) {
+    const scopeManager = analyzeScope(result.ast, parserOptions);
+    result.scopeManager = scopeManager;
+  }
+
+  return result;
+}
 
 /**
  * Parse for script without analyze scope
@@ -49,7 +62,7 @@ export function parseScript(
 export function parseScriptWithoutAnalyzeScope(
   code: string,
   attrs: Record<string, string | undefined>,
-  options: any,
+  options: NormalizedParserOptions,
 ): ESLintExtendedProgram {
   const parser = getParser(attrs, options.parser);
 
@@ -69,7 +82,7 @@ export function parseScriptWithoutAnalyzeScope(
 function parseScriptWithoutAnalyzeScopeFromVCode(
   code: string,
   attrs: Record<string, string | undefined>,
-  options: any,
+  options: NormalizedParserOptions,
 ): ESLintExtendedProgram {
   const result = parseScriptWithoutAnalyzeScope(code, attrs, options);
   result._virtualScriptCode = code;

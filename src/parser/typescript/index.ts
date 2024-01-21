@@ -1,21 +1,40 @@
 import type { ESLintExtendedProgram } from "..";
-import { parseScript } from "../script";
+import type { NormalizedParserOptions } from "../parser-options";
+import { parseScript, parseScriptInSvelte } from "../script";
 import type { AnalyzeTypeScriptContext } from "./analyze";
-import { analyzeTypeScript } from "./analyze";
+import { analyzeTypeScript, analyzeTypeScriptInSvelte } from "./analyze";
+import { setParent } from "./set-parent";
 import type { TSESParseForESLintResult } from "./types";
 
 /**
- * Parse for type script
+ * Parse for TypeScript in <script>
  */
-export function parseTypeScript(
+export function parseTypeScriptInSvelte(
   code: { script: string; render: string },
   attrs: Record<string, string | undefined>,
-  parserOptions: unknown,
+  parserOptions: NormalizedParserOptions,
   context: AnalyzeTypeScriptContext,
 ): ESLintExtendedProgram {
-  const tsCtx = analyzeTypeScript(code, attrs, parserOptions, context);
+  const tsCtx = analyzeTypeScriptInSvelte(code, attrs, parserOptions, context);
+
+  const result = parseScriptInSvelte(tsCtx.script, attrs, parserOptions);
+
+  tsCtx.restoreContext.restore(result as unknown as TSESParseForESLintResult);
+
+  return result;
+}
+/**
+ * Parse for TypeScript
+ */
+export function parseTypeScript(
+  code: string,
+  attrs: Record<string, string | undefined>,
+  parserOptions: NormalizedParserOptions,
+): ESLintExtendedProgram {
+  const tsCtx = analyzeTypeScript(code, attrs, parserOptions);
 
   const result = parseScript(tsCtx.script, attrs, parserOptions);
+  setParent(result);
 
   tsCtx.restoreContext.restore(result as unknown as TSESParseForESLintResult);
 

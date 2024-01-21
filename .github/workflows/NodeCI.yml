@@ -35,6 +35,34 @@ jobs:
         run: pnpm install
       - name: Test
         run: pnpm run test
+  test-for-svelte-v5:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v2
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+      - name: Install Packages
+        run: pnpm install
+      - name: Test
+        run: pnpm run test
+
+  test-for-svelte-v4:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v2
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+      - name: Install Svelte v4
+        run: |+
+          pnpm install -D svelte@4
+          rm -rf node_modules
+      - name: Install Packages
+        run: pnpm install
+      - name: Test
+        run: pnpm run test
+
   test-for-svelte-v3:
     runs-on: ubuntu-latest
     strategy:

@@ -16,21 +16,28 @@ import { VirtualTypeScriptContext } from "../context";
 import type { TSESParseForESLintResult } from "../types";
 import type ESTree from "estree";
 import type { SvelteAttribute, SvelteHTMLElement } from "../../../ast";
+import { globals, globalsForRunes } from "../../../parser/globals";
+import type { NormalizedParserOptions } from "../../parser-options";
+import { setParent } from "../set-parent";
 
 export type AnalyzeTypeScriptContext = {
   slots: Set<SvelteHTMLElement>;
 };
 
-const RESERVED_NAMES = new Set<string>(["$$props", "$$restProps", "$$slots"]);
+type TransformInfo = {
+  node: TSESTree.Node;
+  transform: (ctx: VirtualTypeScriptContext) => void;
+};
+
 /**
- * Analyze TypeScript source code.
- * Generate virtual code to provide correct type information for Svelte store reference namess and scopes.
+ * Analyze TypeScript source code in <script>.
+ * Generate virtual code to provide correct type information for Svelte store reference names, scopes, and runes.
  * See https://github.com/sveltejs/svelte-eslint-parser/blob/main/docs/internal-mechanism.md#scope-types
  */
-export function analyzeTypeScript(
+export function analyzeTypeScriptInSvelte(
   code: { script: string; render: string },
   attrs: Record<string, string | undefined>,
-  parserOptions: any,
+  parserOptions: NormalizedParserOptions,
   context: AnalyzeTypeScriptContext,
 ): VirtualTypeScriptContext {
   const ctx = new VirtualTypeScriptContext(code.script + code.render);
@@ -52,9 +59,43 @@ export function analyzeTypeScript(
 
   analyzeDollarDollarVariables(result, ctx, context.slots);
 
-  analyzeReactiveScopes(result, ctx);
+  analyzeRuneVariables(result, ctx);
+
+  applyTransforms(
+    [...analyzeReactiveScopes(result), ...analyzeDollarDerivedScopes(result)],
+    ctx,
+  );
 
   analyzeRenderScopes(code, ctx);
+
+  return ctx;
+}
+/**
+ * Analyze TypeScript source code.
+ * Generate virtual code to provide correct type information for Svelte runes.
+ * See https://github.com/sveltejs/svelte-eslint-parser/blob/main/docs/internal-mechanism.md#scope-types
+ */
+export function analyzeTypeScript(
+  code: string,
+  attrs: Record<string, string | undefined>,
+  parserOptions: NormalizedParserOptions,
+): VirtualTypeScriptContext {
+  const ctx = new VirtualTypeScriptContext(code);
+  ctx.appendOriginal(/^\s*/u.exec(code)![0].length);
+
+  const result = parseScriptWithoutAnalyzeScope(code, attrs, {
+    ...parserOptions,
+    // Without typings
+    project: null,
+  }) as unknown as TSESParseForESLintResult;
+
+  ctx._beforeResult = result;
+
+  analyzeRuneVariables(result, ctx);
+
+  applyTransforms([...analyzeDollarDerivedScopes(result)], ctx);
+
+  ctx.appendOriginalToEnd();
 
   return ctx;
 }
@@ -75,8 +116,8 @@ function analyzeStoreReferenceNames(
     if (
       // Begin with `$`.
       reference.identifier.name.startsWith("$") &&
-      // Ignore it is a reserved variable.
-      !RESERVED_NAMES.has(reference.identifier.name) &&
+      // Ignore globals
+      !globals.includes(reference.identifier.name as never) &&
       // Ignore if it is already defined.
       !programScope.set.has(reference.identifier.name)
     ) {
@@ -156,63 +197,73 @@ function analyzeDollarDollarVariables(
   slots: Set<SvelteHTMLElement>,
 ) {
   const scopeManager = result.scopeManager;
-
-  if (
-    scopeManager.globalScope!.through.some(
-      (reference) => reference.identifier.name === "$$props",
-    )
-  ) {
-    appendDeclareVirtualScript("$$props", `{ [index: string]: any }`);
-  }
-  if (
-    scopeManager.globalScope!.through.some(
-      (reference) => reference.identifier.name === "$$restProps",
-    )
-  ) {
-    appendDeclareVirtualScript("$$restProps", `{ [index: string]: any }`);
-  }
-  if (
-    scopeManager.globalScope!.through.some(
-      (reference) => reference.identifier.name === "$$slots",
-    )
-  ) {
-    const nameTypes = new Set<string>();
-    for (const slot of slots) {
-      const nameAttr = slot.startTag.attributes.find(
-        (attr): attr is SvelteAttribute =>
-          attr.type === "SvelteAttribute" && attr.key.name === "name",
-      );
-      if (!nameAttr || nameAttr.value.length === 0) {
-        nameTypes.add('"default"');
-        continue;
-      }
-
-      if (nameAttr.value.length === 1) {
-        const value = nameAttr.value[0];
-        if (value.type === "SvelteLiteral") {
-          nameTypes.add(JSON.stringify(value.value));
-        } else {
-          nameTypes.add("string");
-        }
-        continue;
-      }
-      nameTypes.add(
-        `\`${nameAttr.value
-          .map((value) =>
-            value.type === "SvelteLiteral"
-              ? value.value.replace(/([$`])/gu, "\\$1")
-              : "${string}",
-          )
-          .join("")}\``,
-      );
+  for (const globalName of globals) {
+    if (
+      !scopeManager.globalScope!.through.some(
+        (reference) => reference.identifier.name === globalName,
+      )
+    ) {
+      continue;
     }
+    switch (globalName) {
+      case "$$props":
+        appendDeclareVirtualScript(globalName, `{ [index: string]: any }`);
+        break;
+      case "$$restProps":
+        appendDeclareVirtualScript(globalName, `{ [index: string]: any }`);
+        break;
+      case "$$slots": {
+        const nameTypes = new Set<string>();
+        for (const slot of slots) {
+          const nameAttr = slot.startTag.attributes.find(
+            (attr): attr is SvelteAttribute =>
+              attr.type === "SvelteAttribute" && attr.key.name === "name",
+          );
+          if (!nameAttr || nameAttr.value.length === 0) {
+            nameTypes.add('"default"');
+            continue;
+          }
 
-    appendDeclareVirtualScript(
-      "$$slots",
-      `Record<${
-        nameTypes.size > 0 ? [...nameTypes].join(" | ") : "any"
-      }, boolean>`,
-    );
+          if (nameAttr.value.length === 1) {
+            const value = nameAttr.value[0];
+            if (value.type === "SvelteLiteral") {
+              nameTypes.add(JSON.stringify(value.value));
+            } else {
+              nameTypes.add("string");
+            }
+            continue;
+          }
+          nameTypes.add(
+            `\`${nameAttr.value
+              .map((value) =>
+                value.type === "SvelteLiteral"
+                  ? value.value.replace(/([$`])/gu, "\\$1")
+                  : "${string}",
+              )
+              .join("")}\``,
+          );
+        }
+
+        appendDeclareVirtualScript(
+          globalName,
+          `Record<${
+            nameTypes.size > 0 ? [...nameTypes].join(" | ") : "any"
+          }, boolean>`,
+        );
+        break;
+      }
+      case "$state":
+      case "$derived":
+      case "$effect":
+      case "$props":
+      case "$inspect":
+        // Processed by `analyzeRuneVariables`.
+        break;
+      default: {
+        const _: never = globalName;
+        throw Error(`Unknown global: ${_}`);
+      }
+    }
   }
 
   /** Append declare virtual script */
@@ -245,13 +296,132 @@ function analyzeDollarDollarVariables(
 }
 
 /**
- * Analyze the reactive scopes.
- * Transform source code to provide the correct type information in the `$:` statements.
+ * Analyze Runes.
+ * Insert type definitions code to provide correct type information for Runes.
  */
-function analyzeReactiveScopes(
+function analyzeRuneVariables(
   result: TSESParseForESLintResult,
   ctx: VirtualTypeScriptContext,
 ) {
+  const scopeManager = result.scopeManager;
+  for (const globalName of globalsForRunes) {
+    if (
+      !scopeManager.globalScope!.through.some(
+        (reference) => reference.identifier.name === globalName,
+      )
+    ) {
+      continue;
+    }
+    switch (globalName) {
+      case "$state": {
+        appendDeclareFunctionVirtualScripts(globalName, [
+          "<T>(initial: T): T",
+          "<T>(): T | undefined",
+        ]);
+        break;
+      }
+      case "$derived": {
+        appendDeclareFunctionVirtualScripts(globalName, [
+          "<T>(expression: T): T",
+        ]);
+        break;
+      }
+      case "$effect": {
+        appendDeclareFunctionVirtualScripts(globalName, [
+          "(fn: () => void | (() => void)): void",
+        ]);
+        appendDeclareNamespaceVirtualScripts(globalName, [
+          "export function pre(fn: () => void | (() => void)): void;",
+          "export function active(): boolean;",
+          "export function root(fn: () => void | (() => void)): () => void;",
+        ]);
+        break;
+      }
+      case "$props": {
+        appendDeclareFunctionVirtualScripts(globalName, ["<T>(): T"]);
+        break;
+      }
+      case "$inspect": {
+        appendDeclareFunctionVirtualScripts(globalName, [
+          `<T>(value: T, callback?: (value: T, type: 'init' | 'update') => void): void`,
+        ]);
+        break;
+      }
+      default: {
+        const _: never = globalName;
+        throw Error(`Unknown global: ${_}`);
+      }
+    }
+  }
+
+  /** Append declare virtual script */
+  function appendDeclareFunctionVirtualScripts(name: string, types: string[]) {
+    for (const type of types) {
+      ctx.appendVirtualScript(`declare function ${name}${type};`);
+      ctx.restoreContext.addRestoreStatementProcess((node, result) => {
+        if (
+          node.type !== "TSDeclareFunction" ||
+          !node.declare ||
+          node.id?.type !== "Identifier" ||
+          node.id.name !== name
+        ) {
+          return false;
+        }
+        const program = result.ast;
+        program.body.splice(program.body.indexOf(node), 1);
+
+        const scopeManager = result.scopeManager as ScopeManager;
+
+        // Remove `declare` variable
+        removeAllScopeAndVariableAndReference(node, {
+          visitorKeys: result.visitorKeys,
+          scopeManager,
+        });
+
+        return true;
+      });
+    }
+  }
+
+  function appendDeclareNamespaceVirtualScripts(
+    name: string,
+    scripts: string[],
+  ) {
+    for (const script of scripts) {
+      ctx.appendVirtualScript(`declare namespace ${name} { ${script} }`);
+      ctx.restoreContext.addRestoreStatementProcess((node, result) => {
+        if (
+          node.type !== "TSModuleDeclaration" ||
+          !node.declare ||
+          node.id?.type !== "Identifier" ||
+          node.id.name !== name
+        ) {
+          return false;
+        }
+        const program = result.ast;
+        program.body.splice(program.body.indexOf(node), 1);
+
+        const scopeManager = result.scopeManager as ScopeManager;
+
+        // Remove `declare` variable
+        removeAllScopeAndVariableAndReference(node, {
+          visitorKeys: result.visitorKeys,
+          scopeManager,
+        });
+
+        return true;
+      });
+    }
+  }
+}
+
+/**
+ * Analyze the reactive scopes.
+ * Transform source code to provide the correct type information in the `$:` statements.
+ */
+function* analyzeReactiveScopes(
+  result: TSESParseForESLintResult,
+): Iterable<TransformInfo> {
   const scopeManager = result.scopeManager;
   const throughIds = scopeManager.globalScope!.through.map(
     (reference) => reference.identifier,
@@ -275,17 +445,57 @@ function analyzeReactiveScopes(
               left.range[0] <= id.range[0] && id.range[1] <= left.range[1],
           )
         ) {
-          transformForDeclareReactiveVar(
-            statement,
-            statement.body.expression.left,
-            statement.body.expression,
-            result.ast.tokens!,
-            ctx,
-          );
+          const node = statement;
+          const expression = statement.body.expression;
+          yield {
+            node,
+            transform: (ctx) =>
+              transformForDeclareReactiveVar(
+                node,
+                left,
+                expression,
+                result.ast.tokens!,
+                ctx,
+              ),
+          };
           continue;
         }
       }
-      transformForReactiveStatement(statement, ctx);
+      yield {
+        node: statement,
+        transform: (ctx) => transformForReactiveStatement(statement, ctx),
+      };
+    }
+  }
+}
+
+/**
+ * Analyze the $derived scopes.
+ * Transform source code to provide the correct type information in the `$derived(...)` expression.
+ */
+function* analyzeDollarDerivedScopes(
+  result: TSESParseForESLintResult,
+): Iterable<TransformInfo> {
+  const scopeManager = result.scopeManager;
+  const derivedReferences = scopeManager.globalScope!.through.filter(
+    (reference) => reference.identifier.name === "$derived",
+  );
+  if (!derivedReferences.length) {
+    return;
+  }
+  setParent(result);
+  for (const ref of derivedReferences) {
+    const derived = ref.identifier;
+    if (
+      derived.parent.type === "CallExpression" &&
+      derived.parent.callee === derived &&
+      derived.parent.arguments[0]?.type !== "SpreadElement"
+    ) {
+      const node = derived.parent;
+      yield {
+        node,
+        transform: (ctx) => transformForDollarDerived(node, ctx),
+      };
     }
   }
 }
@@ -320,6 +530,26 @@ function analyzeRenderScopes(
     removeFunctionScope(node, scopeManager);
     return true;
   });
+}
+
+/**
+ * Applies the given transforms.
+ * Note that intersecting transformations are not applied.
+ */
+function applyTransforms(
+  transforms: TransformInfo[],
+  ctx: VirtualTypeScriptContext,
+) {
+  transforms.sort((a, b) => a.node.range[0] - b.node.range[0]);
+
+  let offset = 0;
+  for (const transform of transforms) {
+    const range = transform.node.range;
+    if (offset <= range[0]) {
+      transform.transform(ctx);
+    }
+    offset = range[1];
+  }
 }
 
 /**
@@ -425,7 +655,6 @@ function transformForDeclareReactiveVar(
   ctx.appendOriginal(statement.range[1]);
   ctx.appendVirtualScript(`}`);
 
-  // eslint-disable-next-line complexity -- ignore X(
   ctx.restoreContext.addRestoreStatementProcess((node, result) => {
     if ((node as any).type !== "SvelteReactiveStatement") {
       return false;
@@ -575,6 +804,74 @@ function transformForReactiveStatement(
     const scopeManager = result.scopeManager as ScopeManager;
     removeFunctionScope(body, scopeManager);
     return true;
+  });
+}
+
+/**
+ * Transform for `$derived(expr)` to `$derived((()=>{ return fn(); function fn () { return expr } })())`
+ */
+function transformForDollarDerived(
+  derivedCall: TSESTree.CallExpression,
+  ctx: VirtualTypeScriptContext,
+) {
+  const functionId = ctx.generateUniqueId("$derivedArgument");
+  const expression = derivedCall.arguments[0];
+  ctx.appendOriginal(expression.range[0]);
+  ctx.appendVirtualScript(
+    `(()=>{return ${functionId}();function ${functionId}(){return `,
+  );
+  ctx.appendOriginal(expression.range[1]);
+  ctx.appendVirtualScript(`}})()`);
+
+  ctx.restoreContext.addRestoreExpressionProcess<TSESTree.CallExpression>({
+    target: "CallExpression" as TSESTree.AST_NODE_TYPES.CallExpression,
+    restore: (node, result) => {
+      if (
+        node.callee.type !== "Identifier" ||
+        node.callee.name !== "$derived"
+      ) {
+        return false;
+      }
+      const arg = node.arguments[0];
+      if (
+        !arg ||
+        arg.type !== "CallExpression" ||
+        arg.arguments.length !== 0 ||
+        arg.callee.type !== "ArrowFunctionExpression" ||
+        arg.callee.body.type !== "BlockStatement" ||
+        arg.callee.body.body.length !== 2 ||
+        arg.callee.body.body[0].type !== "ReturnStatement" ||
+        arg.callee.body.body[0].argument?.type !== "CallExpression" ||
+        arg.callee.body.body[0].argument.callee.type !== "Identifier" ||
+        arg.callee.body.body[0].argument.callee.name !== functionId ||
+        arg.callee.body.body[1].type !== "FunctionDeclaration" ||
+        arg.callee.body.body[1].id.name !== functionId
+      ) {
+        return false;
+      }
+      const fnNode = arg.callee.body.body[1];
+      if (
+        fnNode.body.body.length !== 1 ||
+        fnNode.body.body[0].type !== "ReturnStatement" ||
+        !fnNode.body.body[0].argument
+      ) {
+        return false;
+      }
+
+      const expr = fnNode.body.body[0].argument;
+
+      node.arguments[0] = expr;
+      expr.parent = node;
+
+      const scopeManager = result.scopeManager as ScopeManager;
+      removeFunctionScope(arg.callee.body.body[1], scopeManager);
+      removeIdentifierReference(
+        arg.callee.body.body[0].argument.callee,
+        scopeManager.acquire(arg.callee)!,
+      );
+      removeFunctionScope(arg.callee, scopeManager);
+      return true;
+    },
   });
 }
 

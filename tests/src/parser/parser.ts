@@ -13,6 +13,7 @@ import {
 } from "./test-utils";
 import type { Comment, SvelteProgram, Token } from "../../../src/ast";
 import { sortNodes } from "../../../src/parser/sort";
+import { sortJson } from "./test-utils";
 
 function parse(code: string, filePath: string, config: any) {
   return parseForESLint(code, generateParserOptions({ filePath }, config));
@@ -23,10 +24,14 @@ describe("Check for AST.", () => {
     input,
     inputFileName,
     outputFileName,
-    scopeFileName,
     config,
+    getScopeFile,
     meetRequirements,
   } of listupFixtures()) {
+    if (!meetRequirements("parse")) {
+      continue;
+    }
+
     describe(inputFileName, () => {
       let result: any;
 
@@ -42,7 +47,7 @@ describe("Check for AST.", () => {
       if (meetRequirements("scope"))
         it("most to generate the expected scope.", () => {
           let json: any = scopeToJSON(result.scopeManager);
-          let output: any = fs.readFileSync(scopeFileName, "utf8");
+          let output: any = getScopeFile();
 
           if (
             result.services?.program // use ts parser
@@ -57,7 +62,7 @@ describe("Check for AST.", () => {
             }
           }
 
-          assert.deepStrictEqual(json, output);
+          assert.deepStrictEqual(sortJson(json), sortJson(output));
         });
 
       it("location must be correct.", () => {
@@ -106,8 +111,8 @@ function checkTokens(ast: SvelteProgram, input: string) {
     return token.type === "Block"
       ? `/*${token.value}*/`
       : token.type === "Line"
-      ? `//${token.value}`
-      : token.value;
+        ? `//${token.value}`
+        : token.value;
   }
 }
 
@@ -136,23 +141,27 @@ function checkLoc(ast: SvelteProgram, fileName: string, code: string) {
         );
       }
       set.add(node);
+      const nodeParent = (node as any).parent;
       if (parent?.type.startsWith("Svelte")) {
         assert.ok(
-          (node as any).parent?.type === parent?.type,
-          `Parent type mismatch [${(node as any).parent
-            ?.type} : ${parent?.type}] @${astToJson(node)}`,
+          nodeParent?.type === parent?.type,
+          `Parent type mismatch [${nodeParent?.type} : ${parent?.type}] @${astToJson(
+            node,
+          )}`,
         );
       }
-      assert.ok(
-        (node as any).parent?.range?.[0] === parent?.range![0],
-        `Parent range mismatch [${(node as any).parent
-          ?.range?.[0]} : ${parent?.range![0]}] @${astToJson(node)}`,
-      );
-      assert.ok(
-        (node as any).parent?.range?.[1] === parent?.range![1],
-        `Parent range mismatch [${(node as any).parent
-          ?.range?.[1]} : ${parent?.range![1]}] @${astToJson(node)}`,
-      );
+      if (nodeParent) {
+        assert.ok(
+          nodeParent.range?.[0] === parent?.range![0],
+          `Parent range mismatch [${nodeParent
+            ?.range?.[0]} : ${parent?.range![0]}] @${astToJson(node)}`,
+        );
+        assert.ok(
+          nodeParent.range?.[1] === parent?.range![1],
+          `Parent range mismatch [${nodeParent
+            ?.range?.[1]} : ${parent?.range![1]}] @${astToJson(node)}`,
+        );
+      }
       assert.ok(
         node.range![0] < node.range![1],
         `No range on "${node.type} line:${node.loc!.start.line} col:${

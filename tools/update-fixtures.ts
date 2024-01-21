@@ -14,7 +14,6 @@ import {
 } from "../tests/src/parser/test-utils";
 import type ts from "typescript";
 import type ESTree from "estree";
-import * as tsESLintParser from "@typescript-eslint/parser";
 import type { SourceLocation } from "../src/ast";
 
 const ERROR_FIXTURE_ROOT = path.resolve(
@@ -46,21 +45,10 @@ const RULES = [
   "template-curly-spacing",
 ];
 
-let beforeFilePath: string | undefined;
-
 /**
  * Parse
  */
 function parse(code: string, filePath: string, config: any) {
-  if (beforeFilePath) {
-    // Clear type info cache
-    tsESLintParser.parseForESLint(
-      "",
-      generateParserOptions({ filePath: beforeFilePath }, config),
-    );
-  }
-
-  beforeFilePath = filePath;
   return parseForESLint(code, generateParserOptions({ filePath }, config));
 }
 
@@ -68,11 +56,15 @@ for (const {
   input,
   inputFileName,
   outputFileName,
-  scopeFileName,
+  writeScopeFile,
   typeFileName,
   config,
+  meetRequirements,
   getRuleOutputFileName,
 } of listupFixtures()) {
+  if (!meetRequirements("test") || !meetRequirements("parse")) {
+    continue;
+  }
   // if (!inputFileName.includes("test")) continue;
   try {
     // eslint-disable-next-line no-console -- ignore
@@ -81,10 +73,14 @@ for (const {
     const astJson = astToJson(result.ast);
     fs.writeFileSync(outputFileName, astJson, "utf8");
     const scopeJson = scopeToJSON(result.scopeManager);
-    fs.writeFileSync(scopeFileName, scopeJson, "utf8");
+    writeScopeFile(scopeJson);
 
     if (typeFileName) {
-      fs.writeFileSync(typeFileName, buildTypes(input, result), "utf8");
+      fs.writeFileSync(
+        typeFileName,
+        buildTypes(input, result, inputFileName),
+        "utf8",
+      );
     }
   } catch (e) {
     // eslint-disable-next-line no-console -- ignore
@@ -155,6 +151,7 @@ for (const { input, inputFileName, outputFileName, config } of listupFixtures(
   STYLE_LOCATION_FIXTURE_ROOT,
 )) {
   const services = parse(input, inputFileName, config).services;
+  if (!services.isSvelte) continue;
   const styleContext = services.getStyleContext();
   if (styleContext.status !== "success") {
     continue;
@@ -181,7 +178,6 @@ for (const { input, inputFileName, outputFileName, config } of listupFixtures(
   );
 }
 
-// eslint-disable-next-line require-jsdoc -- X
 function createLinter() {
   const linter = new Linter();
 
@@ -190,7 +186,6 @@ function createLinter() {
   return linter;
 }
 
-// eslint-disable-next-line require-jsdoc -- X
 function buildTypes(
   input: string,
   result: {
@@ -198,28 +193,40 @@ function buildTypes(
     services: Record<string, any>;
     visitorKeys: { [type: string]: string[] };
   },
+  inputFileName: string,
 ): string {
   const scriptLineRange: [number, number][] = [];
-  parser.traverseNodes(result.ast, {
-    enterNode(node) {
-      if (node.type === "SvelteScriptElement" && node.body.length) {
-        scriptLineRange.push([
-          node.body[0].loc!.start.line - 1,
-          node.body[node.body.length - 1].loc!.end.line - 1,
-        ]);
-      }
-      if (node.type === "SvelteDirective" && node.expression) {
-        if (node.expression.loc!.start.line !== node.expression.loc!.end.line)
+  if (inputFileName.endsWith(".svelte")) {
+    parser.traverseNodes(result.ast, {
+      enterNode(node) {
+        if (node.type === "SvelteScriptElement" && node.body.length) {
           scriptLineRange.push([
-            node.expression.loc!.start.line - 1,
-            node.expression.loc!.end.line - 2,
+            node.body[0].loc!.start.line - 1,
+            node.body[node.body.length - 1].loc!.end.line - 1,
           ]);
-      }
-    },
-    leaveNode() {
-      // noop
-    },
-  });
+        }
+        if (node.type === "SvelteDirective" && node.expression) {
+          if (node.expression.loc!.start.line !== node.expression.loc!.end.line)
+            scriptLineRange.push([
+              node.expression.loc!.start.line - 1,
+              node.expression.loc!.end.line - 2,
+            ]);
+        }
+        if (node.type === "SvelteMustacheTag") {
+          if (node.loc.start.line !== node.loc.end.line)
+            scriptLineRange.push([
+              node.loc.start.line - 1,
+              node.loc.end.line - 2,
+            ]);
+        }
+      },
+      leaveNode() {
+        // noop
+      },
+    });
+  } else {
+    scriptLineRange.push([0, Infinity]);
+  }
 
   const tsNodeMap: ReadonlyMap<any, ts.Node> =
     result.services.esTreeNodeToTSNodeMap;
@@ -231,7 +238,6 @@ function buildTypes(
   const lines = input.split(/\r?\n/);
   const types: string[][] = [];
 
-  // eslint-disable-next-line require-jsdoc -- X
   function addType(node: ESTree.Expression) {
     const tsNode = tsNodeMap.get(node);
     if (!tsNode) {

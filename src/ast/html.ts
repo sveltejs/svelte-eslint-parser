@@ -16,6 +16,7 @@ export type SvelteHTMLNode =
   | SvelteMustacheTag
   | SvelteDebugTag
   | SvelteConstTag
+  | SvelteRenderTag
   | SvelteIfBlock
   | SvelteElseBlock
   | SvelteEachBlock
@@ -24,6 +25,7 @@ export type SvelteHTMLNode =
   | SvelteAwaitThenBlock
   | SvelteAwaitCatchBlock
   | SvelteKeyBlock
+  | SvelteSnippetBlock
   | SvelteAttribute
   | SvelteShorthandAttribute
   | SvelteSpreadAttribute
@@ -87,7 +89,8 @@ export interface SvelteHTMLElement extends BaseSvelteElement {
     | SvelteAwaitPendingBlock
     | SvelteAwaitThenBlock
     | SvelteAwaitCatchBlock
-    | SvelteKeyBlock;
+    | SvelteKeyBlock
+    | SvelteSnippetBlock;
 }
 /** Node of Svelte component element. */
 export interface SvelteComponentElement extends BaseSvelteElement {
@@ -106,7 +109,8 @@ export interface SvelteComponentElement extends BaseSvelteElement {
     | SvelteAwaitPendingBlock
     | SvelteAwaitThenBlock
     | SvelteAwaitCatchBlock
-    | SvelteKeyBlock;
+    | SvelteKeyBlock
+    | SvelteSnippetBlock;
 }
 /** Node of Svelte special component element. e.g. `<svelte:window>` */
 export interface SvelteSpecialElement extends BaseSvelteElement {
@@ -125,7 +129,8 @@ export interface SvelteSpecialElement extends BaseSvelteElement {
     | SvelteAwaitPendingBlock
     | SvelteAwaitThenBlock
     | SvelteAwaitCatchBlock
-    | SvelteKeyBlock;
+    | SvelteKeyBlock
+    | SvelteSnippetBlock;
 }
 /** Node of start tag. */
 export interface SvelteStartTag extends BaseNode {
@@ -174,10 +179,12 @@ type Child =
   | SvelteMustacheTag
   | SvelteDebugTag
   | SvelteConstTag
+  | SvelteRenderTag
   | SvelteIfBlockAlone
   | SvelteEachBlock
   | SvelteAwaitBlock
   | SvelteKeyBlock
+  | SvelteSnippetBlock
   | SvelteHTMLComment;
 
 /** Node of text. like HTML text. */
@@ -194,7 +201,8 @@ export interface SvelteText extends BaseNode {
     | SvelteAwaitPendingBlock
     | SvelteAwaitThenBlock
     | SvelteAwaitCatchBlock
-    | SvelteKeyBlock;
+    | SvelteKeyBlock
+    | SvelteSnippetBlock;
 }
 /** Node of literal. */
 export interface SvelteLiteral extends BaseNode {
@@ -219,6 +227,7 @@ interface BaseSvelteMustacheTag extends BaseNode {
     | SvelteAwaitThenBlock
     | SvelteAwaitCatchBlock
     | SvelteKeyBlock
+    | SvelteSnippetBlock
     | SvelteAttribute
     | SvelteStyleDirective;
 }
@@ -244,6 +253,7 @@ export interface SvelteDebugTag extends BaseNode {
     | SvelteAwaitThenBlock
     | SvelteAwaitCatchBlock
     | SvelteKeyBlock
+    | SvelteSnippetBlock
     | SvelteAttribute;
 }
 /** Node of const tag. e.g. `{@const}` */
@@ -260,7 +270,25 @@ export interface SvelteConstTag extends BaseNode {
     | SvelteAwaitThenBlock
     | SvelteAwaitCatchBlock
     | SvelteKeyBlock
+    | SvelteSnippetBlock
     | SvelteAttribute;
+}
+/** Node of render tag. e.g. `{@render}` */
+export interface SvelteRenderTag extends BaseNode {
+  type: "SvelteRenderTag";
+  callee: ESTree.Identifier;
+  argument: ESTree.Expression | null;
+  parent:
+    | SvelteProgram
+    | SvelteElement
+    | SvelteIfBlock
+    | SvelteElseBlockAlone
+    | SvelteEachBlock
+    | SvelteAwaitPendingBlock
+    | SvelteAwaitThenBlock
+    | SvelteAwaitCatchBlock
+    | SvelteKeyBlock
+    | SvelteSnippetBlock;
 }
 /** Node of if block. e.g. `{#if}` */
 export type SvelteIfBlock = SvelteIfBlockAlone | SvelteIfBlockElseIf;
@@ -279,7 +307,8 @@ interface BaseSvelteIfBlock extends BaseNode {
     | SvelteAwaitPendingBlock
     | SvelteAwaitThenBlock
     | SvelteAwaitCatchBlock
-    | SvelteKeyBlock;
+    | SvelteKeyBlock
+    | SvelteSnippetBlock;
 }
 /** Node of if block. e.g. `{#if}` */
 export interface SvelteIfBlockAlone extends BaseSvelteIfBlock {
@@ -328,7 +357,8 @@ export interface SvelteEachBlock extends BaseNode {
     | SvelteAwaitPendingBlock
     | SvelteAwaitThenBlock
     | SvelteAwaitCatchBlock
-    | SvelteKeyBlock;
+    | SvelteKeyBlock
+    | SvelteSnippetBlock;
 }
 /** Node of await block. e.g. `{#await}`, `{#await ... then ... }`, `{#await ... catch ... }` */
 export type SvelteAwaitBlock =
@@ -351,7 +381,8 @@ interface BaseSvelteAwaitBlock extends BaseNode {
     | SvelteAwaitPendingBlock
     | SvelteAwaitThenBlock
     | SvelteAwaitCatchBlock
-    | SvelteKeyBlock;
+    | SvelteKeyBlock
+    | SvelteSnippetBlock;
 }
 /** Node of await block. e.g. `{#await}` */
 export interface SvelteAwaitBlockAwaitPending extends BaseSvelteAwaitBlock {
@@ -442,7 +473,26 @@ export interface SvelteKeyBlock extends BaseNode {
     | SvelteAwaitPendingBlock
     | SvelteAwaitThenBlock
     | SvelteAwaitCatchBlock
-    | SvelteKeyBlock;
+    | SvelteKeyBlock
+    | SvelteSnippetBlock;
+}
+/** Node of snippet block. e.g. `{#snippet}` */
+export interface SvelteSnippetBlock extends BaseNode {
+  type: "SvelteSnippetBlock";
+  id: ESTree.Identifier;
+  context: null | ESTree.Pattern;
+  children: Child[];
+  parent:
+    | SvelteProgram
+    | SvelteElement
+    | SvelteIfBlock
+    | SvelteElseBlockAlone
+    | SvelteEachBlock
+    | SvelteAwaitPendingBlock
+    | SvelteAwaitThenBlock
+    | SvelteAwaitCatchBlock
+    | SvelteKeyBlock
+    | SvelteSnippetBlock;
 }
 /** Node of HTML comment. */
 export interface SvelteHTMLComment extends BaseNode {
@@ -457,7 +507,8 @@ export interface SvelteHTMLComment extends BaseNode {
     | SvelteAwaitPendingBlock
     | SvelteAwaitThenBlock
     | SvelteAwaitCatchBlock
-    | SvelteKeyBlock;
+    | SvelteKeyBlock
+    | SvelteSnippetBlock;
 }
 /** Node of HTML attribute. */
 export interface SvelteAttribute extends BaseNode {

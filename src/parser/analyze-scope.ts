@@ -2,15 +2,20 @@ import type ESTree from "estree";
 import type { Scope, ScopeManager } from "eslint-scope";
 import { Variable, Reference, analyze } from "eslint-scope";
 import { getFallbackKeys } from "../traverse";
-import type { SvelteReactiveStatement, SvelteScriptElement } from "../ast";
-import { addReference, addVariable } from "../scope";
+import type {
+  SvelteReactiveStatement,
+  SvelteScriptElement,
+  SvelteSnippetBlock,
+} from "../ast";
+import { addReference, addVariable, getScopeFromNode } from "../scope";
 import { addElementToSortedArray } from "../utils";
+import type { NormalizedParserOptions } from "./parser-options";
 /**
  * Analyze scope
  */
 export function analyzeScope(
   node: ESTree.Node,
-  parserOptions: any = {},
+  parserOptions: NormalizedParserOptions,
 ): ScopeManager {
   const ecmaVersion = parserOptions.ecmaVersion || 2020;
   const ecmaFeatures = parserOptions.ecmaFeatures || {};
@@ -213,6 +218,33 @@ export function analyzePropsScope(
         },
       );
       (reference as any).sveltePropReference = true;
+    }
+  }
+}
+
+/** Analyze snippets in component scope */
+export function analyzeSnippetsScope(
+  snippets: SvelteSnippetBlock[],
+  scopeManager: ScopeManager,
+): void {
+  for (const snippet of snippets) {
+    const parent = snippet.parent;
+    if (
+      parent.type === "SvelteElement" &&
+      (parent.kind === "component" ||
+        (parent.kind === "special" && parent.name.name === "svelte:component"))
+    ) {
+      const scope = getScopeFromNode(scopeManager, snippet.id);
+      const variable = scope.upper
+        ? scope.upper.set.get(snippet.id.name)
+        : null;
+      if (variable) {
+        // Add the virtual reference for reading.
+        const reference = addVirtualReference(snippet.id, variable, scope, {
+          read: true,
+        });
+        (reference as any).svelteSnippetReference = true;
+      }
     }
   }
 }

@@ -1,5 +1,3 @@
-import fs from "fs";
-import path from "path";
 import type {
   Comment,
   Locations,
@@ -8,6 +6,7 @@ import type {
   SvelteHTMLElement,
   SvelteName,
   SvelteScriptElement,
+  SvelteSnippetBlock,
   SvelteStyleElement,
   Token,
 } from "../ast";
@@ -15,19 +14,13 @@ import type ESTree from "estree";
 import type * as SvAST from "../parser/svelte-ast-types";
 import { ScriptLetContext } from "./script-let";
 import { LetDirectiveCollections } from "./let-directive-collection";
-import { getParserForLang } from "../parser/resolve-parser";
 import type { AttributeToken } from "../parser/html";
 import { parseAttributes } from "../parser/html";
-import {
-  isTSESLintParserObject,
-  maybeTSESLintParserObject,
-} from "../parser/parser-object";
 import { sortedLastIndex } from "../utils";
-
-const TS_PARSER_NAMES = [
-  "@typescript-eslint/parser",
-  "typescript-eslint-parser-for-extra-files",
-];
+import {
+  isTypeScript,
+  type NormalizedParserOptions,
+} from "../parser/parser-options";
 
 export class ScriptsSourceCode {
   private raw: string;
@@ -116,7 +109,7 @@ export type ContextSourceCode = {
 export class Context {
   public readonly code: string;
 
-  public readonly parserOptions: any;
+  public readonly parserOptions: NormalizedParserOptions;
 
   // ----- Source Code ------
   public readonly sourceCode: ContextSourceCode;
@@ -150,12 +143,14 @@ export class Context {
     | SvAST.Title
   >();
 
+  public readonly snippets: SvelteSnippetBlock[] = [];
+
   // ----- States ------
   private readonly state: { isTypeScript?: boolean } = {};
 
   private readonly blocks: Block[] = [];
 
-  public constructor(code: string, parserOptions: any) {
+  public constructor(code: string, parserOptions: NormalizedParserOptions) {
     this.code = code;
     this.parserOptions = parserOptions;
     this.locs = new LinesAndColumns(code);
@@ -287,44 +282,7 @@ export class Context {
       return this.state.isTypeScript;
     }
     const lang = this.sourceCode.scripts.attrs.lang;
-    if (!lang) {
-      return (this.state.isTypeScript = false);
-    }
-    const parserValue = getParserForLang(
-      this.sourceCode.scripts.attrs,
-      this.parserOptions?.parser,
-    );
-    if (typeof parserValue !== "string") {
-      return (this.state.isTypeScript =
-        maybeTSESLintParserObject(parserValue) ||
-        isTSESLintParserObject(parserValue));
-    }
-    const parserName = parserValue;
-    if (TS_PARSER_NAMES.includes(parserName)) {
-      return (this.state.isTypeScript = true);
-    }
-    if (TS_PARSER_NAMES.some((nm) => parserName.includes(nm))) {
-      let targetPath = parserName;
-      while (targetPath) {
-        const pkgPath = path.join(targetPath, "package.json");
-        if (fs.existsSync(pkgPath)) {
-          try {
-            return (this.state.isTypeScript = TS_PARSER_NAMES.includes(
-              JSON.parse(fs.readFileSync(pkgPath, "utf-8"))?.name,
-            ));
-          } catch {
-            return (this.state.isTypeScript = false);
-          }
-        }
-        const parent = path.dirname(targetPath);
-        if (targetPath === parent) {
-          break;
-        }
-        targetPath = parent;
-      }
-    }
-
-    return (this.state.isTypeScript = false);
+    return (this.state.isTypeScript = isTypeScript(this.parserOptions, lang));
   }
 
   public stripScriptCode(start: number, end: number): void {
@@ -338,8 +296,8 @@ export class Context {
       element.type === "SvelteScriptElement"
         ? "script"
         : element.type === "SvelteStyleElement"
-        ? "style"
-        : (element.name as SvelteName).name.toLowerCase();
+          ? "style"
+          : (element.name as SvelteName).name.toLowerCase();
     return this.blocks.find(
       (block) =>
         block.tag === tag &&
@@ -424,8 +382,8 @@ function* extractBlocks(code: string): IterableIterator<Block> {
       lowerTag === "script"
         ? endScriptTagRe
         : lowerTag === "style"
-        ? endStyleTagRe
-        : endTemplateTagRe;
+          ? endStyleTagRe
+          : endTemplateTagRe;
     endTagRe.lastIndex = startTagEnd;
     const endTagMatch = endTagRe.exec(code);
     if (endTagMatch) {

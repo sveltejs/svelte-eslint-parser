@@ -9,6 +9,8 @@ import type * as TSESScopes from "@typescript-eslint/scope-manager";
 import type { SvelteNode } from "../../../src/ast";
 import type { StyleContext } from "../../../src";
 import { TS_GLOBALS } from "./ts-vars";
+import { svelteVersion } from "../../../src/parser/svelte-version";
+import type { NormalizedParserOptions } from "../../../src/parser/parser-options";
 
 const AST_FIXTURE_ROOT = path.resolve(__dirname, "../../fixtures/parser/ast");
 const BASIC_PARSER_OPTIONS: Linter.ParserOptions = {
@@ -20,10 +22,69 @@ const BASIC_PARSER_OPTIONS: Linter.ParserOptions = {
   project: require.resolve("../../fixtures/tsconfig.test.json"),
   extraFileExtensions: [".svelte"],
 };
+
+const SVELTE5_SCOPE_VARIABLES_BASE = [
+  {
+    name: "$$slots",
+    identifiers: [],
+    defs: [],
+    references: [],
+  },
+  {
+    name: "$$props",
+    identifiers: [],
+    defs: [],
+    references: [],
+  },
+  {
+    name: "$$restProps",
+    identifiers: [],
+    defs: [],
+    references: [],
+  },
+  {
+    name: "$state",
+    identifiers: [],
+    defs: [],
+    references: [],
+  },
+  {
+    name: "$derived",
+    identifiers: [],
+    defs: [],
+    references: [],
+  },
+  {
+    name: "$effect",
+    identifiers: [],
+    defs: [],
+    references: [],
+  },
+  {
+    name: "$props",
+    identifiers: [],
+    defs: [],
+    references: [],
+  },
+  {
+    name: "$inspect",
+    identifiers: [],
+    defs: [],
+    references: [],
+  },
+];
 export function generateParserOptions(
   ...options: Linter.ParserOptions[]
-): Linter.ParserOptions {
-  let result = { ...BASIC_PARSER_OPTIONS };
+): Linter.ParserOptions;
+export function generateParserOptions(
+  ...options: (Linter.ParserOptions | NormalizedParserOptions)[]
+): NormalizedParserOptions;
+export function generateParserOptions(
+  ...options: (Linter.ParserOptions | NormalizedParserOptions)[]
+): Linter.ParserOptions | NormalizedParserOptions {
+  let result: Linter.ParserOptions | NormalizedParserOptions = {
+    ...BASIC_PARSER_OPTIONS,
+  };
   for (const option of options) {
     result = { ...result, ...option };
   }
@@ -33,52 +94,157 @@ export function* listupFixtures(dir?: string): Iterable<{
   input: string;
   inputFileName: string;
   outputFileName: string;
-  scopeFileName: string;
   typeFileName: string | null;
   config: Linter.ParserOptions;
   requirements: {
     scope?: Record<string, string>;
   };
+  getScopeFile: () => string | null;
+  writeScopeFile: (json: string) => void;
   getRuleOutputFileName: (ruleName: string) => string;
-  meetRequirements: (key: "test" | "scope") => boolean;
+  meetRequirements: (key: "test" | "scope" | "parse") => boolean;
 }> {
   yield* listupFixturesImpl(dir || AST_FIXTURE_ROOT);
+}
+
+function getScopeFile(inputFileName: string, isSvelte5Only: boolean) {
+  const scopeFileName = inputFileName.replace(
+    /input\.svelte(?:\.[jt]s)?$/u,
+    "scope-output.json",
+  );
+  if (!fs.existsSync(scopeFileName)) return null;
+  const scopeFile = fs.readFileSync(scopeFileName, "utf8");
+  if (!svelteVersion.gte(5) || isSvelte5Only) {
+    return scopeFile;
+  }
+
+  const scopeFileJson = JSON.parse(scopeFile);
+  const scopeFileNameSvelte5 = inputFileName.replace(
+    /input\.svelte(?:\.[jt]s)?$/u,
+    "scope-output-svelte5.json",
+  );
+  if (!fs.existsSync(scopeFileNameSvelte5)) {
+    scopeFileJson.variables = SVELTE5_SCOPE_VARIABLES_BASE;
+    return JSON.stringify(scopeFileJson, null, 2);
+  }
+
+  const scopeFileSvelte5 = fs.readFileSync(scopeFileNameSvelte5, "utf8");
+  const scopeFileSvelte5Json = JSON.parse(scopeFileSvelte5);
+
+  for (const key of Object.keys(scopeFileJson)) {
+    if (scopeFileSvelte5Json[key]) {
+      scopeFileJson[key] = scopeFileSvelte5Json[key];
+    }
+  }
+  for (const key of Object.keys(scopeFileSvelte5Json)) {
+    if (!scopeFileJson[key]) {
+      scopeFileJson[key] = scopeFileSvelte5Json[key];
+    }
+  }
+
+  return JSON.stringify(scopeFileJson, null, 2);
+}
+
+function writeScopeFile(
+  inputFileName: string,
+  json: string,
+  isSvelte5Only: boolean,
+) {
+  const scopeFileName = inputFileName.replace(
+    /input\.svelte(?:\.[jt]s)?$/u,
+    "scope-output.json",
+  );
+  if (!svelteVersion.gte(5)) {
+    // v4
+    if (isSvelte5Only) return;
+    fs.writeFileSync(scopeFileName, json, "utf8");
+    return;
+  }
+
+  // v5
+  if (isSvelte5Only) {
+    fs.writeFileSync(scopeFileName, json, "utf8");
+    return;
+  }
+  const scopeFileNameSvelte5 = inputFileName.replace(
+    /input\.svelte(?:\.[jt]s)?$/u,
+    "scope-output-svelte5.json",
+  );
+  if (!fs.existsSync(scopeFileName)) {
+    fs.writeFileSync(scopeFileNameSvelte5, json, "utf8");
+    return;
+  }
+  const baseScope = JSON.parse(fs.readFileSync(scopeFileName, "utf8"));
+  const scope = JSON.parse(json);
+  if (
+    JSON.stringify({
+      ...baseScope,
+      variables: SVELTE5_SCOPE_VARIABLES_BASE,
+    }) === JSON.stringify(scope)
+  ) {
+    return;
+  }
+
+  for (const key of Object.keys(scope)) {
+    if (
+      baseScope[key] &&
+      JSON.stringify(baseScope[key]) === JSON.stringify(scope[key])
+    ) {
+      delete scope[key];
+    }
+  }
+  fs.writeFileSync(
+    scopeFileNameSvelte5,
+    JSON.stringify(scope, null, 2),
+    "utf8",
+  );
 }
 
 function* listupFixturesImpl(dir: string): Iterable<{
   input: string;
   inputFileName: string;
   outputFileName: string;
-  scopeFileName: string;
   typeFileName: string | null;
   config: Linter.ParserOptions;
   requirements: {
     scope?: Record<string, string>;
   };
+  getScopeFile: () => string | null;
+  writeScopeFile: (json: string) => void;
   getRuleOutputFileName: (ruleName: string) => string;
-  meetRequirements: (key: "test" | "scope") => boolean;
+  meetRequirements: (key: "test" | "scope" | "parse") => boolean;
 }> {
   for (const filename of fs.readdirSync(dir)) {
     const inputFileName = path.join(dir, filename);
-    if (filename.endsWith("input.svelte")) {
+
+    const isSvelte5Only = inputFileName.includes("/svelte5/");
+    if (isSvelte5Only && !svelteVersion.gte(5)) {
+      continue;
+    }
+
+    if (
+      filename.endsWith("input.svelte") ||
+      filename.endsWith("input.svelte.js") ||
+      filename.endsWith("input.svelte.ts")
+    ) {
       const outputFileName = inputFileName.replace(
-        /input\.svelte$/u,
+        /input\.svelte(?:\.[jt]s)?$/u,
         "output.json",
       );
-      const scopeFileName = inputFileName.replace(
-        /input\.svelte$/u,
-        "scope-output.json",
-      );
       const typeFileName = inputFileName.replace(
-        /input\.svelte$/u,
-        "type-output.svelte",
+        /input\.svelte(\.[jt]s)?$/u,
+        "type-output.svelte$1",
       );
-      const configFileName = inputFileName.replace(
-        /input\.svelte$/u,
+      const configFileNameForFile = inputFileName.replace(
+        /input\.svelte(?:\.[jt]s)?$/u,
         "config.json",
       );
+      const configFileNameForDir = path.join(
+        path.dirname(inputFileName),
+        "_config.json",
+      );
       const requirementsFileName = inputFileName.replace(
-        /input\.svelte$/u,
+        /input\.svelte(?:\.[jt]s)?$/u,
         "requirements.json",
       );
 
@@ -86,20 +252,31 @@ function* listupFixturesImpl(dir: string): Iterable<{
       const requirements = fs.existsSync(requirementsFileName)
         ? JSON.parse(fs.readFileSync(requirementsFileName, "utf-8"))
         : {};
-      const config = fs.existsSync(configFileName)
-        ? JSON.parse(fs.readFileSync(configFileName, "utf-8"))
-        : {};
+      const config = {};
+      for (const configFileName of [
+        configFileNameForDir,
+        configFileNameForFile,
+      ]) {
+        if (fs.existsSync(configFileName)) {
+          Object.assign(
+            config,
+            JSON.parse(fs.readFileSync(configFileName, "utf-8")),
+          );
+        }
+      }
       yield {
         input,
         inputFileName,
         outputFileName,
-        scopeFileName,
         typeFileName: fs.existsSync(typeFileName) ? typeFileName : null,
         config,
         requirements,
+        getScopeFile: () => getScopeFile(inputFileName, isSvelte5Only),
+        writeScopeFile: (json: string) =>
+          writeScopeFile(inputFileName, json, isSvelte5Only),
         getRuleOutputFileName: (ruleName) => {
           return inputFileName.replace(
-            /input\.svelte$/u,
+            /input\.svelte(?:\.[jt]s)?$/u,
             `${ruleName}-result.json`,
           );
         },
@@ -342,15 +519,10 @@ export function normalizeError(error: any): any {
   };
 }
 
-/* eslint-disable complexity -- ignore */
 /**
  * Remove `parent` properties from the given AST.
  */
-function nodeReplacer(
-  /* eslint-enable complexity -- ignore */
-  key: string,
-  value: any,
-): any {
+function nodeReplacer(key: string, value: any): any {
   if (key === "parent") {
     return undefined;
   }
@@ -517,4 +689,32 @@ function normalizeObject(value: any) {
       return a < b ? -1 : a > b ? 1 : 0;
     }),
   );
+}
+
+export function sortJson(pJson: any): any {
+  function tryParse(): { isJson: boolean; json: any | null } {
+    if (Array.isArray(pJson) || typeof pJson === "object") {
+      return { isJson: true, json: pJson };
+    }
+    try {
+      const json = JSON.parse(pJson);
+      return { isJson: true, json };
+    } catch {
+      return { isJson: false, json: null };
+    }
+  }
+
+  const { isJson, json } = tryParse();
+  if (!isJson) return pJson;
+  if (Array.isArray(json)) {
+    return json.map(sortJson);
+  }
+  if (json && typeof json === "object") {
+    const result: any = {};
+    for (const key of Object.keys(json).sort()) {
+      result[key] = sortJson(json[key]);
+    }
+    return result;
+  }
+  return json;
 }

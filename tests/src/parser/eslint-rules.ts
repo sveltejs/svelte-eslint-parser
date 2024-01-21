@@ -41,7 +41,11 @@ describe("svelte-eslint-parser with ESLint rules", () => {
     inputFileName,
     config,
     getRuleOutputFileName,
+    meetRequirements,
   } of listupFixtures()) {
+    if (!meetRequirements("parse")) {
+      continue;
+    }
     const linter = createLinter();
     describe(inputFileName, () => {
       for (const rule of RULES) {
@@ -77,8 +81,16 @@ describe("svelte-eslint-parser with ESLint rules", () => {
               null,
               2,
             );
-            const output = fs.readFileSync(outputFileName, "utf8");
-            assert.strictEqual(messagesJson, output);
+
+            if (!fs.existsSync(outputFileName)) {
+              assert.strictEqual(messagesJson, "[]");
+            } else {
+              const output = fs.readFileSync(outputFileName, "utf8");
+              assert.strictEqual(
+                JSON.stringify(JSON.parse(messagesJson), null, 2),
+                JSON.stringify(JSON.parse(output), null, 2),
+              );
+            }
           }
         });
       }

@@ -1,5 +1,57 @@
 # svelte-eslint-parser
 
+## 0.34.0-next.6
+
+### Minor Changes
+
+- [#446](https://github.com/sveltejs/svelte-eslint-parser/pull/446) [`168f920`](https://github.com/sveltejs/svelte-eslint-parser/commit/168f9209e8ea9f2a1ef2fad28728f6aa0963638f) Thanks [@ota-meshi](https://github.com/ota-meshi)! - feat: add support for `$inspect` and `$effect.root`
+
+## 0.34.0-next.5
+
+### Minor Changes
+
+- [#440](https://github.com/sveltejs/svelte-eslint-parser/pull/440) [`726f21f`](https://github.com/sveltejs/svelte-eslint-parser/commit/726f21fc7a520abe8b7b0be268f2ceb9b3205531) Thanks [@baseballyama](https://github.com/baseballyama)! - feat: skip type injection if template uses TypeScript
+
+- [#441](https://github.com/sveltejs/svelte-eslint-parser/pull/441) [`34232c5`](https://github.com/sveltejs/svelte-eslint-parser/commit/34232c58b49abdb362d74d849e80ef5607d0ce52) Thanks [@baseballyama](https://github.com/baseballyama)! - feat: add type of `$effect.active`
+
+## 0.34.0-next.4
+
+### Patch Changes
+
+- [#438](https://github.com/sveltejs/svelte-eslint-parser/pull/438) [`c21b54c`](https://github.com/sveltejs/svelte-eslint-parser/commit/c21b54ced7984aaeaac6b12ff66bfc4cc0712caf) Thanks [@ota-meshi](https://github.com/ota-meshi)! - fix: incorrect location for `{ #await expr then v }` with spaces
+
+## 0.34.0-next.3
+
+### Minor Changes
+
+- [#435](https://github.com/sveltejs/svelte-eslint-parser/pull/435) [`7508680`](https://github.com/sveltejs/svelte-eslint-parser/commit/7508680b3a88c951fa3fe0bdd9b59b21d6034b27) Thanks [@ota-meshi](https://github.com/ota-meshi)! - feat: improve props type
+
+### Patch Changes
+
+- [#434](https://github.com/sveltejs/svelte-eslint-parser/pull/434) [`0ef067b`](https://github.com/sveltejs/svelte-eslint-parser/commit/0ef067b57ab8897cff03f8793c2767e6d0b83274) Thanks [@ota-meshi](https://github.com/ota-meshi)! - fix: incorrect location when there is whitespace at the beginning of block
+
+## 0.34.0-next.2
+
+### Minor Changes
+
+- [#430](https://github.com/sveltejs/svelte-eslint-parser/pull/430) [`af1bae5`](https://github.com/sveltejs/svelte-eslint-parser/commit/af1bae5d4eb9c9605e4f2ad66590b14f1bfa9a55) Thanks [@ota-meshi](https://github.com/ota-meshi)! - feat: apply correct type information to `$derived` argument expression
+
+- [#431](https://github.com/sveltejs/svelte-eslint-parser/pull/431) [`ab13a46`](https://github.com/sveltejs/svelte-eslint-parser/commit/ab13a4662410014ad7d53fc7664bd5b464f15cbe) Thanks [@ota-meshi](https://github.com/ota-meshi)! - feat: add support for `{#snippet}` and `{@render}`
+
+## 0.34.0-next.1
+
+### Minor Changes
+
+- [#425](https://github.com/sveltejs/svelte-eslint-parser/pull/425) [`ff242c4`](https://github.com/sveltejs/svelte-eslint-parser/commit/ff242c4abc322fd6bc93fda9fb30da14d73a847e) Thanks [@baseballyama](https://github.com/baseballyama)! - feat: Support runes
+
+- [#426](https://github.com/sveltejs/svelte-eslint-parser/pull/426) [`9793cb0`](https://github.com/sveltejs/svelte-eslint-parser/commit/9793cb0d4520b1d5ae9e1f0aa5aff1c8b84cebb6) Thanks [@ota-meshi](https://github.com/ota-meshi)! - feat: apply runes to `*.svelte.js` and `*.svelte.ts`.
+
+## 0.34.0-next.0
+
+### Minor Changes
+
+- [#421](https://github.com/sveltejs/svelte-eslint-parser/pull/421) [`59fc0e9`](https://github.com/sveltejs/svelte-eslint-parser/commit/59fc0e90bdd20f208a4ae8c3527ea51acf106811) Thanks [@ota-meshi](https://github.com/ota-meshi)! - feat: (experimental) partial support for Svelte v5 parser
+
 ## 0.33.1
 
 ### Patch Changes

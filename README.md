@@ -169,6 +169,44 @@ module.exports = {
 }
 ```
 
+### Runes support
+
+***This is an experimental feature. It may be changed or removed in minor versions without notice.***
+
+If you install Svelte v5 the parser will be able to parse runes, and will also be able to parse `*.js` and `*.ts` files.
+
+When using this mode in an ESLint configuration, it is recommended to set it per file pattern as below.
+
+```json
+{
+    "overrides": [
+        {
+            "files": ["*.svelte"],
+            "parser": "svelte-eslint-parser",
+            "parserOptions": {
+                "parser": "...",
+                ...
+            }
+        },
+        {
+            "files": ["*.svelte.js"],
+            "parser": "svelte-eslint-parser",
+            "parserOptions": {
+                ...
+            }
+        },
+        {
+            "files": ["*.svelte.ts"],
+            "parser": "svelte-eslint-parser",
+            "parserOptions": {
+                "parser": "...(ts parser)...",
+                ...
+            }
+        }
+    ]
+}
+```
+
 ## :computer: Editor Integrations
 
 ### Visual Studio Code

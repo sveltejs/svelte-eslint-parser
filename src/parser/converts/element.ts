@@ -19,7 +19,9 @@ import type {
   SvelteMustacheTag,
   SvelteName,
   SvelteProgram,
+  SvelteRenderTag,
   SvelteScriptElement,
+  SvelteSnippetBlock,
   SvelteSpecialDirective,
   SvelteSpecialElement,
   SvelteStyleElement,
@@ -34,6 +36,7 @@ import {
   convertEachBlock,
   convertIfBlock,
   convertKeyBlock,
+  convertSnippetBlock,
 } from "./block";
 import { getWithLoc, indexOf } from "./common";
 import {
@@ -47,12 +50,11 @@ import { convertConstTag } from "./const";
 import { sortNodes } from "../sort";
 import type { ScriptLetBlockParam } from "../../context/script-let";
 import { ParseError } from "../..";
+import { convertRenderTag } from "./render";
 
-/* eslint-disable complexity -- X */
 /** Convert for Fragment or Element or ... */
 export function* convertChildren(
-  /* eslint-enable complexity -- X */
-  fragment: { children: SvAST.TemplateNode[] },
+  fragment: { children?: SvAST.TemplateNode[] },
   parent:
     | SvelteProgram
     | SvelteElement
@@ -62,7 +64,8 @@ export function* convertChildren(
     | SvelteAwaitPendingBlock
     | SvelteAwaitThenBlock
     | SvelteAwaitCatchBlock
-    | SvelteKeyBlock,
+    | SvelteKeyBlock
+    | SvelteSnippetBlock,
   ctx: Context,
 ): IterableIterator<
   | SvelteText
@@ -70,12 +73,15 @@ export function* convertChildren(
   | SvelteMustacheTag
   | SvelteDebugTag
   | SvelteConstTag
+  | SvelteRenderTag
   | SvelteIfBlockAlone
   | SvelteEachBlock
   | SvelteAwaitBlock
   | SvelteKeyBlock
+  | SvelteSnippetBlock
   | SvelteHTMLComment
 > {
+  if (!fragment.children) return;
   for (const child of fragment.children) {
     if (child.type === "Comment") {
       yield convertComment(child, parent, ctx);
@@ -109,7 +115,7 @@ export function* convertChildren(
       continue;
     }
     if (child.type === "MustacheTag") {
-      yield convertMustacheTag(child, parent, ctx);
+      yield convertMustacheTag(child, parent, null, ctx);
       continue;
     }
     if (child.type === "RawMustacheTag") {
@@ -134,6 +140,11 @@ export function* convertChildren(
     if (child.type === "KeyBlock") {
       // {#key expression}...{/key}
       yield convertKeyBlock(child, parent, ctx);
+      continue;
+    }
+    if (child.type === "SnippetBlock") {
+      // {#snippet x(args)}...{/snippet}
+      yield convertSnippetBlock(child, parent, ctx);
       continue;
     }
     if (child.type === "Window") {
@@ -168,6 +179,10 @@ export function* convertChildren(
       yield convertConstTag(child, parent, ctx);
       continue;
     }
+    if (child.type === "RenderTag") {
+      yield convertRenderTag(child, parent, ctx);
+      continue;
+    }
     if (child.type === "Document") {
       yield convertDocumentElement(child, parent, ctx);
       continue;
@@ -199,10 +214,14 @@ function extractLetDirectives(fragment: {
 
 /** Check if children needs a scope. */
 function needScopeByChildren(fragment: {
-  children: SvAST.TemplateNode[];
+  children?: SvAST.TemplateNode[];
 }): boolean {
+  if (!fragment.children) return false;
   for (const child of fragment.children) {
     if (child.type === "ConstTag") {
+      return true;
+    }
+    if (child.type === "SnippetBlock") {
       return true;
     }
   }
@@ -437,66 +456,92 @@ function processThisAttribute(
       (c) => Boolean(c.trim()),
       eqIndex + 1,
     );
-    const quote = ctx.code.startsWith(thisValue, valueStartIndex)
-      ? null
-      : ctx.code[valueStartIndex];
-    const literalStartIndex = quote
-      ? valueStartIndex + quote.length
-      : valueStartIndex;
-    const literalEndIndex = literalStartIndex + thisValue.length;
-    const endIndex = quote ? literalEndIndex + quote.length : literalEndIndex;
-    const thisAttr: SvelteAttribute = {
-      type: "SvelteAttribute",
-      key: null as any,
-      boolean: false,
-      value: [],
-      parent: element.startTag,
-      ...ctx.getConvertLocation({ start: startIndex, end: endIndex }),
-    };
-    thisAttr.key = {
-      type: "SvelteName",
-      name: "this",
-      parent: thisAttr,
-      ...ctx.getConvertLocation({ start: startIndex, end: eqIndex }),
-    };
-    thisAttr.value.push({
-      type: "SvelteLiteral",
-      value: thisValue,
-      parent: thisAttr,
-      ...ctx.getConvertLocation({
+    if (ctx.code[valueStartIndex] === "{") {
+      // Svelte v5 `this={"..."}`
+      const openingQuoteIndex = indexOf(
+        ctx.code,
+        (c) => c === '"' || c === "'",
+        valueStartIndex + 1,
+      );
+      const quote = ctx.code[openingQuoteIndex];
+      const closingQuoteIndex = indexOf(
+        ctx.code,
+        (c) => c === quote,
+        openingQuoteIndex + thisValue.length,
+      );
+      const closeIndex = ctx.code.indexOf("}", closingQuoteIndex + 1);
+      const endIndex = indexOf(
+        ctx.code,
+        (c) => c === ">" || !c.trim(),
+        closeIndex,
+      );
+      thisNode = createSvelteSpecialDirective(startIndex, endIndex, eqIndex, {
+        type: "Literal",
+        value: thisValue,
+        range: [openingQuoteIndex, closingQuoteIndex + 1],
+      });
+    } else {
+      const quote = ctx.code.startsWith(thisValue, valueStartIndex)
+        ? null
+        : ctx.code[valueStartIndex];
+      const literalStartIndex = quote
+        ? valueStartIndex + quote.length
+        : valueStartIndex;
+      const literalEndIndex = literalStartIndex + thisValue.length;
+      const endIndex = quote ? literalEndIndex + quote.length : literalEndIndex;
+      const thisAttr: SvelteAttribute = {
+        type: "SvelteAttribute",
+        key: null as any,
+        boolean: false,
+        value: [],
+        parent: element.startTag,
+        ...ctx.getConvertLocation({ start: startIndex, end: endIndex }),
+      };
+      thisAttr.key = {
+        type: "SvelteName",
+        name: "this",
+        parent: thisAttr,
+        ...ctx.getConvertLocation({ start: startIndex, end: eqIndex }),
+      };
+      thisAttr.value.push({
+        type: "SvelteLiteral",
+        value: thisValue,
+        parent: thisAttr,
+        ...ctx.getConvertLocation({
+          start: literalStartIndex,
+          end: literalEndIndex,
+        }),
+      });
+      // this
+      ctx.addToken("HTMLIdentifier", {
+        start: startIndex,
+        end: startIndex + 4,
+      });
+      // =
+      ctx.addToken("Punctuator", {
+        start: eqIndex,
+        end: eqIndex + 1,
+      });
+      if (quote) {
+        // "
+        ctx.addToken("Punctuator", {
+          start: valueStartIndex,
+          end: literalStartIndex,
+        });
+      }
+      ctx.addToken("HTMLText", {
         start: literalStartIndex,
         end: literalEndIndex,
-      }),
-    });
-    // this
-    ctx.addToken("HTMLIdentifier", {
-      start: startIndex,
-      end: startIndex + 4,
-    });
-    // =
-    ctx.addToken("Punctuator", {
-      start: eqIndex,
-      end: eqIndex + 1,
-    });
-    if (quote) {
-      // "
-      ctx.addToken("Punctuator", {
-        start: valueStartIndex,
-        end: literalStartIndex,
       });
+      if (quote) {
+        // "
+        ctx.addToken("Punctuator", {
+          start: literalEndIndex,
+          end: endIndex,
+        });
+      }
+      thisNode = thisAttr;
     }
-    ctx.addToken("HTMLText", {
-      start: literalStartIndex,
-      end: literalEndIndex,
-    });
-    if (quote) {
-      // "
-      ctx.addToken("Punctuator", {
-        start: literalEndIndex,
-        end: endIndex,
-      });
-    }
-    thisNode = thisAttr;
   } else {
     // this={...}
     const eqIndex = ctx.code.lastIndexOf("=", getWithLoc(thisValue).start);
@@ -507,6 +552,30 @@ function processThisAttribute(
       (c) => c === ">" || !c.trim(),
       closeIndex,
     );
+    thisNode = createSvelteSpecialDirective(
+      startIndex,
+      endIndex,
+      eqIndex,
+      thisValue,
+    );
+  }
+
+  const targetIndex = element.startTag.attributes.findIndex(
+    (attr) => thisNode.range[1] <= attr.range[0],
+  );
+  if (targetIndex === -1) {
+    element.startTag.attributes.push(thisNode);
+  } else {
+    element.startTag.attributes.splice(targetIndex, 0, thisNode);
+  }
+
+  /** Create SvelteSpecialDirective */
+  function createSvelteSpecialDirective(
+    startIndex: number,
+    endIndex: number,
+    eqIndex: number,
+    expression: ESTree.Expression,
+  ): SvelteSpecialDirective {
     const thisDir: SvelteSpecialDirective = {
       type: "SvelteSpecialDirective",
       kind: "this",
@@ -530,19 +599,11 @@ function processThisAttribute(
       start: eqIndex,
       end: eqIndex + 1,
     });
-    ctx.scriptLet.addExpression(thisValue, thisDir, null, (es) => {
+    ctx.scriptLet.addExpression(expression, thisDir, null, (es) => {
       thisDir.expression = es;
     });
-    thisNode = thisDir;
-  }
 
-  const targetIndex = element.startTag.attributes.findIndex(
-    (attr) => thisNode.range[1] <= attr.range[0],
-  );
-  if (targetIndex === -1) {
-    element.startTag.attributes.push(thisNode);
-  } else {
-    element.startTag.attributes.splice(targetIndex, 0, thisNode);
+    return thisDir;
   }
 }
 
