@@ -2,4 +2,4 @@
 "svelte-eslint-parser": patch
 ---
 
-feat: support $state.frozen
+feat: add `$state.frozen` support
