@@ -153,13 +153,15 @@ function checkLoc(ast: SvelteProgram, fileName: string, code: string) {
       if (nodeParent) {
         assert.ok(
           nodeParent.range?.[0] === parent?.range![0],
-          `Parent range mismatch [${nodeParent
-            ?.range?.[0]} : ${parent?.range![0]}] @${astToJson(node)}`,
+          `Parent range mismatch [${
+            nodeParent?.range?.[0]
+          } : ${parent?.range![0]}] @${astToJson(node)}`,
         );
         assert.ok(
           nodeParent.range?.[1] === parent?.range![1],
-          `Parent range mismatch [${nodeParent
-            ?.range?.[1]} : ${parent?.range![1]}] @${astToJson(node)}`,
+          `Parent range mismatch [${
+            nodeParent?.range?.[1]
+          } : ${parent?.range![1]}] @${astToJson(node)}`,
         );
       }
       assert.ok(
