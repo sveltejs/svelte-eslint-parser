@@ -22,7 +22,7 @@ const svelteKeys: SvelteKeysType = {
   SvelteMustacheTag: ["expression"],
   SvelteDebugTag: ["identifiers"],
   SvelteConstTag: ["declaration"],
-  SvelteRenderTag: ["callee", "argument"],
+  SvelteRenderTag: ["callee", "arguments"],
   SvelteIfBlock: ["expression", "children", "else"],
   SvelteElseBlock: ["children"],
   SvelteEachBlock: [
