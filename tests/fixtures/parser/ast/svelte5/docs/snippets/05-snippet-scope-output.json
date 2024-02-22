@@ -359,14 +359,50 @@
             },
             {
               "type": "SvelteRenderTag",
-              "argument": {
-                "type": "BinaryExpression",
-                "left": {
-                  "type": "Identifier",
-                  "name": "n",
+              "arguments": [
+                {
+                  "type": "BinaryExpression",
+                  "left": {
+                    "type": "Identifier",
+                    "name": "n",
+                    "range": [
+                      131,
+                      132
+                    ],
+                    "loc": {
+                      "start": {
+                        "line": 8,
+                        "column": 21
+                      },
+                      "end": {
+                        "line": 8,
+                        "column": 22
+                      }
+                    }
+                  },
+                  "operator": "-",
+                  "right": {
+                    "type": "Literal",
+                    "raw": "1",
+                    "value": 1,
+                    "range": [
+                      135,
+                      136
+                    ],
+                    "loc": {
+                      "start": {
+                        "line": 8,
+                        "column": 25
+                      },
+                      "end": {
+                        "line": 8,
+                        "column": 26
+                      }
+                    }
+                  },
                   "range": [
                     131,
-                    132
+                    136
                   ],
                   "loc": {
                     "start": {
@@ -375,45 +411,11 @@
                     },
                     "end": {
                       "line": 8,
-                      "column": 22
-                    }
-                  }
-                },
-                "operator": "-",
-                "right": {
-                  "type": "Literal",
-                  "raw": "1",
-                  "value": 1,
-                  "range": [
-                    135,
-                    136
-                  ],
-                  "loc": {
-                    "start": {
-                      "line": 8,
-                      "column": 25
-                    },
-                    "end": {
-                      "line": 8,
                       "column": 26
                     }
                   }
-                },
-                "range": [
-                  131,
-                  136
-                ],
-                "loc": {
-                  "start": {
-                    "line": 8,
-                    "column": 21
-                  },
-                  "end": {
-                    "line": 8,
-                    "column": 26
-                  }
                 }
-              },
+              ],
               "callee": {
                 "type": "Identifier",
                 "name": "countdown",
@@ -454,7 +456,7 @@
             "children": [
               {
                 "type": "SvelteRenderTag",
-                "argument": null,
+                "arguments": [],
                 "callee": {
                   "type": "Identifier",
                   "name": "blastoff",
@@ -591,25 +593,27 @@
     },
     {
       "type": "SvelteRenderTag",
-      "argument": {
-        "type": "Literal",
-        "raw": "10",
-        "value": 10,
-        "range": [
-          209,
-          211
-        ],
-        "loc": {
-          "start": {
-            "line": 14,
-            "column": 19
-          },
-          "end": {
-            "line": 14,
-            "column": 21
+      "arguments": [
+        {
+          "type": "Literal",
+          "raw": "10",
+          "value": 10,
+          "range": [
+            209,
+            211
+          ],
+          "loc": {
+            "start": {
+              "line": 14,
+              "column": 19
+            },
+            "end": {
+              "line": 14,
+              "column": 21
+            }
           }
         }
-      },
+      ],
       "callee": {
         "type": "Identifier",
         "name": "countdown",

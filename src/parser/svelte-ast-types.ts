@@ -61,7 +61,7 @@ export interface ConstTag extends BaseNode {
 export interface RenderTag extends BaseNode {
   type: "RenderTag";
   expression: ESTree.Identifier;
-  argument: null | ESTree.Expression;
+  arguments: (ESTree.Expression | ESTree.SpreadElement)[];
 }
 export interface IfBlock extends BaseNode {
   type: "IfBlock";
