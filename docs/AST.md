@@ -423,6 +423,8 @@ interface SvelteConstTag extends Node {
 }
 ```
 
+[VariableDeclarator] is a node defined in ESTree.
+
 ### SvelteRenderTag
 
 This is the `{@render}` tag node.
@@ -431,11 +433,9 @@ This is the `{@render}` tag node.
 interface SvelteRenderTag extends Node {
   type: "SvelteRenderTag";
   callee: Identifier;
-  argument: Expression | null;
+  arguments: (Expression | SpreadElement)[];
 }
 ```
-
-[VariableDeclarator] is a node defined in ESTree.
 
 ### SvelteIfBlock
 
