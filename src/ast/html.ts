@@ -480,7 +480,7 @@ export interface SvelteKeyBlock extends BaseNode {
 export interface SvelteSnippetBlock extends BaseNode {
   type: "SvelteSnippetBlock";
   id: ESTree.Identifier;
-  context: null | ESTree.Pattern;
+  params: ESTree.Pattern[];
   children: Child[];
   parent:
     | SvelteProgram

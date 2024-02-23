@@ -555,7 +555,7 @@ This is the `{#snippet}` tag node.
 interface SvelteSnippetBlock extends Node {
   type: "SvelteSnippetBlock";
   id: Identifier;
-  context: null | Pattern;
+  params: Pattern[];
   children: Child[];
 }
 ```

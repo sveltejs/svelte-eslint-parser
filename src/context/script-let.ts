@@ -428,7 +428,7 @@ export class ScriptLetContext {
     id: ESTree.Identifier,
     closeParentIndex: number,
     snippetBlock: SvelteSnippetBlock,
-    callback: (id: ESTree.Identifier, ctx: ESTree.Pattern | null) => void,
+    callback: (id: ESTree.Identifier, params: ESTree.Pattern[]) => void,
   ): void {
     const idRange = getNodeRange(id);
     const part = this.ctx.code.slice(idRange[0], closeParentIndex + 1);
@@ -438,14 +438,14 @@ export class ScriptLetContext {
       (st, tokens, _comments, result) => {
         const fnDecl = st as ESTree.FunctionDeclaration;
         const idNode = fnDecl.id;
-        const context = fnDecl.params.length > 0 ? fnDecl.params[0] : null;
+        const params = [...fnDecl.params];
         const scope = result.getScope(fnDecl);
 
         // Process for nodes
-        callback(idNode, context);
+        callback(idNode, params);
         (idNode as any).parent = snippetBlock;
-        if (context) {
-          (context as any).parent = snippetBlock;
+        for (const param of params) {
+          (param as any).parent = snippetBlock;
         }
 
         // Process for scope

@@ -38,7 +38,7 @@ const svelteKeys: SvelteKeysType = {
   SvelteAwaitThenBlock: ["value", "children"],
   SvelteAwaitCatchBlock: ["error", "children"],
   SvelteKeyBlock: ["expression", "children"],
-  SvelteSnippetBlock: ["id", "context", "children"],
+  SvelteSnippetBlock: ["id", "params", "children"],
   SvelteAttribute: ["key", "value"],
   SvelteShorthandAttribute: ["key", "value"],
   SvelteSpreadAttribute: ["argument"],

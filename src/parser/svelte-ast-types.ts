@@ -116,7 +116,7 @@ export interface KeyBlock extends BaseNode {
 export interface SnippetBlock extends BaseNode {
   type: "SnippetBlock";
   expression: ESTree.Identifier;
-  context: null | ESTree.Pattern;
+  parameters: ESTree.Pattern[];
   children: TemplateNode[];
 }
 
