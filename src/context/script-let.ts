@@ -344,9 +344,12 @@ export class ScriptLetContext {
     );
 
     if (ranges.defaultRange) {
-      const defaultType = this.ctx.code.slice(...ranges.defaultRange);
-      const id = this.generateUniqueId(defaultType);
-      const scriptLet = `type ${id}=${this.ctx.code.slice(...ranges.defaultRange)};`;
+      const eqDefaultType = this.ctx.code.slice(
+        ranges.constraintRange?.[1] ?? ranges.idRange[1],
+        ranges.defaultRange[1],
+      );
+      const id = this.generateUniqueId(eqDefaultType);
+      const scriptLet = `type ${id}${eqDefaultType};`;
 
       this.appendScript(
         scriptLet,
@@ -364,8 +367,7 @@ export class ScriptLetContext {
           (typeAnnotation as any).parent = param;
 
           tokens.shift(); // type
-          tokens.shift(); // id
-          tokens.shift(); // =
+          tokens.shift(); // ${id}
           tokens.pop(); // ;
 
           // Disconnect the tree structure.
