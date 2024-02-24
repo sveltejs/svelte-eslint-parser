@@ -371,7 +371,7 @@ This is the generics directive node.
 interface SvelteGenericsDirective extends BaseNode {
   type: "SvelteGenericsDirective";
   key: SvelteName & { name: "generics" };
-  params: TSESTree.TSTypeParameterDeclaration["params"];
+  params: TSESTree.TSTypeParameter[];
   parent: SvelteStartTag & { parent: SvelteScriptElement };
 }
 ```
