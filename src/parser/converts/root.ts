@@ -211,6 +211,25 @@ function convertGenericsAttribute(script: SvelteScriptElement, ctx: Context) {
     return;
   }
   const value = genericsAttribute.value[0];
+
+  const genericValueCode = ctx.code.slice(value.range[0], value.range[1]);
+  const scriptLet = `void function<${genericValueCode}>(){}`;
+  let result: TSESParseForESLintResult;
+  try {
+    result = parseScriptWithoutAnalyzeScope(
+      scriptLet,
+      ctx.sourceCode.scripts.attrs,
+      {
+        ...ctx.parserOptions,
+        // Without typings
+        project: null,
+      },
+    ) as unknown as TSESParseForESLintResult;
+  } catch {
+    // ignore
+    return;
+  }
+
   delete (genericsAttribute as any).boolean;
   delete (genericsAttribute as any).value;
 
@@ -231,17 +250,6 @@ function convertGenericsAttribute(script: SvelteScriptElement, ctx: Context) {
   generics.type = "SvelteGenericsDirective";
   generics.params = [];
 
-  const genericValueCode = ctx.code.slice(value.range[0], value.range[1]);
-  const scriptLet = `void function<${genericValueCode}>(){}`;
-  const result = parseScriptWithoutAnalyzeScope(
-    scriptLet,
-    ctx.sourceCode.scripts.attrs,
-    {
-      ...ctx.parserOptions,
-      // Without typings
-      project: null,
-    },
-  ) as unknown as TSESParseForESLintResult;
   result.ast.tokens!.shift(); // void
   result.ast.tokens!.shift(); // function
   result.ast.tokens!.shift(); // <
