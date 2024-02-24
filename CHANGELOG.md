@@ -1,5 +1,11 @@
 # svelte-eslint-parser
 
+## 0.34.0-next.9
+
+### Minor Changes
+
+- [#476](https://github.com/sveltejs/svelte-eslint-parser/pull/476) [`92aeee3`](https://github.com/sveltejs/svelte-eslint-parser/commit/92aeee35ee7bcfd27d8bc1920a341ddf14fa926b) Thanks [@ota-meshi](https://github.com/ota-meshi)! - feat: change AST of `{@render}` and `{#snippet}` to match the latest version of svelte v5.
+
 ## 0.34.0-next.8
 
 ### Patch Changes
