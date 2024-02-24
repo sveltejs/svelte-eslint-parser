@@ -578,6 +578,17 @@ function nodeReplacer(key: string, value: any): any {
         }
       }
     }
+    if (
+      typeof obj.type === "string" &&
+      (obj.type.startsWith("Import") || obj.type.startsWith("Export")) &&
+      Array.isArray(obj.attributes) &&
+      obj.attributes.length === 0
+    ) {
+      // Node types changed in typescript-eslint v6.
+      const copy = { ...obj };
+      delete copy.attributes;
+      obj = copy;
+    }
   }
   return normalizeObject(obj);
 }
