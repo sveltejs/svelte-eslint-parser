@@ -22,7 +22,7 @@ const svelteKeys: SvelteKeysType = {
   SvelteMustacheTag: ["expression"],
   SvelteDebugTag: ["identifiers"],
   SvelteConstTag: ["declaration"],
-  SvelteRenderTag: ["callee", "argument"],
+  SvelteRenderTag: ["callee", "arguments"],
   SvelteIfBlock: ["expression", "children", "else"],
   SvelteElseBlock: ["children"],
   SvelteEachBlock: [
@@ -38,7 +38,7 @@ const svelteKeys: SvelteKeysType = {
   SvelteAwaitThenBlock: ["value", "children"],
   SvelteAwaitCatchBlock: ["error", "children"],
   SvelteKeyBlock: ["expression", "children"],
-  SvelteSnippetBlock: ["id", "context", "children"],
+  SvelteSnippetBlock: ["id", "params", "children"],
   SvelteAttribute: ["key", "value"],
   SvelteShorthandAttribute: ["key", "value"],
   SvelteSpreadAttribute: ["argument"],

@@ -277,7 +277,7 @@ export interface SvelteConstTag extends BaseNode {
 export interface SvelteRenderTag extends BaseNode {
   type: "SvelteRenderTag";
   callee: ESTree.Identifier;
-  argument: ESTree.Expression | null;
+  arguments: (ESTree.Expression | ESTree.SpreadElement)[];
   parent:
     | SvelteProgram
     | SvelteElement
@@ -480,7 +480,7 @@ export interface SvelteKeyBlock extends BaseNode {
 export interface SvelteSnippetBlock extends BaseNode {
   type: "SvelteSnippetBlock";
   id: ESTree.Identifier;
-  context: null | ESTree.Pattern;
+  params: ESTree.Pattern[];
   children: Child[];
   parent:
     | SvelteProgram

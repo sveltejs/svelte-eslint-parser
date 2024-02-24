@@ -462,7 +462,7 @@ export function convertSnippetBlock(
   const snippetBlock: SvelteSnippetBlock = {
     type: "SvelteSnippetBlock",
     id: null as any,
-    context: null as any,
+    params: [],
     children: [],
     parent,
     ...ctx.getConvertLocation({ start: nodeStart, end: node.end }),
@@ -470,16 +470,20 @@ export function convertSnippetBlock(
 
   const closeParenIndex = ctx.code.indexOf(
     ")",
-    getWithLoc(node.context || node.expression).end,
+    getWithLoc(
+      node.parameters.length > 0
+        ? node.parameters[node.parameters.length - 1]
+        : node.expression,
+    ).end,
   );
 
   ctx.scriptLet.nestSnippetBlock(
     node.expression,
     closeParenIndex,
     snippetBlock,
-    (id, context) => {
+    (id, params) => {
       snippetBlock.id = id;
-      snippetBlock.context = context;
+      snippetBlock.params = params;
     },
   );
 
