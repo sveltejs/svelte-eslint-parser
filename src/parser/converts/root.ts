@@ -262,14 +262,13 @@ function convertGenericsAttribute(script: SvelteScriptElement, ctx: Context) {
   const { ast } = result;
   const statement = ast.body[0] as ESTree.ExpressionStatement;
   const rawExpression = statement.expression as ESTree.UnaryExpression;
-  const classDecl = rawExpression.argument as ESTree.FunctionExpression;
-  const typeParameters = (classDecl as TSESTree.FunctionExpression)
+  const fnDecl = rawExpression.argument as ESTree.FunctionExpression;
+  const typeParameters = (fnDecl as TSESTree.FunctionExpression)
     .typeParameters!;
   const params = typeParameters.params;
 
   // Replace tokens
   for (const tokensKey of ["tokens", "comments"] as const) {
-    const newTokens: any[] = [];
     for (const token of result.ast[tokensKey]!) {
       if (
         params.every(
@@ -278,13 +277,14 @@ function convertGenericsAttribute(script: SvelteScriptElement, ctx: Context) {
             param.range[1] <= token.range[0],
         )
       ) {
-        newTokens.push(token);
+        ctx[tokensKey].push(token as any);
       }
     }
-    ctx[tokensKey].push(...newTokens);
   }
 
   for (const param of params) {
+    (param as any).parent = generics;
+    generics.params.push(param);
     ctx.scriptLet.addGenericTypeAliasDeclaration(
       param,
       (id, typeNode) => {
@@ -297,7 +297,5 @@ function convertGenericsAttribute(script: SvelteScriptElement, ctx: Context) {
         param.default = typeNode;
       },
     );
-    (param as any).parent = generics;
-    generics.params.push(param);
   }
 }
