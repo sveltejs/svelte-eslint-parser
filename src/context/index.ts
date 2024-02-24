@@ -29,9 +29,12 @@ export class ScriptsSourceCode {
 
   public readonly attrs: Record<string, string | undefined>;
 
-  private _separate = "";
-
-  private _appendScriptLets: string | null = null;
+  private _appendScriptLets: {
+    separate: string;
+    beforeSpaces: string;
+    render: string;
+    generics: string;
+  } | null = null;
 
   public separateIndexes: number[] = [];
 
@@ -49,16 +52,28 @@ export class ScriptsSourceCode {
     if (this._appendScriptLets == null) {
       return this.raw;
     }
-    return this.trimmedRaw + this._separate + this._appendScriptLets;
+    return (
+      this.trimmedRaw +
+      this._appendScriptLets.separate +
+      this._appendScriptLets.beforeSpaces +
+      this._appendScriptLets.render +
+      this._appendScriptLets.generics
+    );
   }
 
-  public getCurrentVirtualCodeInfo(): { script: string; render: string } {
+  public getCurrentVirtualCodeInfo(): {
+    script: string;
+    render: string;
+    generics: string;
+  } {
     if (this._appendScriptLets == null) {
-      return { script: this.raw, render: "" };
+      return { script: this.raw, render: "", generics: "" };
     }
     return {
-      script: this.trimmedRaw + this._separate,
-      render: this._appendScriptLets,
+      script: this.trimmedRaw + this._appendScriptLets.separate,
+      render:
+        this._appendScriptLets.beforeSpaces + this._appendScriptLets.render,
+      generics: this._appendScriptLets.generics,
     };
   }
 
@@ -68,22 +83,30 @@ export class ScriptsSourceCode {
     }
     return (
       this.trimmedRaw.length +
-      this._separate.length +
-      this._appendScriptLets.length
+      this._appendScriptLets.separate.length +
+      this._appendScriptLets.beforeSpaces.length +
+      this._appendScriptLets.render.length +
+      this._appendScriptLets.generics.length
     );
   }
 
-  public addLet(letCode: string): { start: number; end: number } {
+  public addLet(
+    letCode: string,
+    kind: "generics" | "render",
+  ): { start: number; end: number } {
     if (this._appendScriptLets == null) {
-      this._appendScriptLets = "";
-      const currentLength = this.getCurrentVirtualCodeLength();
+      const currentLength = this.trimmedRaw.length;
       this.separateIndexes = [currentLength, currentLength + 1];
-      this._separate += "\n;";
-      const after = this.raw.slice(this.getCurrentVirtualCodeLength());
-      this._appendScriptLets += after;
+      const after = this.raw.slice(currentLength + 2);
+      this._appendScriptLets = {
+        separate: "\n;",
+        beforeSpaces: after,
+        render: "",
+        generics: "",
+      };
     }
     const start = this.getCurrentVirtualCodeLength();
-    this._appendScriptLets += letCode;
+    this._appendScriptLets[kind] += letCode;
     return {
       start,
       end: this.getCurrentVirtualCodeLength(),

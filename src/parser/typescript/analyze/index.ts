@@ -35,16 +35,18 @@ type TransformInfo = {
  * See https://github.com/sveltejs/svelte-eslint-parser/blob/main/docs/internal-mechanism.md#scope-types
  */
 export function analyzeTypeScriptInSvelte(
-  code: { script: string; render: string },
+  code: { script: string; generics: string; render: string },
   attrs: Record<string, string | undefined>,
   parserOptions: NormalizedParserOptions,
   context: AnalyzeTypeScriptContext,
 ): VirtualTypeScriptContext {
-  const ctx = new VirtualTypeScriptContext(code.script + code.render);
+  const ctx = new VirtualTypeScriptContext(
+    code.script + code.render + code.generics,
+  );
   ctx.appendOriginal(/^\s*/u.exec(code.script)![0].length);
 
   const result = parseScriptWithoutAnalyzeScope(
-    code.script + code.render,
+    code.script + code.render + code.generics,
     attrs,
     {
       ...parserOptions,
@@ -67,6 +69,8 @@ export function analyzeTypeScriptInSvelte(
   );
 
   analyzeRenderScopes(code, ctx);
+
+  ctx.appendOriginalToEnd();
 
   return ctx;
 }
@@ -512,13 +516,13 @@ function* analyzeDollarDerivedScopes(
  * Transform source code to provide the correct type information in the HTML templates.
  */
 function analyzeRenderScopes(
-  code: { script: string; render: string },
+  code: { script: string; render: string; generics: string },
   ctx: VirtualTypeScriptContext,
 ) {
   ctx.appendOriginal(code.script.length);
   const renderFunctionName = ctx.generateUniqueId("render");
   ctx.appendVirtualScript(`function ${renderFunctionName}(){`);
-  ctx.appendOriginalToEnd();
+  ctx.appendOriginal(code.script.length + code.render.length);
   ctx.appendVirtualScript(`}`);
   ctx.restoreContext.addRestoreStatementProcess((node, result) => {
     if (

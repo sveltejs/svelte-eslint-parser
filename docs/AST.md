@@ -172,6 +172,7 @@ interface SvelteStartTag extends Node {
     | SvelteDirective
     | SvelteStyleDirective
     | SvelteSpecialDirective
+    | SvelteGenericsDirective
   )[];
   selfClosing: boolean;
 }
@@ -359,6 +360,19 @@ This is the directive key node.
 ```ts
 interface SvelteSpecialDirectiveKey extends Node {
   type: "SvelteSpecialDirectiveKey";
+}
+```
+
+### SvelteGenericsDirective
+
+This is the generics directive node.
+
+```ts
+interface SvelteGenericsDirective extends BaseNode {
+  type: "SvelteGenericsDirective";
+  key: SvelteName & { name: "generics" };
+  params: TSESTree.TSTypeParameterDeclaration["params"];
+  parent: SvelteStartTag & { parent: SvelteScriptElement };
 }
 ```
 
