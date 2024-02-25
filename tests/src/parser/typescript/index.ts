@@ -13,6 +13,9 @@ describe("Check for typescript analyze result.", () => {
     config,
     meetRequirements,
   } of listupFixtures()) {
+    if (!meetRequirements("parse")) {
+      return;
+    }
     if (!input.includes('lang="ts"')) {
       continue;
     }
