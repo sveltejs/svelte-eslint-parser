@@ -328,6 +328,9 @@ function analyzeRuneVariables(
         appendDeclareFunctionVirtualScripts(globalName, [
           "<T>(expression: T): T",
         ]);
+        appendDeclareNamespaceVirtualScripts(globalName, [
+          "export function by<T>(fn: () => T): T;",
+        ]);
         break;
       }
       case "$effect": {
