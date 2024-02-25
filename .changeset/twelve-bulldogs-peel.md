@@ -2,4 +2,4 @@
 "svelte-eslint-parser": minor
 ---
 
-feat: add support for generics directive
+feat: add experimental support for generics directive
