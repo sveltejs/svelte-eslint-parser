@@ -4,7 +4,8 @@ import staticAdapter from '@sveltejs/adapter-static';
 const config = {
 	kit: {
 		paths: {
-			base: '/svelte-eslint-parser'
+			base: '/svelte-eslint-parser',
+			relative: false
 		},
 
 		adapter: staticAdapter({
