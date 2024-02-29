@@ -21,7 +21,13 @@ export function convertRenderTag(
     [callRange.start, callRange.end],
     mustache,
     null,
-    (expression: ESTree.SimpleCallExpression | (ESTree.ChainExpression & { expression: ESTree.SimpleCallExpression })) => {
+    (
+      expression:
+        | ESTree.SimpleCallExpression
+        | (ESTree.ChainExpression & {
+            expression: ESTree.SimpleCallExpression;
+          }),
+    ) => {
       mustache.expression = expression;
       (mustache.expression as any).parent = mustache;
     },
