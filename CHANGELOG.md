@@ -1,5 +1,15 @@
 # svelte-eslint-parser
 
+## 0.34.0-next.10
+
+### Minor Changes
+
+- [#479](https://github.com/sveltejs/svelte-eslint-parser/pull/479) [`850ad74`](https://github.com/sveltejs/svelte-eslint-parser/commit/850ad74176416978e360f6c23e4479bff81baea6) Thanks [@ota-meshi](https://github.com/ota-meshi)! - feat: add support for `$derived.by` type
+
+### Patch Changes
+
+- [#483](https://github.com/sveltejs/svelte-eslint-parser/pull/483) [`f722d7c`](https://github.com/sveltejs/svelte-eslint-parser/commit/f722d7c047706b4a051999b28d482d0069667da5) Thanks [@ota-meshi](https://github.com/ota-meshi)! - fix: for svelte v5.0.0-next.68 & support optional `{@render}`
+
 ## 0.34.0-next.9
 
 ### Minor Changes
