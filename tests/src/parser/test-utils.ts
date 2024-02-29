@@ -638,6 +638,8 @@ const nodeToKeys: SvelteKeysType = {
   SvelteStartTag: ["attributes", "selfClosing"],
   SvelteStyleElement: ["name", "startTag", "children", "endTag"],
   SvelteText: ["value"],
+  SvelteRenderTag: ["expression"],
+  SvelteSnippetBlock: ["id", "params", "children"],
 };
 
 function normalizeObject(value: any) {
