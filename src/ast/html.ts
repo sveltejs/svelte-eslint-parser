@@ -276,8 +276,9 @@ export interface SvelteConstTag extends BaseNode {
 /** Node of render tag. e.g. `{@render}` */
 export interface SvelteRenderTag extends BaseNode {
   type: "SvelteRenderTag";
-  callee: ESTree.Identifier;
-  arguments: (ESTree.Expression | ESTree.SpreadElement)[];
+  expression:
+    | ESTree.SimpleCallExpression
+    | (ESTree.ChainExpression & { expression: ESTree.SimpleCallExpression });
   parent:
     | SvelteProgram
     | SvelteElement

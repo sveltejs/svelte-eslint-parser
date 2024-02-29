@@ -359,15 +359,52 @@
             },
             {
               "type": "SvelteRenderTag",
-              "arguments": [
-                {
-                  "type": "BinaryExpression",
-                  "left": {
-                    "type": "Identifier",
-                    "name": "n",
+              "expression": {
+                "type": "CallExpression",
+                "arguments": [
+                  {
+                    "type": "BinaryExpression",
+                    "left": {
+                      "type": "Identifier",
+                      "name": "n",
+                      "range": [
+                        131,
+                        132
+                      ],
+                      "loc": {
+                        "start": {
+                          "line": 8,
+                          "column": 21
+                        },
+                        "end": {
+                          "line": 8,
+                          "column": 22
+                        }
+                      }
+                    },
+                    "operator": "-",
+                    "right": {
+                      "type": "Literal",
+                      "raw": "1",
+                      "value": 1,
+                      "range": [
+                        135,
+                        136
+                      ],
+                      "loc": {
+                        "start": {
+                          "line": 8,
+                          "column": 25
+                        },
+                        "end": {
+                          "line": 8,
+                          "column": 26
+                        }
+                      }
+                    },
                     "range": [
                       131,
-                      132
+                      136
                     ],
                     "loc": {
                       "start": {
@@ -376,52 +413,33 @@
                       },
                       "end": {
                         "line": 8,
-                        "column": 22
-                      }
-                    }
-                  },
-                  "operator": "-",
-                  "right": {
-                    "type": "Literal",
-                    "raw": "1",
-                    "value": 1,
-                    "range": [
-                      135,
-                      136
-                    ],
-                    "loc": {
-                      "start": {
-                        "line": 8,
-                        "column": 25
-                      },
-                      "end": {
-                        "line": 8,
                         "column": 26
                       }
                     }
-                  },
+                  }
+                ],
+                "callee": {
+                  "type": "Identifier",
+                  "name": "countdown",
                   "range": [
-                    131,
-                    136
+                    121,
+                    130
                   ],
                   "loc": {
                     "start": {
                       "line": 8,
-                      "column": 21
+                      "column": 11
                     },
                     "end": {
                       "line": 8,
-                      "column": 26
+                      "column": 20
                     }
                   }
-                }
-              ],
-              "callee": {
-                "type": "Identifier",
-                "name": "countdown",
+                },
+                "optional": false,
                 "range": [
                   121,
-                  130
+                  137
                 ],
                 "loc": {
                   "start": {
@@ -430,7 +448,7 @@
                   },
                   "end": {
                     "line": 8,
-                    "column": 20
+                    "column": 27
                   }
                 }
               },
@@ -456,13 +474,31 @@
             "children": [
               {
                 "type": "SvelteRenderTag",
-                "arguments": [],
-                "callee": {
-                  "type": "Identifier",
-                  "name": "blastoff",
+                "expression": {
+                  "type": "CallExpression",
+                  "arguments": [],
+                  "callee": {
+                    "type": "Identifier",
+                    "name": "blastoff",
+                    "range": [
+                      159,
+                      167
+                    ],
+                    "loc": {
+                      "start": {
+                        "line": 10,
+                        "column": 11
+                      },
+                      "end": {
+                        "line": 10,
+                        "column": 19
+                      }
+                    }
+                  },
+                  "optional": false,
                   "range": [
                     159,
-                    167
+                    169
                   ],
                   "loc": {
                     "start": {
@@ -471,7 +507,7 @@
                     },
                     "end": {
                       "line": 10,
-                      "column": 19
+                      "column": 21
                     }
                   }
                 },
@@ -595,33 +631,51 @@
     },
     {
       "type": "SvelteRenderTag",
-      "arguments": [
-        {
-          "type": "Literal",
-          "raw": "10",
-          "value": 10,
+      "expression": {
+        "type": "CallExpression",
+        "arguments": [
+          {
+            "type": "Literal",
+            "raw": "10",
+            "value": 10,
+            "range": [
+              209,
+              211
+            ],
+            "loc": {
+              "start": {
+                "line": 14,
+                "column": 19
+              },
+              "end": {
+                "line": 14,
+                "column": 21
+              }
+            }
+          }
+        ],
+        "callee": {
+          "type": "Identifier",
+          "name": "countdown",
           "range": [
-            209,
-            211
+            199,
+            208
           ],
           "loc": {
             "start": {
               "line": 14,
-              "column": 19
+              "column": 9
             },
             "end": {
               "line": 14,
-              "column": 21
+              "column": 18
             }
           }
-        }
-      ],
-      "callee": {
-        "type": "Identifier",
-        "name": "countdown",
+        },
+        "optional": false,
         "range": [
           199,
-          208
+          212
         ],
         "loc": {
           "start": {
@@ -630,7 +684,7 @@
           },
           "end": {
             "line": 14,
-            "column": 18
+            "column": 22
           }
         }
       },
