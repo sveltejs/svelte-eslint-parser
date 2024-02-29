@@ -6,4 +6,4 @@
 	<p>{msg}</p> <!-- msg: string -->
 {/snippet}
 
-{@render foo(msg)} <!-- foo: (msg: string) => void, msg: string -->
+{@render foo(msg)} <!-- foo(msg): void -->

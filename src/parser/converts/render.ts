@@ -12,29 +12,18 @@ export function convertRenderTag(
 ): SvelteRenderTag {
   const mustache: SvelteRenderTag = {
     type: "SvelteRenderTag",
-    callee: null as any,
-    arguments: [],
+    expression: null as any,
     parent,
     ...ctx.getConvertLocation(node),
   };
-  const calleeRange = getWithLoc(node.expression);
-  const closeParenIndex = ctx.code.indexOf(
-    ")",
-    node.arguments.length
-      ? getWithLoc(node.arguments[node.arguments.length - 1]).end
-      : calleeRange.end,
-  );
+  const callRange = getWithLoc(node.expression);
   ctx.scriptLet.addExpressionFromRange(
-    [calleeRange.start, closeParenIndex + 1],
+    [callRange.start, callRange.end],
     mustache,
     null,
-    (expression: ESTree.SimpleCallExpression) => {
-      mustache.callee = expression.callee as ESTree.Identifier;
-      (mustache.callee as any).parent = mustache;
-      for (const argument of expression.arguments) {
-        mustache.arguments.push(argument);
-        (argument as any).parent = mustache;
-      }
+    (expression: ESTree.SimpleCallExpression | (ESTree.ChainExpression & { expression: ESTree.SimpleCallExpression })) => {
+      mustache.expression = expression;
+      (mustache.expression as any).parent = mustache;
     },
   );
   const atRenderStart = ctx.code.indexOf("@render", mustache.range[0]);
