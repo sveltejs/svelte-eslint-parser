@@ -1,5 +1,6 @@
 import type {} from "svelte"; // FIXME: Workaround to get type information for "svelte/compiler"
 import { parse } from "svelte/compiler";
+import type * as Compiler from "svelte/compiler";
 import type * as SvAST from "./svelte-ast-types";
 import type { Context } from "../context";
 import { convertSvelteRoot } from "./converts/index";
@@ -7,6 +8,7 @@ import { sortNodes } from "./sort";
 import type { SvelteProgram } from "../ast";
 import { ParseError } from "..";
 import type { NormalizedParserOptions } from "./parser-options";
+import { svelteVersion } from "./svelte-version";
 
 /**
  * Parse for template
@@ -17,12 +19,13 @@ export function parseTemplate(
   parserOptions: NormalizedParserOptions,
 ): {
   ast: SvelteProgram;
-  svelteAst: SvAST.Ast;
+  svelteAst: Compiler.Root | SvAST.AstLegacy;
 } {
   try {
     const svelteAst = parse(code, {
       filename: parserOptions.filePath,
-    }) as never as SvAST.Ast;
+      ...(svelteVersion.gte(5) ? { modern: true } : {}),
+    }) as never as Compiler.Root | SvAST.AstLegacy;
     const ast = convertSvelteRoot(svelteAst, ctx);
     sortNodes(ast.body);
 

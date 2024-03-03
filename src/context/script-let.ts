@@ -246,11 +246,15 @@ export class ScriptLetContext {
   }
 
   public addVariableDeclarator(
-    expression: ESTree.AssignmentExpression,
+    declarator: ESTree.VariableDeclarator | ESTree.AssignmentExpression,
     parent: SvelteNode,
     ...callbacks: ScriptLetCallback<ESTree.VariableDeclarator>[]
   ): ScriptLetCallback<ESTree.VariableDeclarator>[] {
-    const range = getNodeRange(expression);
+    const range =
+      declarator.type === "VariableDeclarator"
+        ? // As of Svelte v5-next.65, VariableDeclarator nodes do not have location information.
+          [getNodeRange(declarator.id)[0], getNodeRange(declarator.init!)[1]]
+        : getNodeRange(declarator);
     const part = this.ctx.code.slice(...range);
     this.appendScript(
       `const ${part};`,

@@ -1,6 +1,5 @@
 import type { SvelteLiteral, SvelteText } from "../../ast";
 import type { Context } from "../../context";
-import type { AttributeValueToken } from "../html";
 import type * as SvAST from "../svelte-ast-types";
 /** Convert for Text */
 export function convertText(
@@ -31,25 +30,6 @@ export function convertTextToLiteral(
     ...ctx.getConvertLocation(node),
   };
   extractTextTokens(node, ctx);
-  return text;
-}
-
-/** Convert for AttributeValueToken to Literal */
-export function convertAttributeValueTokenToLiteral(
-  node: AttributeValueToken,
-  parent: SvelteLiteral["parent"],
-  ctx: Context,
-): SvelteLiteral {
-  const valueLoc = node.quote
-    ? { start: node.start + 1, end: node.end - 1 }
-    : node;
-  const text: SvelteLiteral = {
-    type: "SvelteLiteral",
-    value: node.value,
-    parent,
-    ...ctx.getConvertLocation(valueLoc),
-  };
-  extractTextTokens(valueLoc, ctx);
   return text;
 }
 

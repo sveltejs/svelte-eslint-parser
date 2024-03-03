@@ -53,6 +53,27 @@ describe("parseAttributes", () => {
     {
       input: `quote='"'  `,
     },
+    {
+      input: `expr={true}  `,
+    },
+    {
+      input: `expr="{true}"  `,
+    },
+    {
+      input: `expr='{true}'  `,
+    },
+    {
+      input: `expr={"s"}  `,
+    },
+    {
+      input: `expr={"}"}  `,
+    },
+    {
+      input: `expr={/*}*/"}"}  `,
+    },
+    {
+      input: `expr={/*}*///}\n"}"}  `,
+    },
   ];
   for (const { input, index } of testCases) {
     it(input || "(empty)", () => {

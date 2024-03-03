@@ -3,11 +3,11 @@ interface BaseNode {
   start: number;
   end: number;
 }
-export interface Ast {
-  html: Fragment;
-  css: Style;
-  instance: Script;
-  module: Script;
+export interface AstLegacy {
+  html?: Fragment;
+  css?: Style;
+  instance?: Script;
+  module?: Script;
 }
 export declare type TemplateNode =
   | Text
@@ -15,7 +15,6 @@ export declare type TemplateNode =
   | RawMustacheTag
   | DebugTag
   | ConstTag
-  | RenderTag
   | Directive
   | StyleDirective
   | Element
@@ -32,8 +31,7 @@ export declare type TemplateNode =
   | IfBlock
   | EachBlock
   | AwaitBlock
-  | KeyBlock
-  | SnippetBlock;
+  | KeyBlock;
 export interface Fragment extends BaseNode {
   type: "Fragment";
   children: TemplateNode[];
@@ -57,12 +55,6 @@ export interface DebugTag extends BaseNode {
 export interface ConstTag extends BaseNode {
   type: "ConstTag";
   expression: ESTree.AssignmentExpression;
-}
-export interface RenderTag extends BaseNode {
-  type: "RenderTag";
-  expression:
-    | ESTree.SimpleCallExpression
-    | (ESTree.ChainExpression & { expression: ESTree.SimpleCallExpression });
 }
 export interface IfBlock extends BaseNode {
   type: "IfBlock";
@@ -114,13 +106,6 @@ export interface KeyBlock extends BaseNode {
   expression: ESTree.Expression;
   children: TemplateNode[];
 }
-export interface SnippetBlock extends BaseNode {
-  type: "SnippetBlock";
-  expression: ESTree.Identifier;
-  parameters: ESTree.Pattern[];
-  children: TemplateNode[];
-}
-
 export interface BaseElement extends BaseNode {
   type: "Element";
   name: string;

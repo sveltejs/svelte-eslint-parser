@@ -157,6 +157,10 @@ function writeScopeFile(
     /input\.svelte(?:\.[jt]s)?$/u,
     "scope-output.json",
   );
+  const scopeFileNameSvelte5 = inputFileName.replace(
+    /input\.svelte(?:\.[jt]s)?$/u,
+    "scope-output-svelte5.json",
+  );
   if (!svelteVersion.gte(5)) {
     // v4
     if (isSvelte5Only) return;
@@ -167,12 +171,11 @@ function writeScopeFile(
   // v5
   if (isSvelte5Only) {
     fs.writeFileSync(scopeFileName, json, "utf8");
+    if (fs.existsSync(scopeFileNameSvelte5)) {
+      fs.unlinkSync(scopeFileNameSvelte5);
+    }
     return;
   }
-  const scopeFileNameSvelte5 = inputFileName.replace(
-    /input\.svelte(?:\.[jt]s)?$/u,
-    "scope-output-svelte5.json",
-  );
   if (!fs.existsSync(scopeFileName)) {
     fs.writeFileSync(scopeFileNameSvelte5, json, "utf8");
     return;
@@ -185,6 +188,9 @@ function writeScopeFile(
       variables: SVELTE5_SCOPE_VARIABLES_BASE,
     }) === JSON.stringify(scope)
   ) {
+    if (fs.existsSync(scopeFileNameSvelte5)) {
+      fs.unlinkSync(scopeFileNameSvelte5);
+    }
     return;
   }
 

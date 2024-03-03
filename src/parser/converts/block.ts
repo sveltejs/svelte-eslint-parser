@@ -1,4 +1,5 @@
 import type * as SvAST from "../svelte-ast-types";
+import type * as Compiler from "svelte/compiler";
 import type {
   SvelteAwaitBlock,
   SvelteAwaitBlockAwaitCatch,
@@ -20,6 +21,19 @@ import type { Context } from "../../context";
 import { convertChildren } from "./element";
 import { getWithLoc, indexOf, lastIndexOf } from "./common";
 import type * as ESTree from "estree";
+import {
+  getAlternateFromIfBlock,
+  getBodyFromEachBlock,
+  getCatchFromAwaitBlock,
+  getChildren,
+  getConsequentFromIfBlock,
+  getFallbackFromEachBlock,
+  getFragment,
+  getPendingFromAwaitBlock,
+  getTestFromIfBlock,
+  getThenFromAwaitBlock,
+  trimChildren,
+} from "../compat";
 
 /** Get start index of block */
 function startBlockIndex(
@@ -46,20 +60,65 @@ function startBlockIndex(
   );
 }
 
+function startIndexFromFragment(
+  fragment:
+    | Compiler.Fragment
+    | SvAST.ElseBlock
+    | SvAST.ThenBlock
+    | SvAST.CatchBlock,
+  getBeforeEndIndex: () => number,
+) {
+  if ((fragment as { start: number }).start != null) {
+    return (fragment as { start: number }).start;
+  }
+  const children = getChildren(fragment);
+  return children.length ? children[0].start : getBeforeEndIndex();
+}
+
+function endIndexFromFragment(
+  fragment:
+    | Compiler.Fragment
+    | SvAST.IfBlock
+    | SvAST.ElseBlock
+    | SvAST.PendingBlock
+    | SvAST.EachBlock
+    | SvAST.ThenBlock
+    | SvAST.CatchBlock,
+  getBeforeEndIndex: () => number,
+): number {
+  if ((fragment as { end: number }).end != null) {
+    return (fragment as { end: number }).end;
+  }
+  const children = getChildren(fragment);
+  return children.length
+    ? children[children.length - 1].end
+    : getBeforeEndIndex();
+}
+
+function endIndexFromBlock(
+  fragment: Compiler.Fragment | SvAST.PendingBlock,
+  lastExpression: ESTree.Node | { start: number; end: number },
+  ctx: Context,
+) {
+  return endIndexFromFragment(fragment, () => {
+    return ctx.code.indexOf("}", getWithLoc(lastExpression).end) + 1;
+  });
+}
+
 export function convertIfBlock(
-  node: SvAST.IfBlock,
+  node: SvAST.IfBlock | Compiler.IfBlock,
   parent: SvelteIfBlock["parent"],
   ctx: Context,
 ): SvelteIfBlockAlone;
 export function convertIfBlock(
-  node: SvAST.IfBlock,
+  node: SvAST.IfBlock | Compiler.IfBlock,
   parent: SvelteIfBlock["parent"],
   ctx: Context,
   elseif: true,
 ): SvelteIfBlockElseIf;
 /** Convert for IfBlock */
 export function convertIfBlock(
-  node: SvAST.IfBlock,
+  node: SvAST.IfBlock | Compiler.IfBlock,
   parent: SvelteIfBlock["parent"],
   ctx: Context,
   elseif?: true,
@@ -81,10 +140,24 @@ export function convertIfBlock(
     ...ctx.getConvertLocation({ start: nodeStart, end: node.end }),
   } as SvelteIfBlock;
 
-  ctx.scriptLet.nestIfBlock(node.expression, ifBlock, (es) => {
+  const test = getTestFromIfBlock(node);
+  ctx.scriptLet.nestIfBlock(test, ifBlock, (es) => {
     ifBlock.expression = es;
   });
-  ifBlock.children.push(...convertChildren(node, ifBlock, ctx));
+  const consequent = getConsequentFromIfBlock(node);
+
+  ifBlock.children.push(
+    ...convertChildren(
+      {
+        nodes:
+          // Adjust for Svelte v5
+          trimChildren(getChildren(consequent)),
+      },
+      ifBlock,
+      ctx,
+    ),
+  );
+
   ctx.scriptLet.closeScope();
   if (elseif) {
     const index = ctx.code.indexOf("if", nodeStart);
@@ -92,22 +165,16 @@ export function convertIfBlock(
   }
   extractMustacheBlockTokens(ifBlock, ctx, { startOnly: elseif });
 
-  if (!node.else) {
+  const elseFragment = getAlternateFromIfBlock(node);
+  if (!elseFragment) {
     return ifBlock;
   }
 
-  let baseStart = node.else.start;
-  if (node.else.children.length === 1) {
-    const c = node.else.children[0];
-    if (c.type === "IfBlock" && c.elseif) {
-      baseStart = Math.min(baseStart, c.start, getWithLoc(c.expression).start);
-    }
-  }
+  const elseStart = startBlockIndexForElse(elseFragment, consequent, test, ctx);
 
-  const elseStart = startBlockIndex(ctx.code, baseStart - 1, ":else");
-
-  if (node.else.children.length === 1) {
-    const c = node.else.children[0];
+  const elseChildren = getChildren(elseFragment);
+  if (elseChildren.length === 1) {
+    const c = elseChildren[0];
     if (c.type === "IfBlock" && c.elseif) {
       const elseBlock: SvelteElseBlockElseIf = {
         type: "SvelteElseBlock",
@@ -116,7 +183,7 @@ export function convertIfBlock(
         parent: ifBlock,
         ...ctx.getConvertLocation({
           start: elseStart,
-          end: node.else.end,
+          end: c.end,
         }),
       };
       ifBlock.else = elseBlock;
@@ -139,22 +206,59 @@ export function convertIfBlock(
     parent: ifBlock,
     ...ctx.getConvertLocation({
       start: elseStart,
-      end: node.else.end,
+      end: endIndexFromFragment(
+        elseFragment,
+        () => ctx.code.indexOf("}", elseStart + 5) + 1,
+      ),
     }),
   };
   ifBlock.else = elseBlock;
 
   ctx.scriptLet.nestBlock(elseBlock);
-  elseBlock.children.push(...convertChildren(node.else, elseBlock, ctx));
+  elseBlock.children.push(
+    ...convertChildren(
+      {
+        nodes:
+          // Adjust for Svelte v5
+          trimChildren(elseChildren),
+      },
+      elseBlock,
+      ctx,
+    ),
+  );
   ctx.scriptLet.closeScope();
   extractMustacheBlockTokens(elseBlock, ctx, { startOnly: true });
 
   return ifBlock;
 }
 
+function startBlockIndexForElse(
+  elseFragment: Compiler.Fragment | SvAST.ElseBlock,
+  beforeFragment: Compiler.Fragment | SvAST.IfBlock | SvAST.EachBlock,
+  lastExpression: ESTree.Node | { start: number; end: number },
+  ctx: Context,
+) {
+  let baseStart: number;
+  const elseChildren = getChildren(elseFragment);
+  if (elseChildren.length > 0) {
+    const c = elseChildren[0];
+    baseStart = c.start;
+    if (c.type === "IfBlock" && c.elseif) {
+      baseStart = Math.min(baseStart, getWithLoc(getTestFromIfBlock(c)).start);
+    }
+  } else {
+    const beforeEnd = endIndexFromFragment(beforeFragment, () => {
+      return ctx.code.indexOf("}", getWithLoc(lastExpression).end) + 1;
+    });
+    baseStart = beforeEnd + 1;
+  }
+
+  return startBlockIndex(ctx.code, baseStart - 1, ":else");
+}
+
 /** Convert for EachBlock */
 export function convertEachBlock(
-  node: SvAST.EachBlock,
+  node: SvAST.EachBlock | Compiler.EachBlock,
   parent: SvelteEachBlock["parent"],
   ctx: Context,
 ): SvelteEachBlock {
@@ -205,16 +309,33 @@ export function convertEachBlock(
       eachBlock.key = key;
     });
   }
-  eachBlock.children.push(...convertChildren(node, eachBlock, ctx));
+  const body = getBodyFromEachBlock(node);
+  eachBlock.children.push(
+    ...convertChildren(
+      {
+        nodes:
+          // Adjust for Svelte v5
+          trimChildren(getChildren(body)),
+      },
+      eachBlock,
+      ctx,
+    ),
+  );
 
   ctx.scriptLet.closeScope();
   extractMustacheBlockTokens(eachBlock, ctx);
 
-  if (!node.else) {
+  const fallbackFragment = getFallbackFromEachBlock(node);
+  if (!fallbackFragment) {
     return eachBlock;
   }
 
-  const elseStart = startBlockIndex(ctx.code, node.else.start - 1, ":else");
+  const elseStart = startBlockIndexForElse(
+    fallbackFragment,
+    body,
+    node.key || indexRange || node.context,
+    ctx,
+  );
 
   const elseBlock: SvelteElseBlockAlone = {
     type: "SvelteElseBlock",
@@ -223,13 +344,23 @@ export function convertEachBlock(
     parent: eachBlock,
     ...ctx.getConvertLocation({
       start: elseStart,
-      end: node.else.end,
+      end: endIndexFromFragment(fallbackFragment, () => elseStart),
     }),
   };
   eachBlock.else = elseBlock;
 
   ctx.scriptLet.nestBlock(elseBlock);
-  elseBlock.children.push(...convertChildren(node.else, elseBlock, ctx));
+  elseBlock.children.push(
+    ...convertChildren(
+      {
+        nodes:
+          // Adjust for Svelte v5
+          trimChildren(getChildren(fallbackFragment)),
+      },
+      elseBlock,
+      ctx,
+    ),
+  );
   ctx.scriptLet.closeScope();
   extractMustacheBlockTokens(elseBlock, ctx, { startOnly: true });
 
@@ -238,7 +369,7 @@ export function convertEachBlock(
 
 /** Convert for AwaitBlock */
 export function convertAwaitBlock(
-  node: SvAST.AwaitBlock,
+  node: SvAST.AwaitBlock | Compiler.AwaitBlock,
   parent: SvelteAwaitBlock["parent"],
   ctx: Context,
 ): SvelteAwaitBlock {
@@ -263,30 +394,40 @@ export function convertAwaitBlock(
     },
   );
 
-  if (!node.pending.skip) {
+  const pending = getPendingFromAwaitBlock(node);
+  if (pending) {
     const pendingBlock: SvelteAwaitPendingBlock = {
       type: "SvelteAwaitPendingBlock",
       children: [],
       parent: awaitBlock,
       ...ctx.getConvertLocation({
         start: awaitBlock.range[0],
-        end: node.pending.end,
+        end: endIndexFromBlock(pending, node.expression, ctx),
       }),
     };
     ctx.scriptLet.nestBlock(pendingBlock);
-    pendingBlock.children.push(
-      ...convertChildren(node.pending, pendingBlock, ctx),
-    );
+    pendingBlock.children.push(...convertChildren(pending, pendingBlock, ctx));
     awaitBlock.pending = pendingBlock;
     ctx.scriptLet.closeScope();
   }
-  if (!node.then.skip) {
-    const awaitThen = Boolean(node.pending.skip);
+  const then = getThenFromAwaitBlock(node);
+  if (then) {
+    const awaitThen = !pending;
     if (awaitThen) {
       (awaitBlock as SvelteAwaitBlockAwaitThen).kind = "await-then";
     }
 
-    const thenStart = awaitBlock.pending ? node.then.start : nodeStart;
+    const thenStart = awaitBlock.pending
+      ? startBlockIndex(
+          ctx.code,
+          node.value
+            ? getWithLoc(node.value).start
+            : startIndexFromFragment(then, () => {
+                return awaitBlock.pending.range[1];
+              }),
+          ":then",
+        )
+      : nodeStart;
     const thenBlock: SvelteAwaitThenBlock = {
       type: "SvelteAwaitThenBlock",
       awaitThen,
@@ -295,7 +436,14 @@ export function convertAwaitBlock(
       parent: awaitBlock as any,
       ...ctx.getConvertLocation({
         start: thenStart,
-        end: node.then.end,
+        end: endIndexFromFragment(then, () => {
+          return (
+            ctx.code.indexOf(
+              "}",
+              node.value ? getWithLoc(node.value).end : thenStart + 5,
+            ) + 1
+          );
+        }),
       }),
     };
     if (node.value) {
@@ -352,7 +500,7 @@ export function convertAwaitBlock(
     } else {
       ctx.scriptLet.nestBlock(thenBlock);
     }
-    thenBlock.children.push(...convertChildren(node.then, thenBlock, ctx));
+    thenBlock.children.push(...convertChildren(then, thenBlock, ctx));
     if (awaitBlock.pending) {
       extractMustacheBlockTokens(thenBlock, ctx, { startOnly: true });
     } else {
@@ -368,13 +516,24 @@ export function convertAwaitBlock(
     awaitBlock.then = thenBlock;
     ctx.scriptLet.closeScope();
   }
-  if (!node.catch.skip) {
-    const awaitCatch = Boolean(node.pending.skip && node.then.skip);
+  const catchFragment = getCatchFromAwaitBlock(node);
+  if (catchFragment) {
+    const awaitCatch = !pending && !then;
     if (awaitCatch) {
       (awaitBlock as SvelteAwaitBlockAwaitCatch).kind = "await-catch";
     }
     const catchStart =
-      awaitBlock.pending || awaitBlock.then ? node.catch.start : nodeStart;
+      awaitBlock.then || awaitBlock.pending
+        ? startBlockIndex(
+            ctx.code,
+            node.error
+              ? getWithLoc(node.error).start
+              : startIndexFromFragment(catchFragment, () => {
+                  return (awaitBlock.then || awaitBlock.pending).range[1];
+                }),
+            ":catch",
+          )
+        : nodeStart;
     const catchBlock = {
       type: "SvelteAwaitCatchBlock",
       awaitCatch,
@@ -383,7 +542,14 @@ export function convertAwaitBlock(
       parent: awaitBlock,
       ...ctx.getConvertLocation({
         start: catchStart,
-        end: node.catch.end,
+        end: endIndexFromFragment(catchFragment, () => {
+          return (
+            ctx.code.indexOf(
+              "}",
+              node.error ? getWithLoc(node.error).end : catchStart + 6,
+            ) + 1
+          );
+        }),
       }),
     } as SvelteAwaitCatchBlock;
 
@@ -401,7 +567,9 @@ export function convertAwaitBlock(
     } else {
       ctx.scriptLet.nestBlock(catchBlock);
     }
-    catchBlock.children.push(...convertChildren(node.catch, catchBlock, ctx));
+    catchBlock.children.push(
+      ...convertChildren(catchFragment, catchBlock, ctx),
+    );
     if (awaitBlock.pending || awaitBlock.then) {
       extractMustacheBlockTokens(catchBlock, ctx, { startOnly: true });
     } else {
@@ -425,7 +593,7 @@ export function convertAwaitBlock(
 
 /** Convert for KeyBlock */
 export function convertKeyBlock(
-  node: SvAST.KeyBlock,
+  node: SvAST.KeyBlock | Compiler.KeyBlock,
   parent: SvelteKeyBlock["parent"],
   ctx: Context,
 ): SvelteKeyBlock {
@@ -443,7 +611,17 @@ export function convertKeyBlock(
   });
 
   ctx.scriptLet.nestBlock(keyBlock);
-  keyBlock.children.push(...convertChildren(node, keyBlock, ctx));
+  keyBlock.children.push(
+    ...convertChildren(
+      {
+        nodes:
+          // Adjust for Svelte v5
+          trimChildren(getChildren(getFragment(node))),
+      },
+      keyBlock,
+      ctx,
+    ),
+  );
   ctx.scriptLet.closeScope();
 
   extractMustacheBlockTokens(keyBlock, ctx);
@@ -453,7 +631,7 @@ export function convertKeyBlock(
 
 /** Convert for SnippetBlock */
 export function convertSnippetBlock(
-  node: SvAST.SnippetBlock,
+  node: Compiler.SnippetBlock,
   parent: SvelteSnippetBlock["parent"],
   ctx: Context,
 ): SvelteSnippetBlock {
@@ -487,7 +665,17 @@ export function convertSnippetBlock(
     },
   );
 
-  snippetBlock.children.push(...convertChildren(node, snippetBlock, ctx));
+  snippetBlock.children.push(
+    ...convertChildren(
+      {
+        nodes:
+          // Adjust for Svelte v5
+          trimChildren(node.body.nodes),
+      },
+      snippetBlock,
+      ctx,
+    ),
+  );
 
   ctx.scriptLet.closeScope();
   extractMustacheBlockTokens(snippetBlock, ctx);

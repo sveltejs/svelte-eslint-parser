@@ -1,4 +1,5 @@
 import type * as SvAST from "../svelte-ast-types";
+import type * as Compiler from "svelte/compiler";
 import type {
   SvelteAttribute,
   SvelteGenericsDirective,
@@ -11,19 +12,27 @@ import type {
 import {} from "./common";
 import type { Context } from "../../context";
 import { convertChildren, extractElementTags } from "./element";
-import { convertAttributeTokens } from "./attr";
+import { convertAttributes } from "./attr";
 import type { Scope } from "eslint-scope";
 import { parseScriptWithoutAnalyzeScope } from "../script";
 import type { TSESParseForESLintResult } from "../typescript/types";
 import type * as ESTree from "estree";
 import type { TSESTree } from "@typescript-eslint/types";
 import { fixLocations } from "../../context/fix-locations";
+import {
+  getChildren,
+  getFragmentFromRoot,
+  getInstanceFromRoot,
+  getModuleFromRoot,
+  getOptionsFromRoot,
+} from "../compat";
+import { sortNodes } from "../sort";
 
 /**
  * Convert root
  */
 export function convertSvelteRoot(
-  svelteAst: SvAST.Ast,
+  svelteAst: Compiler.Root | SvAST.AstLegacy,
   ctx: Context,
 ): SvelteProgram {
   const ast: SvelteProgram = {
@@ -36,12 +45,28 @@ export function convertSvelteRoot(
     ...ctx.getConvertLocation({ start: 0, end: ctx.code.length }),
   };
   const body = ast.body;
-  if (svelteAst.html) {
-    const fragment = svelteAst.html;
-    body.push(...convertChildren(fragment, ast, ctx));
+  const fragment = getFragmentFromRoot(svelteAst);
+  if (fragment) {
+    let children = getChildren(fragment);
+    const options = getOptionsFromRoot(svelteAst, ctx.code);
+    if (options) {
+      children = [...children];
+      if (
+        !children.some((node, idx) => {
+          if (options.end <= node.start) {
+            children.splice(idx, 0, options);
+            return true;
+          }
+          return false;
+        })
+      ) {
+        children.push(options);
+      }
+    }
+    body.push(...convertChildren({ nodes: children }, ast, ctx));
   }
-  if (svelteAst.instance) {
-    const instance = svelteAst.instance;
+  const instance = getInstanceFromRoot(svelteAst);
+  if (instance) {
     const script: SvelteScriptElement = {
       type: "SvelteScriptElement",
       name: null as any,
@@ -68,8 +93,9 @@ export function convertSvelteRoot(
     });
     body.push(script);
   }
-  if (svelteAst.module) {
-    const module = svelteAst.module;
+
+  const module = getModuleFromRoot(svelteAst);
+  if (module) {
     const script: SvelteScriptElement = {
       type: "SvelteScriptElement",
       name: null as any,
@@ -187,7 +213,7 @@ function extractAttributes(
   const block = ctx.findBlock(element);
   if (block) {
     element.startTag.attributes.push(
-      ...convertAttributeTokens(block.attrs, element.startTag, ctx),
+      ...convertAttributes(block.attrs, element.startTag, ctx),
     );
   }
 }
@@ -235,6 +261,7 @@ function convertGenericsAttribute(script: SvelteScriptElement, ctx: Context) {
   delete (genericsAttribute as any).value;
 
   // Remove value token indexes
+  sortNodes(ctx.tokens);
   const firstTokenIndex = ctx.tokens.findIndex(
     (token) =>
       value.range[0] <= token.range[0] && token.range[1] <= value.range[1],

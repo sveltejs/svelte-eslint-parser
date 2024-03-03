@@ -1,10 +1,12 @@
 import type { SvelteConstTag } from "../../ast";
 import type { Context } from "../../context";
+import { getDeclaratorFromConstTag } from "../compat";
 import type * as SvAST from "../svelte-ast-types";
+import type * as Compiler from "svelte/compiler";
 
 /** Convert for ConstTag */
 export function convertConstTag(
-  node: SvAST.ConstTag,
+  node: SvAST.ConstTag | Compiler.ConstTag,
   parent: SvelteConstTag["parent"],
   ctx: Context,
 ): SvelteConstTag {
@@ -15,7 +17,7 @@ export function convertConstTag(
     ...ctx.getConvertLocation(node),
   };
   ctx.scriptLet.addVariableDeclarator(
-    node.expression,
+    getDeclaratorFromConstTag(node),
     mustache,
     (declaration) => {
       mustache.declaration = declaration;

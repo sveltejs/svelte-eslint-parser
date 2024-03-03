@@ -12,9 +12,9 @@ import type {
 } from "../ast";
 import type ESTree from "estree";
 import type * as SvAST from "../parser/svelte-ast-types";
+import type * as Compiler from "svelte/compiler";
 import { ScriptLetContext } from "./script-let";
 import { LetDirectiveCollections } from "./let-directive-collection";
-import type { AttributeToken } from "../parser/html";
 import { parseAttributes } from "../parser/html";
 import { sortedLastIndex } from "../utils";
 import {
@@ -164,6 +164,19 @@ export class Context {
     | SvAST.SlotTemplate
     | SvAST.Slot
     | SvAST.Title
+    | Compiler.RegularElement
+    | Compiler.Component
+    | Compiler.SvelteComponent
+    | Compiler.SvelteElement
+    | Compiler.SvelteWindow
+    | Compiler.SvelteBody
+    | Compiler.SvelteHead
+    | Compiler.SvelteDocument
+    | Compiler.SvelteFragment
+    | Compiler.SvelteSelf
+    | Compiler.SvelteOptionsRaw
+    | Compiler.SlotElement
+    | Compiler.TitleElement
   >();
 
   public readonly snippets: SvelteSnippetBlock[] = [];
@@ -190,8 +203,16 @@ export class Context {
         if (block.selfClosing) {
           continue;
         }
-        const lang = block.attrs.find((attr) => attr.key.name === "lang");
-        if (!lang || !lang.value || lang.value.value === "html") {
+        const lang = block.attrs.find((attr) => attr.name === "lang");
+        if (!lang || !Array.isArray(lang.value)) {
+          continue;
+        }
+        const langValue = lang.value[0];
+        if (
+          !langValue ||
+          langValue.type !== "Text" ||
+          langValue.data === "html"
+        ) {
           continue;
         }
       }
@@ -221,7 +242,13 @@ export class Context {
             spaces.slice(start, block.contentRange[0]) +
             code.slice(...block.contentRange);
           for (const attr of block.attrs) {
-            scriptAttrs[attr.key.name] = attr.value?.value;
+            if (Array.isArray(attr.value)) {
+              const attrValue = attr.value[0];
+              scriptAttrs[attr.name] =
+                attrValue && attrValue.type === "Text"
+                  ? attrValue.data
+                  : undefined;
+            }
           }
         } else {
           scriptCode += spaces.slice(start, block.contentRange[1]);
@@ -347,7 +374,7 @@ type Block =
   | {
       tag: "script" | "style" | "template";
       originalTag: string;
-      attrs: AttributeToken[];
+      attrs: Compiler.Attribute[];
       selfClosing?: false;
       contentRange: [number, number];
       startTagRange: [number, number];
@@ -358,7 +385,7 @@ type Block =
 type SelfClosingBlock = {
   tag: "script" | "style" | "template";
   originalTag: string;
-  attrs: AttributeToken[];
+  attrs: Compiler.Attribute[];
   selfClosing: true;
   startTagRange: [number, number];
 };
@@ -380,7 +407,7 @@ function* extractBlocks(code: string): IterableIterator<Block> {
 
     const lowerTag = tag.toLowerCase() as "script" | "style" | "template";
 
-    let attrs: AttributeToken[] = [];
+    let attrs: Compiler.Attribute[] = [];
     if (!nextChar.trim()) {
       const attrsData = parseAttributes(code, startTagOpenRe.lastIndex);
       attrs = attrsData.attributes;
