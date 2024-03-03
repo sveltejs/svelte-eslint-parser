@@ -1,5 +1,13 @@
 # svelte-eslint-parser
 
+## 0.34.0-next.11
+
+### Minor Changes
+
+- [#437](https://github.com/sveltejs/svelte-eslint-parser/pull/437) [`a27697a`](https://github.com/sveltejs/svelte-eslint-parser/commit/a27697a715072ae6adddf228976f23bab6d48fb8) Thanks [@ota-meshi](https://github.com/ota-meshi)! - feat: change it to use modern AST, if svelte v5 is installed
+
+- [#477](https://github.com/sveltejs/svelte-eslint-parser/pull/477) [`5f2b111`](https://github.com/sveltejs/svelte-eslint-parser/commit/5f2b1112e1ceacfabb292e51d33492fba878bc6c) Thanks [@ota-meshi](https://github.com/ota-meshi)! - feat: add experimental support for generics directive
+
 ## 0.34.0-next.10
 
 ### Minor Changes
