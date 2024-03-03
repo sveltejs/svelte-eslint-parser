@@ -52,7 +52,8 @@ export function convertSvelteRoot(
       ...ctx.getConvertLocation(instance),
     };
     extractAttributes(script, ctx);
-    convertGenericsAttribute(script, ctx);
+    if (ctx.parserOptions.svelteFeatures?.experimentalGenerics)
+      convertGenericsAttribute(script, ctx);
     extractElementTags(script, ctx, {
       buildNameNode: (openTokenRange) => {
         ctx.addToken("HTMLIdentifier", openTokenRange);
