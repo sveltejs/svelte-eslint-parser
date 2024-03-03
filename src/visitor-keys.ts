@@ -45,7 +45,7 @@ const svelteKeys: SvelteKeysType = {
   SvelteDirective: ["key", "expression"],
   SvelteStyleDirective: ["key", "value"],
   SvelteSpecialDirective: ["key", "expression"],
-  SvelteGenericsDirective: ["params"],
+  SvelteGenericsDirective: ["key", "params"],
   SvelteDirectiveKey: ["name"],
   SvelteSpecialDirectiveKey: [],
   SvelteText: [],
