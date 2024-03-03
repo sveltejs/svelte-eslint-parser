@@ -1045,13 +1045,31 @@
                   "children": [
                     {
                       "type": "SvelteRenderTag",
-                      "arguments": [],
-                      "callee": {
-                        "type": "Identifier",
-                        "name": "children",
+                      "expression": {
+                        "type": "CallExpression",
+                        "arguments": [],
+                        "callee": {
+                          "type": "Identifier",
+                          "name": "children",
+                          "range": [
+                            227,
+                            235
+                          ],
+                          "loc": {
+                            "start": {
+                              "line": 14,
+                              "column": 16
+                            },
+                            "end": {
+                              "line": 14,
+                              "column": 24
+                            }
+                          }
+                        },
+                        "optional": false,
                         "range": [
                           227,
-                          235
+                          237
                         ],
                         "loc": {
                           "start": {
@@ -1060,7 +1078,7 @@
                           },
                           "end": {
                             "line": 14,
-                            "column": 24
+                            "column": 26
                           }
                         }
                       },
@@ -1341,32 +1359,50 @@
                   "children": [
                     {
                       "type": "SvelteRenderTag",
-                      "arguments": [
-                        {
+                      "expression": {
+                        "type": "CallExpression",
+                        "arguments": [
+                          {
+                            "type": "Identifier",
+                            "name": "d",
+                            "range": [
+                              311,
+                              312
+                            ],
+                            "loc": {
+                              "start": {
+                                "line": 19,
+                                "column": 20
+                              },
+                              "end": {
+                                "line": 19,
+                                "column": 21
+                              }
+                            }
+                          }
+                        ],
+                        "callee": {
                           "type": "Identifier",
-                          "name": "d",
+                          "name": "row",
                           "range": [
-                            311,
-                            312
+                            307,
+                            310
                           ],
                           "loc": {
                             "start": {
                               "line": 19,
-                              "column": 20
+                              "column": 16
                             },
                             "end": {
                               "line": 19,
-                              "column": 21
+                              "column": 19
                             }
                           }
-                        }
-                      ],
-                      "callee": {
-                        "type": "Identifier",
-                        "name": "row",
+                        },
+                        "optional": false,
                         "range": [
                           307,
-                          310
+                          313
                         ],
                         "loc": {
                           "start": {
@@ -1375,7 +1411,7 @@
                           },
                           "end": {
                             "line": 19,
-                            "column": 19
+                            "column": 22
                           }
                         }
                       },
