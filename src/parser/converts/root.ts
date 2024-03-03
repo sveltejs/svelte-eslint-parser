@@ -26,6 +26,7 @@ import {
   getModuleFromRoot,
   getOptionsFromRoot,
 } from "../compat";
+import { sortNodes } from "../sort";
 
 /**
  * Convert root
@@ -260,6 +261,7 @@ function convertGenericsAttribute(script: SvelteScriptElement, ctx: Context) {
   delete (genericsAttribute as any).value;
 
   // Remove value token indexes
+  sortNodes(ctx.tokens);
   const firstTokenIndex = ctx.tokens.findIndex(
     (token) =>
       value.range[0] <= token.range[0] && token.range[1] <= value.range[1],

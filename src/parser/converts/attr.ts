@@ -190,6 +190,9 @@ function convertAttribute(
     });
     return sAttr;
   }
+  // Not required for shorthands. Therefore, register the token here.
+  ctx.addToken("HTMLIdentifier", keyRange);
+
   processAttributeValue(
     node.value as (
       | SvAST.Text
@@ -201,9 +204,6 @@ function convertAttribute(
     parent,
     ctx,
   );
-
-  // Not required for shorthands. Therefore, register the token here.
-  ctx.addToken("HTMLIdentifier", keyRange);
 
   return attribute;
 }
