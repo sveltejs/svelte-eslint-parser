@@ -173,12 +173,14 @@ module.exports = {
 
 You can use `parserOptions.svelteFeatures` property to specify how to parse related to Svelte features. For example:
 
-```json
+```jsonc
 {
     "parser": "svelte-eslint-parser",
     "parserOptions": {
         "svelteFeatures": {
+
             /* -- Experimental Svelte Features -- */
+            /* It may be changed or removed in minor versions without notice. */
             // Whether to parse the `generics` attribute.
             // See https://github.com/sveltejs/rfcs/pull/38
             "experimentalGenerics": false
