@@ -169,6 +169,24 @@ module.exports = {
 }
 ```
 
+### parserOptions.svelteFeatures
+
+You can use `parserOptions.svelteFeatures` property to specify how to parse related to Svelte features. For example:
+
+```json
+{
+    "parser": "svelte-eslint-parser",
+    "parserOptions": {
+        "svelteFeatures": {
+            /* -- Experimental Svelte Features -- */
+            // Whether to parse the `generics` attribute.
+            // See https://github.com/sveltejs/rfcs/pull/38
+            "experimentalGenerics": false
+        }
+    }
+}
+```
+
 ### Runes support
 
 ***This is an experimental feature. It may be changed or removed in minor versions without notice.***

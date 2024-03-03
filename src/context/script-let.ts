@@ -5,7 +5,6 @@ import type { Scope as TSScope } from "@typescript-eslint/scope-manager";
 import type { Context, ScriptsSourceCode } from ".";
 import type {
   Comment,
-  Locations,
   SvelteEachBlock,
   SvelteIfBlock,
   SvelteName,
@@ -18,11 +17,13 @@ import { getWithLoc } from "../parser/converts/common";
 import {
   getScopeFromNode,
   removeAllScopeAndVariableAndReference,
+  removeIdentifierVariable,
   removeReference,
   removeScope,
 } from "../scope";
 import { getKeys, traverseNodes, getNodes } from "../traverse";
 import { UniqueIdGenerator } from "./unique";
+import { fixLocations } from "./fix-locations";
 
 type TSAsExpression = {
   type: "TSAsExpression";
@@ -163,6 +164,7 @@ export class ScriptLetContext {
     this.appendScript(
       `(${part})${isTS ? `as (${typing})` : ""};`,
       range[0] - 1,
+      "render",
       (st, tokens, comments, result) => {
         const exprSt = st as ESTree.ExpressionStatement;
         const tsAs: TSAsExpression | null = isTS
@@ -218,6 +220,7 @@ export class ScriptLetContext {
     this.appendScript(
       `({${part}});`,
       range[0] - 2,
+      "render",
       (st, tokens, _comments, result) => {
         const exprSt = st as ESTree.ExpressionStatement;
         const objectExpression: ESTree.ObjectExpression =
@@ -252,6 +255,7 @@ export class ScriptLetContext {
     this.appendScript(
       `const ${part};`,
       range[0] - 6,
+      "render",
       (st, tokens, _comments, result) => {
         const decl = st as ESTree.VariableDeclaration;
         const node = decl.declarations[0];
@@ -281,6 +285,100 @@ export class ScriptLetContext {
     return callbacks;
   }
 
+  public addGenericTypeAliasDeclaration(
+    param: TSESTree.TSTypeParameter,
+    callbackId: (id: TSESTree.Identifier, type: TSESTree.TypeNode) => void,
+    callbackDefault: (type: TSESTree.TypeNode) => void,
+  ): void {
+    const ranges = getTypeParameterRanges(this.ctx.code, param);
+    let scriptLet = `type ${this.ctx.code.slice(...ranges.idRange)}`;
+    if (ranges.constraintRange) {
+      scriptLet += ` =     ${this.ctx.code.slice(...ranges.constraintRange)};`;
+      //           |extends|
+    } else {
+      scriptLet += " = unknown;";
+    }
+
+    this.appendScript(
+      scriptLet,
+      ranges.idRange[0] - 5,
+      "generics",
+      (st, tokens, _comments, result) => {
+        const decl = st as any as TSESTree.TSTypeAliasDeclaration;
+        const id = decl.id;
+        const typeAnnotation = decl.typeAnnotation;
+        // Process for nodes
+        callbackId(id, typeAnnotation);
+
+        const scope = result.getScope(decl as any);
+        for (const variable of scope.variables) {
+          for (const def of variable.defs) {
+            if (def.node === decl) {
+              def.node = param;
+            }
+          }
+        }
+
+        (id as any).parent = param;
+        (typeAnnotation as any).parent = param;
+
+        tokens.shift(); // type
+        if (ranges.constraintRange) {
+          const eqToken = tokens[1];
+          eqToken.type = "Keyword";
+          eqToken.value = "extends";
+          eqToken.range[0] = eqToken.range[0] - 1;
+          eqToken.range[1] = eqToken.range[0] + 7;
+          tokens.pop(); // ;
+        } else {
+          tokens.pop(); // ;
+          tokens.pop(); // unknown
+          tokens.pop(); // =
+        }
+
+        // Disconnect the tree structure.
+        delete (decl as any).id;
+        delete (decl as any).typeAnnotation;
+        delete (decl as any).typeParameters;
+      },
+    );
+
+    if (ranges.defaultRange) {
+      const eqDefaultType = this.ctx.code.slice(
+        ranges.constraintRange?.[1] ?? ranges.idRange[1],
+        ranges.defaultRange[1],
+      );
+      const id = this.generateUniqueId(eqDefaultType);
+      const scriptLet = `type ${id}${eqDefaultType};`;
+
+      this.appendScript(
+        scriptLet,
+        ranges.defaultRange[0] - 5 - id.length - 1,
+        "generics",
+        (st, tokens, _comments, result) => {
+          const decl = st as any as TSESTree.TSTypeAliasDeclaration;
+          const typeAnnotation = decl.typeAnnotation;
+          // Process for nodes
+          callbackDefault(typeAnnotation);
+
+          const scope = result.getScope(decl as any);
+          removeIdentifierVariable(decl.id, scope);
+
+          (typeAnnotation as any).parent = param;
+
+          tokens.shift(); // type
+          tokens.shift(); // ${id}
+          tokens.pop(); // ;
+
+          // Disconnect the tree structure.
+          delete (decl as any).id;
+          delete (decl as any).typeAnnotation;
+          delete (decl as any).typeParameters;
+        },
+      );
+    }
+  }
+
   public nestIfBlock(
     expression: ESTree.Expression,
     ifBlock: SvelteIfBlock,
@@ -291,6 +389,7 @@ export class ScriptLetContext {
     const restore = this.appendScript(
       `if(${part}){`,
       range[0] - 3,
+      "render",
       (st, tokens, _comments, result) => {
         const ifSt = st as ESTree.IfStatement;
         const node = ifSt.test;
@@ -345,6 +444,7 @@ export class ScriptLetContext {
     const restore = this.appendScript(
       source,
       exprRange[0] - exprOffset,
+      "render",
       (st, tokens, comments, result) => {
         const expSt = st as ESTree.ExpressionStatement;
         const call = expSt.expression as ESTree.CallExpression;
@@ -435,6 +535,7 @@ export class ScriptLetContext {
     const restore = this.appendScript(
       `function ${part}{`,
       idRange[0] - 9,
+      "render",
       (st, tokens, _comments, result) => {
         const fnDecl = st as ESTree.FunctionDeclaration;
         const idNode = fnDecl.id;
@@ -483,6 +584,7 @@ export class ScriptLetContext {
           for (const preparationScript of generatedTypes.preparationScript) {
             this.appendScriptWithoutOffset(
               preparationScript,
+              "render",
               (node, tokens, comments, result) => {
                 tokens.length = 0;
                 comments.length = 0;
@@ -502,6 +604,7 @@ export class ScriptLetContext {
       const restore = this.appendScript(
         `{`,
         block.range[0],
+        "render",
         (st, tokens, _comments, result) => {
           const blockSt = st as ESTree.BlockStatement;
 
@@ -557,6 +660,7 @@ export class ScriptLetContext {
       const restore = this.appendScript(
         `(${source})=>{`,
         maps[0].range[0] - 1,
+        "render",
         (st, tokens, comments, result) => {
           const exprSt = st as ESTree.ExpressionStatement;
           const fn = exprSt.expression as ESTree.ArrowFunctionExpression;
@@ -630,6 +734,7 @@ export class ScriptLetContext {
   private appendScript(
     text: string,
     offset: number,
+    kind: "generics" | "render",
     callback: (
       node: ESTree.Node,
       tokens: Token[],
@@ -639,13 +744,15 @@ export class ScriptLetContext {
   ) {
     const resultCallback = this.appendScriptWithoutOffset(
       text,
+      kind,
       (node, tokens, comments, result) => {
-        this.fixLocations(
+        fixLocations(
           node,
           tokens,
           comments,
           offset - resultCallback.start,
           result.visitorKeys,
+          this.ctx,
         );
         callback(node, tokens, comments, result);
       },
@@ -655,6 +762,7 @@ export class ScriptLetContext {
 
   private appendScriptWithoutOffset(
     text: string,
+    kind: "generics" | "render",
     callback: (
       node: ESTree.Node,
       tokens: Token[],
@@ -662,7 +770,10 @@ export class ScriptLetContext {
       options: ScriptLetCallbackOption,
     ) => void,
   ) {
-    const { start: startOffset, end: endOffset } = this.script.addLet(text);
+    const { start: startOffset, end: endOffset } = this.script.addLet(
+      text,
+      kind,
+    );
 
     const restoreCallback: RestoreCallback = {
       start: startOffset,
@@ -675,7 +786,7 @@ export class ScriptLetContext {
 
   private pushScope(restoreCallback: RestoreCallback, closeToken: string) {
     this.closeScopeCallbacks.push(() => {
-      this.script.addLet(closeToken);
+      this.script.addLet(closeToken, "render");
       restoreCallback.end = this.script.getCurrentVirtualCodeLength();
     });
   }
@@ -906,7 +1017,7 @@ export class ScriptLetContext {
         }
         bufferTokens.push(token);
       }
-      this.fixLocations(
+      fixLocations(
         map.newNode,
         bufferTokens,
         comments.filter(
@@ -914,63 +1025,10 @@ export class ScriptLetContext {
         ),
         map.range[0] - startOffset,
         visitorKeys,
+        this.ctx,
       );
     }
     tokens.splice(tokenIndex);
-  }
-
-  /** Fix locations */
-  private fixLocations(
-    node: ESTree.Node,
-    tokens: Token[],
-    comments: Comment[],
-    offset: number,
-    visitorKeys?: { [type: string]: string[] },
-  ) {
-    if (offset === 0) {
-      return;
-    }
-    const traversed = new Set<any>();
-    traverseNodes(node, {
-      visitorKeys,
-      enterNode: (n) => {
-        if (traversed.has(n)) {
-          return;
-        }
-        traversed.add(n);
-        if (traversed.has(n.range)) {
-          if (!traversed.has(n.loc)) {
-            // However, `Node#loc` may not be shared.
-            const locs = this.ctx.getConvertLocation({
-              start: n.range![0],
-              end: n.range![1],
-            });
-            applyLocs(n, locs);
-            traversed.add(n.loc);
-          }
-        } else {
-          const start = n.range![0] + offset;
-          const end = n.range![1] + offset;
-          const locs = this.ctx.getConvertLocation({ start, end });
-          applyLocs(n, locs);
-          traversed.add(n.range);
-          traversed.add(n.loc);
-        }
-      },
-      leaveNode: Function.prototype as any,
-    });
-    for (const t of tokens) {
-      const start = t.range[0] + offset;
-      const end = t.range[1] + offset;
-      const locs = this.ctx.getConvertLocation({ start, end });
-      applyLocs(t, locs);
-    }
-    for (const t of comments) {
-      const start = t.range[0] + offset;
-      const end = t.range[1] + offset;
-      const locs = this.ctx.getConvertLocation({ start, end });
-      applyLocs(t, locs);
-    }
   }
 
   private generateUniqueId(base: string) {
@@ -982,18 +1040,75 @@ export class ScriptLetContext {
   }
 }
 
-/**
- * applyLocs
- */
-function applyLocs(target: Locations | ESTree.Node, locs: Locations) {
-  target.loc = locs.loc;
-  target.range = locs.range;
-  if (typeof (target as any).start === "number") {
-    delete (target as any).start;
+function getTypeParameterRanges(code: string, param: TSESTree.TSTypeParameter) {
+  const idRange: [number, number] = [
+    param.range[0],
+    param.constraint || param.default ? param.name.range[1] : param.range[1],
+  ];
+  let constraintRange: [number, number] | null = null;
+  let defaultRange: [number, number] | null = null;
+  if (param.constraint) {
+    constraintRange = [
+      param.constraint.range[0],
+      param.default ? param.constraint.range[1] : param.range[1],
+    ];
+    const index = getTokenIndex(
+      code,
+      (code, index) => code.startsWith("extends", index),
+      idRange[1],
+      param.constraint.range[0],
+    );
+    if (index != null) {
+      idRange[1] = index;
+      constraintRange[0] = index + 7;
+    }
   }
-  if (typeof (target as any).end === "number") {
-    delete (target as any).end;
+  if (param.default) {
+    defaultRange = [param.default.range[0], param.range[1]];
+    const index = getTokenIndex(
+      code,
+      (code, index) => code[index] === "=",
+      constraintRange?.[1] ?? idRange[1],
+      param.default.range[0],
+    );
+    if (index != null) {
+      (constraintRange ?? idRange)[1] = index;
+      defaultRange[0] = index + 1;
+    }
   }
+  return { idRange, constraintRange, defaultRange };
+}
+
+function getTokenIndex(
+  code: string,
+  targetToken: (code: string, index: number) => boolean,
+  start: number,
+  end: number,
+) {
+  let index = start;
+  while (index < end) {
+    if (targetToken(code, index)) {
+      return index;
+    }
+    if (code.startsWith("//", index)) {
+      const lfIndex = code.indexOf("\n", index);
+      if (lfIndex >= 0) {
+        index = lfIndex + 1;
+        continue;
+      }
+      return null;
+    }
+    if (code.startsWith("/*", index)) {
+      const endIndex = code.indexOf("*/", index);
+      if (endIndex >= 0) {
+        index = endIndex + 2;
+        continue;
+      }
+      return null;
+    }
+    index++;
+  }
+  return null;
 }
 
 /** Get the node to scope map from given scope manager  */

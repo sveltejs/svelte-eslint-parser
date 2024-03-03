@@ -19,6 +19,12 @@ export type NormalizedParserOptions = {
     experimentalObjectRestSpread?: boolean | undefined;
     [key: string]: any;
   };
+  svelteFeatures?: {
+    /* -- Experimental Svelte Features -- */
+    // Whether to parse the `generics` attribute.
+    // See https://github.com/sveltejs/rfcs/pull/38
+    experimentalGenerics?: boolean;
+  };
   loc: boolean;
   range: boolean;
   raw: boolean;

@@ -1,4 +1,5 @@
 import type ESTree from "estree";
+import type { TSESTree } from "@typescript-eslint/types";
 import type { BaseNode } from "./base";
 import type { Token, Comment } from "./common";
 
@@ -32,6 +33,7 @@ export type SvelteHTMLNode =
   | SvelteDirective
   | SvelteStyleDirective
   | SvelteSpecialDirective
+  | SvelteGenericsDirective
   | SvelteDirectiveKey
   | SvelteSpecialDirectiveKey
   | SvelteHTMLComment;
@@ -142,6 +144,7 @@ export interface SvelteStartTag extends BaseNode {
     | SvelteDirective
     | SvelteStyleDirective
     | SvelteSpecialDirective
+    | SvelteGenericsDirective
   )[];
   selfClosing: boolean;
   parent: SvelteElement | SvelteScriptElement | SvelteStyleElement;
@@ -650,4 +653,10 @@ export interface SvelteSpecialDirective extends BaseNode {
   key: SvelteSpecialDirectiveKey;
   expression: ESTree.Expression;
   parent: SvelteStartTag /* & { parent: SvelteSpecialElement } */;
+}
+export interface SvelteGenericsDirective extends BaseNode {
+  type: "SvelteGenericsDirective";
+  key: SvelteName & { name: "generics" };
+  params: TSESTree.TSTypeParameterDeclaration["params"];
+  parent: SvelteStartTag /* & { parent: SvelteScriptElement } */;
 }

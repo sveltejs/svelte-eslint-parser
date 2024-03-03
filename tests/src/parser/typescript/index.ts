@@ -13,6 +13,9 @@ describe("Check for typescript analyze result.", () => {
     config,
     meetRequirements,
   } of listupFixtures()) {
+    if (!meetRequirements("parse")) {
+      return;
+    }
     if (!input.includes('lang="ts"')) {
       continue;
     }
@@ -49,12 +52,12 @@ describe("Check for typescript analyze result.", () => {
           },
         );
         const result = parseScriptInSvelte(
-          code.script + code.render,
+          code.script + code.render + code.generics,
           attrs,
           parserOptions,
         );
         const info = {
-          code: code.script + code.render,
+          code: code.script + code.render + code.generics,
           virtualScriptCode: analyzedResult._virtualScriptCode,
         };
 

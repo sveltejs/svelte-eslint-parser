@@ -201,7 +201,7 @@ function buildTypes(
       enterNode(node) {
         if (node.type === "SvelteScriptElement" && node.body.length) {
           scriptLineRange.push([
-            node.body[0].loc!.start.line - 1,
+            node.startTag.loc.end.line - 1,
             node.body[node.body.length - 1].loc!.end.line - 1,
           ]);
         }
@@ -210,6 +210,17 @@ function buildTypes(
             scriptLineRange.push([
               node.expression.loc!.start.line - 1,
               node.expression.loc!.end.line - 2,
+            ]);
+        }
+        if (node.type === "SvelteGenericsDirective") {
+          const endLine = Math.min(
+            node.loc.end.line - 1,
+            node.params[node.params.length - 1].loc.end.line,
+          );
+          if (node.params[0].loc.start.line !== endLine)
+            scriptLineRange.push([
+              node.params[0].loc.start.line - 1,
+              endLine - 1,
             ]);
         }
         if (node.type === "SvelteMustacheTag") {

@@ -21,6 +21,9 @@ const BASIC_PARSER_OPTIONS: Linter.ParserOptions = {
   },
   project: require.resolve("../../fixtures/tsconfig.test.json"),
   extraFileExtensions: [".svelte"],
+  svelteFeatures: {
+    experimentalGenerics: true,
+  },
 };
 
 const SVELTE5_SCOPE_VARIABLES_BASE = [
