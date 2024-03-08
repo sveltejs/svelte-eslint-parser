@@ -655,10 +655,13 @@ export function convertSnippetBlock(
     ).end,
   );
 
+  const scopeKind = parent.type === "Program" ? "snippet" : "render";
+
   ctx.scriptLet.nestSnippetBlock(
     node.expression,
     closeParenIndex,
     snippetBlock,
+    scopeKind,
     (id, params) => {
       snippetBlock.id = id;
       snippetBlock.params = params;

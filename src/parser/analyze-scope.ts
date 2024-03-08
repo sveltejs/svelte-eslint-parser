@@ -235,16 +235,15 @@ export function analyzeSnippetsScope(
         (parent.kind === "special" && parent.name.name === "svelte:component"))
     ) {
       const scope = getScopeFromNode(scopeManager, snippet.id);
-      const variable = scope.upper
-        ? scope.upper.set.get(snippet.id.name)
-        : null;
-      if (variable) {
-        // Add the virtual reference for reading.
-        const reference = addVirtualReference(snippet.id, variable, scope, {
-          read: true,
-        });
-        (reference as any).svelteSnippetReference = true;
-      }
+      const upperScope = scope.upper;
+      if (!upperScope) continue;
+      const variable = upperScope.set.get(snippet.id.name);
+      if (!variable) continue;
+      // Add the virtual reference for reading.
+      const reference = addVirtualReference(snippet.id, variable, upperScope, {
+        read: true,
+      });
+      (reference as any).svelteSnippetReference = true;
     }
   }
 }

@@ -138,6 +138,8 @@ export class ScriptLetContext {
 
   private readonly unique = new UniqueIdGenerator();
 
+  private currentScriptScopeKind: "render" | "snippet" = "render";
+
   public constructor(ctx: Context) {
     this.script = ctx.sourceCode.scripts;
     this.ctx = ctx;
@@ -164,7 +166,7 @@ export class ScriptLetContext {
     this.appendScript(
       `(${part})${isTS ? `as (${typing})` : ""};`,
       range[0] - 1,
-      "render",
+      this.currentScriptScopeKind,
       (st, tokens, comments, result) => {
         const exprSt = st as ESTree.ExpressionStatement;
         const tsAs: TSAsExpression | null = isTS
@@ -220,7 +222,7 @@ export class ScriptLetContext {
     this.appendScript(
       `({${part}});`,
       range[0] - 2,
-      "render",
+      this.currentScriptScopeKind,
       (st, tokens, _comments, result) => {
         const exprSt = st as ESTree.ExpressionStatement;
         const objectExpression: ESTree.ObjectExpression =
@@ -259,7 +261,7 @@ export class ScriptLetContext {
     this.appendScript(
       `const ${part};`,
       range[0] - 6,
-      "render",
+      this.currentScriptScopeKind,
       (st, tokens, _comments, result) => {
         const decl = st as ESTree.VariableDeclaration;
         const node = decl.declarations[0];
@@ -393,7 +395,7 @@ export class ScriptLetContext {
     const restore = this.appendScript(
       `if(${part}){`,
       range[0] - 3,
-      "render",
+      this.currentScriptScopeKind,
       (st, tokens, _comments, result) => {
         const ifSt = st as ESTree.IfStatement;
         const node = ifSt.test;
@@ -417,7 +419,7 @@ export class ScriptLetContext {
         ifSt.consequent = null as never;
       },
     );
-    this.pushScope(restore, "}");
+    this.pushScope(restore, "}", this.currentScriptScopeKind);
   }
 
   public nestEachBlock(
@@ -448,7 +450,7 @@ export class ScriptLetContext {
     const restore = this.appendScript(
       source,
       exprRange[0] - exprOffset,
-      "render",
+      this.currentScriptScopeKind,
       (st, tokens, comments, result) => {
         const expSt = st as ESTree.ExpressionStatement;
         const call = expSt.expression as ESTree.CallExpression;
@@ -525,13 +527,14 @@ export class ScriptLetContext {
         expSt.expression = null as never;
       },
     );
-    this.pushScope(restore, "});");
+    this.pushScope(restore, "});", this.currentScriptScopeKind);
   }
 
   public nestSnippetBlock(
     id: ESTree.Identifier,
     closeParentIndex: number,
     snippetBlock: SvelteSnippetBlock,
+    kind: "snippet" | "render",
     callback: (id: ESTree.Identifier, params: ESTree.Pattern[]) => void,
   ): void {
     const idRange = getNodeRange(id);
@@ -539,7 +542,7 @@ export class ScriptLetContext {
     const restore = this.appendScript(
       `function ${part}{`,
       idRange[0] - 9,
-      "render",
+      kind,
       (st, tokens, _comments, result) => {
         const fnDecl = st as ESTree.FunctionDeclaration;
         const idNode = fnDecl.id;
@@ -565,7 +568,7 @@ export class ScriptLetContext {
         fnDecl.params = [];
       },
     );
-    this.pushScope(restore, "}");
+    this.pushScope(restore, "}", kind);
   }
 
   public nestBlock(
@@ -588,7 +591,7 @@ export class ScriptLetContext {
           for (const preparationScript of generatedTypes.preparationScript) {
             this.appendScriptWithoutOffset(
               preparationScript,
-              "render",
+              this.currentScriptScopeKind,
               (node, tokens, comments, result) => {
                 tokens.length = 0;
                 comments.length = 0;
@@ -608,7 +611,7 @@ export class ScriptLetContext {
       const restore = this.appendScript(
         `{`,
         block.range[0],
-        "render",
+        this.currentScriptScopeKind,
         (st, tokens, _comments, result) => {
           const blockSt = st as ESTree.BlockStatement;
 
@@ -622,7 +625,7 @@ export class ScriptLetContext {
           blockSt.body = null as never;
         },
       );
-      this.pushScope(restore, "}");
+      this.pushScope(restore, "}", this.currentScriptScopeKind);
     } else {
       const sortedParams = [...resolvedParams]
         .map((d) => {
@@ -664,7 +667,7 @@ export class ScriptLetContext {
       const restore = this.appendScript(
         `(${source})=>{`,
         maps[0].range[0] - 1,
-        "render",
+        this.currentScriptScopeKind,
         (st, tokens, comments, result) => {
           const exprSt = st as ESTree.ExpressionStatement;
           const fn = exprSt.expression as ESTree.ArrowFunctionExpression;
@@ -723,7 +726,7 @@ export class ScriptLetContext {
           exprSt.expression = null as never;
         },
       );
-      this.pushScope(restore, "};");
+      this.pushScope(restore, "};", this.currentScriptScopeKind);
     }
   }
 
@@ -738,7 +741,7 @@ export class ScriptLetContext {
   private appendScript(
     text: string,
     offset: number,
-    kind: "generics" | "render",
+    kind: "generics" | "snippet" | "render",
     callback: (
       node: ESTree.Node,
       tokens: Token[],
@@ -766,7 +769,7 @@ export class ScriptLetContext {
 
   private appendScriptWithoutOffset(
     text: string,
-    kind: "generics" | "render",
+    kind: "generics" | "snippet" | "render",
     callback: (
       node: ESTree.Node,
       tokens: Token[],
@@ -788,9 +791,16 @@ export class ScriptLetContext {
     return restoreCallback;
   }
 
-  private pushScope(restoreCallback: RestoreCallback, closeToken: string) {
+  private pushScope(
+    restoreCallback: RestoreCallback,
+    closeToken: string,
+    kind: "snippet" | "render",
+  ) {
+    const upper = this.currentScriptScopeKind;
+    this.currentScriptScopeKind = kind;
     this.closeScopeCallbacks.push(() => {
-      this.script.addLet(closeToken, "render");
+      this.script.addLet(closeToken, kind);
+      this.currentScriptScopeKind = upper;
       restoreCallback.end = this.script.getCurrentVirtualCodeLength();
     });
   }
@@ -825,7 +835,16 @@ export class ScriptLetContext {
       // If we replace the `scope.block` at this time,
       // the scope restore calculation will not work, so we will replace the `scope.block` later.
       postprocessList.push(() => {
+        const beforeBlock = scope.block
         scope.block = node;
+
+        for (const variable of [...scope.variables, ...scope.upper?.variables ?? []]) {
+          for (const def of variable.defs) {
+            if(def.node === beforeBlock) {
+              def.node = node;
+            }
+          }
+        }
       });
 
       const scopes = nodeToScope.get(node);
