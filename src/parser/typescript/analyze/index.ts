@@ -35,18 +35,18 @@ type TransformInfo = {
  * See https://github.com/sveltejs/svelte-eslint-parser/blob/main/docs/internal-mechanism.md#scope-types
  */
 export function analyzeTypeScriptInSvelte(
-  code: { script: string; generics: string; render: string },
+  code: { script: string; rootScope: string; render: string },
   attrs: Record<string, string | undefined>,
   parserOptions: NormalizedParserOptions,
   context: AnalyzeTypeScriptContext,
 ): VirtualTypeScriptContext {
   const ctx = new VirtualTypeScriptContext(
-    code.script + code.render + code.generics,
+    code.script + code.render + code.rootScope,
   );
   ctx.appendOriginal(/^\s*/u.exec(code.script)![0].length);
 
   const result = parseScriptWithoutAnalyzeScope(
-    code.script + code.render + code.generics,
+    code.script + code.render + code.rootScope,
     attrs,
     {
       ...parserOptions,
@@ -516,7 +516,7 @@ function* analyzeDollarDerivedScopes(
  * Transform source code to provide the correct type information in the HTML templates.
  */
 function analyzeRenderScopes(
-  code: { script: string; render: string; generics: string },
+  code: { script: string; render: string; rootScope: string },
   ctx: VirtualTypeScriptContext,
 ) {
   ctx.appendOriginal(code.script.length);

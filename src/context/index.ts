@@ -33,6 +33,7 @@ export class ScriptsSourceCode {
     separate: string;
     beforeSpaces: string;
     render: string;
+    snippet: string;
     generics: string;
   } | null = null;
 
@@ -57,6 +58,7 @@ export class ScriptsSourceCode {
       this._appendScriptLets.separate +
       this._appendScriptLets.beforeSpaces +
       this._appendScriptLets.render +
+      this._appendScriptLets.snippet +
       this._appendScriptLets.generics
     );
   }
@@ -64,16 +66,17 @@ export class ScriptsSourceCode {
   public getCurrentVirtualCodeInfo(): {
     script: string;
     render: string;
-    generics: string;
+    rootScope: string;
   } {
     if (this._appendScriptLets == null) {
-      return { script: this.raw, render: "", generics: "" };
+      return { script: this.raw, render: "", rootScope: "" };
     }
     return {
       script: this.trimmedRaw + this._appendScriptLets.separate,
       render:
         this._appendScriptLets.beforeSpaces + this._appendScriptLets.render,
-      generics: this._appendScriptLets.generics,
+      rootScope:
+        this._appendScriptLets.snippet + this._appendScriptLets.generics,
     };
   }
 
@@ -86,13 +89,14 @@ export class ScriptsSourceCode {
       this._appendScriptLets.separate.length +
       this._appendScriptLets.beforeSpaces.length +
       this._appendScriptLets.render.length +
+      this._appendScriptLets.snippet.length +
       this._appendScriptLets.generics.length
     );
   }
 
   public addLet(
     letCode: string,
-    kind: "generics" | "render",
+    kind: "generics" | "snippet" | "render",
   ): { start: number; end: number } {
     if (this._appendScriptLets == null) {
       const currentLength = this.trimmedRaw.length;
@@ -102,6 +106,7 @@ export class ScriptsSourceCode {
         separate: "\n;",
         beforeSpaces: after,
         render: "",
+        snippet: "",
         generics: "",
       };
     }

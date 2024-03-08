@@ -10,7 +10,7 @@ import type { TSESParseForESLintResult } from "./types";
  * Parse for TypeScript in <script>
  */
 export function parseTypeScriptInSvelte(
-  code: { script: string; render: string; generics: string },
+  code: { script: string; render: string; rootScope: string },
   attrs: Record<string, string | undefined>,
   parserOptions: NormalizedParserOptions,
   context: AnalyzeTypeScriptContext,

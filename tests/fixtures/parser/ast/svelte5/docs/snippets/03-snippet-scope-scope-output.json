@@ -480,79 +480,259 @@
                 }
               },
               "node": {
-                "type": "FunctionDeclaration",
-                "async": false,
-                "body": {
-                  "type": "BlockStatement",
-                  "body": [
-                    {
-                      "type": "ExpressionStatement",
-                      "expression": null,
-                      "range": [
-                        -6,
-                        1
-                      ],
-                      "loc": {
-                        "start": {
-                          "line": 0,
-                          "column": null
-                        },
-                        "end": {
-                          "line": 1,
-                          "column": 1
-                        }
-                      }
-                    },
-                    {
-                      "type": "ExpressionStatement",
-                      "expression": null,
-                      "range": [
-                        2,
-                        12
-                      ],
-                      "loc": {
-                        "start": {
-                          "line": 1,
-                          "column": 2
-                        },
-                        "end": {
-                          "line": 2,
-                          "column": 3
-                        }
-                      }
-                    }
-                  ],
+                "type": "SvelteSnippetBlock",
+                "id": {
+                  "type": "Identifier",
+                  "name": "hello",
                   "range": [
-                    97,
-                    116
+                    86,
+                    91
                   ],
                   "loc": {
                     "start": {
                       "line": 5,
-                      "column": 21
+                      "column": 10
                     },
                     "end": {
-                      "line": 6,
-                      "column": 17
+                      "line": 5,
+                      "column": 15
                     }
                   }
                 },
-                "expression": false,
-                "generator": false,
-                "id": null,
-                "params": [],
+                "params": [
+                  {
+                    "type": "Identifier",
+                    "name": "name",
+                    "range": [
+                      92,
+                      96
+                    ],
+                    "loc": {
+                      "start": {
+                        "line": 5,
+                        "column": 16
+                      },
+                      "end": {
+                        "line": 5,
+                        "column": 20
+                      }
+                    }
+                  }
+                ],
+                "children": [
+                  {
+                    "type": "SvelteElement",
+                    "kind": "html",
+                    "name": {
+                      "type": "SvelteName",
+                      "name": "p",
+                      "range": [
+                        101,
+                        102
+                      ],
+                      "loc": {
+                        "start": {
+                          "line": 6,
+                          "column": 2
+                        },
+                        "end": {
+                          "line": 6,
+                          "column": 3
+                        }
+                      }
+                    },
+                    "startTag": {
+                      "type": "SvelteStartTag",
+                      "attributes": [],
+                      "selfClosing": false,
+                      "range": [
+                        100,
+                        103
+                      ],
+                      "loc": {
+                        "start": {
+                          "line": 6,
+                          "column": 1
+                        },
+                        "end": {
+                          "line": 6,
+                          "column": 4
+                        }
+                      }
+                    },
+                    "children": [
+                      {
+                        "type": "SvelteText",
+                        "value": "hello ",
+                        "range": [
+                          103,
+                          109
+                        ],
+                        "loc": {
+                          "start": {
+                            "line": 6,
+                            "column": 4
+                          },
+                          "end": {
+                            "line": 6,
+                            "column": 10
+                          }
+                        }
+                      },
+                      {
+                        "type": "SvelteMustacheTag",
+                        "kind": "text",
+                        "expression": {
+                          "type": "Identifier",
+                          "name": "name",
+                          "range": [
+                            110,
+                            114
+                          ],
+                          "loc": {
+                            "start": {
+                              "line": 6,
+                              "column": 11
+                            },
+                            "end": {
+                              "line": 6,
+                              "column": 15
+                            }
+                          }
+                        },
+                        "range": [
+                          109,
+                          115
+                        ],
+                        "loc": {
+                          "start": {
+                            "line": 6,
+                            "column": 10
+                          },
+                          "end": {
+                            "line": 6,
+                            "column": 16
+                          }
+                        }
+                      },
+                      {
+                        "type": "SvelteText",
+                        "value": "! ",
+                        "range": [
+                          115,
+                          117
+                        ],
+                        "loc": {
+                          "start": {
+                            "line": 6,
+                            "column": 16
+                          },
+                          "end": {
+                            "line": 6,
+                            "column": 18
+                          }
+                        }
+                      },
+                      {
+                        "type": "SvelteMustacheTag",
+                        "kind": "text",
+                        "expression": {
+                          "type": "Identifier",
+                          "name": "message",
+                          "range": [
+                            118,
+                            125
+                          ],
+                          "loc": {
+                            "start": {
+                              "line": 6,
+                              "column": 19
+                            },
+                            "end": {
+                              "line": 6,
+                              "column": 26
+                            }
+                          }
+                        },
+                        "range": [
+                          117,
+                          126
+                        ],
+                        "loc": {
+                          "start": {
+                            "line": 6,
+                            "column": 18
+                          },
+                          "end": {
+                            "line": 6,
+                            "column": 27
+                          }
+                        }
+                      },
+                      {
+                        "type": "SvelteText",
+                        "value": "!",
+                        "range": [
+                          126,
+                          127
+                        ],
+                        "loc": {
+                          "start": {
+                            "line": 6,
+                            "column": 27
+                          },
+                          "end": {
+                            "line": 6,
+                            "column": 28
+                          }
+                        }
+                      }
+                    ],
+                    "endTag": {
+                      "type": "SvelteEndTag",
+                      "range": [
+                        127,
+                        131
+                      ],
+                      "loc": {
+                        "start": {
+                          "line": 6,
+                          "column": 28
+                        },
+                        "end": {
+                          "line": 6,
+                          "column": 32
+                        }
+                      }
+                    },
+                    "range": [
+                      100,
+                      131
+                    ],
+                    "loc": {
+                      "start": {
+                        "line": 6,
+                        "column": 1
+                      },
+                      "end": {
+                        "line": 6,
+                        "column": 32
+                      }
+                    }
+                  }
+                ],
                 "range": [
-                  77,
-                  116
+                  76,
+                  142
                 ],
                 "loc": {
                   "start": {
                     "line": 5,
-                    "column": 1
+                    "column": 0
                   },
                   "end": {
-                    "line": 6,
-                    "column": 17
+                    "line": 7,
+                    "column": 10
                   }
                 }
               }
@@ -881,79 +1061,259 @@
                     }
                   },
                   "node": {
-                    "type": "FunctionDeclaration",
-                    "async": false,
-                    "body": {
-                      "type": "BlockStatement",
-                      "body": [
-                        {
-                          "type": "ExpressionStatement",
-                          "expression": null,
-                          "range": [
-                            -6,
-                            1
-                          ],
-                          "loc": {
-                            "start": {
-                              "line": 0,
-                              "column": null
-                            },
-                            "end": {
-                              "line": 1,
-                              "column": 1
-                            }
-                          }
-                        },
-                        {
-                          "type": "ExpressionStatement",
-                          "expression": null,
-                          "range": [
-                            2,
-                            12
-                          ],
-                          "loc": {
-                            "start": {
-                              "line": 1,
-                              "column": 2
-                            },
-                            "end": {
-                              "line": 2,
-                              "column": 3
-                            }
-                          }
-                        }
-                      ],
+                    "type": "SvelteSnippetBlock",
+                    "id": {
+                      "type": "Identifier",
+                      "name": "hello",
                       "range": [
-                        97,
-                        116
+                        86,
+                        91
                       ],
                       "loc": {
                         "start": {
                           "line": 5,
-                          "column": 21
+                          "column": 10
                         },
                         "end": {
-                          "line": 6,
-                          "column": 17
+                          "line": 5,
+                          "column": 15
                         }
                       }
                     },
-                    "expression": false,
-                    "generator": false,
-                    "id": null,
-                    "params": [],
+                    "params": [
+                      {
+                        "type": "Identifier",
+                        "name": "name",
+                        "range": [
+                          92,
+                          96
+                        ],
+                        "loc": {
+                          "start": {
+                            "line": 5,
+                            "column": 16
+                          },
+                          "end": {
+                            "line": 5,
+                            "column": 20
+                          }
+                        }
+                      }
+                    ],
+                    "children": [
+                      {
+                        "type": "SvelteElement",
+                        "kind": "html",
+                        "name": {
+                          "type": "SvelteName",
+                          "name": "p",
+                          "range": [
+                            101,
+                            102
+                          ],
+                          "loc": {
+                            "start": {
+                              "line": 6,
+                              "column": 2
+                            },
+                            "end": {
+                              "line": 6,
+                              "column": 3
+                            }
+                          }
+                        },
+                        "startTag": {
+                          "type": "SvelteStartTag",
+                          "attributes": [],
+                          "selfClosing": false,
+                          "range": [
+                            100,
+                            103
+                          ],
+                          "loc": {
+                            "start": {
+                              "line": 6,
+                              "column": 1
+                            },
+                            "end": {
+                              "line": 6,
+                              "column": 4
+                            }
+                          }
+                        },
+                        "children": [
+                          {
+                            "type": "SvelteText",
+                            "value": "hello ",
+                            "range": [
+                              103,
+                              109
+                            ],
+                            "loc": {
+                              "start": {
+                                "line": 6,
+                                "column": 4
+                              },
+                              "end": {
+                                "line": 6,
+                                "column": 10
+                              }
+                            }
+                          },
+                          {
+                            "type": "SvelteMustacheTag",
+                            "kind": "text",
+                            "expression": {
+                              "type": "Identifier",
+                              "name": "name",
+                              "range": [
+                                110,
+                                114
+                              ],
+                              "loc": {
+                                "start": {
+                                  "line": 6,
+                                  "column": 11
+                                },
+                                "end": {
+                                  "line": 6,
+                                  "column": 15
+                                }
+                              }
+                            },
+                            "range": [
+                              109,
+                              115
+                            ],
+                            "loc": {
+                              "start": {
+                                "line": 6,
+                                "column": 10
+                              },
+                              "end": {
+                                "line": 6,
+                                "column": 16
+                              }
+                            }
+                          },
+                          {
+                            "type": "SvelteText",
+                            "value": "! ",
+                            "range": [
+                              115,
+                              117
+                            ],
+                            "loc": {
+                              "start": {
+                                "line": 6,
+                                "column": 16
+                              },
+                              "end": {
+                                "line": 6,
+                                "column": 18
+                              }
+                            }
+                          },
+                          {
+                            "type": "SvelteMustacheTag",
+                            "kind": "text",
+                            "expression": {
+                              "type": "Identifier",
+                              "name": "message",
+                              "range": [
+                                118,
+                                125
+                              ],
+                              "loc": {
+                                "start": {
+                                  "line": 6,
+                                  "column": 19
+                                },
+                                "end": {
+                                  "line": 6,
+                                  "column": 26
+                                }
+                              }
+                            },
+                            "range": [
+                              117,
+                              126
+                            ],
+                            "loc": {
+                              "start": {
+                                "line": 6,
+                                "column": 18
+                              },
+                              "end": {
+                                "line": 6,
+                                "column": 27
+                              }
+                            }
+                          },
+                          {
+                            "type": "SvelteText",
+                            "value": "!",
+                            "range": [
+                              126,
+                              127
+                            ],
+                            "loc": {
+                              "start": {
+                                "line": 6,
+                                "column": 27
+                              },
+                              "end": {
+                                "line": 6,
+                                "column": 28
+                              }
+                            }
+                          }
+                        ],
+                        "endTag": {
+                          "type": "SvelteEndTag",
+                          "range": [
+                            127,
+                            131
+                          ],
+                          "loc": {
+                            "start": {
+                              "line": 6,
+                              "column": 28
+                            },
+                            "end": {
+                              "line": 6,
+                              "column": 32
+                            }
+                          }
+                        },
+                        "range": [
+                          100,
+                          131
+                        ],
+                        "loc": {
+                          "start": {
+                            "line": 6,
+                            "column": 1
+                          },
+                          "end": {
+                            "line": 6,
+                            "column": 32
+                          }
+                        }
+                      }
+                    ],
                     "range": [
-                      77,
-                      116
+                      76,
+                      142
                     ],
                     "loc": {
                       "start": {
                         "line": 5,
-                        "column": 1
+                        "column": 0
                       },
                       "end": {
-                        "line": 6,
-                        "column": 17
+                        "line": 7,
+                        "column": 10
                       }
                     }
                   }

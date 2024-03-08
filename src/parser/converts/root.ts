@@ -45,6 +45,7 @@ export function convertSvelteRoot(
     ...ctx.getConvertLocation({ start: 0, end: ctx.code.length }),
   };
   const body = ast.body;
+  const snippetChildren: Compiler.SnippetBlock[] = [];
   const fragment = getFragmentFromRoot(svelteAst);
   if (fragment) {
     let children = getChildren(fragment);
@@ -63,11 +64,21 @@ export function convertSvelteRoot(
         children.push(options);
       }
     }
-    body.push(...convertChildren({ nodes: children }, ast, ctx));
+    const nonSnippetChildren: typeof children = [];
+    for (const child of children) {
+      if (child.type === "SnippetBlock") {
+        snippetChildren.push(child);
+      } else {
+        nonSnippetChildren.push(child);
+      }
+    }
+
+    body.push(...convertChildren({ nodes: nonSnippetChildren }, ast, ctx));
   }
+  let script: SvelteScriptElement | null = null;
   const instance = getInstanceFromRoot(svelteAst);
   if (instance) {
-    const script: SvelteScriptElement = {
+    script = {
       type: "SvelteScriptElement",
       name: null as any,
       startTag: null as any,
@@ -77,15 +88,13 @@ export function convertSvelteRoot(
       ...ctx.getConvertLocation(instance),
     };
     extractAttributes(script, ctx);
-    if (ctx.parserOptions.svelteFeatures?.experimentalGenerics)
-      convertGenericsAttribute(script, ctx);
     extractElementTags(script, ctx, {
       buildNameNode: (openTokenRange) => {
         ctx.addToken("HTMLIdentifier", openTokenRange);
         const name: SvelteName = {
           type: "SvelteName",
           name: "script",
-          parent: script,
+          parent: script!,
           ...ctx.getConvertLocation(openTokenRange),
         };
         return name;
@@ -163,6 +172,9 @@ export function convertSvelteRoot(
 
     body.push(style);
   }
+  body.push(...convertChildren({ nodes: snippetChildren }, ast, ctx));
+  if (script && ctx.parserOptions.svelteFeatures?.experimentalGenerics)
+    convertGenericsAttribute(script, ctx);
 
   // Set the scope of the Program node.
   ctx.scriptLet.addProgramRestore(
@@ -187,6 +199,8 @@ export function convertSvelteRoot(
       });
     },
   );
+
+  sortNodes(body);
 
   return ast;
 }

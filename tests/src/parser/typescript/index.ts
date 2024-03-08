@@ -52,12 +52,12 @@ describe("Check for typescript analyze result.", () => {
           },
         );
         const result = parseScriptInSvelte(
-          code.script + code.render + code.generics,
+          code.script + code.render + code.rootScope,
           attrs,
           parserOptions,
         );
         const info = {
-          code: code.script + code.render + code.generics,
+          code: code.script + code.render + code.rootScope,
           virtualScriptCode: analyzedResult._virtualScriptCode,
         };
 
