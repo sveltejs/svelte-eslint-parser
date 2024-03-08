@@ -1,5 +1,11 @@
 # svelte-eslint-parser
 
+## 0.34.0-next.12
+
+### Patch Changes
+
+- [#486](https://github.com/sveltejs/svelte-eslint-parser/pull/486) [`79a4fb7`](https://github.com/sveltejs/svelte-eslint-parser/commit/79a4fb718673e5af74075e0575b74b87ef2c406a) Thanks [@ota-meshi](https://github.com/ota-meshi)! - fix: wrong scope in top level snippets
+
 ## 0.34.0-next.11
 
 ### Minor Changes
