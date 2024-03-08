@@ -835,12 +835,15 @@ export class ScriptLetContext {
       // If we replace the `scope.block` at this time,
       // the scope restore calculation will not work, so we will replace the `scope.block` later.
       postprocessList.push(() => {
-        const beforeBlock = scope.block
+        const beforeBlock = scope.block;
         scope.block = node;
 
-        for (const variable of [...scope.variables, ...scope.upper?.variables ?? []]) {
+        for (const variable of [
+          ...scope.variables,
+          ...(scope.upper?.variables ?? []),
+        ]) {
           for (const def of variable.defs) {
-            if(def.node === beforeBlock) {
+            if (def.node === beforeBlock) {
               def.node = node;
             }
           }
