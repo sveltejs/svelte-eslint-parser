@@ -70,6 +70,12 @@ const SVELTE5_SCOPE_VARIABLES_BASE = [
     references: [],
   },
   {
+    name: "$bindable",
+    identifiers: [],
+    defs: [],
+    references: [],
+  },
+  {
     name: "$inspect",
     identifiers: [],
     defs: [],

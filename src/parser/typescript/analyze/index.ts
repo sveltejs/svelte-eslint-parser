@@ -260,6 +260,7 @@ function analyzeDollarDollarVariables(
       case "$derived":
       case "$effect":
       case "$props":
+      case "$bindable":
       case "$inspect":
         // Processed by `analyzeRuneVariables`.
         break;
@@ -317,6 +318,7 @@ function analyzeRuneVariables(
       continue;
     }
     switch (globalName) {
+      // See https://github.com/sveltejs/svelte/blob/dfc55c18f010f620b966e13eb0ad1f9791b5798f/packages/svelte/types/index.d.ts#L2492
       case "$state": {
         appendDeclareFunctionVirtualScripts(globalName, [
           "<T>(initial: T): T",
@@ -328,6 +330,7 @@ function analyzeRuneVariables(
         ]);
         break;
       }
+      // See https://github.com/sveltejs/svelte/blob/dfc55c18f010f620b966e13eb0ad1f9791b5798f/packages/svelte/types/index.d.ts#L2535
       case "$derived": {
         appendDeclareFunctionVirtualScripts(globalName, [
           "<T>(expression: T): T",
@@ -337,6 +340,7 @@ function analyzeRuneVariables(
         ]);
         break;
       }
+      // See https://github.com/sveltejs/svelte/blob/dfc55c18f010f620b966e13eb0ad1f9791b5798f/packages/svelte/types/index.d.ts#L2574
       case "$effect": {
         appendDeclareFunctionVirtualScripts(globalName, [
           "(fn: () => void | (() => void)): void",
@@ -348,10 +352,17 @@ function analyzeRuneVariables(
         ]);
         break;
       }
+      // See https://github.com/sveltejs/svelte/blob/dfc55c18f010f620b966e13eb0ad1f9791b5798f/packages/svelte/types/index.d.ts#L2655
       case "$props": {
         appendDeclareFunctionVirtualScripts(globalName, ["<T>(): T"]);
         break;
       }
+      // See https://github.com/sveltejs/svelte/blob/dfc55c18f010f620b966e13eb0ad1f9791b5798f/packages/svelte/types/index.d.ts#L2666
+      case "$bindable": {
+        appendDeclareFunctionVirtualScripts(globalName, ["<T>(t?: T): T"]);
+        break;
+      }
+      // See https://github.com/sveltejs/svelte/blob/dfc55c18f010f620b966e13eb0ad1f9791b5798f/packages/svelte/types/index.d.ts#L2686
       case "$inspect": {
         appendDeclareFunctionVirtualScripts(globalName, [
           `<T extends any[]>(...values: T): { with: (fn: (type: 'init' | 'update', ...values: T) => void) => void }`,
