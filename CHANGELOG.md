@@ -4,50 +4,27 @@
 
 ### Minor Changes
 
-- [#430](https://github.com/sveltejs/svelte-eslint-parser/pull/430) [`af1bae5`](https://github.com/sveltejs/svelte-eslint-parser/commit/af1bae5d4eb9c9605e4f2ad66590b14f1bfa9a55) Thanks [@ota-meshi](https://github.com/ota-meshi)! - feat: apply correct type information to `$derived` argument expression
-
-- [#425](https://github.com/sveltejs/svelte-eslint-parser/pull/425) [`ff242c4`](https://github.com/sveltejs/svelte-eslint-parser/commit/ff242c4abc322fd6bc93fda9fb30da14d73a847e) Thanks [@baseballyama](https://github.com/baseballyama)! - feat: Support runes
-
-- [#426](https://github.com/sveltejs/svelte-eslint-parser/pull/426) [`9793cb0`](https://github.com/sveltejs/svelte-eslint-parser/commit/9793cb0d4520b1d5ae9e1f0aa5aff1c8b84cebb6) Thanks [@ota-meshi](https://github.com/ota-meshi)! - feat: apply runes to `*.svelte.js` and `*.svelte.ts`.
-
-- [#464](https://github.com/sveltejs/svelte-eslint-parser/pull/464) [`d531e4e`](https://github.com/sveltejs/svelte-eslint-parser/commit/d531e4e6552e88fe47825436ee26619039cadc7d) Thanks [@baseballyama](https://github.com/baseballyama)! - breaking: drop @typescript-eslint v4 support
+#### Add experimental support for Svelte v5
 
 - [#421](https://github.com/sveltejs/svelte-eslint-parser/pull/421) [`59fc0e9`](https://github.com/sveltejs/svelte-eslint-parser/commit/59fc0e90bdd20f208a4ae8c3527ea51acf106811) Thanks [@ota-meshi](https://github.com/ota-meshi)! - feat: (experimental) partial support for Svelte v5 parser
-
+- [#425](https://github.com/sveltejs/svelte-eslint-parser/pull/425) [`ff242c4`](https://github.com/sveltejs/svelte-eslint-parser/commit/ff242c4abc322fd6bc93fda9fb30da14d73a847e) Thanks [@baseballyama](https://github.com/baseballyama)! - feat: Support runes
+- [#426](https://github.com/sveltejs/svelte-eslint-parser/pull/426) [`9793cb0`](https://github.com/sveltejs/svelte-eslint-parser/commit/9793cb0d4520b1d5ae9e1f0aa5aff1c8b84cebb6) Thanks [@ota-meshi](https://github.com/ota-meshi)! - feat: apply runes to `*.svelte.js` and `*.svelte.ts`.
+- [#430](https://github.com/sveltejs/svelte-eslint-parser/pull/430) [`af1bae5`](https://github.com/sveltejs/svelte-eslint-parser/commit/af1bae5d4eb9c9605e4f2ad66590b14f1bfa9a55) Thanks [@ota-meshi](https://github.com/ota-meshi)! - feat: apply correct type information to `$derived` argument expression
 - [#498](https://github.com/sveltejs/svelte-eslint-parser/pull/498) [`3b2c62b`](https://github.com/sveltejs/svelte-eslint-parser/commit/3b2c62b2bafa22ec1251968c5969a7006ae61fb9) Thanks [@ota-meshi](https://github.com/ota-meshi)! - feat: add support for `$bindable` rune
-
 - [#440](https://github.com/sveltejs/svelte-eslint-parser/pull/440) [`726f21f`](https://github.com/sveltejs/svelte-eslint-parser/commit/726f21fc7a520abe8b7b0be268f2ceb9b3205531) Thanks [@baseballyama](https://github.com/baseballyama)! - feat: skip type injection if template uses TypeScript
-
 - [#431](https://github.com/sveltejs/svelte-eslint-parser/pull/431) [`ab13a46`](https://github.com/sveltejs/svelte-eslint-parser/commit/ab13a4662410014ad7d53fc7664bd5b464f15cbe) Thanks [@ota-meshi](https://github.com/ota-meshi)! - feat: add support for `{#snippet}` and `{@render}`
-
 - [#437](https://github.com/sveltejs/svelte-eslint-parser/pull/437) [`a27697a`](https://github.com/sveltejs/svelte-eslint-parser/commit/a27697a715072ae6adddf228976f23bab6d48fb8) Thanks [@ota-meshi](https://github.com/ota-meshi)! - feat: change it to use modern AST, if svelte v5 is installed
-
 - [#441](https://github.com/sveltejs/svelte-eslint-parser/pull/441) [`34232c5`](https://github.com/sveltejs/svelte-eslint-parser/commit/34232c58b49abdb362d74d849e80ef5607d0ce52) Thanks [@baseballyama](https://github.com/baseballyama)! - feat: add type of `$effect.active`
-
 - [#479](https://github.com/sveltejs/svelte-eslint-parser/pull/479) [`850ad74`](https://github.com/sveltejs/svelte-eslint-parser/commit/850ad74176416978e360f6c23e4479bff81baea6) Thanks [@ota-meshi](https://github.com/ota-meshi)! - feat: add support for `$derived.by` type
-
 - [#477](https://github.com/sveltejs/svelte-eslint-parser/pull/477) [`5f2b111`](https://github.com/sveltejs/svelte-eslint-parser/commit/5f2b1112e1ceacfabb292e51d33492fba878bc6c) Thanks [@ota-meshi](https://github.com/ota-meshi)! - feat: add experimental support for generics directive
-
 - [#446](https://github.com/sveltejs/svelte-eslint-parser/pull/446) [`168f920`](https://github.com/sveltejs/svelte-eslint-parser/commit/168f9209e8ea9f2a1ef2fad28728f6aa0963638f) Thanks [@ota-meshi](https://github.com/ota-meshi)! - feat: add support for `$inspect` and `$effect.root`
-
 - [#435](https://github.com/sveltejs/svelte-eslint-parser/pull/435) [`7508680`](https://github.com/sveltejs/svelte-eslint-parser/commit/7508680b3a88c951fa3fe0bdd9b59b21d6034b27) Thanks [@ota-meshi](https://github.com/ota-meshi)! - feat: improve props type
-
 - [#476](https://github.com/sveltejs/svelte-eslint-parser/pull/476) [`92aeee3`](https://github.com/sveltejs/svelte-eslint-parser/commit/92aeee35ee7bcfd27d8bc1920a341ddf14fa926b) Thanks [@ota-meshi](https://github.com/ota-meshi)! - feat: change AST of `{@render}` and `{#snippet}` to match the latest version of svelte v5.
-
-### Patch Changes
-
 - [#483](https://github.com/sveltejs/svelte-eslint-parser/pull/483) [`f722d7c`](https://github.com/sveltejs/svelte-eslint-parser/commit/f722d7c047706b4a051999b28d482d0069667da5) Thanks [@ota-meshi](https://github.com/ota-meshi)! - fix: for svelte v5.0.0-next.68 & support optional `{@render}`
-
 - [#434](https://github.com/sveltejs/svelte-eslint-parser/pull/434) [`0ef067b`](https://github.com/sveltejs/svelte-eslint-parser/commit/0ef067b57ab8897cff03f8793c2767e6d0b83274) Thanks [@ota-meshi](https://github.com/ota-meshi)! - fix: incorrect location when there is whitespace at the beginning of block
-
 - [#486](https://github.com/sveltejs/svelte-eslint-parser/pull/486) [`79a4fb7`](https://github.com/sveltejs/svelte-eslint-parser/commit/79a4fb718673e5af74075e0575b74b87ef2c406a) Thanks [@ota-meshi](https://github.com/ota-meshi)! - fix: wrong scope in top level snippets
-
 - [#467](https://github.com/sveltejs/svelte-eslint-parser/pull/467) [`e27a3de`](https://github.com/sveltejs/svelte-eslint-parser/commit/e27a3de8d97dd934a8dc0097374eee3ad3ee61ff) Thanks [@baseballyama](https://github.com/baseballyama)! - feat: update `$inspect` types
-
-- [#468](https://github.com/sveltejs/svelte-eslint-parser/pull/468) [`133cd24`](https://github.com/sveltejs/svelte-eslint-parser/commit/133cd24b47795fd104df903d2fef31904ab74710) Thanks [@baseballyama](https://github.com/baseballyama)! - chore: update Svelte 5 version
-
 - [#466](https://github.com/sveltejs/svelte-eslint-parser/pull/466) [`d5b3322`](https://github.com/sveltejs/svelte-eslint-parser/commit/d5b3322e19b7208815ba4251d75cf46d511cd4f1) Thanks [@baseballyama](https://github.com/baseballyama)! - feat: add `$state.frozen` support
-
 - [#438](https://github.com/sveltejs/svelte-eslint-parser/pull/438) [`c21b54c`](https://github.com/sveltejs/svelte-eslint-parser/commit/c21b54ced7984aaeaac6b12ff66bfc4cc0712caf) Thanks [@ota-meshi](https://github.com/ota-meshi)! - fix: incorrect location for `{ #await expr then v }` with spaces
 
 ## 0.34.0-next.12
