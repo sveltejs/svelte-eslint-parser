@@ -6,6 +6,7 @@ export const globalsForRunes = [
   "$derived",
   "$effect",
   "$props",
+  "$bindable",
   "$inspect",
 ] as const;
 const globalsForSvelte5 = [...globalsForSvelte4, ...globalsForRunes];
