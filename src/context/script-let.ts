@@ -178,6 +178,10 @@ export class ScriptLetContext {
           callback(node as E, result);
         }
 
+        tokens.shift(); // (
+        tokens.pop(); // )
+        tokens.pop(); // ;
+
         if (isTS) {
           for (const scope of extractTypeNodeScopes(
             tsAs!.typeAnnotation,
@@ -200,10 +204,6 @@ export class ScriptLetContext {
         }
 
         (node as any).parent = parent;
-
-        tokens.shift(); // (
-        tokens.pop(); // )
-        tokens.pop(); // ;
 
         // Disconnect the tree structure.
         exprSt.expression = null as never;
