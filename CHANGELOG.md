@@ -1,5 +1,11 @@
 # svelte-eslint-parser
 
+## 0.34.1
+
+### Patch Changes
+
+- [#504](https://github.com/sveltejs/svelte-eslint-parser/pull/504) [`44c1704`](https://github.com/sveltejs/svelte-eslint-parser/commit/44c170430151aaa1bc9ef86d6f8e0868585074d5) Thanks [@ota-meshi](https://github.com/ota-meshi)! - fix: wrong token when using `lang=ts`
+
 ## 0.34.0
 
 ### Minor Changes
