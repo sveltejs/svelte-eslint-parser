@@ -5,7 +5,7 @@
     c: boolean; // c: boolean
     d: number; // d: number
   }
-  let { a, b, c, ...everythingElse } = $props<MyProps>(); // a: number, a: number, b: string, b: string, c: boolean, c: boolean, everythingElse: { d: number; }, $props<MyProps>(): MyProps
+  let { a, b, c, ...everythingElse }: MyProps = $props(); // a: number, a: number, b: string, b: string, c: boolean, c: boolean, everythingElse: { d: number; }, MyProps: MyProps, $props(): any
 </script>
 
 {a} <!-- a: number -->

@@ -5,7 +5,7 @@
     c: boolean;
     d: number;
   }
-  let { a, b, c, ...everythingElse } = $props<MyProps>();
+  let { a, b, c, ...everythingElse }: MyProps = $props();
 </script>
 
 {a}

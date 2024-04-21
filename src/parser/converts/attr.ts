@@ -106,7 +106,7 @@ export function* convertAttributes(
     if (attr.type === "Ref") {
       throw new ParseError("Ref are not supported.", attr.start, ctx);
     }
-    if ((attr as any).type === "Style") {
+    if (attr.type === "Style") {
       throw new ParseError(
         `Svelte v3.46.0 is no longer supported. Please use Svelte>=v3.46.1.`,
         attr.start,

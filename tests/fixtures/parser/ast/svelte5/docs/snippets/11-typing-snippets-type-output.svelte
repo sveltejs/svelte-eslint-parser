@@ -1,11 +1,11 @@
 <script lang="ts" generics="T"> // T: unknown
 	import type { Snippet } from 'svelte'; // Snippet: Snippet<T>, Snippet: Snippet<T>
 
-	let { data, children, row } = $props<{ // data: unknown[], data: unknown[], children: (this: void) => unique symbol & { _: "functions passed to {@render ...} tags must use the `Snippet` type imported from \"svelte\""; }, children: (this: void) => unique symbol & { _: "functions passed to {@render ...} tags must use the `Snippet` type imported from \"svelte\""; }, row: (this: void, args_0: unknown) => unique symbol & { _: "functions passed to {@render ...} tags must use the `Snippet` type imported from \"svelte\""; }, row: (this: void, args_0: unknown) => unique symbol & { _: "functions passed to {@render ...} tags must use the `Snippet` type imported from \"svelte\""; }, $props<{ data: T[]; children: Snippet; row: Snippet<[T]>; }>(): { data: unknown[]; children: (this: void) => unique symbol & { _: "functions passed to {@render ...} tags must use the `Snippet` type imported from \"svelte\""; }; row: (this: void, args_0: unknown) => unique symbol & { ...; }; }
-		data: T[];
-		children: Snippet;
-		row: Snippet<[T]>;
-	}>();
+	let { data, children, row }: { // data: unknown[], data: unknown[], children: (this: void) => unique symbol & { _: "functions passed to {@render ...} tags must use the `Snippet` type imported from \"svelte\""; }, children: (this: void) => unique symbol & { _: "functions passed to {@render ...} tags must use the `Snippet` type imported from \"svelte\""; }, row: (this: void, args_0: unknown) => unique symbol & { _: "functions passed to {@render ...} tags must use the `Snippet` type imported from \"svelte\""; }, row: (this: void, args_0: unknown) => unique symbol & { _: "functions passed to {@render ...} tags must use the `Snippet` type imported from \"svelte\""; }
+		data: T[]; // T: unknown, data: unknown[]
+		children: Snippet; // Snippet: Snippet<T>, children: (this: void) => unique symbol & { _: "functions passed to {@render ...} tags must use the `Snippet` type imported from \"svelte\""; }
+		row: Snippet<[T]>; // Snippet: Snippet<T>, T: unknown, row: (this: void, args_0: unknown) => unique symbol & { _: "functions passed to {@render ...} tags must use the `Snippet` type imported from \"svelte\""; }
+	} = $props(); // $props(): any
 </script>
 
 <table>

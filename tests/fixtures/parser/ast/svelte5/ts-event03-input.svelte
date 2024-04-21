@@ -1,7 +1,7 @@
 <script lang="ts">
-    const {onfoo} = $props<{
+    const {onfoo}:{
         onfoo: (e: { detail: number }) => void
-    }>()
+    } = $props()
     onfoo({detail: 1})
 </script>
 
