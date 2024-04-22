@@ -1,5 +1,11 @@
 # svelte-eslint-parser
 
+## 0.35.0
+
+### Minor Changes
+
+- [#510](https://github.com/sveltejs/svelte-eslint-parser/pull/510) [`9dddc36`](https://github.com/sveltejs/svelte-eslint-parser/commit/9dddc36ec7bd5ef9549e8f324539c5e0e5789b86) Thanks [@baseballyama](https://github.com/baseballyama)! - feat: update type of $props rune
+
 ## 0.34.1
 
 ### Patch Changes
