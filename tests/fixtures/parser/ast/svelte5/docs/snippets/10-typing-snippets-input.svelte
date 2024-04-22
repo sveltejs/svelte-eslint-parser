@@ -1,11 +1,11 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
 
-	let { data, children, row } = $props<{
+	let { data, children, row }: {
 		data: any[];
 		children: Snippet;
 		row: Snippet<[any]>;
-	}>();
+	} = $props();
 </script>
 
 <table>

@@ -14,7 +14,7 @@
 		position: relative;
 		height: calc(100vh - 64px);
 	}
-	.main > * {
+	.main > :global(*) {
 		position: relative;
 		width: 100%;
 		height: 100%;

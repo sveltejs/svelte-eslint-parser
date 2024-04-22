@@ -354,7 +354,7 @@ function analyzeRuneVariables(
       }
       // See https://github.com/sveltejs/svelte/blob/dfc55c18f010f620b966e13eb0ad1f9791b5798f/packages/svelte/types/index.d.ts#L2655
       case "$props": {
-        appendDeclareFunctionVirtualScripts(globalName, ["<T>(): T"]);
+        appendDeclareFunctionVirtualScripts(globalName, ["(): any"]);
         break;
       }
       // See https://github.com/sveltejs/svelte/blob/dfc55c18f010f620b966e13eb0ad1f9791b5798f/packages/svelte/types/index.d.ts#L2666

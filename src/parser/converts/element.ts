@@ -211,7 +211,7 @@ export function* convertChildren(
       continue;
     }
 
-    throw new Error(`Unknown type:${(child as any).type}`);
+    throw new Error(`Unknown type:${child.type}`);
   }
 }
 
