@@ -21,10 +21,16 @@ export function parseTemplate(
   svelteAst: Compiler.Root | SvAST.AstLegacy;
 } {
   try {
-    const svelteAst = parse(code, {
+    const options: {
+      filename?: string | undefined;
+      modern: true;
+    } = {
       filename: parserOptions.filePath,
-      ...(svelteVersion.gte(5) ? { modern: true } : {}),
-    }) as never as Compiler.Root | SvAST.AstLegacy;
+      ...(svelteVersion.gte(5) ? { modern: true } : ({} as never)),
+    };
+    const svelteAst = parse(code, options) as never as
+      | Compiler.Root
+      | SvAST.AstLegacy;
     const ast = convertSvelteRoot(svelteAst, ctx);
 
     return {
