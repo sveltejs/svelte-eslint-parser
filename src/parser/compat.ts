@@ -2,7 +2,6 @@
 import type ESTree from "estree";
 import type * as SvAST from "./svelte-ast-types";
 import type * as Compiler from "svelte/compiler";
-import { parseAttributes } from "./html";
 
 export type Child =
   | Compiler.Text
@@ -31,16 +30,22 @@ export function getModuleFromRoot(
 }
 export function getOptionsFromRoot(
   svelteAst: Compiler.Root | SvAST.AstLegacy,
-  code: string,
 ): Compiler.SvelteOptionsRaw | null {
   const root = svelteAst as Compiler.Root;
   if (root.options) {
-    if ((root.options as any).__raw__) {
-      return (root.options as any).__raw__;
-    }
-    // If there is no `__raw__` property in the `SvelteOptions` node,
-    // we will parse `<svelte:options>` ourselves.
-    return parseSvelteOptions(root.options, code);
+    return {
+      type: "SvelteOptions",
+      name: "svelte:options",
+      attributes: root.options.attributes,
+      fragment: {
+        type: "Fragment",
+        nodes: [],
+        transparent: true,
+      },
+      start: root.options.start,
+      end: root.options.end,
+      parent: null as any,
+    };
   }
   return null;
 }
@@ -238,41 +243,4 @@ export function getDeclaratorFromConstTag(
     (node as Compiler.ConstTag).declaration?.declarations?.[0] ??
     (node as SvAST.ConstTag).expression
   );
-}
-
-function parseSvelteOptions(
-  options: Compiler.SvelteOptions,
-  code: string,
-): Compiler.SvelteOptionsRaw {
-  const { start, end } = options;
-  const nameEndName = start + "<svelte:options".length;
-  const { attributes, index: tagEndIndex } = parseAttributes(
-    code,
-    nameEndName + 1,
-  );
-  const fragment: Compiler.Fragment = {
-    type: "Fragment",
-    nodes: [],
-    transparent: true,
-  };
-  if (code.startsWith(">", tagEndIndex)) {
-    const childEndIndex = code.indexOf("</svelte:options", tagEndIndex);
-    fragment.nodes.push({
-      type: "Text",
-      data: code.slice(tagEndIndex + 1, childEndIndex),
-      start: tagEndIndex + 1,
-      end: childEndIndex,
-      raw: code.slice(tagEndIndex + 1, childEndIndex),
-      parent: fragment,
-    });
-  }
-  return {
-    type: "SvelteOptions",
-    name: "svelte:options",
-    attributes,
-    fragment,
-    start,
-    end,
-    parent: null as any,
-  };
 }

@@ -49,7 +49,7 @@ export function convertSvelteRoot(
   const fragment = getFragmentFromRoot(svelteAst);
   if (fragment) {
     let children = getChildren(fragment);
-    const options = getOptionsFromRoot(svelteAst, ctx.code);
+    const options = getOptionsFromRoot(svelteAst);
     if (options) {
       children = [...children];
       if (
