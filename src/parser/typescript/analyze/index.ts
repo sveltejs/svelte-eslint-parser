@@ -262,6 +262,7 @@ function analyzeDollarDollarVariables(
       case "$props":
       case "$bindable":
       case "$inspect":
+      case "$host":
         // Processed by `analyzeRuneVariables`.
         break;
       default: {
@@ -318,7 +319,7 @@ function analyzeRuneVariables(
       continue;
     }
     switch (globalName) {
-      // See https://github.com/sveltejs/svelte/blob/dfc55c18f010f620b966e13eb0ad1f9791b5798f/packages/svelte/types/index.d.ts#L2492
+      // See https://github.com/sveltejs/svelte/blob/bda32edb1a4f2d383d96071750d6bfa9421b2175/packages/svelte/types/index.d.ts#L2585
       case "$state": {
         appendDeclareFunctionVirtualScripts(globalName, [
           "<T>(initial: T): T",
@@ -328,9 +329,12 @@ function analyzeRuneVariables(
           "export function frozen<T>(initial: T): Readonly<T>;",
           "export function frozen<T>(): Readonly<T> | undefined;",
         ]);
+        appendDeclareNamespaceVirtualScripts(globalName, [
+          "export function snapshot<T>(state: T): T;",
+        ]);
         break;
       }
-      // See https://github.com/sveltejs/svelte/blob/dfc55c18f010f620b966e13eb0ad1f9791b5798f/packages/svelte/types/index.d.ts#L2535
+      // See https://github.com/sveltejs/svelte/blob/bda32edb1a4f2d383d96071750d6bfa9421b2175/packages/svelte/types/index.d.ts#L2648
       case "$derived": {
         appendDeclareFunctionVirtualScripts(globalName, [
           "<T>(expression: T): T",
@@ -340,7 +344,7 @@ function analyzeRuneVariables(
         ]);
         break;
       }
-      // See https://github.com/sveltejs/svelte/blob/dfc55c18f010f620b966e13eb0ad1f9791b5798f/packages/svelte/types/index.d.ts#L2574
+      // See https://github.com/sveltejs/svelte/blob/bda32edb1a4f2d383d96071750d6bfa9421b2175/packages/svelte/types/index.d.ts#L2687
       case "$effect": {
         appendDeclareFunctionVirtualScripts(globalName, [
           "(fn: () => void | (() => void)): void",
@@ -352,20 +356,27 @@ function analyzeRuneVariables(
         ]);
         break;
       }
-      // See https://github.com/sveltejs/svelte/blob/dfc55c18f010f620b966e13eb0ad1f9791b5798f/packages/svelte/types/index.d.ts#L2655
+      // See https://github.com/sveltejs/svelte/blob/bda32edb1a4f2d383d96071750d6bfa9421b2175/packages/svelte/types/index.d.ts#L2768
       case "$props": {
         appendDeclareFunctionVirtualScripts(globalName, ["(): any"]);
         break;
       }
-      // See https://github.com/sveltejs/svelte/blob/dfc55c18f010f620b966e13eb0ad1f9791b5798f/packages/svelte/types/index.d.ts#L2666
+      // See https://github.com/sveltejs/svelte/blob/bda32edb1a4f2d383d96071750d6bfa9421b2175/packages/svelte/types/index.d.ts#L2779
       case "$bindable": {
         appendDeclareFunctionVirtualScripts(globalName, ["<T>(t?: T): T"]);
         break;
       }
-      // See https://github.com/sveltejs/svelte/blob/dfc55c18f010f620b966e13eb0ad1f9791b5798f/packages/svelte/types/index.d.ts#L2686
+      // See https://github.com/sveltejs/svelte/blob/bda32edb1a4f2d383d96071750d6bfa9421b2175/packages/svelte/types/index.d.ts#L2799
       case "$inspect": {
         appendDeclareFunctionVirtualScripts(globalName, [
           `<T extends any[]>(...values: T): { with: (fn: (type: 'init' | 'update', ...values: T) => void) => void }`,
+        ]);
+        break;
+      }
+      // See https://github.com/sveltejs/svelte/blob/bda32edb1a4f2d383d96071750d6bfa9421b2175/packages/svelte/types/index.d.ts#L2822
+      case "$host": {
+        appendDeclareFunctionVirtualScripts(globalName, [
+          `<El extends HTMLElement = HTMLElement>(): El`,
         ]);
         break;
       }

@@ -81,6 +81,12 @@ const SVELTE5_SCOPE_VARIABLES_BASE = [
     defs: [],
     references: [],
   },
+  {
+    name: "$host",
+    identifiers: [],
+    defs: [],
+    references: [],
+  },
 ];
 export function generateParserOptions(
   ...options: Linter.ParserOptions[]
