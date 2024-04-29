@@ -118,12 +118,19 @@ You can use `parserOptions.parser` property to specify a custom parser to parse 
 Other properties than parser would be given to the specified parser.
 For example:
 
-```json
-{
-  "parserOptions": {
-    "parser": "@typescript-eslint/parser"
-  }
-}
+```js
+import tsParser from "@typescript-eslint/parser";
+export default [
+  {
+    files: ["**/*.svelte", "*.svelte"],
+    languageOptions: {
+      parser: svelteParser,
+      parserOptions: {
+        parser: tsParser,
+      },
+    },
+  },
+];
 ```
 
 For example, if you are using the `"@typescript-eslint/parser"`, and if you want to use TypeScript in `<script>` of `.svelte`, you need to add more `parserOptions` configuration.
