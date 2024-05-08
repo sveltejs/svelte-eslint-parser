@@ -116,7 +116,8 @@ For example:
 
 You can use `parserOptions.parser` property to specify a custom parser to parse `<script>` tags.
 Other properties than parser would be given to the specified parser.
-For example:
+
+For example in `eslint.config.js`:
 
 ```js
 import tsParser from "@typescript-eslint/parser";
@@ -133,7 +134,20 @@ export default [
 ];
 ```
 
-For example, if you are using the `"@typescript-eslint/parser"`, and if you want to use TypeScript in `<script>` of `.svelte`, you need to add more `parserOptions` configuration.
+For example in `.eslintrc.*`:
+
+```json
+{
+  "parser": "svelte-eslint-parser",
+  "parserOptions": {
+    "parser": "@typescript-eslint/parser"
+  }
+}
+```
+
+If you are using the `"@typescript-eslint/parser"`, and if you want to use TypeScript in `<script>` of `.svelte`, you need to add more `parserOptions` configuration.
+
+For example in `eslint.config.js`:
 
 ```js
 import tsParser from "@typescript-eslint/parser";
@@ -164,9 +178,37 @@ export default [
 ];
 ```
 
+For example in `.eslintrc.*`:
+
+```js
+module.exports = {
+  // ...
+  parser: "@typescript-eslint/parser",
+  parserOptions: {
+    // ...
+    project: "path/to/your/tsconfig.json",
+    extraFileExtensions: [".svelte"], // This is a required setting in `@typescript-eslint/parser` v4.24.0.
+  },
+  overrides: [
+    {
+      files: ["*.svelte"],
+      parser: "svelte-eslint-parser",
+      // Parse the `<script>` in `.svelte` as TypeScript by adding the following configuration.
+      parserOptions: {
+        parser: "@typescript-eslint/parser",
+      },
+    },
+    // ...
+  ],
+  // ...
+};
+```
+
 #### Multiple parsers
 
 If you want to switch the parser for each lang, specify the object.
+
+For example in `eslint.config.js`:
 
 ```js
 import tsParser from "@typescript-eslint/parser";
@@ -188,33 +230,26 @@ export default [
 ];
 ```
 
-#### Parser module name
+For example in `.eslintrc.*`:
 
-When using JavaScript configuration (`eslint.config.js`), you can also give the parser module name.
-
-```js
-export default [
-  {
-    files: ["**/*.svelte", "*.svelte"],
-    languageOptions: {
-      parser: svelteParser,
-      parserOptions: {
-        // Single parser
-        parser: "@typescript-eslint/parser",
-        // Multiple parser
-        parser: {
-          js: "espree",
-          ts: "@typescript-eslint/parser",
-        },
-      },
-    },
-  },
-];
+```json
+{
+  "parser": "svelte-eslint-parser",
+  "parserOptions": {
+    "parser": {
+      "ts": "@typescript-eslint/parser",
+      "js": "espree",
+      "typescript": "@typescript-eslint/parser"
+    }
+  }
+}
 ```
 
 ### parserOptions.svelteFeatures
 
 You can use `parserOptions.svelteFeatures` property to specify how to parse related to Svelte features. For example:
+
+For example in `eslint.config.js`:
 
 ```js
 export default [
@@ -236,6 +271,23 @@ export default [
 ];
 ```
 
+For example in `.eslintrc.*`:
+
+```jsonc
+{
+  "parser": "svelte-eslint-parser",
+  "parserOptions": {
+    "svelteFeatures": {
+      /* -- Experimental Svelte Features -- */
+      /* It may be changed or removed in minor versions without notice. */
+      // Whether to parse the `generics` attribute.
+      // See https://github.com/sveltejs/rfcs/pull/38
+      "experimentalGenerics": false,
+    },
+  },
+}
+```
+
 ### Runes support
 
 **_This is an experimental feature. It may be changed or removed in minor versions without notice._**
@@ -243,6 +295,8 @@ export default [
 If you install Svelte v5 the parser will be able to parse runes, and will also be able to parse `*.js` and `*.ts` files.
 
 When using this mode in an ESLint configuration, it is recommended to set it per file pattern as below.
+
+For example in `eslint.config.js`:
 
 ```js
 export default [
@@ -276,6 +330,38 @@ export default [
     },
   },
 ];
+```
+
+For example in `.eslintrc.*`:
+
+```jsonc
+{
+  "overrides": [
+    {
+      "files": ["*.svelte"],
+      "parser": "svelte-eslint-parser",
+      "parserOptions": {
+        "parser": "...",
+        /* ... */
+      },
+    },
+    {
+      "files": ["*.svelte.js"],
+      "parser": "svelte-eslint-parser",
+      "parserOptions": {
+        /* ... */
+      },
+    },
+    {
+      "files": ["*.svelte.ts"],
+      "parser": "svelte-eslint-parser",
+      "parserOptions": {
+        "parser": "...(ts parser)...",
+        /* ... */
+      },
+    },
+  ],
+}
 ```
 
 ## :computer: Editor Integrations
