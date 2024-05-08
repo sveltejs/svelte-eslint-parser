@@ -22,6 +22,7 @@ module.exports = {
 		'n/no-unpublished-require': 'off',
 		'n/no-unpublished-import': 'off',
 		'n/no-unsupported-features/es-syntax': 'off',
+		'n/no-unsupported-features/node-builtins': 'off',
 		'require-jsdoc': 'off',
 		'n/file-extension-in-import': 'off',
 		'prettier/prettier': [
