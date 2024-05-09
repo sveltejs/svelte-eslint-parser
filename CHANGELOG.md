@@ -1,5 +1,13 @@
 # svelte-eslint-parser
 
+## 0.36.0
+
+### Minor Changes
+
+- [#513](https://github.com/sveltejs/svelte-eslint-parser/pull/513) [`37f0061`](https://github.com/sveltejs/svelte-eslint-parser/commit/37f006191342d2f4bfa44a8798b40b6079d9b75f) Thanks [@ota-meshi](https://github.com/ota-meshi)! - feat: add support for $host and $state.snapshot
+
+- [#513](https://github.com/sveltejs/svelte-eslint-parser/pull/513) [`37f0061`](https://github.com/sveltejs/svelte-eslint-parser/commit/37f006191342d2f4bfa44a8798b40b6079d9b75f) Thanks [@ota-meshi](https://github.com/ota-meshi)! - feat: update svelte to 5.0.0-next.115 && minor refactor
+
 ## 0.35.0
 
 ### Minor Changes
