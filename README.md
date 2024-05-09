@@ -3,7 +3,7 @@
 [Svelte] parser for [ESLint].  
 You can check it on [Online DEMO](https://sveltejs.github.io/svelte-eslint-parser/playground).
 
-***Note that this parser has experimental support for Svelte v5, but may break with new versions of Svelte v5.***
+**_Note that this parser has experimental support for Svelte v5, but may break with new versions of Svelte v5._**
 
 [![NPM license](https://img.shields.io/npm/l/svelte-eslint-parser.svg)](https://www.npmjs.com/package/svelte-eslint-parser)
 [![NPM version](https://img.shields.io/npm/v/svelte-eslint-parser.svg)](https://www.npmjs.com/package/svelte-eslint-parser)
@@ -50,20 +50,40 @@ npm install --save-dev eslint svelte-eslint-parser
 
 ## 📖 Usage
 
-1. Write `overrides.parser` option into your `.eslintrc.*` file.
+1. Write `parser` option into your ESLint Config file.
 2. Use glob patterns or `--ext .svelte` CLI option.
+
+### ESLint Config (`eslint.config.js`)
+
+```js
+import js from "@eslint/js";
+import svelteParser from "svelte-eslint-parser";
+export default [
+  js.configs.recommended,
+  {
+    files: ["**/*.svelte", "*.svelte"],
+    languageOptions: {
+      parser: svelteParser,
+    },
+  },
+];
+```
+
+### ESLint Config (`.eslintrc.*`)
 
 ```json
 {
-    "extends": "eslint:recommended",
-    "overrides": [
-        {
-            "files": ["*.svelte"],
-            "parser": "svelte-eslint-parser"
-        }
-    ]
+  "extends": "eslint:recommended",
+  "overrides": [
+    {
+      "files": ["*.svelte"],
+      "parser": "svelte-eslint-parser"
+    }
+  ]
 }
 ```
+
+### CLI
 
 ```console
 $ eslint "src/**/*.{js,svelte}"
@@ -73,40 +93,92 @@ $ eslint src --ext .svelte
 
 ## 🔧 Options
 
-`parserOptions` has the same properties as what [espree](https://github.com/eslint/espree#usage), the default parser of ESLint, is supporting.
+[`parserOptions`] has the same properties as what [espree](https://github.com/eslint/espree#usage), the default parser of ESLint, is supporting.
 For example:
 
 ```json
 {
-    "parser": "svelte-eslint-parser",
-    "parserOptions": {
-        "sourceType": "module",
-        "ecmaVersion": 2021,
-        "ecmaFeatures": {
-            "globalReturn": false,
-            "impliedStrict": false,
-            "jsx": false
-        }
+  "parserOptions": {
+    "sourceType": "module",
+    "ecmaVersion": 2021,
+    "ecmaFeatures": {
+      "globalReturn": false,
+      "impliedStrict": false,
+      "jsx": false
     }
+  }
 }
 ```
+
+[`parserOptions`]: https://eslint.org/docs/latest/use/configure/parser#configure-parser-options
 
 ### parserOptions.parser
 
 You can use `parserOptions.parser` property to specify a custom parser to parse `<script>` tags.
 Other properties than parser would be given to the specified parser.
-For example:
+
+For example in `eslint.config.js`:
+
+```js
+import tsParser from "@typescript-eslint/parser";
+export default [
+  {
+    files: ["**/*.svelte", "*.svelte"],
+    languageOptions: {
+      parser: svelteParser,
+      parserOptions: {
+        parser: tsParser,
+      },
+    },
+  },
+];
+```
+
+For example in `.eslintrc.*`:
 
 ```json
 {
-    "parser": "svelte-eslint-parser",
-    "parserOptions": {
-        "parser": "@typescript-eslint/parser"
-    }
+  "parser": "svelte-eslint-parser",
+  "parserOptions": {
+    "parser": "@typescript-eslint/parser"
+  }
 }
 ```
 
-For example, if you are using the `"@typescript-eslint/parser"`, and if you want to use TypeScript in `<script>` of `.svelte`, you need to add more `parserOptions` configuration.
+If you are using the `"@typescript-eslint/parser"`, and if you want to use TypeScript in `<script>` of `.svelte`, you need to add more `parserOptions` configuration.
+
+For example in `eslint.config.js`:
+
+```js
+import tsParser from "@typescript-eslint/parser";
+export default [
+  // ...
+  {
+    // ...
+    languageOptions: {
+      parser: tsParser,
+      parserOptions: {
+        // ...
+        project: "path/to/your/tsconfig.json",
+        extraFileExtensions: [".svelte"], // This is a required setting in `@typescript-eslint/parser` v4.24.0.
+      },
+    },
+  },
+  {
+    files: ["**/*.svelte", "*.svelte"],
+    languageOptions: {
+      parser: svelteParser,
+      // Parse the `<script>` in `.svelte` as TypeScript by adding the following configuration.
+      parserOptions: {
+        parser: tsParser,
+      },
+    },
+    // ...
+  },
+];
+```
+
+For example in `.eslintrc.*`:
 
 ```js
 module.exports = {
@@ -129,45 +201,47 @@ module.exports = {
     // ...
   ],
   // ...
-}
+};
 ```
 
 #### Multiple parsers
 
 If you want to switch the parser for each lang, specify the object.
 
-```json
-{
-    "parser": "svelte-eslint-parser",
-    "parserOptions": {
-        "parser": {
-            "ts": "@typescript-eslint/parser",
-            "js": "espree",
-            "typescript": "@typescript-eslint/parser"
-        }
-    }
-}
-```
-
-#### Parser Object
-
-When using JavaScript configuration (`.eslintrc.js`), you can also give the parser object directly.
+For example in `eslint.config.js`:
 
 ```js
-const tsParser = require("@typescript-eslint/parser")
-const espree = require("espree")
-
-module.exports = {
-    parser: "svelte-eslint-parser",
-    parserOptions: {
-        // Single parser
-        parser: tsParser,
-        // Multiple parser
+import tsParser from "@typescript-eslint/parser";
+import espree from "espree";
+export default [
+  {
+    files: ["**/*.svelte", "*.svelte"],
+    languageOptions: {
+      parser: svelteParser,
+      parserOptions: {
         parser: {
-            js: espree,
-            ts: tsParser,
-        }
+          ts: tsParser,
+          js: espree,
+          typescript: tsParser,
+        },
+      },
     },
+  },
+];
+```
+
+For example in `.eslintrc.*`:
+
+```json
+{
+  "parser": "svelte-eslint-parser",
+  "parserOptions": {
+    "parser": {
+      "ts": "@typescript-eslint/parser",
+      "js": "espree",
+      "typescript": "@typescript-eslint/parser"
+    }
+  }
 }
 ```
 
@@ -175,57 +249,118 @@ module.exports = {
 
 You can use `parserOptions.svelteFeatures` property to specify how to parse related to Svelte features. For example:
 
+For example in `eslint.config.js`:
+
+```js
+export default [
+  {
+    files: ["**/*.svelte", "*.svelte"],
+    languageOptions: {
+      parser: svelteParser,
+      parserOptions: {
+        svelteFeatures: {
+          /* -- Experimental Svelte Features -- */
+          /* It may be changed or removed in minor versions without notice. */
+          // Whether to parse the `generics` attribute.
+          // See https://github.com/sveltejs/rfcs/pull/38
+          experimentalGenerics: false,
+        },
+      },
+    },
+  },
+];
+```
+
+For example in `.eslintrc.*`:
+
 ```jsonc
 {
-    "parser": "svelte-eslint-parser",
-    "parserOptions": {
-        "svelteFeatures": {
-
-            /* -- Experimental Svelte Features -- */
-            /* It may be changed or removed in minor versions without notice. */
-            // Whether to parse the `generics` attribute.
-            // See https://github.com/sveltejs/rfcs/pull/38
-            "experimentalGenerics": false
-        }
-    }
+  "parser": "svelte-eslint-parser",
+  "parserOptions": {
+    "svelteFeatures": {
+      /* -- Experimental Svelte Features -- */
+      /* It may be changed or removed in minor versions without notice. */
+      // Whether to parse the `generics` attribute.
+      // See https://github.com/sveltejs/rfcs/pull/38
+      "experimentalGenerics": false,
+    },
+  },
 }
 ```
 
 ### Runes support
 
-***This is an experimental feature. It may be changed or removed in minor versions without notice.***
+**_This is an experimental feature. It may be changed or removed in minor versions without notice._**
 
 If you install Svelte v5 the parser will be able to parse runes, and will also be able to parse `*.js` and `*.ts` files.
 
 When using this mode in an ESLint configuration, it is recommended to set it per file pattern as below.
 
-```json
+For example in `eslint.config.js`:
+
+```js
+export default [
+  {
+    files: ["**/*.svelte", "*.svelte"],
+    languageOptions: {
+      parser: svelteParser,
+      parserOptions: {
+        parser: "...",
+        /* ... */
+      },
+    },
+  },
+  {
+    files: ["**/*.svelte.js", "*.svelte.js"],
+    languageOptions: {
+      parser: svelteParser,
+      parserOptions: {
+        /* ... */
+      },
+    },
+  },
+  {
+    files: ["**/*.svelte.ts", "*.svelte.ts"],
+    languageOptions: {
+      parser: svelteParser,
+      parserOptions: {
+        parser: "...(ts parser)...",
+        /* ... */
+      },
+    },
+  },
+];
+```
+
+For example in `.eslintrc.*`:
+
+```jsonc
 {
-    "overrides": [
-        {
-            "files": ["*.svelte"],
-            "parser": "svelte-eslint-parser",
-            "parserOptions": {
-                "parser": "...",
-                ...
-            }
-        },
-        {
-            "files": ["*.svelte.js"],
-            "parser": "svelte-eslint-parser",
-            "parserOptions": {
-                ...
-            }
-        },
-        {
-            "files": ["*.svelte.ts"],
-            "parser": "svelte-eslint-parser",
-            "parserOptions": {
-                "parser": "...(ts parser)...",
-                ...
-            }
-        }
-    ]
+  "overrides": [
+    {
+      "files": ["*.svelte"],
+      "parser": "svelte-eslint-parser",
+      "parserOptions": {
+        "parser": "...",
+        /* ... */
+      },
+    },
+    {
+      "files": ["*.svelte.js"],
+      "parser": "svelte-eslint-parser",
+      "parserOptions": {
+        /* ... */
+      },
+    },
+    {
+      "files": ["*.svelte.ts"],
+      "parser": "svelte-eslint-parser",
+      "parserOptions": {
+        "parser": "...(ts parser)...",
+        /* ... */
+      },
+    },
+  ],
 }
 ```
 
@@ -241,11 +376,7 @@ Example **.vscode/settings.json**:
 
 ```json
 {
-    "eslint.validate": [
-        "javascript",
-        "javascriptreact",
-        "svelte"
-    ]
+  "eslint.validate": ["javascript", "javascriptreact", "svelte"]
 }
 ```
 
@@ -261,7 +392,7 @@ Welcome contributing!
 
 Please use GitHub's Issues/PRs.
 
-See also the documentation for the internal mechanism.  
+See also the documentation for the internal mechanism.
 
 - [internal-mechanism.md](./docs/internal-mechanism.md)
 
