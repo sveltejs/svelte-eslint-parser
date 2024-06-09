@@ -169,26 +169,82 @@ export function analyzePropsScope(
   }
 
   for (const node of body.body) {
-    if (node.type !== "ExportNamedDeclaration") {
-      continue;
-    }
-    if (node.declaration) {
-      if (node.declaration.type === "VariableDeclaration") {
-        for (const decl of node.declaration.declarations) {
-          if (decl.id.type === "Identifier") {
-            addPropsReference(decl.id, moduleScope);
+    if (node.type === "ExportNamedDeclaration") {
+      // Process for Svelte v4 style props. e.g. `export let x`;
+      if (node.declaration) {
+        if (node.declaration.type === "VariableDeclaration") {
+          for (const decl of node.declaration.declarations) {
+            for (const pattern of extractPattern(decl.id)) {
+              if (pattern.type === "Identifier") {
+                addPropReference(pattern, moduleScope);
+              }
+            }
           }
         }
+      } else {
+        for (const spec of node.specifiers) {
+          addPropReference(spec.local, moduleScope);
+        }
       }
-    } else {
-      for (const spec of node.specifiers) {
-        addPropsReference(spec.local, moduleScope);
+    } else if (node.type === "VariableDeclaration") {
+      // Process for Svelte v5 Runes props. e.g. `let { x = $bindable() } = $props()`;
+      for (const decl of node.declarations) {
+        if (
+          decl.init?.type === "CallExpression" &&
+          decl.init.callee.type === "Identifier" &&
+          decl.init.callee.name === "$props" &&
+          decl.id.type === "ObjectPattern"
+        ) {
+          for (const pattern of extractPattern(decl.id)) {
+            if (
+              pattern.type === "AssignmentPattern" &&
+              pattern.left.type === "Identifier" &&
+              pattern.right.type === "CallExpression" &&
+              pattern.right.callee.type === "Identifier" &&
+              pattern.right.callee.name === "$bindable"
+            ) {
+              addPropReference(pattern.left, moduleScope);
+            }
+          }
+        }
       }
     }
   }
 
-  /** Add virtual props reference */
-  function addPropsReference(node: ESTree.Identifier, scope: Scope) {
+  function* extractPattern(node: ESTree.Pattern): Iterable<ESTree.Pattern> {
+    yield node;
+    if (node.type === "Identifier") {
+      return;
+    }
+    if (node.type === "ObjectPattern") {
+      for (const prop of node.properties) {
+        if (prop.type === "Property") {
+          yield* extractPattern(prop.value);
+        } else {
+          yield* extractPattern(prop);
+        }
+      }
+      return;
+    }
+    if (node.type === "ArrayPattern") {
+      for (const elem of node.elements) {
+        if (elem) {
+          yield* extractPattern(elem);
+        }
+      }
+      return;
+    }
+    if (node.type === "AssignmentPattern") {
+      yield* extractPattern(node.left);
+      return;
+    }
+    if (node.type === "RestElement") {
+      yield* extractPattern(node.argument);
+    }
+  }
+
+  /** Add virtual prop reference */
+  function addPropReference(node: ESTree.Identifier, scope: Scope) {
     for (const variable of scope.variables) {
       if (variable.name !== node.name) {
         continue;

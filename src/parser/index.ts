@@ -138,7 +138,7 @@ function parseAsSvelte(
   analyzeStoreScope(resultScript.scopeManager!);
   analyzeReactiveScope(resultScript.scopeManager!);
   analyzeStoreScope(resultScript.scopeManager!); // for reactive vars
-  analyzeSnippetsScope(ctx.snippets, resultScript.scopeManager!); // for reactive vars
+  analyzeSnippetsScope(ctx.snippets, resultScript.scopeManager!);
 
   // Add $$xxx variable
   addGlobalVariables(resultScript.scopeManager!, globals);
