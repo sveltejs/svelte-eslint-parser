@@ -1,5 +1,5 @@
 <script lang="ts">
-  import Component, { ListItem } from "./lib/Component.svelte"; // Component: typeof Component__SvelteComponent_, ListItem: any, ListItem: any
+  import Component, { ListItem } from "./lib/Component.svelte"; // Component: __sveltets_2_IsomorphicComponent<__sveltets_2_PropsWithChildren<{ items?: ListItem[] | undefined; }, { default: { item: ListItem; }; count: { count: number; }; }>, { ...; }, { ...; }, Record<...>, string>, ListItem: any, ListItem: any
 
   const items: ListItem[] = [ // items: ListItem[]
     {
@@ -18,12 +18,12 @@
 </script>
 
 <main>
-  <Component {items} let:item> <!-- Component: typeof Component__SvelteComponent_, items: ListItem[], items: ListItem[], item: ListItem -->
+  <Component {items} let:item> <!-- Component: __sveltets_2_IsomorphicComponent<__sveltets_2_PropsWithChildren<{ items?: ListItem[] | undefined; }, { default: { item: ListItem; }; count: { count: number; }; }>, { ...; }, { ...; }, Record<...>, string>, items: ListItem[], items: ListItem[], item: ListItem -->
     <div>
       {item.title} <!-- item.title: string -->
     </div>
   </Component>
-  <Component {items}> <!-- Component: typeof Component__SvelteComponent_, items: ListItem[], items: ListItem[] -->
+  <Component {items}> <!-- Component: __sveltets_2_IsomorphicComponent<__sveltets_2_PropsWithChildren<{ items?: ListItem[] | undefined; }, { default: { item: ListItem; }; count: { count: number; }; }>, { ...; }, { ...; }, Record<...>, string>, items: ListItem[], items: ListItem[] -->
     <div let:item> <!-- item: ListItem -->
       {item.title} <!-- item.title: string -->
     </div>
