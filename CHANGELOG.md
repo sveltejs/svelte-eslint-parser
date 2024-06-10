@@ -1,5 +1,11 @@
 # svelte-eslint-parser
 
+## 0.37.0
+
+### Minor Changes
+
+- [#527](https://github.com/sveltejs/svelte-eslint-parser/pull/527) [`d92287d`](https://github.com/sveltejs/svelte-eslint-parser/commit/d92287d35074f9293bba9db28d43ead997d3ea06) Thanks [@ota-meshi](https://github.com/ota-meshi)! - feat: add support for `$bindable()` scope analysis
+
 ## 0.36.0
 
 ### Minor Changes
