@@ -1,5 +1,11 @@
 # svelte-eslint-parser
 
+## 0.38.0
+
+### Minor Changes
+
+- [#534](https://github.com/sveltejs/svelte-eslint-parser/pull/534) [`a27c8e9`](https://github.com/sveltejs/svelte-eslint-parser/commit/a27c8e902d5db63eadc0c8fd7c63e9e09b25845d) Thanks [@baseballyama](https://github.com/baseballyama)! - feat: support Svelte 5.0.0-next.155. (Add `$state.is` and replace `$effect.active` with `$effect.tracking`)
+
 ## 0.37.0
 
 ### Minor Changes
