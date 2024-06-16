@@ -1,4 +1,4 @@
-import type { StaticSvelteConfig as StaticSvelteConfigAll } from ".";
+import type { StaticSvelteConfig } from ".";
 import { getEspree } from "../parser/espree";
 import type {
   Program,
@@ -10,8 +10,6 @@ import { getFallbackKeys, traverseNodes } from "../traverse";
 import type { ScopeManager } from "eslint-scope";
 import { analyze } from "eslint-scope";
 import { findVariable } from "../scope";
-
-type StaticSvelteConfig = Omit<StaticSvelteConfigAll, "configFilePath">;
 
 export function parseConfig(code: string): StaticSvelteConfig | null {
   const espree = getEspree();

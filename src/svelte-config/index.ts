@@ -4,7 +4,6 @@ import { parseConfig } from "./parser";
 
 /** The result of static analysis of `svelte.config.js`. */
 export type StaticSvelteConfig = {
-  configFilePath: string;
   compilerOptions?: {
     runes?: boolean;
   };
@@ -14,8 +13,12 @@ export type StaticSvelteConfig = {
     };
   };
 };
+export type StaticSvelteConfigFile = {
+  filePath: string;
+  config: StaticSvelteConfig;
+};
 
-const caches = new Map<string, StaticSvelteConfig | null>();
+const caches = new Map<string, StaticSvelteConfigFile | null>();
 
 /**
  * Resolves svelte.config.js.
@@ -24,7 +27,7 @@ const caches = new Map<string, StaticSvelteConfig | null>();
  */
 export function resolveSvelteConfig(
   filePath: string | undefined,
-): StaticSvelteConfig | null {
+): StaticSvelteConfigFile | null {
   const cwd =
     filePath && fs.existsSync(filePath)
       ? path.dirname(filePath)
@@ -33,12 +36,14 @@ export function resolveSvelteConfig(
   if (!configFilePath) return null;
 
   if (caches.has(configFilePath)) {
-    return caches.get(configFilePath) as StaticSvelteConfig | null;
+    return caches.get(configFilePath) || null;
   }
 
   const code = fs.readFileSync(configFilePath, "utf8");
   const config = parseConfig(code);
-  const result = config ? { ...config, configFilePath } : null;
+  const result: StaticSvelteConfigFile | null = config
+    ? { config, filePath: configFilePath }
+    : null;
   caches.set(configFilePath, result);
   return result;
 }
