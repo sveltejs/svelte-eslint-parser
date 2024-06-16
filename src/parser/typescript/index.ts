@@ -1,6 +1,7 @@
 import type { ESLintExtendedProgram } from "..";
 import type { NormalizedParserOptions } from "../parser-options";
 import { parseScript, parseScriptInSvelte } from "../script";
+import type { SvelteParseContext } from "../svelte-parse-context";
 import type { AnalyzeTypeScriptContext } from "./analyze";
 import { analyzeTypeScript, analyzeTypeScriptInSvelte } from "./analyze";
 import { setParent } from "./set-parent";
@@ -30,8 +31,14 @@ export function parseTypeScript(
   code: string,
   attrs: Record<string, string | undefined>,
   parserOptions: NormalizedParserOptions,
+  svelteParseContext: SvelteParseContext,
 ): ESLintExtendedProgram {
-  const tsCtx = analyzeTypeScript(code, attrs, parserOptions);
+  const tsCtx = analyzeTypeScript(
+    code,
+    attrs,
+    parserOptions,
+    svelteParseContext,
+  );
 
   const result = parseScript(tsCtx.script, attrs, parserOptions);
   setParent(result);

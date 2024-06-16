@@ -10,6 +10,7 @@ import type {
 import { addReference, addVariable, getScopeFromNode } from "../scope";
 import { addElementToSortedArray } from "../utils";
 import type { NormalizedParserOptions } from "./parser-options";
+import type { SvelteParseContext } from "./svelte-parse-context";
 /**
  * Analyze scope
  */
@@ -160,6 +161,7 @@ export function analyzeStoreScope(scopeManager: ScopeManager): void {
 export function analyzePropsScope(
   body: SvelteScriptElement,
   scopeManager: ScopeManager,
+  svelteParseContext: SvelteParseContext,
 ): void {
   const moduleScope = scopeManager.scopes.find(
     (scope) => scope.type === "module",
@@ -187,23 +189,25 @@ export function analyzePropsScope(
         }
       }
     } else if (node.type === "VariableDeclaration") {
-      // Process for Svelte v5 Runes props. e.g. `let { x = $bindable() } = $props()`;
-      for (const decl of node.declarations) {
-        if (
-          decl.init?.type === "CallExpression" &&
-          decl.init.callee.type === "Identifier" &&
-          decl.init.callee.name === "$props" &&
-          decl.id.type === "ObjectPattern"
-        ) {
-          for (const pattern of extractPattern(decl.id)) {
-            if (
-              pattern.type === "AssignmentPattern" &&
-              pattern.left.type === "Identifier" &&
-              pattern.right.type === "CallExpression" &&
-              pattern.right.callee.type === "Identifier" &&
-              pattern.right.callee.name === "$bindable"
-            ) {
-              addPropReference(pattern.left, moduleScope);
+      if (svelteParseContext.runes) {
+        // Process for Svelte v5 Runes props. e.g. `let { x = $bindable() } = $props()`;
+        for (const decl of node.declarations) {
+          if (
+            decl.init?.type === "CallExpression" &&
+            decl.init.callee.type === "Identifier" &&
+            decl.init.callee.name === "$props" &&
+            decl.id.type === "ObjectPattern"
+          ) {
+            for (const pattern of extractPattern(decl.id)) {
+              if (
+                pattern.type === "AssignmentPattern" &&
+                pattern.left.type === "Identifier" &&
+                pattern.right.type === "CallExpression" &&
+                pattern.right.callee.type === "Identifier" &&
+                pattern.right.callee.name === "$bindable"
+              ) {
+                addPropReference(pattern.left, moduleScope);
+              }
             }
           }
         }

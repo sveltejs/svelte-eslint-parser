@@ -261,6 +261,12 @@ export default [
         svelteFeatures: {
           /* -- Experimental Svelte Features -- */
           /* It may be changed or removed in minor versions without notice. */
+          // If true, it will analyze Runes.
+          // By default, it will try to read `compilerOptions.runes` from `svelte.config.js`.
+          // However, note that if it cannot be resolved due to static analysis, it will behave as false.
+          runes: false,
+          /* -- Experimental Svelte Features -- */
+          /* It may be changed or removed in minor versions without notice. */
           // Whether to parse the `generics` attribute.
           // See https://github.com/sveltejs/rfcs/pull/38
           experimentalGenerics: false,
@@ -280,6 +286,12 @@ For example in `.eslintrc.*`:
     "svelteFeatures": {
       /* -- Experimental Svelte Features -- */
       /* It may be changed or removed in minor versions without notice. */
+      // If true, it will analyze Runes.
+      // By default, it will try to read `compilerOptions.runes` from `svelte.config.js`.
+      // However, note that if it cannot be resolved due to static analysis, it will behave as false.
+      "runes": false,
+      /* -- Experimental Svelte Features -- */
+      /* It may be changed or removed in minor versions without notice. */
       // Whether to parse the `generics` attribute.
       // See https://github.com/sveltejs/rfcs/pull/38
       "experimentalGenerics": false,
@@ -292,7 +304,7 @@ For example in `.eslintrc.*`:
 
 **_This is an experimental feature. It may be changed or removed in minor versions without notice._**
 
-If you install Svelte v5 the parser will be able to parse runes, and will also be able to parse `*.js` and `*.ts` files.
+If you install Svelte v5 and turn on runes (`compilerOptions.runes` in `svelte.config.js` or `parserOptions.svelteFeatures.runes` in ESLint config is `true`), the parser will be able to parse runes, and will also be able to parse `*.js` and `*.ts` files.
 
 When using this mode in an ESLint configuration, it is recommended to set it per file pattern as below.
 
