@@ -46,6 +46,20 @@ describe("parseConfig", () => {
         `,
       output: { compilerOptions: { runes: false } },
     },
+    {
+      code: `
+        const {compilerOptions} = {compilerOptions:{runes:true}}
+        export default {compilerOptions}
+        `,
+      output: { compilerOptions: { runes: true } },
+    },
+    {
+      code: `
+        const {compilerOptions = {runes:true}} = {}
+        export default {compilerOptions}
+        `,
+      output: { compilerOptions: { runes: true } },
+    },
   ];
   for (const { code, output } of testCases) {
     it(code, () => {

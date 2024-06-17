@@ -1,13 +1,9 @@
 import type { StaticSvelteConfig } from ".";
-import { getEspree } from "../parser/espree";
-import type {
-  Program,
-  ExportDefaultDeclaration,
-  Expression,
-  Identifier,
-} from "estree";
-import { getFallbackKeys, traverseNodes } from "../traverse";
+import type * as ESTree from "estree";
+import type { Scope } from "eslint";
 import type { ScopeManager } from "eslint-scope";
+import { getFallbackKeys, traverseNodes } from "../traverse";
+import { getEspree } from "../parser/espree";
 import { analyze } from "eslint-scope";
 import { findVariable } from "../scope";
 
@@ -72,11 +68,11 @@ class EvaluatedProperties {
 }
 
 function parseAst(
-  ast: Program,
+  ast: ESTree.Program,
   scopeManager: ScopeManager,
 ): StaticSvelteConfig {
   const edd = ast.body.find(
-    (node): node is ExportDefaultDeclaration =>
+    (node): node is ESTree.ExportDefaultDeclaration =>
       node.type === "ExportDefaultDeclaration",
   );
   if (!edd) return {};
@@ -87,10 +83,10 @@ function parseAst(
 }
 
 function parseSvelteConfigExpression(
-  node: Expression,
+  node: ESTree.Expression,
   scopeManager: ScopeManager,
 ): StaticSvelteConfig {
-  const tracked = new Map<Identifier, Expression | null>();
+  const tracked = new Map<ESTree.Identifier, Scope.Definition | null>();
   const parsed = parseExpression(node);
   if (parsed?.type !== EvaluatedType.object) return {};
   const properties = parsed.properties;
@@ -124,37 +120,37 @@ function parseSvelteConfigExpression(
   }
   return result;
 
-  function parseExpression(node: Expression): Evaluated | null {
+  function parseExpression(node: ESTree.Expression): Evaluated | null {
     if (node.type === "Literal") {
       return { type: EvaluatedType.literal, value: node.value };
     }
     if (node.type === "Identifier") {
-      const expr = trackIdentifier(node);
-      if (!expr) return null;
-      return parseExpression(expr);
+      return parseIdentifier(node);
     }
     if (node.type === "ObjectExpression") {
       const reversedProperties = [...node.properties].reverse();
       return {
         type: EvaluatedType.object,
         properties: new EvaluatedProperties((key) => {
+          let hasUnknown = false;
           for (const prop of reversedProperties) {
             if (prop.type === "Property") {
-              if (
-                !prop.computed &&
-                prop.key.type === "Identifier" &&
-                prop.key.name === key
-              ) {
-                return parseExpression(prop.value as Expression);
-              }
-              const evaluatedKey = parseExpression(prop.key as Expression);
-              if (
-                evaluatedKey?.type === EvaluatedType.literal &&
-                String(evaluatedKey.value) === key
-              ) {
-                return parseExpression(prop.value as Expression);
+              if (!prop.computed && prop.key.type === "Identifier") {
+                if (prop.key.name === key)
+                  return parseExpression(prop.value as ESTree.Expression);
+              } else {
+                const evaluatedKey = parseExpression(
+                  prop.key as ESTree.Expression,
+                );
+                if (evaluatedKey?.type === EvaluatedType.literal) {
+                  if (String(evaluatedKey.value) === key)
+                    return parseExpression(prop.value as ESTree.Expression);
+                } else {
+                  hasUnknown = true;
+                }
               }
             } else if (prop.type === "SpreadElement") {
+              hasUnknown = true;
               const nesting = parseExpression(prop.argument);
               if (nesting?.type === EvaluatedType.object) {
                 const value = nesting.properties.get(key);
@@ -162,7 +158,9 @@ function parseSvelteConfigExpression(
               }
             }
           }
-          return null;
+          return hasUnknown
+            ? null
+            : { type: EvaluatedType.literal, value: undefined };
         }),
       };
     }
@@ -170,15 +168,113 @@ function parseSvelteConfigExpression(
     return null;
   }
 
-  function trackIdentifier(node: Identifier): Expression | null {
+  function parseIdentifier(node: ESTree.Identifier) {
+    const def = getIdentifierDefinition(node);
+    if (!def) return null;
+    if (def.type !== "Variable") return null;
+    if (def.parent.kind !== "const" || !def.node.init) return null;
+    const evaluated = parseExpression(def.node.init);
+    if (!evaluated) return null;
+    const assigns = parsePatternAssign(def.name, def.node.id);
+    let result = evaluated;
+    while (assigns.length) {
+      const assign = assigns.shift()!;
+      if (assign.type === "member") {
+        if (result.type !== EvaluatedType.object) return null;
+        const next = result.properties.get(assign.name);
+        if (!next) return null;
+        result = next;
+      } else if (assign.type === "assignment") {
+        if (
+          result.type === EvaluatedType.literal &&
+          result.value === undefined
+        ) {
+          const next = parseExpression(assign.node.right);
+          if (!next) return null;
+          result = next;
+        }
+      }
+    }
+    return result;
+  }
+
+  function getIdentifierDefinition(
+    node: ESTree.Identifier,
+  ): Scope.Definition | null {
     if (tracked.has(node)) return tracked.get(node) || null;
     tracked.set(node, null);
     const variable = findVariable(scopeManager, node);
     if (!variable || variable.defs.length !== 1) return null;
     const def = variable.defs[0];
-    if (def.type !== "Variable" || def.parent.kind !== "const") return null;
-    const init = def.node.init || null;
-    tracked.set(node, init);
-    return init;
+    tracked.set(node, def);
+    if (
+      def.type !== "Variable" ||
+      def.parent.kind !== "const" ||
+      def.node.id.type !== "Identifier" ||
+      def.node.init?.type !== "Identifier"
+    ) {
+      return def;
+    }
+    const newDef = getIdentifierDefinition(def.node.init);
+    tracked.set(node, newDef);
+    return newDef;
+  }
+}
+
+function parsePatternAssign(
+  node: ESTree.Pattern,
+  root: ESTree.Pattern,
+): (
+  | { type: "member"; name: string }
+  | { type: "assignment"; node: ESTree.AssignmentPattern }
+)[] {
+  return parse(root) || [];
+
+  function parse(
+    target: ESTree.Pattern,
+  ):
+    | (
+        | { type: "member"; name: string }
+        | { type: "assignment"; node: ESTree.AssignmentPattern }
+      )[]
+    | null {
+    if (node === target) {
+      return [];
+    }
+    if (target.type === "Identifier") {
+      return null;
+    }
+    if (target.type === "AssignmentPattern") {
+      const left = parse(target.left);
+      if (!left) return null;
+      return [{ type: "assignment", node: target }, ...left];
+    }
+    if (target.type === "ObjectPattern") {
+      for (const prop of target.properties) {
+        if (prop.type === "Property") {
+          const name =
+            !prop.computed && prop.key.type === "Identifier"
+              ? prop.key.name
+              : prop.key.type === "Literal"
+                ? String(prop.key.value)
+                : null;
+          if (!name) continue;
+          const value = parse(prop.value);
+          if (!value) return null;
+          return [{ type: "member", name }, ...value];
+        }
+      }
+      return null;
+    }
+    if (target.type === "ArrayPattern") {
+      for (const [index, element] of target.elements.entries()) {
+        if (!element) continue;
+        const value = parse(element);
+        if (!value) return null;
+        return [{ type: "member", name: String(index) }, ...value];
+      }
+      return null;
+    }
+    return null;
   }
 }
