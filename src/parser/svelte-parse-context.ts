@@ -25,10 +25,11 @@ export function isEnableRunes(
   if (!svelteVersion.gte(5)) return false;
   if (parserOptions.svelteFeatures?.runes != null) {
     return Boolean(parserOptions.svelteFeatures.runes);
-  } else if (svelteConfig?.compilerOptions?.runes != null) {
+  }
+  if (svelteConfig?.compilerOptions?.runes != null) {
     return Boolean(svelteConfig.compilerOptions.runes);
   }
-  return false;
+  return true;
 }
 
 export function resolveSvelteParseContextForSvelte(
