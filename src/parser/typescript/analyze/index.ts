@@ -16,12 +16,14 @@ import { VirtualTypeScriptContext } from "../context";
 import type { TSESParseForESLintResult } from "../types";
 import type ESTree from "estree";
 import type { SvelteAttribute, SvelteHTMLElement } from "../../../ast";
-import { globals, globalsForRunes } from "../../../parser/globals";
 import type { NormalizedParserOptions } from "../../parser-options";
 import { setParent } from "../set-parent";
+import { getGlobalsForSvelte, globalsForRunes } from "../../globals";
+import type { SvelteParseContext } from "../../svelte-parse-context";
 
 export type AnalyzeTypeScriptContext = {
   slots: Set<SvelteHTMLElement>;
+  svelteParseContext: SvelteParseContext;
 };
 
 type TransformInfo = {
@@ -57,14 +59,22 @@ export function analyzeTypeScriptInSvelte(
 
   ctx._beforeResult = result;
 
-  analyzeStoreReferenceNames(result, ctx);
+  analyzeStoreReferenceNames(result, context.svelteParseContext, ctx);
 
-  analyzeDollarDollarVariables(result, ctx, context.slots);
+  analyzeDollarDollarVariables(
+    result,
+    ctx,
+    context.svelteParseContext,
+    context.slots,
+  );
 
-  analyzeRuneVariables(result, ctx);
+  analyzeRuneVariables(result, ctx, context.svelteParseContext);
 
   applyTransforms(
-    [...analyzeReactiveScopes(result), ...analyzeDollarDerivedScopes(result)],
+    [
+      ...analyzeReactiveScopes(result),
+      ...analyzeDollarDerivedScopes(result, context.svelteParseContext),
+    ],
     ctx,
   );
 
@@ -83,6 +93,7 @@ export function analyzeTypeScript(
   code: string,
   attrs: Record<string, string | undefined>,
   parserOptions: NormalizedParserOptions,
+  svelteParseContext: SvelteParseContext,
 ): VirtualTypeScriptContext {
   const ctx = new VirtualTypeScriptContext(code);
   ctx.appendOriginal(/^\s*/u.exec(code)![0].length);
@@ -95,9 +106,12 @@ export function analyzeTypeScript(
 
   ctx._beforeResult = result;
 
-  analyzeRuneVariables(result, ctx);
+  analyzeRuneVariables(result, ctx, svelteParseContext);
 
-  applyTransforms([...analyzeDollarDerivedScopes(result)], ctx);
+  applyTransforms(
+    [...analyzeDollarDerivedScopes(result, svelteParseContext)],
+    ctx,
+  );
 
   ctx.appendOriginalToEnd();
 
@@ -110,8 +124,10 @@ export function analyzeTypeScript(
  */
 function analyzeStoreReferenceNames(
   result: TSESParseForESLintResult,
+  svelteParseContext: SvelteParseContext,
   ctx: VirtualTypeScriptContext,
 ) {
+  const globals = getGlobalsForSvelte(svelteParseContext);
   const scopeManager = result.scopeManager;
   const programScope = getProgramScope(scopeManager as ScopeManager);
   const maybeStoreRefNames = new Set<string>();
@@ -198,8 +214,10 @@ function analyzeStoreReferenceNames(
 function analyzeDollarDollarVariables(
   result: TSESParseForESLintResult,
   ctx: VirtualTypeScriptContext,
+  svelteParseContext: SvelteParseContext,
   slots: Set<SvelteHTMLElement>,
 ) {
+  const globals = getGlobalsForSvelte(svelteParseContext);
   const scopeManager = result.scopeManager;
   for (const globalName of globals) {
     if (
@@ -308,7 +326,9 @@ function analyzeDollarDollarVariables(
 function analyzeRuneVariables(
   result: TSESParseForESLintResult,
   ctx: VirtualTypeScriptContext,
+  svelteParseContext: SvelteParseContext,
 ) {
+  if (!svelteParseContext.runes) return;
   const scopeManager = result.scopeManager;
   for (const globalName of globalsForRunes) {
     if (
@@ -511,7 +531,9 @@ function* analyzeReactiveScopes(
  */
 function* analyzeDollarDerivedScopes(
   result: TSESParseForESLintResult,
+  svelteParseContext: SvelteParseContext,
 ): Iterable<TransformInfo> {
+  if (!svelteParseContext.runes) return;
   const scopeManager = result.scopeManager;
   const derivedReferences = scopeManager.globalScope!.through.filter(
     (reference) => reference.identifier.name === "$derived",

@@ -34,11 +34,18 @@ import {
   styleNodeLoc,
   styleNodeRange,
 } from "./style-context";
-import { globals, globalsForSvelteScript } from "./globals";
-import { svelteVersion } from "./svelte-version";
+import { getGlobalsForSvelte, getGlobalsForSvelteScript } from "./globals";
 import type { NormalizedParserOptions } from "./parser-options";
 import { isTypeScript, normalizeParserOptions } from "./parser-options";
 import { getFragmentFromRoot } from "./compat";
+import {
+  isEnableRunes,
+  resolveSvelteParseContextForSvelte,
+  resolveSvelteParseContextForSvelteScript,
+  type SvelteParseContext,
+} from "./svelte-parse-context";
+import type { SvelteConfig } from "../svelte-config";
+import { resolveSvelteConfigFromOption } from "../svelte-config";
 
 export {
   StyleContext,
@@ -74,8 +81,13 @@ type ParseResult = {
           isSvelteScript: false;
           getSvelteHtmlAst: () => SvAST.Fragment | Compiler.Fragment;
           getStyleContext: () => StyleContext;
+          svelteParseContext: SvelteParseContext;
         }
-      | { isSvelte: false; isSvelteScript: true }
+      | {
+          isSvelte: false;
+          isSvelteScript: true;
+          svelteParseContext: SvelteParseContext;
+        }
     );
   visitorKeys: { [type: string]: string[] };
   scopeManager: ScopeManager;
@@ -84,10 +96,11 @@ type ParseResult = {
  * Parse source code
  */
 export function parseForESLint(code: string, options?: any): ParseResult {
+  const svelteConfig = resolveSvelteConfigFromOption(options);
   const parserOptions = normalizeParserOptions(options);
 
   if (
-    svelteVersion.hasRunes &&
+    isEnableRunes(svelteConfig, parserOptions) &&
     parserOptions.filePath &&
     !parserOptions.filePath.endsWith(".svelte") &&
     // If no `filePath` is set in ESLint, "<input>" will be specified.
@@ -95,11 +108,15 @@ export function parseForESLint(code: string, options?: any): ParseResult {
   ) {
     const trimmed = code.trim();
     if (!trimmed.startsWith("<") && !trimmed.endsWith(">")) {
-      return parseAsScript(code, parserOptions);
+      const svelteParseContext = resolveSvelteParseContextForSvelteScript(
+        svelteConfig,
+        parserOptions,
+      );
+      return parseAsScript(code, parserOptions, svelteParseContext);
     }
   }
 
-  return parseAsSvelte(code, parserOptions);
+  return parseAsSvelte(code, svelteConfig, parserOptions);
 }
 
 /**
@@ -107,6 +124,7 @@ export function parseForESLint(code: string, options?: any): ParseResult {
  */
 function parseAsSvelte(
   code: string,
+  svelteConfig: SvelteConfig | null,
   parserOptions: NormalizedParserOptions,
 ): ParseResult {
   const ctx = new Context(code, parserOptions);
@@ -115,6 +133,11 @@ function parseAsSvelte(
     ctx,
     parserOptions,
   );
+  const svelteParseContext = resolveSvelteParseContextForSvelte(
+    svelteConfig,
+    parserOptions,
+    resultTemplate.svelteAst,
+  );
 
   const scripts = ctx.sourceCode.scripts;
   const resultScript = ctx.isTypeScript()
@@ -122,7 +145,7 @@ function parseAsSvelte(
         scripts.getCurrentVirtualCodeInfo(),
         scripts.attrs,
         parserOptions,
-        { slots: ctx.slots },
+        { slots: ctx.slots, svelteParseContext },
       )
     : parseScriptInSvelte(
         scripts.getCurrentVirtualCode(),
@@ -141,7 +164,10 @@ function parseAsSvelte(
   analyzeSnippetsScope(ctx.snippets, resultScript.scopeManager!);
 
   // Add $$xxx variable
-  addGlobalVariables(resultScript.scopeManager!, globals);
+  addGlobalVariables(
+    resultScript.scopeManager!,
+    getGlobalsForSvelte(svelteParseContext),
+  );
 
   const ast = resultTemplate.ast;
 
@@ -177,7 +203,7 @@ function parseAsSvelte(
           attr.value[0].value === "module",
       )
     ) {
-      analyzePropsScope(body, resultScript.scopeManager!);
+      analyzePropsScope(body, resultScript.scopeManager!, svelteParseContext);
     }
   }
   if (statements.length) {
@@ -208,6 +234,7 @@ function parseAsSvelte(
     },
     styleNodeLoc,
     styleNodeRange,
+    svelteParseContext,
   });
   resultScript.visitorKeys = Object.assign({}, KEYS, resultScript.visitorKeys);
 
@@ -220,18 +247,23 @@ function parseAsSvelte(
 function parseAsScript(
   code: string,
   parserOptions: NormalizedParserOptions,
+  svelteParseContext: SvelteParseContext,
 ): ParseResult {
   const lang = parserOptions.filePath?.split(".").pop();
   const resultScript = isTypeScript(parserOptions, lang)
-    ? parseTypeScript(code, { lang }, parserOptions)
+    ? parseTypeScript(code, { lang }, parserOptions, svelteParseContext)
     : parseScript(code, { lang }, parserOptions);
 
   // Add $$xxx variable
-  addGlobalVariables(resultScript.scopeManager!, globalsForSvelteScript);
+  addGlobalVariables(
+    resultScript.scopeManager!,
+    getGlobalsForSvelteScript(svelteParseContext),
+  );
 
   resultScript.services = Object.assign(resultScript.services || {}, {
     isSvelte: false,
     isSvelteScript: true,
+    svelteParseContext,
   });
   resultScript.visitorKeys = Object.assign({}, KEYS, resultScript.visitorKeys);
   return resultScript as any;

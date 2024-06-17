@@ -80,6 +80,26 @@ export function getScopeFromNode(
   const global = scopeManager.globalScope;
   return global;
 }
+
+/**
+ * Find the variable of a given identifier.
+ */
+export function findVariable(
+  scopeManager: ScopeManager,
+  node: ESTree.Identifier,
+): Variable | null {
+  let scope: Scope | null = getScopeFromNode(scopeManager, node);
+
+  while (scope != null) {
+    const variable = scope.set.get(node.name);
+    if (variable != null) {
+      return variable;
+    }
+    scope = scope.upper;
+  }
+
+  return null;
+}
 /**
  * Gets the scope for the Program node
  */

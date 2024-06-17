@@ -1,6 +1,6 @@
-import { svelteVersion } from "./svelte-version";
+import type { SvelteParseContext } from "./svelte-parse-context";
 
-const globalsForSvelte4 = ["$$slots", "$$props", "$$restProps"] as const;
+const globalsForSvelte = ["$$slots", "$$props", "$$restProps"] as const;
 export const globalsForRunes = [
   "$state",
   "$derived",
@@ -10,10 +10,22 @@ export const globalsForRunes = [
   "$inspect",
   "$host",
 ] as const;
-const globalsForSvelte5 = [...globalsForSvelte4, ...globalsForRunes];
-export const globals = svelteVersion.gte(5)
-  ? globalsForSvelte5
-  : globalsForSvelte4;
-export const globalsForSvelteScript = svelteVersion.gte(5)
-  ? globalsForRunes
-  : [];
+type Global =
+  | (typeof globalsForSvelte)[number]
+  | (typeof globalsForRunes)[number];
+export function getGlobalsForSvelte(
+  svelteParseContext: SvelteParseContext,
+): readonly Global[] {
+  if (svelteParseContext.runes) {
+    return [...globalsForSvelte, ...globalsForRunes];
+  }
+  return globalsForSvelte;
+}
+export function getGlobalsForSvelteScript(
+  svelteParseContext: SvelteParseContext,
+): readonly Global[] {
+  if (svelteParseContext.runes) {
+    return globalsForRunes;
+  }
+  return [];
+}

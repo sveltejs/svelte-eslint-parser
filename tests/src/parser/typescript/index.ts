@@ -1,6 +1,7 @@
 import { Context } from "../../../../src/context";
 import type { NormalizedParserOptions } from "../../../../src/parser/parser-options";
 import { parseScriptInSvelte } from "../../../../src/parser/script";
+import { compilerVersion } from "../../../../src/parser/svelte-version";
 import { parseTemplate } from "../../../../src/parser/template";
 import { parseTypeScriptInSvelte } from "../../../../src/parser/typescript";
 import { generateParserOptions, listupFixtures } from "../test-utils";
@@ -49,6 +50,11 @@ describe("Check for typescript analyze result.", () => {
           parserOptions,
           {
             slots: new Set(),
+            svelteParseContext: {
+              runes: true,
+              compilerVersion,
+              svelteConfig: null,
+            },
           },
         );
         const result = parseScriptInSvelte(

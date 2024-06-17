@@ -20,6 +20,10 @@ export type NormalizedParserOptions = {
     [key: string]: any;
   };
   svelteFeatures?: {
+    // If true, it will analyze Runes.
+    // By default, it will try to read `compilerOptions.runes` from `svelte.config.js`.
+    // However, note that if it cannot be resolved due to static analysis, it will behave as false.
+    runes?: boolean;
     /* -- Experimental Svelte Features -- */
     // Whether to parse the `generics` attribute.
     // See https://github.com/sveltejs/rfcs/pull/38
