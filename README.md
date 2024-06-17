@@ -286,10 +286,11 @@ export default [
         svelteFeatures: {
           /* -- Experimental Svelte Features -- */
           /* It may be changed or removed in minor versions without notice. */
-          // If true, it will analyze Runes.
-          // By default, it will try to read `compilerOptions.runes` from `svelte.config.js`.
-          // However, note that if `parserOptions.svelteConfig` is not specified and the file cannot be parsed by static analysis, it will behave as `false`.
-          runes: false,
+          // This option is for Svelte 5. The default value is `true`.
+          // If `false`, ESLint will not recognize rune symbols.
+          // If not configured this option, The parser will try to read the option from `compilerOptions.runes` from `svelte.config.js`.
+          // If `parserOptions.svelteConfig` is not specified and the file cannot be parsed by static analysis, it will behave as `true`.
+          runes: true,
           /* -- Experimental Svelte Features -- */
           /* It may be changed or removed in minor versions without notice. */
           // Whether to parse the `generics` attribute.
@@ -311,10 +312,11 @@ For example in `.eslintrc.*`:
     "svelteFeatures": {
       /* -- Experimental Svelte Features -- */
       /* It may be changed or removed in minor versions without notice. */
-      // If true, it will analyze Runes.
-      // By default, it will try to read `compilerOptions.runes` from `svelte.config.js`.
-      // However, note that if the file cannot be parsed by static analysis, it will behave as false.
-      "runes": false,
+      // This option is for Svelte 5. The default value is `true`.
+      // If `false`, ESLint will not recognize rune symbols.
+      // If not configured this option, The parser will try to read the option from `compilerOptions.runes` from `svelte.config.js`.
+      // If `parserOptions.svelteConfig` is not specified and the file cannot be parsed by static analysis, it will behave as `true`.
+      "runes": true,
       /* -- Experimental Svelte Features -- */
       /* It may be changed or removed in minor versions without notice. */
       // Whether to parse the `generics` attribute.
@@ -329,7 +331,8 @@ For example in `.eslintrc.*`:
 
 **_This is an experimental feature. It may be changed or removed in minor versions without notice._**
 
-If you install Svelte v5 and turn on runes (`compilerOptions.runes` in `svelte.config.js` or `parserOptions.svelteFeatures.runes` in ESLint config is `true`), the parser will be able to parse runes, and will also be able to parse `*.js` and `*.ts` files.
+If you install Svelte v5 the parser will be able to parse runes, and will also be able to parse `*.js` and `*.ts` files.
+If you don't want to use Runes, you may need to configure. Please read [parserOptions.svelteFeatures](#parseroptionssveltefeatures) for more details.
 
 When using this mode in an ESLint configuration, it is recommended to set it per file pattern as below.
 
@@ -383,7 +386,6 @@ For example in `.eslintrc.*`:
       "parser": "svelte-eslint-parser",
       "parserOptions": {
         "parser": "...",
-        "svelteFeatures": { "runes": true },
         /* ... */
       },
     },
@@ -391,7 +393,6 @@ For example in `.eslintrc.*`:
       "files": ["*.svelte.js"],
       "parser": "svelte-eslint-parser",
       "parserOptions": {
-        "svelteFeatures": { "runes": true },
         /* ... */
       },
     },
@@ -400,7 +401,6 @@ For example in `.eslintrc.*`:
       "parser": "svelte-eslint-parser",
       "parserOptions": {
         "parser": "...(ts parser)...",
-        "svelteFeatures": { "runes": true },
         /* ... */
       },
     },

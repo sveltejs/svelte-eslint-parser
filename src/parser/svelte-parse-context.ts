@@ -28,7 +28,7 @@ export function isEnableRunes(
   } else if (svelteConfig?.compilerOptions?.runes != null) {
     return Boolean(svelteConfig.compilerOptions.runes);
   }
-  return false;
+  return true;
 }
 
 export function resolveSvelteParseContextForSvelte(
