@@ -266,6 +266,10 @@ export default [
 ];
 ```
 
+If `parserOptions.svelteConfig` is not specified, some config will be statically parsed from the `svelte.config.js` file.
+
+The `.eslintrc.*` style configuration cannot load `svelte.config.js` because it cannot use ESM. We recommend using the `eslint.config.js` style configuration.
+
 ### parserOptions.svelteFeatures
 
 You can use `parserOptions.svelteFeatures` property to specify how to parse related to Svelte features.
