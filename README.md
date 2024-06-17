@@ -245,9 +245,30 @@ For example in `.eslintrc.*`:
 }
 ```
 
+### parserOptions.svelteConfig
+
+If you are using `eslint.config.js`, you can provide a `svelte.config.js` in the `parserOptions.svelteConfig` property.
+
+For example:
+
+```js
+import svelteConfig from "./svelte.config.js";
+export default [
+  {
+    files: ["**/*.svelte", "*.svelte"],
+    languageOptions: {
+      parser: svelteParser,
+      parserOptions: {
+        svelteConfig: svelteConfig,
+      },
+    },
+  },
+];
+```
+
 ### parserOptions.svelteFeatures
 
-You can use `parserOptions.svelteFeatures` property to specify how to parse related to Svelte features. For example:
+You can use `parserOptions.svelteFeatures` property to specify how to parse related to Svelte features.
 
 For example in `eslint.config.js`:
 
@@ -263,7 +284,7 @@ export default [
           /* It may be changed or removed in minor versions without notice. */
           // If true, it will analyze Runes.
           // By default, it will try to read `compilerOptions.runes` from `svelte.config.js`.
-          // However, note that if it cannot be resolved due to static analysis, it will behave as false.
+          // However, note that if `parserOptions.svelteConfig` is not specified and the file cannot be parsed by static analysis, it will behave as `false`.
           runes: false,
           /* -- Experimental Svelte Features -- */
           /* It may be changed or removed in minor versions without notice. */
@@ -288,7 +309,7 @@ For example in `.eslintrc.*`:
       /* It may be changed or removed in minor versions without notice. */
       // If true, it will analyze Runes.
       // By default, it will try to read `compilerOptions.runes` from `svelte.config.js`.
-      // However, note that if it cannot be resolved due to static analysis, it will behave as false.
+      // However, note that if the file cannot be parsed by static analysis, it will behave as false.
       "runes": false,
       /* -- Experimental Svelte Features -- */
       /* It may be changed or removed in minor versions without notice. */
@@ -311,6 +332,7 @@ When using this mode in an ESLint configuration, it is recommended to set it per
 For example in `eslint.config.js`:
 
 ```js
+import svelteConfig from "./svelte.config.js";
 export default [
   {
     files: ["**/*.svelte", "*.svelte"],
@@ -318,6 +340,7 @@ export default [
       parser: svelteParser,
       parserOptions: {
         parser: "...",
+        svelteConfig,
         /* ... */
       },
     },
@@ -327,6 +350,7 @@ export default [
     languageOptions: {
       parser: svelteParser,
       parserOptions: {
+        svelteConfig,
         /* ... */
       },
     },
@@ -337,6 +361,7 @@ export default [
       parser: svelteParser,
       parserOptions: {
         parser: "...(ts parser)...",
+        svelteConfig,
         /* ... */
       },
     },
@@ -354,6 +379,7 @@ For example in `.eslintrc.*`:
       "parser": "svelte-eslint-parser",
       "parserOptions": {
         "parser": "...",
+        "svelteFeatures": { "runes": true },
         /* ... */
       },
     },
@@ -361,6 +387,7 @@ For example in `.eslintrc.*`:
       "files": ["*.svelte.js"],
       "parser": "svelte-eslint-parser",
       "parserOptions": {
+        "svelteFeatures": { "runes": true },
         /* ... */
       },
     },
@@ -369,6 +396,7 @@ For example in `.eslintrc.*`:
       "parser": "svelte-eslint-parser",
       "parserOptions": {
         "parser": "...(ts parser)...",
+        "svelteFeatures": { "runes": true },
         /* ... */
       },
     },

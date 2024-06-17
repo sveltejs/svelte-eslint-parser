@@ -1,33 +1,108 @@
 import path from "path";
 import fs from "fs";
 import { parseConfig } from "./parser";
+import type * as Compiler from "svelte/compiler";
 
-/** The result of static analysis of `svelte.config.js`. */
-export type StaticSvelteConfig = {
-  compilerOptions?: {
-    runes?: boolean;
+export type SvelteConfig = {
+  compilerOptions?: Compiler.CompileOptions;
+  extensions?: string[];
+  kit?: KitConfig;
+  preprocess?: unknown;
+  vitePlugin?: unknown;
+  onwarn?: (
+    warning: Compiler.Warning,
+    defaultHandler: (warning: Compiler.Warning) => void,
+  ) => void;
+  [key: string]: unknown;
+};
+
+interface KitConfig {
+  adapter?: unknown;
+  alias?: Record<string, string>;
+  appDir?: string;
+  csp?: {
+    mode?: "hash" | "nonce" | "auto";
+    directives?: unknown;
+    reportOnly?: unknown;
   };
-  kit?: {
-    files?: {
-      routes?: string;
+  csrf?: {
+    checkOrigin?: boolean;
+  };
+  embedded?: boolean;
+  env?: {
+    dir?: string;
+    publicPrefix?: string;
+    privatePrefix?: string;
+  };
+  files?: {
+    assets?: string;
+    hooks?: {
+      client?: string;
+      server?: string;
+      universal?: string;
     };
+    lib?: string;
+    params?: string;
+    routes?: string;
+    serviceWorker?: string;
+    appTemplate?: string;
+    errorTemplate?: string;
   };
-};
-export type StaticSvelteConfigFile = {
-  filePath: string;
-  config: StaticSvelteConfig;
-};
+  inlineStyleThreshold?: number;
+  moduleExtensions?: string[];
+  outDir?: string;
+  output?: {
+    preloadStrategy?: "modulepreload" | "preload-js" | "preload-mjs";
+  };
+  paths?: {
+    assets?: "" | `http://${string}` | `https://${string}`;
+    base?: "" | `/${string}`;
+    relative?: boolean;
+  };
+  prerender?: {
+    concurrency?: number;
+    crawl?: boolean;
+    entries?: ("*" | `/${string}`)[];
+    handleHttpError?: unknown;
+    handleMissingId?: unknown;
+    handleEntryGeneratorMismatch?: unknown;
+    origin?: string;
+  };
+  serviceWorker?: {
+    register?: boolean;
+    files?(filepath: string): boolean;
+  };
+  typescript?: {
+    config?: (config: Record<string, any>) => Record<string, any> | void;
+  };
+  version?: {
+    name?: string;
+    pollInterval?: number;
+  };
+}
 
-const caches = new Map<string, StaticSvelteConfigFile | null>();
+const caches = new Map<string, SvelteConfig | null>();
 
 /**
- * Resolves svelte.config.js.
- * It searches the parent directories of the given file to find svelte.config.js,
+ * Resolves svelte.config.
+ */
+export function resolveSvelteConfigFromOption(
+  options: any,
+): SvelteConfig | null {
+  if (options?.svelteConfig) {
+    return options.svelteConfig;
+  }
+  return resolveSvelteConfig(options?.filePath);
+}
+
+/**
+ * Resolves `svelte.config.js`.
+ * It searches the parent directories of the given file to find `svelte.config.js`,
  * and returns the static analysis result for it.
  */
-export function resolveSvelteConfig(
+function resolveSvelteConfig(
   filePath: string | undefined,
-): StaticSvelteConfigFile | null {
+): SvelteConfig | null {
   const cwd =
     filePath && fs.existsSync(filePath)
       ? path.dirname(filePath)
@@ -41,11 +116,8 @@ export function resolveSvelteConfig(
 
   const code = fs.readFileSync(configFilePath, "utf8");
   const config = parseConfig(code);
-  const result: StaticSvelteConfigFile | null = config
-    ? { config, filePath: configFilePath }
-    : null;
-  caches.set(configFilePath, result);
-  return result;
+  caches.set(configFilePath, config);
+  return config;
 }
 
 /**

@@ -44,8 +44,8 @@ import {
   resolveSvelteParseContextForSvelteScript,
   type SvelteParseContext,
 } from "./svelte-parse-context";
-import type { StaticSvelteConfigFile } from "../svelte-config";
-import { resolveSvelteConfig } from "../svelte-config";
+import type { SvelteConfig } from "../svelte-config";
+import { resolveSvelteConfigFromOption } from "../svelte-config";
 
 export {
   StyleContext,
@@ -96,7 +96,7 @@ type ParseResult = {
  * Parse source code
  */
 export function parseForESLint(code: string, options?: any): ParseResult {
-  const svelteConfig = resolveSvelteConfig(options?.filePath);
+  const svelteConfig = resolveSvelteConfigFromOption(options);
   const parserOptions = normalizeParserOptions(options);
 
   if (
@@ -124,7 +124,7 @@ export function parseForESLint(code: string, options?: any): ParseResult {
  */
 function parseAsSvelte(
   code: string,
-  svelteConfig: StaticSvelteConfigFile | null,
+  svelteConfig: SvelteConfig | null,
   parserOptions: NormalizedParserOptions,
 ): ParseResult {
   const ctx = new Context(code, parserOptions);

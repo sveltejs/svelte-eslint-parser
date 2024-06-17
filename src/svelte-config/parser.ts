@@ -1,4 +1,4 @@
-import type { StaticSvelteConfig } from ".";
+import type { SvelteConfig } from ".";
 import type * as ESTree from "estree";
 import type { Scope } from "eslint";
 import type { ScopeManager } from "eslint-scope";
@@ -7,7 +7,7 @@ import { getEspree } from "../parser/espree";
 import { analyze } from "eslint-scope";
 import { findVariable } from "../scope";
 
-export function parseConfig(code: string): StaticSvelteConfig | null {
+export function parseConfig(code: string): SvelteConfig | null {
   const espree = getEspree();
   const ast = espree.parse(code, {
     range: true,
@@ -35,42 +35,10 @@ export function parseConfig(code: string): StaticSvelteConfig | null {
   return parseAst(ast, scopeManager);
 }
 
-const enum EvaluatedType {
-  literal,
-  object,
-}
-
-type Evaluated =
-  | {
-      type: EvaluatedType.literal;
-      value: string | number | bigint | boolean | null | undefined | RegExp;
-    }
-  | {
-      type: EvaluatedType.object;
-      properties: EvaluatedProperties;
-    };
-
-class EvaluatedProperties {
-  private readonly cached = new Map<string, Evaluated | null>();
-
-  private readonly getter: (key: string) => Evaluated | null;
-
-  public constructor(getter: (key: string) => Evaluated | null) {
-    this.getter = getter;
-  }
-
-  public get(key: string): Evaluated | null {
-    if (this.cached.has(key)) return this.cached.get(key) || null;
-    const value = this.getter(key);
-    this.cached.set(key, value);
-    return value;
-  }
-}
-
 function parseAst(
   ast: ESTree.Program,
   scopeManager: ScopeManager,
-): StaticSvelteConfig {
+): SvelteConfig {
   const edd = ast.body.find(
     (node): node is ESTree.ExportDefaultDeclaration =>
       node.type === "ExportDefaultDeclaration",
@@ -85,92 +53,162 @@ function parseAst(
 function parseSvelteConfigExpression(
   node: ESTree.Expression,
   scopeManager: ScopeManager,
-): StaticSvelteConfig {
-  const tracked = new Map<ESTree.Identifier, Scope.Definition | null>();
-  const parsed = parseExpression(node);
-  if (parsed?.type !== EvaluatedType.object) return {};
-  const properties = parsed.properties;
-  const result: StaticSvelteConfig = {};
+): SvelteConfig {
+  const evaluated = evaluateExpression(node, scopeManager);
+  if (evaluated?.type !== EvaluatedType.object) return {};
+  const result: SvelteConfig = {};
   // Returns only known properties.
-  const compilerOptions = properties.get("compilerOptions");
+  const compilerOptions = evaluated.getProperty("compilerOptions");
   if (compilerOptions?.type === EvaluatedType.object) {
     result.compilerOptions = {};
-    const runes = compilerOptions.properties.get("runes");
-    if (
-      runes?.type === EvaluatedType.literal &&
-      typeof runes.value === "boolean"
-    ) {
-      result.compilerOptions.runes = runes.value;
+    const runes = compilerOptions.getProperty("runes")?.getStatic();
+    if (runes) {
+      result.compilerOptions.runes = Boolean(runes.value);
     }
   }
-  const kit = properties.get("kit");
+  const kit = evaluated.getProperty("kit");
   if (kit?.type === EvaluatedType.object) {
     result.kit = {};
-    const kitFiles = kit.properties.get("files");
-    if (kitFiles?.type === EvaluatedType.object) {
-      result.kit.files = {};
-      const kitFilesRoutes = kitFiles.properties.get("routes");
-      if (
-        kitFilesRoutes?.type === EvaluatedType.literal &&
-        typeof kitFilesRoutes.value === "string"
-      ) {
-        result.kit.files.routes = kitFilesRoutes.value;
-      }
-    }
+    const files = kit.getProperty("files")?.getStatic();
+    if (files) result.kit.files = files.value as never;
   }
   return result;
+}
 
-  function parseExpression(node: ESTree.Expression): Evaluated | null {
+const enum EvaluatedType {
+  literal,
+  object,
+}
+
+type Evaluated = EvaluatedLiteral | EvaluatedObject;
+
+class EvaluatedLiteral {
+  public readonly type = EvaluatedType.literal;
+
+  public value: unknown;
+
+  public constructor(value: unknown) {
+    this.value = value;
+  }
+
+  public getStatic() {
+    return this;
+  }
+}
+
+/** Evaluating an object expression. */
+class EvaluatedObject {
+  public readonly type = EvaluatedType.object;
+
+  private readonly cached = new Map<string, Evaluated | null>();
+
+  private readonly node: ESTree.ObjectExpression;
+
+  private readonly parseExpression: (
+    node: ESTree.Expression | ESTree.Pattern | ESTree.PrivateIdentifier,
+  ) => Evaluated | null;
+
+  public constructor(
+    node: ESTree.ObjectExpression,
+    parseExpression: (
+      node: ESTree.Expression | ESTree.Pattern | ESTree.PrivateIdentifier,
+    ) => Evaluated | null,
+  ) {
+    this.node = node;
+    this.parseExpression = parseExpression;
+  }
+
+  /** Gets the evaluated value of the property with the given name. */
+  public getProperty(key: string): Evaluated | null {
+    return this.withCache(key, () => {
+      let unknown = false;
+      for (const prop of [...this.node.properties].reverse()) {
+        if (prop.type === "Property") {
+          const name = this.getKey(prop);
+          if (name === key) return this.parseExpression(prop.value);
+          if (name == null) unknown = true;
+        } else if (prop.type === "SpreadElement") {
+          const evaluated = this.parseExpression(prop.argument);
+          if (evaluated?.type === EvaluatedType.object) {
+            const value = evaluated.getProperty(key);
+            if (value) return value;
+          }
+          unknown = true;
+        }
+      }
+      return unknown ? null : new EvaluatedLiteral(undefined);
+    });
+  }
+
+  public getStatic(): { value: Record<string, unknown> } | null {
+    const object: Record<string, unknown> = {};
+    for (const prop of this.node.properties) {
+      if (prop.type === "Property") {
+        const name = this.getKey(prop);
+        if (name == null) return null;
+        const evaluated = this.withCache(name, () =>
+          this.parseExpression(prop.value),
+        )?.getStatic();
+        if (!evaluated) return null;
+        object[name] = evaluated.value;
+      } else if (prop.type === "SpreadElement") {
+        const evaluated = this.parseExpression(prop.argument)?.getStatic();
+        if (!evaluated) return null;
+        Object.assign(object, evaluated.value);
+      }
+    }
+    return { value: object };
+  }
+
+  private withCache(
+    key: string,
+    parse: () => Evaluated | null,
+  ): Evaluated | null {
+    if (this.cached.has(key)) return this.cached.get(key) || null;
+    const evaluated = parse();
+    this.cached.set(key, evaluated);
+    return evaluated;
+  }
+
+  private getKey(node: ESTree.Property): string | null {
+    if (!node.computed && node.key.type === "Identifier") return node.key.name;
+    const evaluatedKey = this.parseExpression(node.key)?.getStatic();
+    if (evaluatedKey) return String(evaluatedKey.value);
+    return null;
+  }
+}
+
+function evaluateExpression(
+  node: ESTree.Expression,
+  scopeManager: ScopeManager,
+): Evaluated | null {
+  const tracked = new Map<ESTree.Identifier, Scope.Definition[]>();
+  return parseExpression(node);
+
+  function parseExpression(
+    node: ESTree.Expression | ESTree.Pattern | ESTree.PrivateIdentifier,
+  ): Evaluated | null {
     if (node.type === "Literal") {
-      return { type: EvaluatedType.literal, value: node.value };
+      return new EvaluatedLiteral(node.value);
     }
     if (node.type === "Identifier") {
       return parseIdentifier(node);
     }
     if (node.type === "ObjectExpression") {
-      const reversedProperties = [...node.properties].reverse();
-      return {
-        type: EvaluatedType.object,
-        properties: new EvaluatedProperties((key) => {
-          let hasUnknown = false;
-          for (const prop of reversedProperties) {
-            if (prop.type === "Property") {
-              if (!prop.computed && prop.key.type === "Identifier") {
-                if (prop.key.name === key)
-                  return parseExpression(prop.value as ESTree.Expression);
-              } else {
-                const evaluatedKey = parseExpression(
-                  prop.key as ESTree.Expression,
-                );
-                if (evaluatedKey?.type === EvaluatedType.literal) {
-                  if (String(evaluatedKey.value) === key)
-                    return parseExpression(prop.value as ESTree.Expression);
-                } else {
-                  hasUnknown = true;
-                }
-              }
-            } else if (prop.type === "SpreadElement") {
-              hasUnknown = true;
-              const nesting = parseExpression(prop.argument);
-              if (nesting?.type === EvaluatedType.object) {
-                const value = nesting.properties.get(key);
-                if (value) return value;
-              }
-            }
-          }
-          return hasUnknown
-            ? null
-            : { type: EvaluatedType.literal, value: undefined };
-        }),
-      };
+      return new EvaluatedObject(node, parseExpression);
     }
 
     return null;
   }
 
-  function parseIdentifier(node: ESTree.Identifier) {
-    const def = getIdentifierDefinition(node);
-    if (!def) return null;
+  function parseIdentifier(node: ESTree.Identifier): Evaluated | null {
+    const defs = getIdentifierDefinitions(node);
+    if (defs.length !== 1) {
+      if (defs.length === 0 && node.name === "undefined")
+        return new EvaluatedLiteral(undefined);
+      return null;
+    }
+    const def = defs[0];
     if (def.type !== "Variable") return null;
     if (def.parent.kind !== "const" || !def.node.init) return null;
     const evaluated = parseExpression(def.node.init);
@@ -181,7 +219,7 @@ function parseSvelteConfigExpression(
       const assign = assigns.shift()!;
       if (assign.type === "member") {
         if (result.type !== EvaluatedType.object) return null;
-        const next = result.properties.get(assign.name);
+        const next = result.getProperty(assign.name);
         if (!next) return null;
         result = next;
       } else if (assign.type === "assignment") {
@@ -198,29 +236,39 @@ function parseSvelteConfigExpression(
     return result;
   }
 
-  function getIdentifierDefinition(
+  function getIdentifierDefinitions(
     node: ESTree.Identifier,
-  ): Scope.Definition | null {
-    if (tracked.has(node)) return tracked.get(node) || null;
-    tracked.set(node, null);
-    const variable = findVariable(scopeManager, node);
-    if (!variable || variable.defs.length !== 1) return null;
-    const def = variable.defs[0];
-    tracked.set(node, def);
-    if (
-      def.type !== "Variable" ||
-      def.parent.kind !== "const" ||
-      def.node.id.type !== "Identifier" ||
-      def.node.init?.type !== "Identifier"
-    ) {
-      return def;
+  ): Scope.Definition[] {
+    if (tracked.has(node)) return tracked.get(node)!;
+    tracked.set(node, []);
+    const defs = findVariable(scopeManager, node)?.defs;
+    if (!defs) return [];
+    tracked.set(node, defs);
+    if (defs.length !== 1) {
+      const def = defs[0];
+      if (
+        def.type === "Variable" &&
+        def.parent.kind === "const" &&
+        def.node.id.type === "Identifier" &&
+        def.node.init?.type === "Identifier"
+      ) {
+        const newDef = getIdentifierDefinitions(def.node.init);
+        tracked.set(node, newDef);
+        return newDef;
+      }
     }
-    const newDef = getIdentifierDefinition(def.node.init);
-    tracked.set(node, newDef);
-    return newDef;
+    return defs;
   }
 }
 
+/**
+ * Returns the assignment path.
+ * For example,
+ * `let {a: {target}} = {}`
+ *   -> `[{type: "member", name: 'a'}, {type: "member", name: 'target'}]`.
+ * `let {a: {target} = foo} = {}`
+ *   -> `[{type: "member", name: 'a'}, {type: "assignment"}, {type: "member", name: 'target'}]`.
+ */
 function parsePatternAssign(
   node: ESTree.Pattern,
   root: ESTree.Pattern,

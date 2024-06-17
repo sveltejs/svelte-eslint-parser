@@ -2,7 +2,7 @@ import type * as Compiler from "svelte/compiler";
 import type * as SvAST from "./svelte-ast-types";
 import type { NormalizedParserOptions } from "./parser-options";
 import { compilerVersion, svelteVersion } from "./svelte-version";
-import type { StaticSvelteConfigFile } from "../svelte-config";
+import type { SvelteConfig } from "../svelte-config";
 
 /** The context for parsing. */
 export type SvelteParseContext = {
@@ -15,24 +15,24 @@ export type SvelteParseContext = {
   /** The version of "svelte/compiler". */
   compilerVersion: string;
   /** The result of static analysis of `svelte.config.js`. */
-  svelteConfig: StaticSvelteConfigFile | null;
+  svelteConfig: SvelteConfig | null;
 };
 
 export function isEnableRunes(
-  svelteConfig: StaticSvelteConfigFile | null,
+  svelteConfig: SvelteConfig | null,
   parserOptions: NormalizedParserOptions,
 ): boolean {
   if (!svelteVersion.gte(5)) return false;
   if (parserOptions.svelteFeatures?.runes != null) {
     return Boolean(parserOptions.svelteFeatures.runes);
-  } else if (svelteConfig?.config.compilerOptions?.runes != null) {
-    return Boolean(svelteConfig.config.compilerOptions.runes);
+  } else if (svelteConfig?.compilerOptions?.runes != null) {
+    return Boolean(svelteConfig.compilerOptions.runes);
   }
   return false;
 }
 
 export function resolveSvelteParseContextForSvelte(
-  svelteConfig: StaticSvelteConfigFile | null,
+  svelteConfig: SvelteConfig | null,
   parserOptions: NormalizedParserOptions,
   svelteAst: Compiler.Root | SvAST.AstLegacy,
 ): SvelteParseContext {
@@ -53,14 +53,14 @@ export function resolveSvelteParseContextForSvelte(
 }
 
 export function resolveSvelteParseContextForSvelteScript(
-  svelteConfig: StaticSvelteConfigFile | null,
+  svelteConfig: SvelteConfig | null,
   parserOptions: NormalizedParserOptions,
 ): SvelteParseContext {
   return resolveSvelteParseContext(svelteConfig, parserOptions);
 }
 
 function resolveSvelteParseContext(
-  svelteConfig: StaticSvelteConfigFile | null,
+  svelteConfig: SvelteConfig | null,
   parserOptions: NormalizedParserOptions,
 ): SvelteParseContext {
   return {
