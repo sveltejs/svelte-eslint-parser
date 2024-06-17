@@ -1,5 +1,11 @@
 # svelte-eslint-parser
 
+## 0.39.1
+
+### Patch Changes
+
+- [#538](https://github.com/sveltejs/svelte-eslint-parser/pull/538) [`437e463`](https://github.com/sveltejs/svelte-eslint-parser/commit/437e4639d771ab55eaaca023f25cafecd94750a8) Thanks [@baseballyama](https://github.com/baseballyama)! - fix: Set `svelteFeatures.runes` to `true` by default for Svelte 5
+
 ## 0.39.0
 
 ### Minor Changes
