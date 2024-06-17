@@ -1,5 +1,11 @@
 # svelte-eslint-parser
 
+## 0.39.0
+
+### Minor Changes
+
+- [#536](https://github.com/sveltejs/svelte-eslint-parser/pull/536) [`1a9ef3d`](https://github.com/sveltejs/svelte-eslint-parser/commit/1a9ef3d5fda174077c3504de32c1123883d4bde4) Thanks [@ota-meshi](https://github.com/ota-meshi)! - feat: makes it optional whether to parse runes.
+
 ## 0.38.0
 
 ### Minor Changes
