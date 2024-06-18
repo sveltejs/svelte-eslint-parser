@@ -13,6 +13,7 @@ export {
 export * as meta from "./meta";
 export { name } from "./meta";
 export type { SvelteConfig } from "./svelte-config";
+export type { PublicSvelteParseContext as SvelteParseContext } from "./parser/svelte-parse-context";
 
 export { AST, ParseError };
 

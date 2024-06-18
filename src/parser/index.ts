@@ -39,9 +39,10 @@ import type { NormalizedParserOptions } from "./parser-options";
 import { isTypeScript, normalizeParserOptions } from "./parser-options";
 import { getFragmentFromRoot } from "./compat";
 import {
-  isEnableRunes,
+  isMaybeEnableRunes,
   resolveSvelteParseContextForSvelte,
   resolveSvelteParseContextForSvelteScript,
+  type PublicSvelteParseContext,
   type SvelteParseContext,
 } from "./svelte-parse-context";
 import type { SvelteConfig } from "../svelte-config";
@@ -81,12 +82,12 @@ type ParseResult = {
           isSvelteScript: false;
           getSvelteHtmlAst: () => SvAST.Fragment | Compiler.Fragment;
           getStyleContext: () => StyleContext;
-          svelteParseContext: SvelteParseContext;
+          svelteParseContext: PublicSvelteParseContext;
         }
       | {
           isSvelte: false;
           isSvelteScript: true;
-          svelteParseContext: SvelteParseContext;
+          svelteParseContext: PublicSvelteParseContext;
         }
     );
   visitorKeys: { [type: string]: string[] };
@@ -100,7 +101,7 @@ export function parseForESLint(code: string, options?: any): ParseResult {
   const parserOptions = normalizeParserOptions(options);
 
   if (
-    isEnableRunes(svelteConfig, parserOptions) &&
+    isMaybeEnableRunes(svelteConfig, parserOptions) &&
     parserOptions.filePath &&
     !parserOptions.filePath.endsWith(".svelte") &&
     // If no `filePath` is set in ESLint, "<input>" will be specified.
@@ -152,6 +153,8 @@ function parseAsSvelte(
         scripts.attrs,
         parserOptions,
       );
+  svelteParseContext.analyzeRunesMode(resultScript.scopeManager!);
+
   ctx.scriptLet.restore(resultScript);
   ctx.tokens.push(...resultScript.ast.tokens);
   ctx.comments.push(...resultScript.ast.comments);
@@ -234,7 +237,7 @@ function parseAsSvelte(
     },
     styleNodeLoc,
     styleNodeRange,
-    svelteParseContext,
+    svelteParseContext: svelteParseContext.toPublic(),
   });
   resultScript.visitorKeys = Object.assign({}, KEYS, resultScript.visitorKeys);
 
@@ -263,7 +266,7 @@ function parseAsScript(
   resultScript.services = Object.assign(resultScript.services || {}, {
     isSvelte: false,
     isSvelteScript: true,
-    svelteParseContext,
+    svelteParseContext: svelteParseContext.toPublic(),
   });
   resultScript.visitorKeys = Object.assign({}, KEYS, resultScript.visitorKeys);
   return resultScript as any;

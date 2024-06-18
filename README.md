@@ -286,11 +286,7 @@ export default [
         svelteFeatures: {
           /* -- Experimental Svelte Features -- */
           /* It may be changed or removed in minor versions without notice. */
-          // This option is for Svelte 5. The default value is `true`.
-          // If `false`, ESLint will not recognize rune symbols.
-          // If not configured this option, The parser will try to read the option from `compilerOptions.runes` from `svelte.config.js`.
-          // If `parserOptions.svelteConfig` is not specified and the file cannot be parsed by static analysis, it will behave as `true`.
-          runes: true,
+          runes: "auto", // or `true` or `false`
           /* -- Experimental Svelte Features -- */
           /* It may be changed or removed in minor versions without notice. */
           // Whether to parse the `generics` attribute.
@@ -312,11 +308,7 @@ For example in `.eslintrc.*`:
     "svelteFeatures": {
       /* -- Experimental Svelte Features -- */
       /* It may be changed or removed in minor versions without notice. */
-      // This option is for Svelte 5. The default value is `true`.
-      // If `false`, ESLint will not recognize rune symbols.
-      // If not configured this option, The parser will try to read the option from `compilerOptions.runes` from `svelte.config.js`.
-      // If `parserOptions.svelteConfig` is not specified and the file cannot be parsed by static analysis, it will behave as `true`.
-      "runes": true,
+      "runes": "auto", // or `true` or `false`
       /* -- Experimental Svelte Features -- */
       /* It may be changed or removed in minor versions without notice. */
       // Whether to parse the `generics` attribute.
@@ -326,6 +318,17 @@ For example in `.eslintrc.*`:
   },
 }
 ```
+
+#### parserOptions.svelteFeatures.runes
+
+Configures whether ESLint recognizes rune symbols.
+
+- `true` ... The parser recognizes rune symbols, and always passes `parserServices.svelteParseContext.runes` as `true`.
+- `"auto"` ... The parser recognizes rune symbols, and passes `true` to `parserServices.svelteParseContext.runes` if the file contains rune symbols, `false` if it does not.
+- `false` ... The parser does not recognize rune symbols, and always passes `parserServices.svelteParseContext.runes` as `false`.
+
+If not configured this option, The parser will try to read the option from `compilerOptions.runes` from `svelte.config.js`.
+If `parserOptions.svelteConfig` is not specified and the file cannot be analyzed by static analysis, or neither has `compilerOptions.runes`, it will behave as `"auto"`.
 
 ### Runes support
 

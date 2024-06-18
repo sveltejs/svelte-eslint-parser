@@ -3,9 +3,11 @@ import type * as SvAST from "./svelte-ast-types";
 import type { NormalizedParserOptions } from "./parser-options";
 import { compilerVersion, svelteVersion } from "./svelte-version";
 import type { SvelteConfig } from "../svelte-config";
+import type { ScopeManager } from "eslint-scope";
+import { globalsForRunes } from "./globals";
 
 /** The context for parsing. */
-export type SvelteParseContext = {
+export type PublicSvelteParseContext = {
   /**
    * Whether to use Runes mode.
    * May be `true` if the user is using Svelte v5.
@@ -18,18 +20,68 @@ export type SvelteParseContext = {
   svelteConfig: SvelteConfig | null;
 };
 
-export function isEnableRunes(
+export const enum RunesMode {
+  off,
+  on,
+  auto,
+}
+
+export class SvelteParseContext {
+  private runesMode: RunesMode;
+
+  private readonly svelteConfig: SvelteConfig | null;
+
+  public constructor(runesMode: RunesMode, svelteConfig: SvelteConfig | null) {
+    this.runesMode = runesMode;
+    this.svelteConfig = svelteConfig;
+  }
+
+  public get runes(): boolean {
+    if (this.runesMode === RunesMode.auto)
+      throw new Error("Runes mode is auto");
+    return this.runesMode === RunesMode.on;
+  }
+
+  public analyzeRunesMode(scopeManager: ScopeManager): void {
+    if (this.runesMode !== RunesMode.auto) return;
+    this.runesMode = scopeManager.globalScope.through.some((reference) =>
+      globalsForRunes.includes(reference.identifier.name as never),
+    )
+      ? RunesMode.on
+      : RunesMode.off;
+  }
+
+  /** Convert it into a format provided by the parser service. */
+  public toPublic(): PublicSvelteParseContext {
+    return {
+      runes: this.runes,
+      compilerVersion,
+      svelteConfig: this.svelteConfig,
+    };
+  }
+}
+
+function getRunesMode(
+  svelteConfig: SvelteConfig | null,
+  parserOptions: NormalizedParserOptions,
+): RunesMode {
+  if (!svelteVersion.gte(5)) return RunesMode.off;
+  if (parserOptions.svelteFeatures?.runes != null) {
+    if (parserOptions.svelteFeatures.runes === "auto") return RunesMode.auto;
+    return parserOptions.svelteFeatures.runes ? RunesMode.on : RunesMode.off;
+  }
+  if (svelteConfig?.compilerOptions?.runes != null) {
+    return svelteConfig.compilerOptions.runes ? RunesMode.on : RunesMode.off;
+  }
+  return RunesMode.auto;
+}
+
+export function isMaybeEnableRunes(
   svelteConfig: SvelteConfig | null,
   parserOptions: NormalizedParserOptions,
 ): boolean {
-  if (!svelteVersion.gte(5)) return false;
-  if (parserOptions.svelteFeatures?.runes != null) {
-    return Boolean(parserOptions.svelteFeatures.runes);
-  }
-  if (svelteConfig?.compilerOptions?.runes != null) {
-    return Boolean(svelteConfig.compilerOptions.runes);
-  }
-  return true;
+  const mode = getRunesMode(svelteConfig, parserOptions);
+  return mode === RunesMode.on || mode === RunesMode.auto;
 }
 
 export function resolveSvelteParseContextForSvelte(
@@ -39,18 +91,12 @@ export function resolveSvelteParseContextForSvelte(
 ): SvelteParseContext {
   const svelteOptions = (svelteAst as Compiler.Root).options;
   if (svelteOptions?.runes != null) {
-    return {
-      runes: svelteOptions.runes,
-      compilerVersion,
+    return new SvelteParseContext(
+      svelteOptions.runes ? RunesMode.on : RunesMode.off,
       svelteConfig,
-    };
+    );
   }
-
-  return {
-    runes: isEnableRunes(svelteConfig, parserOptions),
-    compilerVersion,
-    svelteConfig,
-  };
+  return resolveSvelteParseContext(svelteConfig, parserOptions);
 }
 
 export function resolveSvelteParseContextForSvelteScript(
@@ -64,9 +110,8 @@ function resolveSvelteParseContext(
   svelteConfig: SvelteConfig | null,
   parserOptions: NormalizedParserOptions,
 ): SvelteParseContext {
-  return {
-    runes: isEnableRunes(svelteConfig, parserOptions),
-    compilerVersion,
+  return new SvelteParseContext(
+    getRunesMode(svelteConfig, parserOptions),
     svelteConfig,
-  };
+  );
 }

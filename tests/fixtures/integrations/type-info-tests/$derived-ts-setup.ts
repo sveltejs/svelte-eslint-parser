@@ -30,7 +30,6 @@ export function getConfig() {
     parser: "svelte-eslint-parser",
     parserOptions: {
       ...generateParserOptions(),
-      svelteFeatures: { runes: true },
     },
     rules: {
       "@typescript-eslint/no-unsafe-argument": "error",

@@ -19,7 +19,7 @@ import type { SvelteAttribute, SvelteHTMLElement } from "../../../ast";
 import type { NormalizedParserOptions } from "../../parser-options";
 import { setParent } from "../set-parent";
 import { getGlobalsForSvelte, globalsForRunes } from "../../globals";
-import type { SvelteParseContext } from "../../svelte-parse-context";
+import { type SvelteParseContext } from "../../svelte-parse-context";
 
 export type AnalyzeTypeScriptContext = {
   slots: Set<SvelteHTMLElement>;
@@ -56,6 +56,7 @@ export function analyzeTypeScriptInSvelte(
       project: null,
     },
   ) as unknown as TSESParseForESLintResult;
+  context.svelteParseContext.analyzeRunesMode(result.scopeManager as never);
 
   ctx._beforeResult = result;
 
@@ -103,6 +104,7 @@ export function analyzeTypeScript(
     // Without typings
     project: null,
   }) as unknown as TSESParseForESLintResult;
+  svelteParseContext.analyzeRunesMode(result.scopeManager as never);
 
   ctx._beforeResult = result;
 
