@@ -1,8 +1,8 @@
 <script lang="ts">
-    import Component from './ts-event03-input.svelte'; // Component: typeof SvelteComponent
+    import Component from './ts-event03-input.svelte'; // Component: ComponentType
 </script>
 
-<Component onfoo="{e=>{ // Component: typeof SvelteComponent, e: any
+<Component onfoo="{e=>{ // Component: ComponentType, e: any
     // e.detail is number
     //   `@typescript-eslint/parser` doesn't get the correct types.
     //   Using `typescript-eslint-parser-for-extra-files` will give we the correct types.
