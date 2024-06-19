@@ -4,7 +4,8 @@ export default {
 	join,
 	resolve,
 	dirname,
-	basename
+	basename,
+	parse
 };
 
 export function extname(p) {
