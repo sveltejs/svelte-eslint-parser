@@ -140,7 +140,9 @@ function findConfigFilePath(cwd: string) {
     if (stat?.isFile()) {
       return target;
     }
-    directory = path.dirname(directory);
+    const next = path.dirname(directory);
+    if (next === directory) break;
+    directory = next;
   }
   return null;
 }
