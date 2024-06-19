@@ -103,10 +103,11 @@ export function resolveSvelteConfigFromOption(
 function resolveSvelteConfig(
   filePath: string | undefined,
 ): SvelteConfig | null {
-  const cwd =
-    filePath && fs.existsSync(filePath)
-      ? path.dirname(filePath)
-      : process.cwd();
+  let cwd = filePath && fs.existsSync(filePath) ? path.dirname(filePath) : null;
+  if (cwd == null) {
+    if (typeof process === "undefined") return null;
+    cwd = process.cwd();
+  }
   const configFilePath = findConfigFilePath(cwd);
   if (!configFilePath) return null;
 
