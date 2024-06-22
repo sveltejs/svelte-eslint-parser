@@ -17,22 +17,58 @@ async function setupMonaco() {
 	}
 }
 
-function appendMonacoEditorScript() {
-	return new Promise((resolve) => {
-		const script = document.createElement('script');
-		script.src = 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.26.1/min/vs/loader.min.js';
+async function appendMonacoEditorScript() {
+	let error = new Error();
+	const urlList = [
+		'https://cdn.jsdelivr.net/npm/monaco-editor/dev/vs/loader.min.js',
+		'https://unpkg.com/monaco-editor@latest/min/vs/loader.js'
+	];
+
+	/* global MONACO_EDITOR_VERSION -- Define monaco-editor version */
+	if (typeof MONACO_EDITOR_VERSION !== 'undefined') {
+		urlList.unshift(
+			`https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/${MONACO_EDITOR_VERSION}/min/vs/loader.min.js`,
+			`https://cdn.jsdelivr.net/npm/monaco-editor@${MONACO_EDITOR_VERSION}/dev/vs/loader.min.js`,
+			`https://unpkg.com/monaco-editor/${MONACO_EDITOR_VERSION}/min/vs/loader.min.js`
+		);
+	}
+	for (const url of urlList) {
+		try {
+			return await appendScript(url);
+		} catch (e) {
+			// eslint-disable-next-line no-console -- OK
+			console.warn(`Failed to retrieve resource from ${url}`);
+			error = e;
+		}
+	}
+	throw error;
+}
+
+/** Appends a script tag. */
+function appendScript(src) {
+	const script = document.createElement('script');
+
+	return new Promise((resolve, reject) => {
+		script.src = src;
 		script.onload = () => {
 			script.onload = null;
 
 			watch();
 
 			function watch() {
+				// @ts-expect-error -- global Monaco's require
 				if (window.require) {
 					resolve(script);
+
 					return;
 				}
+
 				setTimeout(watch, 200);
 			}
+		};
+		script.onerror = (e) => {
+			reject(e);
+			document.head.removeChild(script);
 		};
 		document.head.append(script);
 	});

@@ -1,5 +1,10 @@
 import { sveltekit } from '@sveltejs/kit/vite';
 import { resolve } from 'path';
+import { createRequire } from 'module';
+
+const { version: MONACO_EDITOR_VERSION } = createRequire(import.meta.url)(
+	'monaco-editor/package.json'
+);
 
 /** @type {import('vite').UserConfig} */
 const config = {
@@ -20,6 +25,9 @@ const config = {
 			'svelte-eslint-parser': resolve('./build-system/shim/svelte-eslint-parser.js'),
 			'svelte/compiler': resolve('./build-system/shim/svelte/compiler.js')
 		}
+	},
+	define: {
+		MONACO_EDITOR_VERSION: JSON.stringify(MONACO_EDITOR_VERSION)
 	}
 };
 
