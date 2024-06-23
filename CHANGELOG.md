@@ -1,5 +1,11 @@
 # svelte-eslint-parser
 
+## 0.39.2
+
+### Patch Changes
+
+- [#540](https://github.com/sveltejs/svelte-eslint-parser/pull/540) [`48a7001`](https://github.com/sveltejs/svelte-eslint-parser/commit/48a7001d961ff82b6546b6b8c4e6e4655cc5c374) Thanks [@ota-meshi](https://github.com/ota-meshi)! - fix: parsing error for nesting `{#snippet}`
+
 ## 0.39.1
 
 ### Patch Changes
