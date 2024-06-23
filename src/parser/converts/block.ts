@@ -488,7 +488,10 @@ export function convertAwaitBlock(
         const id = typeCtx.generateUniqueId(expression);
         return {
           preparationScript: [
-            `const ${id} = ${expression};`,
+            {
+              script: `const ${id} = ${expression};`,
+              nodeType: "VariableDeclaration",
+            },
             generateAwaitThenValueType(idAwaitThenValue),
           ],
           param: {
@@ -655,7 +658,11 @@ export function convertSnippetBlock(
     ).end,
   );
 
-  const scopeKind = parent.type === "Program" ? "snippet" : "render";
+  const scopeKind =
+    parent.type === "Program"
+      ? "snippet"
+      : // use currentScriptScopeKind
+        null;
 
   ctx.scriptLet.nestSnippetBlock(
     node.expression,
@@ -735,13 +742,16 @@ function extractMustacheBlockTokens(
 
 /** Generate Awaited like type code */
 function generateAwaitThenValueType(id: string) {
-  return `type ${id}<T> = T extends null | undefined
+  return {
+    script: `type ${id}<T> = T extends null | undefined
     ? T
     : T extends { then(value: infer F): any }
     ? F extends (value: infer V, ...args: any) => any
         ? ${id}<V>
         : never
-        : T;`;
+        : T;`,
+    nodeType: "TSTypeAliasDeclaration" as const,
+  };
 }
 
 /** Checks whether the given name identifier is exists or not. */

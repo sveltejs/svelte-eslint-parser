@@ -102,9 +102,12 @@ function getNodeRange(
   ];
 }
 
+type StatementNodeType = `${TSESTree.Statement["type"]}`;
+
 type RestoreCallback = {
   start: number;
   end: number;
+  nodeType: StatementNodeType;
   callback: ScriptLetRestoreCallback;
 };
 
@@ -167,6 +170,7 @@ export class ScriptLetContext {
       `(${part})${isTS ? `as (${typing})` : ""};`,
       range[0] - 1,
       this.currentScriptScopeKind,
+      "ExpressionStatement",
       (st, tokens, comments, result) => {
         const exprSt = st as ESTree.ExpressionStatement;
         const tsAs: TSAsExpression | null = isTS
@@ -223,6 +227,7 @@ export class ScriptLetContext {
       `({${part}});`,
       range[0] - 2,
       this.currentScriptScopeKind,
+      "ExpressionStatement",
       (st, tokens, _comments, result) => {
         const exprSt = st as ESTree.ExpressionStatement;
         const objectExpression: ESTree.ObjectExpression =
@@ -262,6 +267,7 @@ export class ScriptLetContext {
       `const ${part};`,
       range[0] - 6,
       this.currentScriptScopeKind,
+      "VariableDeclaration",
       (st, tokens, _comments, result) => {
         const decl = st as ESTree.VariableDeclaration;
         const node = decl.declarations[0];
@@ -309,6 +315,7 @@ export class ScriptLetContext {
       scriptLet,
       ranges.idRange[0] - 5,
       "generics",
+      "TSTypeAliasDeclaration",
       (st, tokens, _comments, result) => {
         const decl = st as any as TSESTree.TSTypeAliasDeclaration;
         const id = decl.id;
@@ -361,6 +368,7 @@ export class ScriptLetContext {
         scriptLet,
         ranges.defaultRange[0] - 5 - id.length - 1,
         "generics",
+        "TSTypeAliasDeclaration",
         (st, tokens, _comments, result) => {
           const decl = st as any as TSESTree.TSTypeAliasDeclaration;
           const typeAnnotation = decl.typeAnnotation;
@@ -396,6 +404,7 @@ export class ScriptLetContext {
       `if(${part}){`,
       range[0] - 3,
       this.currentScriptScopeKind,
+      "IfStatement",
       (st, tokens, _comments, result) => {
         const ifSt = st as ESTree.IfStatement;
         const node = ifSt.test;
@@ -451,6 +460,7 @@ export class ScriptLetContext {
       source,
       exprRange[0] - exprOffset,
       this.currentScriptScopeKind,
+      "ExpressionStatement",
       (st, tokens, comments, result) => {
         const expSt = st as ESTree.ExpressionStatement;
         const call = expSt.expression as ESTree.CallExpression;
@@ -534,15 +544,18 @@ export class ScriptLetContext {
     id: ESTree.Identifier,
     closeParentIndex: number,
     snippetBlock: SvelteSnippetBlock,
-    kind: "snippet" | "render",
+    // If set to null, `currentScriptScopeKind` will be used.
+    kind: "snippet" | null,
     callback: (id: ESTree.Identifier, params: ESTree.Pattern[]) => void,
   ): void {
+    const scopeKind = kind || this.currentScriptScopeKind;
     const idRange = getNodeRange(id);
     const part = this.ctx.code.slice(idRange[0], closeParentIndex + 1);
     const restore = this.appendScript(
       `function ${part}{`,
       idRange[0] - 9,
-      kind,
+      scopeKind,
+      "FunctionDeclaration",
       (st, tokens, _comments, result) => {
         const fnDecl = st as ESTree.FunctionDeclaration;
         const idNode = fnDecl.id;
@@ -568,7 +581,7 @@ export class ScriptLetContext {
         fnDecl.params = [];
       },
     );
-    this.pushScope(restore, "}", kind);
+    this.pushScope(restore, "}", scopeKind);
   }
 
   public nestBlock(
@@ -577,7 +590,7 @@ export class ScriptLetContext {
       | ScriptLetBlockParam[]
       | ((helper: TypeGenHelper | null) => {
           param: ScriptLetBlockParam;
-          preparationScript?: string[];
+          preparationScript?: { script: string; nodeType: StatementNodeType }[];
         }),
   ): void {
     let resolvedParams;
@@ -590,8 +603,9 @@ export class ScriptLetContext {
         if (generatedTypes.preparationScript) {
           for (const preparationScript of generatedTypes.preparationScript) {
             this.appendScriptWithoutOffset(
-              preparationScript,
+              preparationScript.script,
               this.currentScriptScopeKind,
+              preparationScript.nodeType,
               (node, tokens, comments, result) => {
                 tokens.length = 0;
                 comments.length = 0;
@@ -612,6 +626,7 @@ export class ScriptLetContext {
         `{`,
         block.range[0],
         this.currentScriptScopeKind,
+        "BlockStatement",
         (st, tokens, _comments, result) => {
           const blockSt = st as ESTree.BlockStatement;
 
@@ -668,6 +683,7 @@ export class ScriptLetContext {
         `(${source})=>{`,
         maps[0].range[0] - 1,
         this.currentScriptScopeKind,
+        "ExpressionStatement",
         (st, tokens, comments, result) => {
           const exprSt = st as ESTree.ExpressionStatement;
           const fn = exprSt.expression as ESTree.ArrowFunctionExpression;
@@ -742,6 +758,7 @@ export class ScriptLetContext {
     text: string,
     offset: number,
     kind: "generics" | "snippet" | "render",
+    nodeType: StatementNodeType,
     callback: (
       node: ESTree.Node,
       tokens: Token[],
@@ -752,6 +769,7 @@ export class ScriptLetContext {
     const resultCallback = this.appendScriptWithoutOffset(
       text,
       kind,
+      nodeType,
       (node, tokens, comments, result) => {
         fixLocations(
           node,
@@ -770,6 +788,7 @@ export class ScriptLetContext {
   private appendScriptWithoutOffset(
     text: string,
     kind: "generics" | "snippet" | "render",
+    nodeType: StatementNodeType,
     callback: (
       node: ESTree.Node,
       tokens: Token[],
@@ -785,6 +804,7 @@ export class ScriptLetContext {
     const restoreCallback: RestoreCallback = {
       start: startOffset,
       end: endOffset,
+      nodeType,
       callback,
     };
     this.restoreCallbacks.push(restoreCallback);
@@ -918,6 +938,7 @@ export class ScriptLetContext {
           return;
         }
         if (
+          orderedRestoreCallback.nodeType === node.type &&
           orderedRestoreCallback.start <= node.range![0] &&
           node.range![1] <= orderedRestoreCallback.end
         ) {
