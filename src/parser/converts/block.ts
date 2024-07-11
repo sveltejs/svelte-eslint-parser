@@ -1,5 +1,5 @@
 import type * as SvAST from "../svelte-ast-types";
-import type * as Compiler from "svelte/compiler";
+import type * as Compiler from "../svelte-ast-types-for-v5";
 import type {
   SvelteAwaitBlock,
   SvelteAwaitBlockAwaitCatch,
@@ -114,20 +114,21 @@ export function convertIfBlock(
   node: SvAST.IfBlock | Compiler.IfBlock,
   parent: SvelteIfBlock["parent"],
   ctx: Context,
-  elseif: true,
+  elseifContext?: { start: number },
 ): SvelteIfBlockElseIf;
 /** Convert for IfBlock */
 export function convertIfBlock(
   node: SvAST.IfBlock | Compiler.IfBlock,
   parent: SvelteIfBlock["parent"],
   ctx: Context,
-  elseif?: true,
+  elseifContext?: { start: number },
 ): SvelteIfBlock {
   // {#if expr} {:else} {/if}
   // {:else if expr} {/if}
+  const elseif = Boolean(elseifContext);
   const nodeStart = startBlockIndex(
     ctx.code,
-    elseif ? node.start - 1 : node.start,
+    elseifContext?.start ?? node.start,
     elseif ? ":else" : "#if",
   );
   const ifBlock: SvelteIfBlock = {
@@ -188,7 +189,9 @@ export function convertIfBlock(
       };
       ifBlock.else = elseBlock;
 
-      const elseIfBlock = convertIfBlock(c, elseBlock, ctx, true);
+      const elseIfBlock = convertIfBlock(c, elseBlock, ctx, {
+        start: elseStart,
+      });
       // adjust loc
       elseBlock.range[1] = elseIfBlock.range[1];
       elseBlock.loc.end = {
@@ -238,22 +241,21 @@ function startBlockIndexForElse(
   lastExpression: ESTree.Node | { start: number; end: number },
   ctx: Context,
 ) {
-  let baseStart: number;
   const elseChildren = getChildren(elseFragment);
   if (elseChildren.length > 0) {
     const c = elseChildren[0];
-    baseStart = c.start;
     if (c.type === "IfBlock" && c.elseif) {
-      baseStart = Math.min(baseStart, getWithLoc(getTestFromIfBlock(c)).start);
+      const contentStart = getWithLoc(getTestFromIfBlock(c)).start;
+      if (contentStart <= c.start) {
+        return startBlockIndex(ctx.code, contentStart - 1, ":else");
+      }
     }
-  } else {
-    const beforeEnd = endIndexFromFragment(beforeFragment, () => {
-      return ctx.code.indexOf("}", getWithLoc(lastExpression).end) + 1;
-    });
-    baseStart = beforeEnd + 1;
+    return startBlockIndex(ctx.code, c.start, ":else");
   }
-
-  return startBlockIndex(ctx.code, baseStart - 1, ":else");
+  const beforeEnd = endIndexFromFragment(beforeFragment, () => {
+    return ctx.code.indexOf("}", getWithLoc(lastExpression).end) + 1;
+  });
+  return startBlockIndex(ctx.code, beforeEnd, ":else");
 }
 
 /** Convert for EachBlock */
@@ -706,7 +708,7 @@ function extractMustacheBlockTokens(
     | SvelteKeyBlock
     | SvelteSnippetBlock,
   ctx: Context,
-  option?: { startOnly?: true },
+  option?: { startOnly?: boolean },
 ) {
   const startSectionNameStart = indexOf(
     ctx.code,
