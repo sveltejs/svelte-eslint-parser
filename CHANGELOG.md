@@ -1,5 +1,11 @@
 # svelte-eslint-parser
 
+## 0.40.0
+
+### Minor Changes
+
+- [#548](https://github.com/sveltejs/svelte-eslint-parser/pull/548) [`dfe5cb8`](https://github.com/sveltejs/svelte-eslint-parser/commit/dfe5cb815ef2119cfa56ade8755c45b8533c24e1) Thanks [@ota-meshi](https://github.com/ota-meshi)! - fix: update svelte to 5.0.0-next.181 and fix for `{:else if}`
+
 ## 0.39.2
 
 ### Patch Changes
