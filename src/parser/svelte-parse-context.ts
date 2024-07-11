@@ -1,4 +1,4 @@
-import type * as Compiler from "svelte/compiler";
+import type * as Compiler from "./svelte-ast-types-for-v5";
 import type * as SvAST from "./svelte-ast-types";
 import type { NormalizedParserOptions } from "./parser-options";
 import { compilerVersion, svelteVersion } from "./svelte-version";

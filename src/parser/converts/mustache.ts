@@ -7,7 +7,7 @@ import type {
 import type { Context } from "../../context";
 import type * as SvAST from "../svelte-ast-types";
 import { hasTypeInfo } from "../../utils";
-import type * as Compiler from "svelte/compiler";
+import type * as Compiler from "../svelte-ast-types-for-v5";
 
 /** Convert for MustacheTag */
 export function convertMustacheTag(
