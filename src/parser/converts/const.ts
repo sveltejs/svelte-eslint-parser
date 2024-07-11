@@ -2,7 +2,7 @@ import type { SvelteConstTag } from "../../ast";
 import type { Context } from "../../context";
 import { getDeclaratorFromConstTag } from "../compat";
 import type * as SvAST from "../svelte-ast-types";
-import type * as Compiler from "svelte/compiler";
+import type * as Compiler from "../svelte-ast-types-for-v5";
 
 /** Convert for ConstTag */
 export function convertConstTag(
