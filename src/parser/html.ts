@@ -1,4 +1,4 @@
-import type * as Compiler from "./svelte-ast-types-for-v5";
+import type * as Compiler from "svelte/compiler";
 import type ESTree from "estree";
 import { getEspree } from "./espree";
 

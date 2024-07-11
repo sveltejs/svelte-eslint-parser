@@ -1,7 +1,7 @@
 /** Compatibility for Svelte v4 <-> v5 */
 import type ESTree from "estree";
 import type * as SvAST from "./svelte-ast-types";
-import type * as Compiler from "./svelte-ast-types-for-v5";
+import type * as Compiler from "svelte/compiler";
 
 export type Child =
   | Compiler.Text
