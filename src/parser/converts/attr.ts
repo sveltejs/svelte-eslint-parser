@@ -150,14 +150,10 @@ function convertAttribute(
     ctx.addToken("HTMLIdentifier", keyRange);
     return attribute;
   }
-  const value = Array.isArray(node.value) ? node.value : [node.value];
+  const value = node.value;
   const shorthand =
-    value.some((v) => v.type === "AttributeShorthand") ||
-    // for Svelte v5
-    (value.length === 1 &&
-      value[0].type === "ExpressionTag" &&
-      ctx.code[node.start] === "{" &&
-      ctx.code[node.end - 1] === "}");
+    isAttributeShorthandForSvelteV4(value) ||
+    isAttributeShorthandForSvelteV5(value);
   if (shorthand) {
     const key: ESTree.Identifier = {
       ...attribute.key,
@@ -187,14 +183,29 @@ function convertAttribute(
   // Not required for shorthands. Therefore, register the token here.
   ctx.addToken("HTMLIdentifier", keyRange);
 
-  processAttributeValue(
-    value as Exclude<(typeof value)[number], SvAST.AttributeShorthand>[],
-    attribute,
-    parent,
-    ctx,
-  );
+  processAttributeValue(value, attribute, parent, ctx);
 
   return attribute;
+
+  function isAttributeShorthandForSvelteV4(
+    value: Exclude<(SvAST.Attribute | Compiler.Attribute)["value"], boolean>,
+  ): value is [SvAST.AttributeShorthand] {
+    return Array.isArray(value) && value[0]?.type === "AttributeShorthand";
+  }
+
+  function isAttributeShorthandForSvelteV5(
+    value: Exclude<
+      (SvAST.Attribute | Compiler.Attribute)["value"],
+      boolean | [SvAST.AttributeShorthand]
+    >,
+  ): boolean {
+    return (
+      !Array.isArray(value) &&
+      value.type === "ExpressionTag" &&
+      ctx.code[node.start] === "{" &&
+      ctx.code[node.end - 1] === "}"
+    );
+  }
 }
 
 /** Common process attribute value */
