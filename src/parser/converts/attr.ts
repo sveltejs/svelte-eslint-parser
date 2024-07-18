@@ -150,15 +150,9 @@ function convertAttribute(
     ctx.addToken("HTMLIdentifier", keyRange);
     return attribute;
   }
-  const value = node.value as (
-    | Compiler.Text
-    | Compiler.ExpressionTag
-    | SvAST.Text
-    | SvAST.MustacheTag
-    | SvAST.AttributeShorthand
-  )[];
+  const value = Array.isArray(node.value) ? node.value : [node.value];
   const shorthand =
-    value.find((v) => v.type === "AttributeShorthand") ||
+    value.some((v) => v.type === "AttributeShorthand") ||
     // for Svelte v5
     (value.length === 1 &&
       value[0].type === "ExpressionTag" &&
@@ -194,12 +188,7 @@ function convertAttribute(
   ctx.addToken("HTMLIdentifier", keyRange);
 
   processAttributeValue(
-    node.value as (
-      | SvAST.Text
-      | SvAST.MustacheTag
-      | Compiler.Text
-      | Compiler.ExpressionTag
-    )[],
+    value as Exclude<(typeof value)[number], SvAST.AttributeShorthand>[],
     attribute,
     parent,
     ctx,
@@ -210,17 +199,19 @@ function convertAttribute(
 
 /** Common process attribute value */
 function processAttributeValue(
-  nodeValue: (
-    | SvAST.Text
-    | SvAST.MustacheTag
-    | Compiler.Text
-    | Compiler.ExpressionTag
-  )[],
+  nodeValue:
+    | (
+        | SvAST.Text
+        | SvAST.MustacheTag
+        | Compiler.Text
+        | Compiler.ExpressionTag
+      )[]
+    | Compiler.ExpressionTag,
   attribute: SvelteAttribute | SvelteStyleDirectiveLongform,
   attributeParent: (SvelteAttribute | SvelteStyleDirectiveLongform)["parent"],
   ctx: Context,
 ) {
-  const nodes = nodeValue
+  const nodes = (Array.isArray(nodeValue) ? nodeValue : [nodeValue])
     .filter(
       (v) =>
         v.type !== "Text" ||
