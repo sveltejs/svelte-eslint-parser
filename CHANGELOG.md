@@ -1,5 +1,11 @@
 # svelte-eslint-parser
 
+## 0.41.0
+
+### Minor Changes
+
+- [#550](https://github.com/sveltejs/svelte-eslint-parser/pull/550) [`ef24a69`](https://github.com/sveltejs/svelte-eslint-parser/commit/ef24a69b805b7cff6744be4cbdbc9c2349cfe04d) Thanks [@ota-meshi](https://github.com/ota-meshi)! - feat: support for svelte 5.0.0-next.191
+
 ## 0.40.0
 
 ### Minor Changes
