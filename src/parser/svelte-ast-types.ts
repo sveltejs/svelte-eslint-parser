@@ -192,7 +192,7 @@ export interface Comment extends BaseNode {
 export interface Attribute extends BaseNode {
   type: "Attribute";
   name: string;
-  value: (Text | AttributeShorthand | MustacheTag)[] | true;
+  value: (Text | MustacheTag)[] | [AttributeShorthand] | true;
 }
 export interface Spread extends BaseNode {
   type: "Spread";
