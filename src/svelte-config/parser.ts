@@ -62,7 +62,7 @@ function parseSvelteConfigExpression(
   if (compilerOptions?.type === EvaluatedType.object) {
     result.compilerOptions = {};
     const runes = compilerOptions.getProperty("runes")?.getStatic();
-    if (runes) {
+    if (runes?.value != null) {
       result.compilerOptions.runes = Boolean(runes.value);
     }
   }
@@ -70,7 +70,7 @@ function parseSvelteConfigExpression(
   if (kit?.type === EvaluatedType.object) {
     result.kit = {};
     const files = kit.getProperty("files")?.getStatic();
-    if (files) result.kit.files = files.value as never;
+    if (files?.value != null) result.kit.files = files.value as never;
   }
   return result;
 }

@@ -60,6 +60,12 @@ describe("parseConfig", () => {
         `,
       output: { compilerOptions: { runes: true } },
     },
+    {
+      code: `
+        export default {compilerOptions:{}}
+        `,
+      output: { compilerOptions: {} },
+    },
   ];
   for (const { code, output } of testCases) {
     it(code, () => {
