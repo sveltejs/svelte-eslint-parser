@@ -1,5 +1,11 @@
 # svelte-eslint-parser
 
+## 0.41.1
+
+### Patch Changes
+
+- [#561](https://github.com/sveltejs/svelte-eslint-parser/pull/561) [`8350bb5`](https://github.com/sveltejs/svelte-eslint-parser/commit/8350bb5b59bc6b54afa72baf7eccb83929ceb593) Thanks [@ota-meshi](https://github.com/ota-meshi)! - fix: incorrect runes inference when having empty compiler options
+
 ## 0.41.0
 
 ### Minor Changes
