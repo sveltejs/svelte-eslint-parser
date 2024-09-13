@@ -86,8 +86,6 @@ function parseAttribute(state: State): Compiler.Attribute {
       value: true,
       start,
       end: keyEnd,
-      metadata: null as any,
-      parent: null,
     };
   }
   state.skipSpaces();
@@ -98,8 +96,6 @@ function parseAttribute(state: State): Compiler.Attribute {
       value: true,
       start,
       end: keyEnd,
-      metadata: null as any,
-      parent: null,
     };
   }
   // parse value
@@ -110,8 +106,6 @@ function parseAttribute(state: State): Compiler.Attribute {
     value: [value],
     start,
     end: state.index,
-    metadata: null as any,
-    parent: null,
   };
 }
 
@@ -149,8 +143,6 @@ function parseAttributeValue(
         expression,
         start,
         end,
-        metadata: null as any,
-        parent: null,
       };
     }
   }
@@ -164,7 +156,6 @@ function parseAttributeValue(
         raw: quote,
         start,
         end: state.index,
-        parent: null,
       };
     }
     let c: string | undefined;
@@ -179,7 +170,6 @@ function parseAttributeValue(
           raw: data,
           start: start + 1,
           end: end - 1,
-          parent: null,
         };
       }
     }
@@ -198,7 +188,6 @@ function parseAttributeValue(
     raw: data,
     start,
     end,
-    parent: null,
   };
 }
 

@@ -40,11 +40,9 @@ export function getOptionsFromRoot(
       fragment: {
         type: "Fragment",
         nodes: [],
-        transparent: true,
       },
       start: root.options.start,
       end: root.options.end,
-      parent: null as any,
     };
   }
   return null;

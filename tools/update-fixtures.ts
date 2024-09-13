@@ -135,9 +135,16 @@ for (const { input, inputFileName, outputFileName, config } of listupFixtures(
   }
 }
 
-for (const { input, inputFileName, outputFileName, config } of listupFixtures(
-  STYLE_CONTEXT_FIXTURE_ROOT,
-)) {
+for (const {
+  input,
+  inputFileName,
+  outputFileName,
+  config,
+  meetRequirements,
+} of listupFixtures(STYLE_CONTEXT_FIXTURE_ROOT)) {
+  if (!meetRequirements("parse")) {
+    continue;
+  }
   const result = parse(input, inputFileName, config);
   const styleContext = result.services.getStyleContext();
   fs.writeFileSync(
@@ -147,9 +154,16 @@ for (const { input, inputFileName, outputFileName, config } of listupFixtures(
   );
 }
 
-for (const { input, inputFileName, outputFileName, config } of listupFixtures(
-  STYLE_LOCATION_FIXTURE_ROOT,
-)) {
+for (const {
+  input,
+  inputFileName,
+  outputFileName,
+  config,
+  meetRequirements,
+} of listupFixtures(STYLE_LOCATION_FIXTURE_ROOT)) {
+  if (!meetRequirements("parse")) {
+    continue;
+  }
   const services = parse(input, inputFileName, config).services;
   if (!services.isSvelte) continue;
   const styleContext = services.getStyleContext();

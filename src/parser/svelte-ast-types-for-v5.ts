@@ -1,85 +1,49 @@
-// FIXME Since the node type is not provided by "svelte/compiler",
-// we work around this by extracting the type from the parse function.
-// See also https://github.com/sveltejs/svelte/issues/12292
+import type { AST } from "svelte/compiler";
 
-import type { parse } from "svelte/compiler";
+export type Root = AST.Root;
+export type Fragment = AST.Fragment;
+export type SvelteOptions = AST.SvelteOptions;
+export type Script = AST.Script;
 
-export type Root = ModernParseReturnType<typeof parse>;
-export type Fragment = Root["fragment"];
-export type SvelteOptions = Root["options"];
-export type Script = Root["instance"];
-type FragmentChild = Fragment["nodes"][number];
+export type Text = AST.Text;
 
-export type Text = Extract<FragmentChild, { type: "Text" }>;
+export type ExpressionTag = AST.ExpressionTag;
+export type HtmlTag = AST.HtmlTag;
+export type ConstTag = AST.ConstTag;
+export type DebugTag = AST.DebugTag;
+export type RenderTag = AST.RenderTag;
 
-export type ExpressionTag = Extract<FragmentChild, { type: "ExpressionTag" }>;
-export type HtmlTag = Extract<FragmentChild, { type: "HtmlTag" }>;
-export type ConstTag = Extract<FragmentChild, { type: "ConstTag" }>;
-export type DebugTag = Extract<FragmentChild, { type: "DebugTag" }>;
-export type RenderTag = Extract<FragmentChild, { type: "RenderTag" }>;
+export type Component = AST.Component;
+export type TitleElement = AST.TitleElement;
+export type SlotElement = AST.SlotElement;
+export type RegularElement = AST.RegularElement;
+export type SvelteBody = AST.SvelteBody;
+export type SvelteComponent = AST.SvelteComponent;
+export type SvelteDocument = AST.SvelteDocument;
+export type SvelteElement = AST.SvelteElement;
+export type SvelteFragment = AST.SvelteFragment;
+export type SvelteHead = AST.SvelteHead;
+export type SvelteOptionsRaw = AST.SvelteOptionsRaw;
+export type SvelteSelf = AST.SvelteSelf;
+export type SvelteWindow = AST.SvelteWindow;
 
-export type Component = Extract<FragmentChild, { type: "Component" }>;
-export type TitleElement = Extract<FragmentChild, { type: "TitleElement" }>;
-export type SlotElement = Extract<FragmentChild, { type: "SlotElement" }>;
-export type RegularElement = Extract<FragmentChild, { type: "RegularElement" }>;
-export type SvelteBody = Extract<FragmentChild, { type: "SvelteBody" }>;
-export type SvelteComponent = Extract<
-  FragmentChild,
-  { type: "SvelteComponent" }
->;
-export type SvelteDocument = Extract<FragmentChild, { type: "SvelteDocument" }>;
-export type SvelteElement = Extract<FragmentChild, { type: "SvelteElement" }>;
-export type SvelteFragment = Extract<FragmentChild, { type: "SvelteFragment" }>;
-export type SvelteHead = Extract<FragmentChild, { type: "SvelteHead" }>;
-export type SvelteOptionsRaw = Extract<
-  FragmentChild,
-  { type: "SvelteOptions" }
->;
-export type SvelteSelf = Extract<FragmentChild, { type: "SvelteSelf" }>;
-export type SvelteWindow = Extract<FragmentChild, { type: "SvelteWindow" }>;
+export type IfBlock = AST.IfBlock;
+export type EachBlock = AST.EachBlock;
+export type AwaitBlock = AST.AwaitBlock;
+export type KeyBlock = AST.KeyBlock;
+export type SnippetBlock = AST.SnippetBlock;
 
-export type IfBlock = Extract<FragmentChild, { type: "IfBlock" }>;
-export type EachBlock = Extract<FragmentChild, { type: "EachBlock" }>;
-export type AwaitBlock = Extract<FragmentChild, { type: "AwaitBlock" }>;
-export type KeyBlock = Extract<FragmentChild, { type: "KeyBlock" }>;
-export type SnippetBlock = Extract<FragmentChild, { type: "SnippetBlock" }>;
-
-export type Comment = Extract<FragmentChild, { type: "Comment" }>;
-type ComponentAttribute = Component["attributes"][number];
-export type Attribute = Extract<ComponentAttribute, { type: "Attribute" }>;
-export type SpreadAttribute = Extract<
-  ComponentAttribute,
-  { type: "SpreadAttribute" }
->;
-export type AnimateDirective = Extract<
-  ComponentAttribute,
-  { type: "AnimateDirective" }
->;
-export type BindDirective = Extract<
-  ComponentAttribute,
-  { type: "BindDirective" }
->;
-export type ClassDirective = Extract<
-  ComponentAttribute,
-  { type: "ClassDirective" }
->;
-export type LetDirective = Extract<
-  ComponentAttribute,
-  { type: "LetDirective" }
->;
-export type OnDirective = Extract<ComponentAttribute, { type: "OnDirective" }>;
-export type StyleDirective = Extract<
-  ComponentAttribute,
-  { type: "StyleDirective" }
->;
-export type TransitionDirective = Extract<
-  ComponentAttribute,
-  { type: "TransitionDirective" }
->;
-export type UseDirective = Extract<
-  ComponentAttribute,
-  { type: "UseDirective" }
->;
+export type Comment = AST.Comment;
+export type Attribute = AST.Attribute;
+export type SpreadAttribute = AST.SpreadAttribute;
+export type AnimateDirective = AST.AnimateDirective;
+export type BindDirective = AST.BindDirective;
+export type ClassDirective = AST.ClassDirective;
+export type LetDirective = AST.LetDirective;
+export type OnDirective = AST.OnDirective;
+export type StyleDirective = AST.StyleDirective;
+export type TransitionDirective = AST.TransitionDirective;
+export type UseDirective = AST.UseDirective;
 
 export type Tag = ExpressionTag | HtmlTag | ConstTag | DebugTag | RenderTag;
 export type ElementLike =
@@ -107,10 +71,3 @@ export type Directive =
   | StyleDirective
   | TransitionDirective
   | UseDirective;
-
-type ModernParseReturnType<T> = T extends {
-  (source: string, options: { filename?: string; modern: true }): infer R;
-  (...args: any[]): any;
-}
-  ? R
-  : any;
