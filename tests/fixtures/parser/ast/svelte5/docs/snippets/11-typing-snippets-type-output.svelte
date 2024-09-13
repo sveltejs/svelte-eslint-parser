@@ -11,12 +11,12 @@
 <table>
 	{#if children} <!-- children: Snippet<[]> -->
 		<thead>
-			<tr>{@render children()}</tr> <!-- children(): unique symbol & { _: "functions passed to {@render ...} tags must use the `Snippet` type imported from \"svelte\""; } -->
+			<tr>{@render children()}</tr> <!-- children(): { '{@render ...} must be called with a Snippet': "import type { Snippet } from 'svelte'"; } & unique symbol -->
 		</thead>
 	{/if}
 	<tbody>
 		{#each data as d} <!-- data: unknown[], d: unknown -->
-			<tr>{@render row(d)}</tr> <!-- row(d): unique symbol & { _: "functions passed to {@render ...} tags must use the `Snippet` type imported from \"svelte\""; } -->
+			<tr>{@render row(d)}</tr> <!-- row(d): { '{@render ...} must be called with a Snippet': "import type { Snippet } from 'svelte'"; } & unique symbol -->
 		{/each}
 	</tbody>
 </table>
