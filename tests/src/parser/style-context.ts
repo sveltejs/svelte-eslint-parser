@@ -26,6 +26,9 @@ describe("Check for AST.", () => {
     config,
     meetRequirements,
   } of listupFixtures(STYLE_CONTEXT_FIXTURE_ROOT)) {
+    if (!meetRequirements("parse")) {
+      continue;
+    }
     describe(inputFileName, () => {
       let result: any;
 
