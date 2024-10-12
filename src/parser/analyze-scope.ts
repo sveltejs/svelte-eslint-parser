@@ -185,7 +185,9 @@ export function analyzePropsScope(
         }
       } else {
         for (const spec of node.specifiers) {
-          addPropReference(spec.local, moduleScope);
+          if (spec.local.type !== "Literal") {
+            addPropReference(spec.local, moduleScope);
+          }
         }
       }
     } else if (node.type === "VariableDeclaration") {
