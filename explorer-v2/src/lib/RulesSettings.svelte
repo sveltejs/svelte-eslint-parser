@@ -58,6 +58,7 @@
 								})
 							);
 						}}
+						aria-label="expand/collapse"
 					>
 						<svg xmlns="http://www.w3.org/2000/svg" height="10" viewBox="0 0 10 10" width="10">
 							<path d="M2.5 10l5-5-5-5v10z" fill="#ddd" />
@@ -88,7 +89,11 @@
 										/>
 										{rule.ruleId}
 									</label>
-									<a href={rule.url} target="_blank" rel="noopener noreferrer"
+									<a
+										href={rule.url}
+										target="_blank"
+										rel="noopener noreferrer"
+										aria-label="open in new tab"
 										><svg
 											xmlns="http://www.w3.org/2000/svg"
 											aria-hidden="true"
