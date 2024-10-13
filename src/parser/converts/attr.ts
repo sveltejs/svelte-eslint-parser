@@ -293,7 +293,7 @@ function buildAttributeType(
     return null;
   }
   const elementName = ctx.elements.get(element)!.name;
-  const componentPropsType = `import('svelte').ComponentProps<${elementName}>`;
+  const componentPropsType = `import('svelte').ComponentProps<typeof ${elementName}>`;
   return conditional({
     check: `'${attrName}'`,
     extends: `infer PROP`,
