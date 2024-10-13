@@ -87,8 +87,19 @@ export default [
 	},
 	{
 		...base,
+		externals: {
+			'node:process': '$$inject_process$$'
+		},
 		entry: {
 			'svelte/compiler': resolve('../../node_modules/svelte/src/compiler/index.js')
-		}
+		},
+		plugins: [
+			new WrapperPlugin({
+				test: /svelte\/compiler\.js/,
+				header: `
+				const $$inject_process$$ = undefined;
+				`
+			})
+		]
 	}
 ];
