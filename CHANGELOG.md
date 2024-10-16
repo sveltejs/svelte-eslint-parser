@@ -1,5 +1,15 @@
 # svelte-eslint-parser
 
+## 0.42.0
+
+### Minor Changes
+
+- [#569](https://github.com/sveltejs/svelte-eslint-parser/pull/569) [`3119299`](https://github.com/sveltejs/svelte-eslint-parser/commit/3119299bb66291f537b9c28bb89a559fb6cae90b) Thanks [@ota-meshi](https://github.com/ota-meshi)! - feat: improve props type
+
+### Patch Changes
+
+- [#573](https://github.com/sveltejs/svelte-eslint-parser/pull/573) [`7c556ca`](https://github.com/sveltejs/svelte-eslint-parser/commit/7c556ca092930518c3794bff7be59ed68c2eb15c) Thanks [@ota-meshi](https://github.com/ota-meshi)! - fix: error in snippets with type annotations
+
 ## 0.41.1
 
 ### Patch Changes
