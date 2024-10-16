@@ -651,13 +651,18 @@ export function convertSnippetBlock(
     ...ctx.getConvertLocation({ start: nodeStart, end: node.end }),
   };
 
+  let beforeClosingParen: ESTree.Node;
+  if (node.parameters.length > 0) {
+    const lastParam = node.parameters[
+      node.parameters.length - 1
+    ] as ESTree.Pattern & { typeAnnotation?: ESTree.Node };
+    beforeClosingParen = lastParam.typeAnnotation ?? lastParam;
+  } else {
+    beforeClosingParen = node.expression;
+  }
   const closeParenIndex = ctx.code.indexOf(
     ")",
-    getWithLoc(
-      node.parameters.length > 0
-        ? node.parameters[node.parameters.length - 1]
-        : node.expression,
-    ).end,
+    getWithLoc(beforeClosingParen).end,
   );
 
   const scopeKind =
