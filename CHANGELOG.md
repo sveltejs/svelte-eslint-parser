@@ -1,5 +1,15 @@
 # svelte-eslint-parser
 
+## 0.43.0
+
+### Minor Changes
+
+- [#576](https://github.com/sveltejs/svelte-eslint-parser/pull/576) [`88548e9`](https://github.com/sveltejs/svelte-eslint-parser/commit/88548e96879912daf5d541575f944b95031f1151) Thanks [@ota-meshi](https://github.com/ota-meshi)! - update svelte to v5
+
+### Patch Changes
+
+- [#576](https://github.com/sveltejs/svelte-eslint-parser/pull/576) [`88548e9`](https://github.com/sveltejs/svelte-eslint-parser/commit/88548e96879912daf5d541575f944b95031f1151) Thanks [@ota-meshi](https://github.com/ota-meshi)! - fix some `$props()` type linting error
+
 ## 0.42.0
 
 ### Minor Changes
