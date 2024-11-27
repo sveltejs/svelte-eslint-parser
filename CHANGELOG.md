@@ -1,5 +1,15 @@
 # svelte-eslint-parser
 
+## 1.0.0-next.0
+
+### Major Changes
+
+- [#579](https://github.com/sveltejs/svelte-eslint-parser/pull/579) [`4ac8236`](https://github.com/sveltejs/svelte-eslint-parser/commit/4ac82369156bb081d131d3fb1bf4f488a16f509a) Thanks [@ota-meshi](https://github.com/ota-meshi)! - feat!: drop support for old node versions (<18, 19, 21)
+
+### Minor Changes
+
+- [#589](https://github.com/sveltejs/svelte-eslint-parser/pull/589) [`f54c91f`](https://github.com/sveltejs/svelte-eslint-parser/commit/f54c91f2dac9b27681d9ea9811d25ff8afe5aafe) Thanks [@marekdedic](https://github.com/marekdedic)! - feat: stabilized generics
+
 ## 0.43.0
 
 ### Minor Changes
