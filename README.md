@@ -3,6 +3,11 @@
 [Svelte] parser for [ESLint].  
 You can check it on [Online DEMO](https://sveltejs.github.io/svelte-eslint-parser/playground).
 
+> [!NOTE]
+> This README is in development.\
+> Please refer to the README for the version you are using.\
+> For example, <https://github.com/sveltejs/svelte-eslint-parser/blob/v0.43.0/README.md>
+
 **_Note that this parser has experimental support for Svelte v5, but may break with new versions of Svelte v5._**
 
 [![NPM license](https://img.shields.io/npm/l/svelte-eslint-parser.svg)](https://www.npmjs.com/package/svelte-eslint-parser)
