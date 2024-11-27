@@ -173,8 +173,7 @@ export function convertSvelteRoot(
     body.push(style);
   }
   body.push(...convertChildren({ nodes: snippetChildren }, ast, ctx));
-  if (script && ctx.parserOptions.svelteFeatures?.experimentalGenerics)
-    convertGenericsAttribute(script, ctx);
+  if (script) convertGenericsAttribute(script, ctx);
 
   // Set the scope of the Program node.
   ctx.scriptLet.addProgramRestore(
