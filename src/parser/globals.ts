@@ -1,4 +1,4 @@
-import type { SvelteParseContext } from "./svelte-parse-context";
+import type { SvelteParseContext } from "./svelte-parse-context.js";
 
 const globalsForSvelte = ["$$slots", "$$props", "$$restProps"] as const;
 export const globalsForRunes = [

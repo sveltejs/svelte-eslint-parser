@@ -1,7 +1,8 @@
 import type { TSESTree } from "@typescript-eslint/types";
-import { traverseNodes } from "../../traverse";
-import { LinesAndColumns } from "../../context";
-import type { TSESParseForESLintResult } from "./types";
+import { traverseNodes } from "../../traverse.js";
+import { LinesAndColumns } from "../../context/index.js";
+import type { TSESParseForESLintResult } from "./types.js";
+import type { SvelteReactiveStatement } from "../../ast/script.js";
 
 /**
  * A function that restores the statement.
@@ -14,7 +15,7 @@ import type { TSESParseForESLintResult } from "./types";
  *   This process will no longer be called.
  */
 type RestoreStatementProcess = (
-  node: TSESTree.Statement,
+  node: TSESTree.Statement | SvelteReactiveStatement,
   result: TSESParseForESLintResult,
 ) => boolean;
 /**

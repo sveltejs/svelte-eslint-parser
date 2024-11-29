@@ -1,23 +1,6 @@
 import Module from "module";
 import path from "path";
-import type { BasicParserObject } from "./parser-object";
-
-const createRequire: (filename: string) => (modName: string) => any =
-  // Added in v12.2.0
-  Module.createRequire ||
-  // Added in v10.12.0, but deprecated in v12.2.0.
-  // @ts-expect-error -- old type
-  Module.createRequireFromPath ||
-  // Polyfill - This is not executed on the tests on node@>=10.
-  /* istanbul ignore next */
-  ((modName) => {
-    const mod = new Module(modName);
-
-    mod.filename = modName;
-    mod.paths = (Module as any)._nodeModulePaths(path.dirname(modName));
-    (mod as any)._compile("module.exports = require;", modName);
-    return mod.exports;
-  });
+import type { BasicParserObject } from "./parser-object.js";
 
 let espreeCache: (BasicParserObject & { latestEcmaVersion: number }) | null =
   null;
@@ -39,17 +22,26 @@ function isLinterPath(p: string): boolean {
 export function getEspree(): BasicParserObject & { latestEcmaVersion: number } {
   if (!espreeCache) {
     // Lookup the loaded eslint
-    const linterPath = Object.keys(require.cache || {}).find(isLinterPath);
+    const req = Module.createRequire(import.meta.url);
+    const linterPath = Object.keys(req.cache || {}).find(isLinterPath);
     if (linterPath) {
       try {
-        espreeCache = createRequire(linterPath)("espree");
+        espreeCache = Module.createRequire(linterPath)("espree");
       } catch {
         // ignore
       }
     }
     if (!espreeCache) {
-      // eslint-disable-next-line @typescript-eslint/no-require-imports -- ignore
-      espreeCache = require("espree");
+      try {
+        return req("espree");
+      } catch {
+        // ignore
+      }
+    }
+    if (!espreeCache) {
+      if (typeof require === "function")
+        // eslint-disable-next-line @typescript-eslint/no-require-imports -- ignore
+        espreeCache = require("espree");
     }
   }
 

@@ -1,6 +1,6 @@
-import type * as Compiler from "./svelte-ast-types-for-v5";
+import type * as Compiler from "./svelte-ast-types-for-v5.js";
 import type ESTree from "estree";
-import { getEspree } from "./espree";
+import { getEspree } from "./espree.js";
 
 const RE_IS_SPACE = /^\s$/u;
 

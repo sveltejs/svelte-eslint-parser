@@ -1,8 +1,11 @@
 import type { ScopeManager, Scope, Reference, Variable } from "eslint-scope";
 import type * as ESTree from "estree";
 import type { TSESTree } from "@typescript-eslint/types";
-import { traverseNodes } from "../traverse";
-import { addElementsToSortedArray, addElementToSortedArray } from "../utils";
+import { traverseNodes } from "../traverse.js";
+import {
+  addElementsToSortedArray,
+  addElementToSortedArray,
+} from "../utils/index.js";
 
 /** Remove all scope, variable, and reference */
 export function removeAllScopeAndVariableAndReference(

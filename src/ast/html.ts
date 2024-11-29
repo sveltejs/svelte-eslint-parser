@@ -1,7 +1,7 @@
 import type ESTree from "estree";
 import type { TSESTree } from "@typescript-eslint/types";
-import type { BaseNode } from "./base";
-import type { Token, Comment } from "./common";
+import type { BaseNode } from "./base.js";
+import type { Token, Comment } from "./common.js";
 
 export type SvelteHTMLNode =
   | SvelteProgram

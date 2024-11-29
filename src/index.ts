@@ -1,7 +1,7 @@
-import * as AST from "./ast";
-import { traverseNodes } from "./traverse";
-import { KEYS } from "./visitor-keys";
-import { ParseError } from "./errors";
+import * as AST from "./ast/index.js";
+import { traverseNodes } from "./traverse.js";
+import { KEYS } from "./visitor-keys.js";
+import { ParseError } from "./errors.js";
 export {
   parseForESLint,
   type StyleContext,
@@ -9,10 +9,10 @@ export {
   type StyleContextParseError,
   type StyleContextSuccess,
   type StyleContextUnknownLang,
-} from "./parser";
-export * as meta from "./meta";
-export { name } from "./meta";
-export type { SvelteConfig } from "./svelte-config";
+} from "./parser/index.js";
+export * as meta from "./meta.js";
+export { name } from "./meta.js";
+export type { SvelteConfig } from "./svelte-config/index.js";
 
 export { AST, ParseError };
 

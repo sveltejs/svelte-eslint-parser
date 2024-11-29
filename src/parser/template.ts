@@ -1,13 +1,13 @@
 import type {} from "svelte"; // FIXME: Workaround to get type information for "svelte/compiler"
 import { parse } from "svelte/compiler";
-import type * as Compiler from "./svelte-ast-types-for-v5";
-import type * as SvAST from "./svelte-ast-types";
-import type { Context } from "../context";
-import { convertSvelteRoot } from "./converts/index";
-import type { SvelteProgram } from "../ast";
-import { ParseError } from "..";
-import type { NormalizedParserOptions } from "./parser-options";
-import { svelteVersion } from "./svelte-version";
+import type * as Compiler from "./svelte-ast-types-for-v5.js";
+import type * as SvAST from "./svelte-ast-types.js";
+import type { Context } from "../context/index.js";
+import { convertSvelteRoot } from "./converts/index.js";
+import type { SvelteProgram } from "../ast/index.js";
+import { ParseError } from "../errors.js";
+import type { NormalizedParserOptions } from "./parser-options.js";
+import { svelteVersion } from "./svelte-version.js";
 
 /**
  * Parse for template

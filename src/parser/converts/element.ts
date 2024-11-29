@@ -26,11 +26,11 @@ import type {
   SvelteSpecialElement,
   SvelteStyleElement,
   SvelteText,
-} from "../../ast";
+} from "../../ast/index.js";
 import type ESTree from "estree";
-import type { Context } from "../../context";
-import type * as SvAST from "../svelte-ast-types";
-import type * as Compiler from "../svelte-ast-types-for-v5";
+import type { Context } from "../../context/index.js";
+import type * as SvAST from "../svelte-ast-types.js";
+import type * as Compiler from "../svelte-ast-types-for-v5.js";
 
 import {
   convertAwaitBlock,
@@ -38,22 +38,22 @@ import {
   convertIfBlock,
   convertKeyBlock,
   convertSnippetBlock,
-} from "./block";
-import { getWithLoc, indexOf } from "./common";
+} from "./block.js";
+import { getWithLoc, indexOf } from "./common.js";
 import {
   convertMustacheTag,
   convertDebugTag,
   convertRawMustacheTag,
-} from "./mustache";
-import { convertText } from "./text";
-import { convertAttributes } from "./attr";
-import { convertConstTag } from "./const";
-import { sortNodes } from "../sort";
-import type { ScriptLetBlockParam } from "../../context/script-let";
-import { ParseError } from "../..";
-import { convertRenderTag } from "./render";
-import type { Child } from "../compat";
-import { getChildren, getFragment } from "../compat";
+} from "./mustache.js";
+import { convertText } from "./text.js";
+import { convertAttributes } from "./attr.js";
+import { convertConstTag } from "./const.js";
+import { sortNodes } from "../sort.js";
+import type { ScriptLetBlockParam } from "../../context/script-let.js";
+import { ParseError } from "../../index.js";
+import { convertRenderTag } from "./render.js";
+import type { Child } from "../compat.js";
+import { getChildren, getFragment } from "../compat.js";
 
 /** Convert for Fragment or Element or ... */
 export function* convertChildren(

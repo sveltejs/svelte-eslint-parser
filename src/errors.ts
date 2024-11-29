@@ -1,4 +1,4 @@
-import type { Context } from "./context";
+import type { Context } from "./context/index.js";
 
 /**
  * Svelte parse errors.

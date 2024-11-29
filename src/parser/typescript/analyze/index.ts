@@ -9,17 +9,20 @@ import {
   removeIdentifierReference,
   removeIdentifierVariable,
   replaceScope,
-} from "../../../scope";
-import { addElementsToSortedArray, sortedLastIndex } from "../../../utils";
-import { parseScriptWithoutAnalyzeScope } from "../../script";
-import { VirtualTypeScriptContext } from "../context";
-import type { TSESParseForESLintResult } from "../types";
+} from "../../../scope/index.js";
+import {
+  addElementsToSortedArray,
+  sortedLastIndex,
+} from "../../../utils/index.js";
+import { parseScriptWithoutAnalyzeScope } from "../../script.js";
+import { VirtualTypeScriptContext } from "../context.js";
+import type { TSESParseForESLintResult } from "../types.js";
 import type ESTree from "estree";
-import type { SvelteAttribute, SvelteHTMLElement } from "../../../ast";
-import type { NormalizedParserOptions } from "../../parser-options";
-import { setParent } from "../set-parent";
-import { getGlobalsForSvelte, globalsForRunes } from "../../globals";
-import type { SvelteParseContext } from "../../svelte-parse-context";
+import type { SvelteAttribute, SvelteHTMLElement } from "../../../ast/index.js";
+import type { NormalizedParserOptions } from "../../parser-options.js";
+import { setParent } from "../set-parent.js";
+import { getGlobalsForSvelte, globalsForRunes } from "../../globals.js";
+import type { SvelteParseContext } from "../../svelte-parse-context.js";
 
 export type AnalyzeTypeScriptContext = {
   slots: Set<SvelteHTMLElement>;
@@ -766,10 +769,10 @@ function transformForDeclareReactiveVar(
   ctx.appendVirtualScript(`}`);
 
   ctx.restoreContext.addRestoreStatementProcess((node, result) => {
-    if ((node as any).type !== "SvelteReactiveStatement") {
+    if (node.type !== "SvelteReactiveStatement") {
       return false;
     }
-    const reactiveStatement = node as TSESTree.LabeledStatement;
+    const reactiveStatement = node as never as TSESTree.LabeledStatement;
     if (
       reactiveStatement.body.type !== "VariableDeclaration" ||
       reactiveStatement.body.kind !== "let" ||
@@ -788,7 +791,7 @@ function transformForDeclareReactiveVar(
       return false;
     }
     const program = result.ast;
-    const nextIndex = program.body.indexOf(node) + 1;
+    const nextIndex = program.body.indexOf(reactiveStatement) + 1;
     const fnDecl = program.body[nextIndex];
     if (
       !fnDecl ||
@@ -900,10 +903,10 @@ function transformForReactiveStatement(
   ctx.appendOriginal(statement.range[1]);
 
   ctx.restoreContext.addRestoreStatementProcess((node, result) => {
-    if ((node as any).type !== "SvelteReactiveStatement") {
+    if (node.type !== "SvelteReactiveStatement") {
       return false;
     }
-    const reactiveStatement = node as TSESTree.LabeledStatement;
+    const reactiveStatement = node as never as TSESTree.LabeledStatement;
     const body = reactiveStatement.body;
     if (
       body.type !== "ExportNamedDeclaration" ||

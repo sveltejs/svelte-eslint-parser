@@ -1,16 +1,16 @@
 import type ESTree from "estree";
 import type { Scope, ScopeManager } from "eslint-scope";
 import { Variable, Reference, analyze } from "eslint-scope";
-import { getFallbackKeys } from "../traverse";
+import { getFallbackKeys } from "../traverse.js";
 import type {
   SvelteReactiveStatement,
   SvelteScriptElement,
   SvelteSnippetBlock,
-} from "../ast";
-import { addReference, addVariable, getScopeFromNode } from "../scope";
-import { addElementToSortedArray } from "../utils";
-import type { NormalizedParserOptions } from "./parser-options";
-import type { SvelteParseContext } from "./svelte-parse-context";
+} from "../ast/index.js";
+import { addReference, addVariable, getScopeFromNode } from "../scope/index.js";
+import { addElementToSortedArray } from "../utils/index.js";
+import type { NormalizedParserOptions } from "./parser-options.js";
+import type { SvelteParseContext } from "./svelte-parse-context.js";
 /**
  * Analyze scope
  */

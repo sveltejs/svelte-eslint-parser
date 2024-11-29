@@ -1,11 +1,11 @@
-import type { SvelteConfig } from ".";
+import type { SvelteConfig } from "./index.js";
 import type * as ESTree from "estree";
 import type { Scope } from "eslint";
 import type { ScopeManager } from "eslint-scope";
-import { getFallbackKeys, traverseNodes } from "../traverse";
-import { getEspree } from "../parser/espree";
+import { getFallbackKeys, traverseNodes } from "../traverse.js";
+import { getEspree } from "../parser/espree.js";
 import { analyze } from "eslint-scope";
-import { findVariable } from "../scope";
+import { findVariable } from "../scope/index.js";
 
 export function parseConfig(code: string): SvelteConfig | null {
   const espree = getEspree();

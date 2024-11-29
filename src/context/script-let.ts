@@ -2,7 +2,7 @@ import type { ScopeManager, Scope } from "eslint-scope";
 import type * as ESTree from "estree";
 import type { TSESTree } from "@typescript-eslint/types";
 import type { Scope as TSScope } from "@typescript-eslint/scope-manager";
-import type { Context, ScriptsSourceCode } from ".";
+import type { Context, ScriptsSourceCode } from "./index.js";
 import type {
   Comment,
   SvelteEachBlock,
@@ -11,19 +11,19 @@ import type {
   SvelteNode,
   SvelteSnippetBlock,
   Token,
-} from "../ast";
-import type { ESLintExtendedProgram } from "../parser";
-import { getWithLoc } from "../parser/converts/common";
+} from "../ast/index.js";
+import type { ESLintExtendedProgram } from "../parser/index.js";
+import { getWithLoc } from "../parser/converts/common.js";
 import {
   getScopeFromNode,
   removeAllScopeAndVariableAndReference,
   removeIdentifierVariable,
   removeReference,
   removeScope,
-} from "../scope";
-import { getKeys, traverseNodes, getNodes } from "../traverse";
-import { UniqueIdGenerator } from "./unique";
-import { fixLocations } from "./fix-locations";
+} from "../scope/index.js";
+import { getKeys, traverseNodes, getNodes } from "../traverse.js";
+import { UniqueIdGenerator } from "./unique.js";
+import { fixLocations } from "./fix-locations.js";
 
 type TSAsExpression = {
   type: "TSAsExpression";

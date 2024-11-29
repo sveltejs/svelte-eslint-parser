@@ -9,18 +9,18 @@ import type {
   SvelteSnippetBlock,
   SvelteStyleElement,
   Token,
-} from "../ast";
+} from "../ast/index.js";
 import type ESTree from "estree";
-import type * as SvAST from "../parser/svelte-ast-types";
-import type * as Compiler from "../parser/svelte-ast-types-for-v5";
-import { ScriptLetContext } from "./script-let";
-import { LetDirectiveCollections } from "./let-directive-collection";
-import { parseAttributes } from "../parser/html";
-import { sortedLastIndex } from "../utils";
+import type * as SvAST from "../parser/svelte-ast-types.js";
+import type * as Compiler from "../parser/svelte-ast-types-for-v5.js";
+import { ScriptLetContext } from "./script-let.js";
+import { LetDirectiveCollections } from "./let-directive-collection.js";
+import { parseAttributes } from "../parser/html.js";
+import { sortedLastIndex } from "../utils/index.js";
 import {
   isTypeScript,
   type NormalizedParserOptions,
-} from "../parser/parser-options";
+} from "../parser/parser-options.js";
 
 export class ScriptsSourceCode {
   private raw: string;

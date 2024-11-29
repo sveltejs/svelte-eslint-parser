@@ -2,8 +2,8 @@
 /* eslint-disable no-console -- ignore */
 import * as Benchmark from "benchmark";
 import fs from "fs";
-import { parseForESLint } from "../src/index";
-import { parseForESLint as parseOld } from "../node_modules/svelte-eslint-parser";
+import { parseForESLint } from "../src/index.js";
+import { parseForESLint as parseOld } from "../node_modules/svelte-eslint-parser/lib/index.js";
 
 const contents = `${fs.readFileSync(
   require.resolve("../explorer-v2/src/lib/RulesSettings.svelte"),

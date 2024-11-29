@@ -1,6 +1,6 @@
-import { UniqueIdGenerator } from "../../context/unique";
-import { RestoreContext } from "./restore";
-import type { TSESParseForESLintResult } from "./types";
+import { UniqueIdGenerator } from "../../context/unique.js";
+import { RestoreContext } from "./restore.js";
+import type { TSESParseForESLintResult } from "./types.js";
 
 /**
  * Context for virtual TypeScript code.

@@ -1,18 +1,20 @@
-/* global require -- node */
 import path from "path";
 import fs from "fs";
 import semver from "semver";
 import type { Linter, Scope as ESLintScope } from "eslint";
-import { LinesAndColumns } from "../../../src/context";
+import { LinesAndColumns } from "../../../src/context/index.js";
 import type { Reference, Scope, ScopeManager, Variable } from "eslint-scope";
 import type * as TSESScopes from "@typescript-eslint/scope-manager";
-import type { SvelteNode } from "../../../src/ast";
-import type { StyleContext } from "../../../src";
-import { TS_GLOBALS } from "./ts-vars";
-import { svelteVersion } from "../../../src/parser/svelte-version";
-import type { NormalizedParserOptions } from "../../../src/parser/parser-options";
+import type { SvelteNode } from "../../../src/ast/index.js";
+import type { StyleContext } from "../../../src/index.js";
+import { TS_GLOBALS } from "./ts-vars.js";
+import { svelteVersion } from "../../../src/parser/svelte-version.js";
+import type { NormalizedParserOptions } from "../../../src/parser/parser-options.js";
+import Module from "module";
 
-const AST_FIXTURE_ROOT = path.resolve(__dirname, "../../fixtures/parser/ast");
+const require = Module.createRequire(import.meta.url);
+const dirname = path.dirname(new URL(import.meta.url).pathname);
+const AST_FIXTURE_ROOT = path.resolve(dirname, "../../fixtures/parser/ast");
 const BASIC_PARSER_OPTIONS: Linter.ParserOptions = {
   ecmaVersion: 2020,
   parser: {
@@ -94,13 +96,7 @@ export function generateParserOptions(
 export function generateParserOptions(
   ...options: (Linter.ParserOptions | NormalizedParserOptions)[]
 ): Linter.ParserOptions | NormalizedParserOptions {
-  let result: Linter.ParserOptions | NormalizedParserOptions = {
-    ...BASIC_PARSER_OPTIONS,
-  };
-  for (const option of options) {
-    result = { ...result, ...option };
-  }
-  return result;
+  return Object.assign({}, BASIC_PARSER_OPTIONS, ...options);
 }
 export function* listupFixtures(dir?: string): Iterable<{
   input: string;
@@ -303,7 +299,6 @@ function* listupFixturesImpl(dir: string): Iterable<{
           if (obj) {
             if (
               Object.entries(obj).some(([pkgName, pkgVersion]) => {
-                // eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-var-requires -- ignore
                 const pkg = require(`${pkgName}/package.json`);
                 return !semver.satisfies(pkg.version, pkgVersion as string);
               })

@@ -1,6 +1,7 @@
 import assert from "assert";
-import * as parser from "../../src";
-import { version } from "../../package.json";
+import * as parser from "../../src/index.js";
+import pkg from "../../package.json" with { type: "json" };
+const { version } = pkg;
 const expectedMeta = {
   name: "svelte-eslint-parser",
   version,
@@ -8,6 +9,6 @@ const expectedMeta = {
 
 describe("Test for meta object", () => {
   it("A parser should have a meta object.", () => {
-    assert.deepStrictEqual(parser.meta, expectedMeta);
+    assert.deepStrictEqual({ ...parser.meta }, expectedMeta);
   });
 });

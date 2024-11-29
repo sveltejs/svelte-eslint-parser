@@ -1,18 +1,16 @@
 import assert from "assert";
 import fs from "fs";
-import { parseForESLint } from "../../../src";
+import { parseForESLint } from "../../../src/index.js";
 import {
   generateParserOptions,
   listupFixtures,
   astToJson,
   normalizeError,
-} from "./test-utils";
+} from "./test-utils.js";
 import path from "path";
 
-const ERROR_FIXTURE_ROOT = path.resolve(
-  __dirname,
-  "../../fixtures/parser/error",
-);
+const dirname = path.dirname(new URL(import.meta.url).pathname);
+const ERROR_FIXTURE_ROOT = path.resolve(dirname, "../../fixtures/parser/error");
 
 function parse(code: string, filePath: string, config: any) {
   return parseForESLint(code, generateParserOptions({ filePath }, config));

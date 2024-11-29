@@ -1,5 +1,5 @@
 import assert from "assert";
-import { parseConfig } from "../../../src/svelte-config/parser";
+import { parseConfig } from "../../../src/svelte-config/parser.js";
 
 describe("parseConfig", () => {
   const testCases = [

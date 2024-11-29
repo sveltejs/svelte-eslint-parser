@@ -1,8 +1,8 @@
 import type * as ESTree from "estree";
-import type { SvelteRenderTag } from "../../ast";
-import type { Context } from "../../context";
-import { getWithLoc } from "./common";
-import type * as Compiler from "../svelte-ast-types-for-v5";
+import type { SvelteRenderTag } from "../../ast/index.js";
+import type { Context } from "../../context/index.js";
+import { getWithLoc } from "./common.js";
+import type * as Compiler from "../svelte-ast-types-for-v5.js";
 
 /** Convert for RenderTag */
 export function convertRenderTag(

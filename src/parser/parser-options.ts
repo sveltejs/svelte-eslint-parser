@@ -3,8 +3,8 @@ import path from "path";
 import {
   isTSESLintParserObject,
   maybeTSESLintParserObject,
-} from "./parser-object";
-import { getParserForLang, type UserOptionParser } from "./resolve-parser";
+} from "./parser-object.js";
+import { getParserForLang, type UserOptionParser } from "./resolve-parser.js";
 
 export type NormalizedParserOptions = {
   parser?: UserOptionParser;

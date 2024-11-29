@@ -1,17 +1,17 @@
-/* global require -- node */
 import { Linter } from "eslint";
 import assert from "assert";
 import fs from "fs";
 import globals from "globals";
-import * as parser from "../../src";
+import * as parser from "../../src/index.js";
 import {
   generateParserOptions,
   getMessageData,
   listupFixtures,
-} from "./parser/test-utils";
+} from "./parser/test-utils.js";
 import path from "path";
 
-const FIXTURE_ROOT = path.resolve(__dirname, "../fixtures/integrations");
+const dirname = path.dirname(new URL(import.meta.url).pathname);
+const FIXTURE_ROOT = path.resolve(dirname, "../fixtures/integrations");
 
 describe("Integration tests.", () => {
   for (const {
@@ -24,14 +24,13 @@ describe("Integration tests.", () => {
     if (!meetRequirements("parse")) {
       continue;
     }
-    it(inputFileName, () => {
+    it(inputFileName, async () => {
       const setupFileName = inputFileName.replace(
         /input\.svelte(?:\.[jt]s)?$/u,
         "setup.ts",
       );
       const setup = fs.existsSync(setupFileName)
-        ? // eslint-disable-next-line @typescript-eslint/no-require-imports -- test
-          require(setupFileName)
+        ? await import(setupFileName)
         : null;
       const linter = new Linter();
       const messages = linter.verify(

@@ -2,15 +2,16 @@ import assert from "assert";
 import fs from "fs";
 import path from "path";
 
-import { parseForESLint } from "../../../src";
+import { parseForESLint } from "../../../src/index.js";
 import {
   generateParserOptions,
   listupFixtures,
   styleContextToJson,
-} from "./test-utils";
+} from "./test-utils.js";
 
+const dirname = path.dirname(new URL(import.meta.url).pathname);
 const STYLE_CONTEXT_FIXTURE_ROOT = path.resolve(
-  __dirname,
+  dirname,
   "../../fixtures/parser/style-context",
 );
 

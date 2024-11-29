@@ -1,29 +1,32 @@
-import { KEYS } from "../visitor-keys";
-import { Context } from "../context";
+import { KEYS } from "../visitor-keys.js";
+import { Context } from "../context/index.js";
 import type {
   Comment,
   SvelteProgram,
   SvelteScriptElement,
   SvelteStyleElement,
   Token,
-} from "../ast";
+} from "../ast/index.js";
 import type { Program } from "estree";
 import type { ScopeManager } from "eslint-scope";
 import { Variable } from "eslint-scope";
-import { parseScript, parseScriptInSvelte } from "./script";
-import type * as SvAST from "./svelte-ast-types";
-import type * as Compiler from "./svelte-ast-types-for-v5";
-import { sortNodes } from "./sort";
-import { parseTemplate } from "./template";
+import { parseScript, parseScriptInSvelte } from "./script.js";
+import type * as SvAST from "./svelte-ast-types.js";
+import type * as Compiler from "./svelte-ast-types-for-v5.js";
+import { sortNodes } from "./sort.js";
+import { parseTemplate } from "./template.js";
 import {
   analyzePropsScope,
   analyzeReactiveScope,
   analyzeSnippetsScope,
   analyzeStoreScope,
-} from "./analyze-scope";
-import { ParseError } from "../errors";
-import { parseTypeScript, parseTypeScriptInSvelte } from "./typescript";
-import { addReference } from "../scope";
+} from "./analyze-scope.js";
+import { ParseError } from "../errors.js";
+import {
+  parseTypeScript,
+  parseTypeScriptInSvelte,
+} from "./typescript/index.js";
+import { addReference } from "../scope/index.js";
 import {
   parseStyleContext,
   type StyleContext,
@@ -33,19 +36,19 @@ import {
   type StyleContextUnknownLang,
   styleNodeLoc,
   styleNodeRange,
-} from "./style-context";
-import { getGlobalsForSvelte, getGlobalsForSvelteScript } from "./globals";
-import type { NormalizedParserOptions } from "./parser-options";
-import { isTypeScript, normalizeParserOptions } from "./parser-options";
-import { getFragmentFromRoot } from "./compat";
+} from "./style-context.js";
+import { getGlobalsForSvelte, getGlobalsForSvelteScript } from "./globals.js";
+import type { NormalizedParserOptions } from "./parser-options.js";
+import { isTypeScript, normalizeParserOptions } from "./parser-options.js";
+import { getFragmentFromRoot } from "./compat.js";
 import {
   isEnableRunes,
   resolveSvelteParseContextForSvelte,
   resolveSvelteParseContextForSvelteScript,
   type SvelteParseContext,
-} from "./svelte-parse-context";
-import type { SvelteConfig } from "../svelte-config";
-import { resolveSvelteConfigFromOption } from "../svelte-config";
+} from "./svelte-parse-context.js";
+import type { SvelteConfig } from "../svelte-config/index.js";
+import { resolveSvelteConfigFromOption } from "../svelte-config/index.js";
 
 export {
   StyleContext,

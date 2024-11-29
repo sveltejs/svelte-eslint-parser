@@ -1,5 +1,5 @@
 import type ESTree from "estree";
-import type { BaseNode } from "./base";
+import type { BaseNode } from "./base.js";
 
 export type SvelteScriptNode = SvelteReactiveStatement;
 

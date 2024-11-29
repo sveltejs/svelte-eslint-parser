@@ -1,11 +1,14 @@
-import type { ESLintExtendedProgram } from "..";
-import type { NormalizedParserOptions } from "../parser-options";
-import { parseScript, parseScriptInSvelte } from "../script";
-import type { SvelteParseContext } from "../svelte-parse-context";
-import type { AnalyzeTypeScriptContext } from "./analyze";
-import { analyzeTypeScript, analyzeTypeScriptInSvelte } from "./analyze";
-import { setParent } from "./set-parent";
-import type { TSESParseForESLintResult } from "./types";
+import type { ESLintExtendedProgram } from "../index.js";
+import type { NormalizedParserOptions } from "../parser-options.js";
+import { parseScript, parseScriptInSvelte } from "../script.js";
+import type { SvelteParseContext } from "../svelte-parse-context.js";
+import type { AnalyzeTypeScriptContext } from "./analyze/index.js";
+import {
+  analyzeTypeScript,
+  analyzeTypeScriptInSvelte,
+} from "./analyze/index.js";
+import { setParent } from "./set-parent.js";
+import type { TSESParseForESLintResult } from "./types.js";
 
 /**
  * Parse for TypeScript in <script>

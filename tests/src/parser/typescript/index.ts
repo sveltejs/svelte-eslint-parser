@@ -1,11 +1,11 @@
-import { Context } from "../../../../src/context";
-import type { NormalizedParserOptions } from "../../../../src/parser/parser-options";
-import { parseScriptInSvelte } from "../../../../src/parser/script";
-import { compilerVersion } from "../../../../src/parser/svelte-version";
-import { parseTemplate } from "../../../../src/parser/template";
-import { parseTypeScriptInSvelte } from "../../../../src/parser/typescript";
-import { generateParserOptions, listupFixtures } from "../test-utils";
-import { assertResult } from "./assert-result";
+import { Context } from "../../../../src/context/index.js";
+import type { NormalizedParserOptions } from "../../../../src/parser/parser-options.js";
+import { parseScriptInSvelte } from "../../../../src/parser/script.js";
+import { compilerVersion } from "../../../../src/parser/svelte-version.js";
+import { parseTemplate } from "../../../../src/parser/template.js";
+import { parseTypeScriptInSvelte } from "../../../../src/parser/typescript/index.js";
+import { generateParserOptions, listupFixtures } from "../test-utils.js";
+import { assertResult } from "./assert-result.js";
 
 describe("Check for typescript analyze result.", () => {
   for (const {

@@ -1,4 +1,4 @@
-import type { ESLintExtendedProgram, ESLintProgram } from ".";
+import type { ESLintExtendedProgram, ESLintProgram } from "./index.js";
 import type * as tsESLintParser from "@typescript-eslint/parser";
 type TSESLintParser = typeof tsESLintParser;
 /**

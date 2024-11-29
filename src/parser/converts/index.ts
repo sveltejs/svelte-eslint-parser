@@ -1,1 +1,1 @@
-export { convertSvelteRoot } from "./root";
+export { convertSvelteRoot } from "./root.js";
