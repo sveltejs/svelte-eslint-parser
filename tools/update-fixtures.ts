@@ -14,6 +14,7 @@ import {
 } from "../tests/src/parser/test-utils";
 import type ts from "typescript";
 import type ESTree from "estree";
+import globals from "globals";
 import type { SourceLocation } from "../src/ast";
 
 const ERROR_FIXTURE_ROOT = path.resolve(
@@ -88,20 +89,23 @@ for (const {
     throw e;
   }
 
-  const linter = createLinter();
+  const linter = new Linter();
   for (const rule of RULES) {
     const ruleOutputFileName = getRuleOutputFileName(rule);
     const messages = linter.verify(
       input,
       {
-        parser: "svelte-eslint-parser",
-        parserOptions: generateParserOptions(config),
+        files: ["**"],
+        languageOptions: {
+          parser,
+          parserOptions: generateParserOptions(config),
+          globals: {
+            ...globals.browser,
+            ...globals.es2021,
+          },
+        },
         rules: {
           [rule]: "error",
-        },
-        env: {
-          browser: true,
-          es2021: true,
         },
       },
       inputFileName,
@@ -190,14 +194,6 @@ for (const {
     `${JSON.stringify(locations, undefined, 2)}\n`,
     "utf8",
   );
-}
-
-function createLinter() {
-  const linter = new Linter();
-
-  linter.defineParser("svelte-eslint-parser", parser as any);
-
-  return linter;
 }
 
 function buildTypes(
