@@ -8,8 +8,6 @@ You can check it on [Online DEMO](https://sveltejs.github.io/svelte-eslint-parse
 > Please refer to the README for the version you are using.\
 > For example, <https://github.com/sveltejs/svelte-eslint-parser/blob/v0.43.0/README.md>
 
-**_Note that this parser has experimental support for Svelte v5, but may break with new versions of Svelte v5._**
-
 [![NPM license](https://img.shields.io/npm/l/svelte-eslint-parser.svg)](https://www.npmjs.com/package/svelte-eslint-parser)
 [![NPM version](https://img.shields.io/npm/v/svelte-eslint-parser.svg)](https://www.npmjs.com/package/svelte-eslint-parser)
 [![NPM downloads](https://img.shields.io/badge/dynamic/json.svg?label=downloads&colorB=green&suffix=/day&query=$.downloads&uri=https://api.npmjs.org//downloads/point/last-day/svelte-eslint-parser&maxAge=3600)](http://www.npmtrends.com/svelte-eslint-parser)
@@ -41,12 +39,6 @@ It provides many unique check rules by using the template AST.
 ESLint plugin for internationalization (i18n) with Svelte.  
 It provides rules to help internationalization your application created with Svelte.
 
-## ❗ Attention
-
-The [svelte-eslint-parser] can not be used with the [eslint-plugin-svelte3].
-
-[svelte-eslint-parser]: https://github.com/sveltejs/svelte-eslint-parser
-
 ## 💿 Installation
 
 ```bash
@@ -74,20 +66,6 @@ export default [
 ];
 ```
 
-### ESLint Config (`.eslintrc.*`)
-
-```json
-{
-  "extends": "eslint:recommended",
-  "overrides": [
-    {
-      "files": ["*.svelte"],
-      "parser": "svelte-eslint-parser"
-    }
-  ]
-}
-```
-
 ### CLI
 
 ```console
@@ -101,18 +79,26 @@ $ eslint src --ext .svelte
 [`parserOptions`] has the same properties as what [espree](https://github.com/eslint/espree#usage), the default parser of ESLint, is supporting.
 For example:
 
-```json
-{
-  "parserOptions": {
-    "sourceType": "module",
-    "ecmaVersion": 2021,
-    "ecmaFeatures": {
-      "globalReturn": false,
-      "impliedStrict": false,
-      "jsx": false
-    }
-  }
-}
+```js
+import svelteParser from "svelte-eslint-parser";
+export default [
+  // ...
+  {
+    files: ["**/*.svelte", "*.svelte"],
+    languageOptions: {
+      parser: svelteParser,
+      parserOptions: {
+        sourceType: "module",
+        ecmaVersion: 2021,
+        ecmaFeatures: {
+          globalReturn: false,
+          impliedStrict: false,
+          jsx: false,
+        },
+      },
+    },
+  },
+];
 ```
 
 [`parserOptions`]: https://eslint.org/docs/latest/use/configure/parser#configure-parser-options
@@ -137,17 +123,6 @@ export default [
     },
   },
 ];
-```
-
-For example in `.eslintrc.*`:
-
-```json
-{
-  "parser": "svelte-eslint-parser",
-  "parserOptions": {
-    "parser": "@typescript-eslint/parser"
-  }
-}
 ```
 
 If you are using the `"@typescript-eslint/parser"`, and if you want to use TypeScript in `<script>` of `.svelte`, you need to add more `parserOptions` configuration.
@@ -183,32 +158,6 @@ export default [
 ];
 ```
 
-For example in `.eslintrc.*`:
-
-```js
-module.exports = {
-  // ...
-  parser: "@typescript-eslint/parser",
-  parserOptions: {
-    // ...
-    project: "path/to/your/tsconfig.json",
-    extraFileExtensions: [".svelte"], // This is a required setting in `@typescript-eslint/parser` v4.24.0.
-  },
-  overrides: [
-    {
-      files: ["*.svelte"],
-      parser: "svelte-eslint-parser",
-      // Parse the `<script>` in `.svelte` as TypeScript by adding the following configuration.
-      parserOptions: {
-        parser: "@typescript-eslint/parser",
-      },
-    },
-    // ...
-  ],
-  // ...
-};
-```
-
 #### Multiple parsers
 
 If you want to switch the parser for each lang, specify the object.
@@ -233,21 +182,6 @@ export default [
     },
   },
 ];
-```
-
-For example in `.eslintrc.*`:
-
-```json
-{
-  "parser": "svelte-eslint-parser",
-  "parserOptions": {
-    "parser": {
-      "ts": "@typescript-eslint/parser",
-      "js": "espree",
-      "typescript": "@typescript-eslint/parser"
-    }
-  }
-}
 ```
 
 ### parserOptions.svelteConfig
@@ -289,7 +223,6 @@ export default [
       parser: svelteParser,
       parserOptions: {
         svelteFeatures: {
-          /* It may be changed or removed in minor versions without notice. */
           // This option is for Svelte 5. The default value is `true`.
           // If `false`, ESLint will not recognize rune symbols.
           // If not configured this option, The parser will try to read the option from `compilerOptions.runes` from `svelte.config.js`.
@@ -302,27 +235,7 @@ export default [
 ];
 ```
 
-For example in `.eslintrc.*`:
-
-```jsonc
-{
-  "parser": "svelte-eslint-parser",
-  "parserOptions": {
-    "svelteFeatures": {
-      /* It may be changed or removed in minor versions without notice. */
-      // This option is for Svelte 5. The default value is `true`.
-      // If `false`, ESLint will not recognize rune symbols.
-      // If not configured this option, The parser will try to read the option from `compilerOptions.runes` from `svelte.config.js`.
-      // If `parserOptions.svelteConfig` is not specified and the file cannot be parsed by static analysis, it will behave as `true`.
-      "runes": true,
-    },
-  },
-}
-```
-
 ### Runes support
-
-**_This is an experimental feature. It may be changed or removed in minor versions without notice._**
 
 If you install Svelte v5 the parser will be able to parse runes, and will also be able to parse `*.js` and `*.ts` files.
 If you don't want to use Runes, you may need to configure. Please read [parserOptions.svelteFeatures](#parseroptionssveltefeatures) for more details.
@@ -369,38 +282,6 @@ export default [
 ];
 ```
 
-For example in `.eslintrc.*`:
-
-```jsonc
-{
-  "overrides": [
-    {
-      "files": ["*.svelte"],
-      "parser": "svelte-eslint-parser",
-      "parserOptions": {
-        "parser": "...",
-        /* ... */
-      },
-    },
-    {
-      "files": ["*.svelte.js"],
-      "parser": "svelte-eslint-parser",
-      "parserOptions": {
-        /* ... */
-      },
-    },
-    {
-      "files": ["*.svelte.ts"],
-      "parser": "svelte-eslint-parser",
-      "parserOptions": {
-        "parser": "...(ts parser)...",
-        /* ... */
-      },
-    },
-  ],
-}
-```
-
 ## :computer: Editor Integrations
 
 ### Visual Studio Code
@@ -439,4 +320,3 @@ See the [LICENSE](LICENSE) file for license rights and limitations (MIT).
 
 [Svelte]: https://svelte.dev/
 [ESLint]: https://eslint.org/
-[eslint-plugin-svelte3]: https://github.com/sveltejs/eslint-plugin-svelte3
