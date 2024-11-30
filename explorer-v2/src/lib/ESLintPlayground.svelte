@@ -50,7 +50,6 @@
 		}
 	}
 
-	// eslint-disable-next-line no-use-before-define -- false positive
 	$: serializedString = (() => {
 		const serializeCode = DEFAULT_CODE === code ? undefined : code;
 		const serializeRules = equalsRules(DEFAULT_RULES_CONFIG, rules) ? undefined : rules;
@@ -107,7 +106,7 @@
 
 <div class="playground-root">
 	<div class="playground-tools">
-		<span style="margin-left: 16px">{time}</span>
+		<span style:margin-left="16px">{time}</span>
 	</div>
 	<div class="playground-content">
 		<RulesSettings bind:rules class="rules-settings" />

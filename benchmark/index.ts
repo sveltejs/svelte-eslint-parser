@@ -1,4 +1,4 @@
-// eslint-disable-next-line eslint-comments/disable-enable-pair -- ignore
+// eslint-disable-next-line @eslint-community/eslint-comments/disable-enable-pair -- ignore
 /* eslint-disable no-console -- ignore */
 import * as Benchmark from "benchmark";
 import fs from "fs";

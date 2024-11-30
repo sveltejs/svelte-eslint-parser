@@ -511,7 +511,7 @@ function* analyzeReactiveScopes(
                 node,
                 left,
                 expression,
-                result.ast.tokens!,
+                result.ast.tokens,
                 ctx,
               ),
           };
@@ -807,7 +807,7 @@ function transformForDeclareReactiveVar(
 
     // Restore tokens
     addElementsToSortedArray(
-      program.tokens!,
+      program.tokens,
       [...openParens, ...closeParens],
       (a, b) => a.range[0] - b.range[0],
     );
