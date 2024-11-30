@@ -1,24 +1,26 @@
-/* eslint eslint-comments/require-description: 0, @typescript-eslint/explicit-module-boundary-types: 0 */
 import type { Linter } from "eslint";
 import { generateParserOptions } from "../../../src/parser/test-utils";
 import { rules } from "@typescript-eslint/eslint-plugin";
-export function setupLinter(linter: Linter) {
-  linter.defineRule(
-    "@typescript-eslint/no-misused-promises",
-    rules["no-misused-promises"] as never,
-  );
-}
+import * as parser from "../../../../src";
+import globals from "globals";
 
-export function getConfig() {
+export function getConfig(): Linter.Config {
   return {
-    parser: "svelte-eslint-parser",
-    parserOptions: generateParserOptions(),
+    plugins: {
+      "@typescript-eslint": {
+        rules: rules as any,
+      },
+    },
+    languageOptions: {
+      parser,
+      parserOptions: generateParserOptions(),
+      globals: {
+        ...globals.browser,
+        ...globals.es2021,
+      },
+    },
     rules: {
       "@typescript-eslint/no-misused-promises": "error",
-    },
-    env: {
-      browser: true,
-      es2021: true,
     },
   };
 }

@@ -6,21 +6,28 @@ import type { Scope } from "eslint-scope";
 function generateScopeTestCase(code: string, selector: string, type: string) {
   const linter = new Linter();
   let scope: Scope;
-  linter.defineParser("svelte-eslint-parser", parser as any);
-  linter.defineRule("test", {
-    create(context) {
-      return {
-        [selector]() {
-          scope = context.getScope();
-        },
-      };
-    },
-  });
   linter.verify(code, {
-    parser: "svelte-eslint-parser",
-    parserOptions: { ecmaVersion: 2020, sourceType: "module" },
+    plugins: {
+      test: {
+        rules: {
+          test: {
+            create(context) {
+              return {
+                [selector](node: any) {
+                  scope = context.sourceCode.getScope(node);
+                },
+              };
+            },
+          },
+        },
+      },
+    },
+    languageOptions: {
+      parser,
+      parserOptions: { ecmaVersion: 2020, sourceType: "module" },
+    },
     rules: {
-      test: "error",
+      "test/test": "error",
     },
   });
   assert.strictEqual(scope!.type, type);

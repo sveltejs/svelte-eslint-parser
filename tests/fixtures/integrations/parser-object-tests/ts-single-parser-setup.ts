@@ -1,14 +1,18 @@
-/* eslint eslint-comments/require-description: 0, @typescript-eslint/explicit-module-boundary-types: 0 */
 import { generateParserOptions } from "../../../src/parser/test-utils";
-import * as parser from "@typescript-eslint/parser";
+import * as ts from "@typescript-eslint/parser";
+import globals from "globals";
+import * as parser from "../../../../src";
+import type { Linter } from "eslint";
 
-export function getConfig() {
+export function getConfig(): Linter.Config {
   return {
-    parser: "svelte-eslint-parser",
-    parserOptions: generateParserOptions({ parser }),
-    env: {
-      browser: true,
-      es2021: true,
+    languageOptions: {
+      parser,
+      parserOptions: generateParserOptions({ parser: ts }),
+      globals: {
+        ...globals.browser,
+        ...globals.es2021,
+      },
     },
   };
 }

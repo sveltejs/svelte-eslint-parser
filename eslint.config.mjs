@@ -12,6 +12,7 @@ export default [
       "tests/fixtures/**/*.svelte",
       "tests/fixtures/**/*.js",
       "tests/fixtures/**/*.ts",
+      "!tests/fixtures/integrations/**/*-setup.ts",
       "explorer/dist",
       "explorer/node_modules",
       "explorer-v2/build",
