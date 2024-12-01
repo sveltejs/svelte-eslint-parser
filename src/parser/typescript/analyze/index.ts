@@ -80,6 +80,12 @@ export function analyzeTypeScriptInSvelte(
 
   analyzeRenderScopes(code, ctx);
 
+  // When performing type checking on TypeScript code that is not a module, the error `Cannot redeclare block-scoped variable 'xxx'`. occurs. To fix this, add an `export`.
+  // see: https://github.com/sveltejs/svelte-eslint-parser/issues/557
+  if (!hasExportDeclaration(result.ast)) {
+    appendDummyExport(ctx);
+  }
+
   ctx.appendOriginalToEnd();
 
   return ctx;
@@ -116,6 +122,18 @@ export function analyzeTypeScript(
   ctx.appendOriginalToEnd();
 
   return ctx;
+}
+
+function hasExportDeclaration(ast: TSESParseForESLintResult["ast"]): boolean {
+  for (const node of ast.body) {
+    if (
+      node.type === "ExportNamedDeclaration" ||
+      node.type === "ExportDefaultDeclaration"
+    ) {
+      return true;
+    }
+  }
+  return false;
 }
 
 /**
@@ -317,6 +335,34 @@ function analyzeDollarDollarVariables(
       return true;
     });
   }
+}
+
+/** Append dummy export */
+function appendDummyExport(ctx: VirtualTypeScriptContext) {
+  ctx.appendVirtualScript(`export namespace SvelteEslintParserModuleMarker {}`);
+  ctx.restoreContext.addRestoreStatementProcess((node, result) => {
+    if (
+      node.type !== "ExportNamedDeclaration" ||
+      node.declaration?.type !== "TSModuleDeclaration" ||
+      node.declaration.kind !== "namespace" ||
+      node.declaration.id.type !== "Identifier" ||
+      node.declaration.id.name !== "SvelteEslintParserModuleMarker"
+    ) {
+      return false;
+    }
+    const program = result.ast;
+    program.body.splice(program.body.indexOf(node), 1);
+
+    const scopeManager = result.scopeManager as ScopeManager;
+
+    // Remove `declare` variable
+    removeAllScopeAndVariableAndReference(node, {
+      visitorKeys: result.visitorKeys,
+      scopeManager,
+    });
+
+    return true;
+  });
 }
 
 /**
@@ -569,24 +615,29 @@ function analyzeRenderScopes(
 ) {
   ctx.appendOriginal(code.script.length);
   const renderFunctionName = ctx.generateUniqueId("render");
-  ctx.appendVirtualScript(`function ${renderFunctionName}(){`);
+  ctx.appendVirtualScript(`export function ${renderFunctionName}(){`);
   ctx.appendOriginal(code.script.length + code.render.length);
   ctx.appendVirtualScript(`}`);
   ctx.restoreContext.addRestoreStatementProcess((node, result) => {
     if (
-      node.type !== "FunctionDeclaration" ||
-      node.id.name !== renderFunctionName
+      node.type !== "ExportNamedDeclaration" ||
+      node.declaration?.type !== "FunctionDeclaration" ||
+      node.declaration?.id?.name !== renderFunctionName
     ) {
       return false;
     }
     const program = result.ast;
-    program.body.splice(program.body.indexOf(node), 1, ...node.body.body);
-    for (const body of node.body.body) {
+    program.body.splice(
+      program.body.indexOf(node),
+      1,
+      ...node.declaration.body.body,
+    );
+    for (const body of node.declaration.body.body) {
       body.parent = program;
     }
 
     const scopeManager = result.scopeManager as ScopeManager;
-    removeFunctionScope(node, scopeManager);
+    removeFunctionScope(node.declaration, scopeManager);
     return true;
   });
 }
@@ -843,7 +894,7 @@ function transformForReactiveStatement(
   const functionId = ctx.generateUniqueId("reactiveStatementScopeFunction");
   const originalBody = statement.body;
   ctx.appendOriginal(originalBody.range[0]);
-  ctx.appendVirtualScript(`function ${functionId}(){`);
+  ctx.appendVirtualScript(`export function ${functionId}(){`);
   ctx.appendOriginal(originalBody.range[1]);
   ctx.appendVirtualScript(`}`);
   ctx.appendOriginal(statement.range[1]);
@@ -854,14 +905,18 @@ function transformForReactiveStatement(
     }
     const reactiveStatement = node as TSESTree.LabeledStatement;
     const body = reactiveStatement.body;
-    if (body.type !== "FunctionDeclaration" || body.id.name !== functionId) {
+    if (
+      body.type !== "ExportNamedDeclaration" ||
+      body.declaration?.type !== "FunctionDeclaration" ||
+      body.declaration?.id?.name !== functionId
+    ) {
       return false;
     }
-    reactiveStatement.body = body.body.body[0];
+    reactiveStatement.body = body.declaration.body.body[0];
     reactiveStatement.body.parent = reactiveStatement;
 
     const scopeManager = result.scopeManager as ScopeManager;
-    removeFunctionScope(body, scopeManager);
+    removeFunctionScope(body.declaration, scopeManager);
     return true;
   });
 }
