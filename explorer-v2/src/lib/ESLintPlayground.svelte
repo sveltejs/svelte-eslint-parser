@@ -2,13 +2,13 @@
 	import { onDestroy, onMount } from 'svelte';
 	import { Linter } from 'eslint';
 	import * as svelteEslintParser from 'svelte-eslint-parser';
+	import globals from 'globals';
 	import ESLintEditor from './ESLintEditor.svelte';
 	import RulesSettings from './RulesSettings.svelte';
 	import { deserializeState, serializeState } from './scripts/state';
 	import { DEFAULT_RULES_CONFIG, getURL } from './scripts/rules.js';
 
 	const linter = new Linter();
-	linter.defineParser('svelte-eslint-parser', svelteEslintParser);
 
 	const DEFAULT_CODE =
 		`<script>
@@ -115,17 +115,19 @@
 				{linter}
 				bind:code
 				config={{
-					parser: 'svelte-eslint-parser',
-					parserOptions: {
-						ecmaVersion: 2020,
-						sourceType: 'module',
-						parser: { ts: tsParser, typescript: tsParser }
+					languageOptions: {
+						parser: svelteEslintParser,
+						parserOptions: {
+							ecmaVersion: 2020,
+							sourceType: 'module',
+							parser: { ts: tsParser, typescript: tsParser }
+						},
+						globals: {
+							...globals.browser,
+							...globals.es2021
+						}
 					},
-					rules,
-					env: {
-						browser: true,
-						es2021: true
-					}
+					rules
 				}}
 				class="eslint-playground"
 				on:result={onLintedResult}

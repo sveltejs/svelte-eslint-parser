@@ -1,6 +1,4 @@
-import { Linter } from 'eslint';
-
-const linter = new Linter();
+import { builtinRules } from 'eslint/use-at-your-own-risk';
 
 export const categories = [
 	{
@@ -22,7 +20,7 @@ export const categories = [
 export const DEFAULT_RULES_CONFIG = {};
 
 const rules = [];
-for (const [ruleId, rule] of linter.getRules()) {
+for (const [ruleId, rule] of builtinRules) {
 	if (rule.meta.deprecated) {
 		continue;
 	}
@@ -41,5 +39,5 @@ for (const [ruleId, rule] of linter.getRules()) {
 }
 /** get url */
 export function getURL(ruleId) {
-	return linter.getRules().get(ruleId)?.meta.docs.url ?? '';
+	return builtinRules.get(ruleId)?.meta.docs.url ?? '';
 }
