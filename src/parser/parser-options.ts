@@ -20,7 +20,6 @@ export type NormalizedParserOptions = {
     [key: string]: any;
   };
   svelteFeatures?: {
-    /* -- Experimental Svelte Features -- */
     // This option is for Svelte 5. The default value is `true`.
     // If `false`, ESLint will not recognize rune symbols.
     // If not configured this option, The parser will try to read the option from `compilerOptions.runes` from `svelte.config.js`.
@@ -66,7 +65,7 @@ const TS_PARSER_NAMES = [
 
 export function isTypeScript(
   parserOptions: NormalizedParserOptions,
-  lang: string | undefined,
+  lang: string | undefined
 ): boolean {
   if (!lang) {
     return false;
@@ -89,7 +88,7 @@ export function isTypeScript(
       if (fs.existsSync(pkgPath)) {
         try {
           return TS_PARSER_NAMES.includes(
-            JSON.parse(fs.readFileSync(pkgPath, "utf-8"))?.name,
+            JSON.parse(fs.readFileSync(pkgPath, "utf-8"))?.name
           );
         } catch {
           return false;
