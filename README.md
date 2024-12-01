@@ -289,7 +289,6 @@ export default [
       parser: svelteParser,
       parserOptions: {
         svelteFeatures: {
-          /* -- Experimental Svelte Features -- */
           /* It may be changed or removed in minor versions without notice. */
           // This option is for Svelte 5. The default value is `true`.
           // If `false`, ESLint will not recognize rune symbols.
@@ -310,7 +309,6 @@ For example in `.eslintrc.*`:
   "parser": "svelte-eslint-parser",
   "parserOptions": {
     "svelteFeatures": {
-      /* -- Experimental Svelte Features -- */
       /* It may be changed or removed in minor versions without notice. */
       // This option is for Svelte 5. The default value is `true`.
       // If `false`, ESLint will not recognize rune symbols.

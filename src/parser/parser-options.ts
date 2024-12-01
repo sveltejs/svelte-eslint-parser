@@ -20,7 +20,6 @@ export type NormalizedParserOptions = {
     [key: string]: any;
   };
   svelteFeatures?: {
-    /* -- Experimental Svelte Features -- */
     // This option is for Svelte 5. The default value is `true`.
     // If `false`, ESLint will not recognize rune symbols.
     // If not configured this option, The parser will try to read the option from `compilerOptions.runes` from `svelte.config.js`.
