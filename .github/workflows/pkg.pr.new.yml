@@ -14,7 +14,7 @@ jobs:
       - name: Build
         run: pnpm run build
 
-      - run: pnpx pkg-pr-new publish --comment=off --json output.json --compact --no-template
+      - run: pnpx pkg-pr-new publish --json output.json --compact --no-template
       - name: Add metadata to output
         uses: actions/github-script@v6
         with:
