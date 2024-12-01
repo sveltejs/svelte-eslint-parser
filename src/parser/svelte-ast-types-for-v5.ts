@@ -26,6 +26,7 @@ export type SvelteHead = AST.SvelteHead;
 export type SvelteOptionsRaw = AST.SvelteOptionsRaw;
 export type SvelteSelf = AST.SvelteSelf;
 export type SvelteWindow = AST.SvelteWindow;
+export type SvelteBoundary = AST.SvelteBoundary;
 
 export type IfBlock = AST.IfBlock;
 export type EachBlock = AST.EachBlock;
@@ -59,7 +60,8 @@ export type ElementLike =
   | SvelteHead
   | SvelteOptionsRaw
   | SvelteSelf
-  | SvelteWindow;
+  | SvelteWindow
+  | SvelteBoundary;
 export type Block = EachBlock | IfBlock | AwaitBlock | KeyBlock | SnippetBlock;
 
 export type Directive =

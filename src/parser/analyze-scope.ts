@@ -294,7 +294,9 @@ export function analyzeSnippetsScope(
     if (
       parent.type === "SvelteElement" &&
       (parent.kind === "component" ||
-        (parent.kind === "special" && parent.name.name === "svelte:component"))
+        (parent.kind === "special" &&
+          (parent.name.name === "svelte:component" ||
+            parent.name.name === "svelte:boundary")))
     ) {
       const scope = getScopeFromNode(scopeManager, snippet.id);
       const upperScope = scope.upper;
