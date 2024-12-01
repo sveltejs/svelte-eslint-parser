@@ -56,6 +56,7 @@ export function parseStyleContext(
   let parseFn: Parser<Root>, sourceAst: Root;
   switch (sourceLang) {
     case "css":
+    case "postcss":
       parseFn = postcss.parse;
       break;
     case "scss":
