@@ -1,6 +1,7 @@
 import { sveltekit } from '@sveltejs/kit/vite';
 import { resolve } from 'path';
 import { createRequire } from 'module';
+import eslint4b, { requireESLintUseAtYourOwnRisk4b } from 'vite-plugin-eslint4b';
 
 const { version: MONACO_EDITOR_VERSION } = createRequire(import.meta.url)(
 	'monaco-editor/package.json'
@@ -8,7 +9,7 @@ const { version: MONACO_EDITOR_VERSION } = createRequire(import.meta.url)(
 
 /** @type {import('vite').UserConfig} */
 const config = {
-	plugins: [sveltekit()],
+	plugins: [sveltekit(), eslint4b(), requireESLintUseAtYourOwnRisk4b()],
 	server: {
 		fs: { strict: false }
 	},
@@ -16,12 +17,14 @@ const config = {
 		alias: {
 			assert: resolve('./build-system/shim/assert.js'),
 			path: resolve('./build-system/shim/path.js'),
+			'node:path': resolve('./build-system/shim/path.js'),
+			util: resolve('./build-system/shim/util.js'),
 			fs: resolve('./build-system/shim/fs.js'),
 			module: resolve('./build-system/shim/module.js'),
 
 			globby: resolve('./build-system/shim/globby.js'),
+			'fast-glob': resolve('./build-system/shim/fast-glob.js'),
 			tslib: resolve('./node_modules/tslib/tslib.es6.js'),
-			eslint: resolve('./build-system/shim/eslint.js'),
 			'svelte-eslint-parser': resolve('./build-system/shim/svelte-eslint-parser.js'),
 			'svelte/compiler': resolve('./build-system/shim/svelte/compiler.js')
 		}

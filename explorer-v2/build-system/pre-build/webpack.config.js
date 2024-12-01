@@ -39,36 +39,6 @@ export default [
 	{
 		...base,
 		entry: {
-			eslint: resolve('./eslint.js')
-		},
-		externals: {
-			espree: '$$inject_espree$$',
-			esquery: '$$inject_esquery$$'
-		},
-		plugins: [
-			new WrapperPlugin({
-				test: /eslint\.js/,
-				header: `
-				if (typeof window !== "undefined") {
-					if (typeof window.global === "undefined") {
-						window.global = {}
-					}
-					if (typeof window.process === "undefined") {
-						window.process = {
-							env: {},
-							cwd: () => undefined,
-						}
-					}
-				}
-				import * as $$inject_espree$$ from 'espree';
-				import $$inject_esquery$$ from 'esquery';
-				`
-			})
-		]
-	},
-	{
-		...base,
-		entry: {
 			'svelte-eslint-parser': resolve('./svelte-eslint-parser.js')
 		},
 		externals: {
