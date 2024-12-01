@@ -65,7 +65,7 @@ const TS_PARSER_NAMES = [
 
 export function isTypeScript(
   parserOptions: NormalizedParserOptions,
-  lang: string | undefined
+  lang: string | undefined,
 ): boolean {
   if (!lang) {
     return false;
@@ -88,7 +88,7 @@ export function isTypeScript(
       if (fs.existsSync(pkgPath)) {
         try {
           return TS_PARSER_NAMES.includes(
-            JSON.parse(fs.readFileSync(pkgPath, "utf-8"))?.name
+            JSON.parse(fs.readFileSync(pkgPath, "utf-8"))?.name,
           );
         } catch {
           return false;
