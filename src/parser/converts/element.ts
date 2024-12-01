@@ -210,6 +210,10 @@ export function* convertChildren(
       yield convertDocumentElement(child, parent, ctx);
       continue;
     }
+    if (child.type === "SvelteBoundary") {
+      yield convertSvelteBoundaryElement(child, parent, ctx);
+      continue;
+    }
 
     throw new Error(`Unknown type:${child.type}`);
   }
@@ -415,7 +419,8 @@ function convertSpecialElement(
     | Compiler.SvelteDocument
     | Compiler.SvelteFragment
     | Compiler.SvelteSelf
-    | Compiler.SvelteOptionsRaw,
+    | Compiler.SvelteOptionsRaw
+    | Compiler.SvelteBoundary,
   parent: SvelteSpecialElement["parent"],
   ctx: Context,
 ): SvelteSpecialElement {
@@ -892,6 +897,15 @@ function convertOptionsElement(
 /** Convert for <svelte:fragment> element. */
 function convertSlotTemplateElement(
   node: SvAST.SlotTemplate | Compiler.SvelteFragment,
+  parent: SvelteSpecialElement["parent"],
+  ctx: Context,
+): SvelteSpecialElement {
+  return convertSpecialElement(node, parent, ctx);
+}
+
+/** Convert for <svelte:boundary> element. */
+function convertSvelteBoundaryElement(
+  node: Compiler.SvelteBoundary,
   parent: SvelteSpecialElement["parent"],
   ctx: Context,
 ): SvelteSpecialElement {
