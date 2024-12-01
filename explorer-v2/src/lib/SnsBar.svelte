@@ -29,7 +29,7 @@
 	});
 </script>
 
-<div class="sns-bar" style="margin-left: auto">
+<div class="sns-bar" style:margin-left="auto">
 	<div class="sns">
 		<a
 			class="github-button"

@@ -29,7 +29,7 @@
 		codeActionProviderDisposable;
 	const loadingMonaco = loadMonacoEditor();
 	const starting = appStarting;
-	// eslint-disable-next-line no-use-before-define -- TODO
+
 	$: loading = Promise.all([waiting, loadingMonaco, starting]);
 	$: {
 		if (setLeftValue) {

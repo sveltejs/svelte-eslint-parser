@@ -1,24 +1,24 @@
-/* eslint eslint-comments/require-description: 0, @typescript-eslint/explicit-module-boundary-types: 0 */
 import type { Linter } from "eslint";
 import { generateParserOptions } from "../../../src/parser/test-utils";
-import { rules } from "eslint-plugin-svelte";
-export function setupLinter(linter: Linter) {
-  linter.defineRule(
-    "svelte/no-immutable-reactive-statements",
-    rules["no-immutable-reactive-statements"] as never,
-  );
-}
+import * as svelte from "eslint-plugin-svelte";
+import globals from "globals";
+import * as parser from "../../../../src";
 
-export function getConfig() {
+export function getConfig(): Linter.Config {
   return {
-    parser: "svelte-eslint-parser",
-    parserOptions: generateParserOptions(),
+    plugins: {
+      svelte: svelte as any,
+    },
+    languageOptions: {
+      parser,
+      parserOptions: generateParserOptions(),
+      globals: {
+        ...globals.browser,
+        ...globals.es2021,
+      },
+    },
     rules: {
       "svelte/no-immutable-reactive-statements": "error",
-    },
-    env: {
-      browser: true,
-      es2021: true,
     },
   };
 }

@@ -17,7 +17,6 @@
 
 	let messageMap = new Map();
 
-	// eslint-disable-next-line no-use-before-define -- TODO
 	$: showApplyFix = fix && fixedValue !== code;
 	$: {
 		lint(linter, code, config, options);

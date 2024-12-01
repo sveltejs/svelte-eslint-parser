@@ -1,5 +1,5 @@
 <script>
-	// eslint-disable-next-line eslint-comments/disable-enable-pair -- ignore
+	// eslint-disable-next-line @eslint-community/eslint-comments/disable-enable-pair -- ignore
 	/* eslint-disable no-useless-escape -- ignore */
 	import MonacoEditor from './MonacoEditor.svelte';
 	import AstOptions from './AstOptions.svelte';

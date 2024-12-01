@@ -2,6 +2,7 @@
 import { Linter } from "eslint";
 import assert from "assert";
 import fs from "fs";
+import globals from "globals";
 import * as parser from "../../src";
 import {
   generateParserOptions,
@@ -11,14 +12,6 @@ import {
 import path from "path";
 
 const FIXTURE_ROOT = path.resolve(__dirname, "../fixtures/integrations");
-
-function createLinter() {
-  const linter = new Linter();
-
-  linter.defineParser("svelte-eslint-parser", parser as any);
-
-  return linter;
-}
 
 describe("Integration tests.", () => {
   for (const {
@@ -40,17 +33,21 @@ describe("Integration tests.", () => {
         ? // eslint-disable-next-line @typescript-eslint/no-require-imports -- test
           require(setupFileName)
         : null;
-      const linter = createLinter();
-      setup?.setupLinter?.(linter);
+      const linter = new Linter();
       const messages = linter.verify(
         input,
-        setup?.getConfig?.() ?? {
-          parser: "svelte-eslint-parser",
-          parserOptions: generateParserOptions(config),
-          env: {
-            browser: true,
-            es2021: true,
-          },
+        {
+          files: ["**"],
+          ...(setup?.getConfig?.() ?? {
+            languageOptions: {
+              parser,
+              parserOptions: generateParserOptions(config),
+              globals: {
+                ...globals.browser,
+                ...globals.es2021,
+              },
+            },
+          }),
         },
         inputFileName,
       );

@@ -1,36 +1,26 @@
-/* eslint eslint-comments/require-description: 0, @typescript-eslint/explicit-module-boundary-types: 0 */
 import type { Linter } from "eslint";
 import { generateParserOptions } from "../../../src/parser/test-utils";
 import { rules } from "@typescript-eslint/eslint-plugin";
-export function setupLinter(linter: Linter) {
-  linter.defineRule(
-    "@typescript-eslint/no-unsafe-argument",
-    rules["no-unsafe-argument"] as never,
-  );
-  linter.defineRule(
-    "@typescript-eslint/no-unsafe-assignment",
-    rules["no-unsafe-assignment"] as never,
-  );
-  linter.defineRule(
-    "@typescript-eslint/no-unsafe-call",
-    rules["no-unsafe-call"] as never,
-  );
-  linter.defineRule(
-    "@typescript-eslint/no-unsafe-member-access",
-    rules["no-unsafe-member-access"] as never,
-  );
-  linter.defineRule(
-    "@typescript-eslint/no-unsafe-return",
-    rules["no-unsafe-return"] as never,
-  );
-}
+import * as parser from "../../../../src";
+import globals from "globals";
 
-export function getConfig() {
+export function getConfig(): Linter.Config {
   return {
-    parser: "svelte-eslint-parser",
-    parserOptions: {
-      ...generateParserOptions(),
-      svelteFeatures: { runes: true },
+    plugins: {
+      "@typescript-eslint": {
+        rules: rules as any,
+      },
+    },
+    languageOptions: {
+      parser,
+      parserOptions: {
+        ...generateParserOptions(),
+        svelteFeatures: { runes: true },
+      },
+      globals: {
+        ...globals.browser,
+        ...globals.es2021,
+      },
     },
     rules: {
       "@typescript-eslint/no-unsafe-argument": "error",
@@ -38,10 +28,6 @@ export function getConfig() {
       "@typescript-eslint/no-unsafe-call": "error",
       "@typescript-eslint/no-unsafe-member-access": "error",
       "@typescript-eslint/no-unsafe-return": "error",
-    },
-    env: {
-      browser: true,
-      es2021: true,
     },
   };
 }

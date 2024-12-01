@@ -291,18 +291,18 @@ function convertGenericsAttribute(script: SvelteScriptElement, ctx: Context) {
   generics.type = "SvelteGenericsDirective";
   generics.params = [];
 
-  result.ast.tokens!.shift(); // void
-  result.ast.tokens!.shift(); // function
-  result.ast.tokens!.shift(); // <
-  result.ast.tokens!.pop(); // }
-  result.ast.tokens!.pop(); // {
-  result.ast.tokens!.pop(); // )
-  result.ast.tokens!.pop(); // (
-  result.ast.tokens!.pop(); // >
+  result.ast.tokens.shift(); // void
+  result.ast.tokens.shift(); // function
+  result.ast.tokens.shift(); // <
+  result.ast.tokens.pop(); // }
+  result.ast.tokens.pop(); // {
+  result.ast.tokens.pop(); // )
+  result.ast.tokens.pop(); // (
+  result.ast.tokens.pop(); // >
   fixLocations(
     result.ast as any,
-    result.ast.tokens! as any,
-    result.ast.comments! as any,
+    result.ast.tokens as any,
+    result.ast.comments as any,
     value.range[0] - 14,
     result.visitorKeys as any,
     ctx,
@@ -318,7 +318,7 @@ function convertGenericsAttribute(script: SvelteScriptElement, ctx: Context) {
 
   // Replace tokens
   for (const tokensKey of ["tokens", "comments"] as const) {
-    for (const token of result.ast[tokensKey]!) {
+    for (const token of result.ast[tokensKey]) {
       if (
         params.every(
           (param) =>

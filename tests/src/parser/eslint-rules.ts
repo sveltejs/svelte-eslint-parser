@@ -1,20 +1,13 @@
 import { Linter } from "eslint";
 import assert from "assert";
 import fs from "fs";
+import globals from "globals";
 import * as parser from "../../../src/index";
 import {
   generateParserOptions,
   getMessageData,
   listupFixtures,
 } from "./test-utils";
-
-function createLinter() {
-  const linter = new Linter();
-
-  linter.defineParser("svelte-eslint-parser", parser as any);
-
-  return linter;
-}
 
 //------------------------------------------------------------------------------
 // Tests
@@ -46,7 +39,7 @@ describe("svelte-eslint-parser with ESLint rules", () => {
     if (!meetRequirements("parse")) {
       continue;
     }
-    const linter = createLinter();
+    const linter = new Linter();
     describe(inputFileName, () => {
       for (const rule of RULES) {
         it(rule, () => {
@@ -54,14 +47,17 @@ describe("svelte-eslint-parser with ESLint rules", () => {
           const messages = linter.verify(
             input,
             {
-              parser: "svelte-eslint-parser",
-              parserOptions: generateParserOptions(config),
+              files: ["**"],
+              languageOptions: {
+                parser,
+                parserOptions: generateParserOptions(config),
+                globals: {
+                  ...globals.browser,
+                  ...globals.es2021,
+                },
+              },
               rules: {
                 [rule]: "error",
-              },
-              env: {
-                browser: true,
-                es2021: true,
               },
             },
             inputFileName,

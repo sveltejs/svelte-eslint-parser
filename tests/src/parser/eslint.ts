@@ -1,16 +1,9 @@
 import { Linter } from "eslint";
 import assert from "assert";
 import semver from "semver";
+import globals from "globals";
 import * as parser from "../../../src/index";
 import { generateParserOptions } from "./test-utils";
-
-function createLinter() {
-  const linter = new Linter();
-
-  linter.defineParser("svelte-eslint-parser", parser as any);
-
-  return linter;
-}
 
 //------------------------------------------------------------------------------
 // Tests
@@ -20,23 +13,31 @@ describe("eslint custom parser", () => {
   it("should work with eslint.", () => {
     const code = `<h1>Hello!</h1>`;
 
-    const linter = createLinter();
-    linter.defineRule("test", {
-      create(context) {
-        return {
-          SvelteElement(node: any) {
-            context.report({
-              node,
-              message: "test",
-            });
-          },
-        };
-      },
-    });
+    const linter = new Linter();
     const messages = linter.verify(code, {
-      parser: "svelte-eslint-parser",
+      plugins: {
+        test: {
+          rules: {
+            test: {
+              create(context) {
+                return {
+                  SvelteElement(node: any) {
+                    context.report({
+                      node,
+                      message: "test",
+                    });
+                  },
+                };
+              },
+            },
+          },
+        },
+      },
+      languageOptions: {
+        parser,
+      },
       rules: {
-        test: "error",
+        "test/test": "error",
       },
     });
 
@@ -243,10 +244,16 @@ describe("eslint custom parser", () => {
 
     for (const { code, output, messages, parserOptions } of tests) {
       it(code, () => {
-        const linter = createLinter();
+        const linter = new Linter();
         const result = linter.verifyAndFix(code, {
-          parser: "svelte-eslint-parser",
-          parserOptions: generateParserOptions(parserOptions),
+          languageOptions: {
+            parser,
+            parserOptions: generateParserOptions(parserOptions),
+            globals: {
+              ...globals.browser,
+              ...globals.es2021,
+            },
+          },
           rules: {
             "no-unused-labels": "error",
             "no-extra-label": "error",
@@ -254,10 +261,6 @@ describe("eslint custom parser", () => {
             "no-unused-vars": "error",
             "no-unused-expressions": "error",
             "space-infix-ops": "error",
-          },
-          env: {
-            browser: true,
-            es2021: true,
           },
         });
 

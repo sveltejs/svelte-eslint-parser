@@ -1,5 +1,5 @@
 <script>
-	// eslint-disable-next-line eslint-comments/disable-enable-pair -- ignore
+	// eslint-disable-next-line @eslint-community/eslint-comments/disable-enable-pair -- ignore
 	/* eslint-disable no-useless-escape -- ignore */
 	import MonacoEditor from './MonacoEditor.svelte';
 	import * as svelteEslintParser from 'svelte-eslint-parser';
@@ -52,7 +52,7 @@
 			refresh(code);
 		}
 	}
-	// eslint-disable-next-line no-use-before-define -- false positive
+
 	$: serializedString = (() => {
 		const serializeCode = DEFAULT_CODE === code ? undefined : code;
 		return serializeState({
@@ -89,7 +89,6 @@
 				parser: tsParser
 			})._virtualScriptCode;
 		} catch (e) {
-			// eslint-disable-next-line no-console -- Demo
 			console.error(e);
 			virtualScriptCode = `message: ${e.message}`;
 			time = `${Date.now() - start}ms`;
