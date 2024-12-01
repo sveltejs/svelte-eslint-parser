@@ -80,6 +80,12 @@ export function analyzeTypeScriptInSvelte(
 
   analyzeRenderScopes(code, ctx);
 
+  // When performing type checking on TypeScript code that is not a module, the error `Cannot redeclare block-scoped variable 'xxx'`. occurs. To fix this, add an `export`.
+  // see: https://github.com/sveltejs/svelte-eslint-parser/issues/557
+  if (!hasExportDeclaration(result.ast)) {
+    ctx.appendVirtualScript("export {};");
+  }
+
   ctx.appendOriginalToEnd();
 
   return ctx;
@@ -116,6 +122,18 @@ export function analyzeTypeScript(
   ctx.appendOriginalToEnd();
 
   return ctx;
+}
+
+function hasExportDeclaration(ast: TSESParseForESLintResult["ast"]): boolean {
+  for (const node of ast.body) {
+    if (
+      node.type === "ExportNamedDeclaration" ||
+      node.type === "ExportDefaultDeclaration"
+    ) {
+      return true;
+    }
+  }
+  return false;
 }
 
 /**
@@ -380,7 +398,7 @@ function analyzeRuneVariables(
       // See https://github.com/sveltejs/svelte/blob/41b5cd6f5daae3970a9927e062f42b6b62440d16/packages/svelte/types/index.d.ts#L2615
       case "$props": {
         // Use type parameters to avoid `@typescript-eslint/no-unsafe-assignment` errors.
-        appendDeclareFunctionVirtualScripts(globalName, ["<T>(): T"]);
+        appendDeclareFunctionVirtualScripts(globalName, ["(): any"]);
         break;
       }
       // See https://github.com/sveltejs/svelte/blob/41b5cd6f5daae3970a9927e062f42b6b62440d16/packages/svelte/types/index.d.ts#L2626
