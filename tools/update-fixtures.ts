@@ -69,8 +69,6 @@ for (const {
   }
   // if (!inputFileName.includes("test")) continue;
   try {
-    // eslint-disable-next-line no-console -- ignore
-    console.log(inputFileName);
     const result = parse(input, inputFileName, config);
     const astJson = astToJson(result.ast);
     fs.writeFileSync(outputFileName, astJson, "utf8");
@@ -279,9 +277,7 @@ function buildTypes(
       lineTypes.push(`${node.name}: ${typeText}`);
     } else {
       lineTypes.push(
-        `${input
-          .slice(...node.range!)
-          .replace(/\s*\n\s*/gu, " ")}: ${typeText}`,
+        `${input.slice(...node.range!).replace(/\s*\n\s*/gu, " ")}: ${typeText}`,
       );
     }
   }

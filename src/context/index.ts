@@ -18,12 +18,16 @@ import { LetDirectiveCollections } from "./let-directive-collection.js";
 import { parseAttributes } from "../parser/html.js";
 import { sortedLastIndex } from "../utils/index.js";
 import {
-  isTypeScript,
+  getLanguage,
   type NormalizedParserOptions,
 } from "../parser/parser-options.js";
 
 export class ScriptsSourceCode {
   private raw: string;
+
+  public getRaw(): string {
+    return this.raw;
+  }
 
   private trimmedRaw: string;
 
@@ -175,7 +179,7 @@ export class Context {
   public readonly snippets: SvelteSnippetBlock[] = [];
 
   // ----- States ------
-  private readonly state: { isTypeScript?: boolean } = {};
+  private readonly state: { language?: "js" | "ts" | "jsdoc" | string } = {};
 
   private readonly blocks: Block[] = [];
 
@@ -321,11 +325,17 @@ export class Context {
   }
 
   public isTypeScript(): boolean {
-    if (this.state.isTypeScript != null) {
-      return this.state.isTypeScript;
+    return this.getLanguage() === "ts";
+  }
+
+  public getLanguage(): "js" | "ts" | "jsdoc" | string {
+    if (this.state.language != null) {
+      return this.state.language;
     }
-    const lang = this.sourceCode.scripts.attrs.lang;
-    return (this.state.isTypeScript = isTypeScript(this.parserOptions, lang));
+    const rawLang = this.sourceCode.scripts.attrs.lang;
+    const code = this.sourceCode.scripts.getRaw();
+    const language = getLanguage(this.parserOptions, rawLang, code);
+    return (this.state.language = language);
   }
 
   public stripScriptCode(start: number, end: number): void {

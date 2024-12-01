@@ -8,7 +8,7 @@ export function getConfig(): Linter.Config {
   return {
     languageOptions: {
       parser,
-      parserOptions: generateParserOptions({ parser: { ts } }),
+      parserOptions: generateParserOptions({ parser: ts }),
       globals: {
         ...globals.browser,
         ...globals.es2021,
