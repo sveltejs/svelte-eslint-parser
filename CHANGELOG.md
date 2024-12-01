@@ -1,5 +1,23 @@
 # svelte-eslint-parser
 
+## 1.0.0-next.1
+
+### Major Changes
+
+- [#459](https://github.com/sveltejs/svelte-eslint-parser/pull/459) [`d768a5c`](https://github.com/sveltejs/svelte-eslint-parser/commit/d768a5ce13d15e00fa82434c041366c00d2833b0) Thanks [@renovate](https://github.com/apps/renovate)! - fix(deps): update dependency eslint-scope to v8
+
+### Minor Changes
+
+- [#609](https://github.com/sveltejs/svelte-eslint-parser/pull/609) [`47b61de`](https://github.com/sveltejs/svelte-eslint-parser/commit/47b61deb4eaf668eb07ef0697e11ae46a7790639) Thanks [@ota-meshi](https://github.com/ota-meshi)! - feat: add support for `<svelte:boundary>`
+
+### Patch Changes
+
+- [#601](https://github.com/sveltejs/svelte-eslint-parser/pull/601) [`e1c6a8a`](https://github.com/sveltejs/svelte-eslint-parser/commit/e1c6a8ac3585d2c4a0dede3f0d5eb0f511045ea9) Thanks [@baseballyama](https://github.com/baseballyama)! - chore: remove experimental for svelteFeatures.runes option parserOptions
+
+- [#604](https://github.com/sveltejs/svelte-eslint-parser/pull/604) [`5ed0609`](https://github.com/sveltejs/svelte-eslint-parser/commit/5ed060950b7db8ee1d04a8106238fcad0ed02aad) Thanks [@baseballyama](https://github.com/baseballyama)! - fix: recognize script as module for Typescript type checking
+
+- [#600](https://github.com/sveltejs/svelte-eslint-parser/pull/600) [`5586809`](https://github.com/sveltejs/svelte-eslint-parser/commit/5586809d9988323926d53b5999494a56c6442df0) Thanks [@baseballyama](https://github.com/baseballyama)! - feat: support postcss
+
 ## 1.0.0-next.0
 
 ### Major Changes
