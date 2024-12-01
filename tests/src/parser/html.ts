@@ -1,4 +1,4 @@
-import chai from "chai";
+import * as chai from "chai";
 import { jestSnapshotPlugin } from "mocha-chai-jest-snapshot";
 
 import { parseAttributes } from "../../../src/parser/html";
