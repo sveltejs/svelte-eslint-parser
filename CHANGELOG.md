@@ -1,5 +1,11 @@
 # svelte-eslint-parser
 
+## 1.0.0-next.3
+
+### Patch Changes
+
+- [#612](https://github.com/sveltejs/svelte-eslint-parser/pull/612) [`9e84b3e`](https://github.com/sveltejs/svelte-eslint-parser/commit/9e84b3e7ab44e737a7f54010daeb9739d9214019) Thanks [@ota-meshi](https://github.com/ota-meshi)! - fix: compatibility with eslint-plugin-prettier
+
 ## 1.0.0-next.2
 
 ### Major Changes
