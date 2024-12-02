@@ -20,19 +20,19 @@ import type {
   SvelteStyleElement,
   SvelteElseBlock,
   SvelteAwaitBlock,
-} from "../../ast";
+} from "../../ast/index.js";
 import type ESTree from "estree";
-import type { Context } from "../../context";
-import type * as SvAST from "../svelte-ast-types";
-import type * as Compiler from "../svelte-ast-types-for-v5";
-import { getWithLoc, indexOf } from "./common";
-import { convertMustacheTag } from "./mustache";
-import { convertTextToLiteral } from "./text";
-import { ParseError } from "../../errors";
-import type { ScriptLetCallback } from "../../context/script-let";
-import { svelteVersion } from "../svelte-version";
-import { hasTypeInfo } from "../../utils";
-import { getModifiers } from "../compat";
+import type { Context } from "../../context/index.js";
+import type * as SvAST from "../svelte-ast-types.js";
+import type * as Compiler from "../svelte-ast-types-for-v5.js";
+import { getWithLoc, indexOf } from "./common.js";
+import { convertMustacheTag } from "./mustache.js";
+import { convertTextToLiteral } from "./text.js";
+import { ParseError } from "../../errors.js";
+import type { ScriptLetCallback } from "../../context/script-let.js";
+import { svelteVersion } from "../svelte-version.js";
+import { hasTypeInfo } from "../../utils/index.js";
+import { getModifiers } from "../compat.js";
 
 type LetDirective = Omit<Compiler.LetDirective, "expression"> & {
   expression: SvAST.LetDirective["expression"];

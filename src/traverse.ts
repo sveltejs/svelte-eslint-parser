@@ -1,7 +1,7 @@
 import type { VisitorKeys } from "eslint-visitor-keys";
-import { KEYS } from "./visitor-keys";
+import { KEYS } from "./visitor-keys.js";
 import type ESTree from "estree";
-import type { SvelteNode } from "./ast";
+import type { SvelteNode } from "./ast/index.js";
 import type { TSESTree } from "@typescript-eslint/types";
 import type { VisitorKeys as TSESVisitorKeys } from "@typescript-eslint/visitor-keys";
 

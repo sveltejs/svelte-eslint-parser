@@ -1,6 +1,6 @@
-import type { SvelteLiteral, SvelteText } from "../../ast";
-import type { Context } from "../../context";
-import type * as SvAST from "../svelte-ast-types";
+import type { SvelteLiteral, SvelteText } from "../../ast/index.js";
+import type { Context } from "../../context/index.js";
+import type * as SvAST from "../svelte-ast-types.js";
 /** Convert for Text */
 export function convertText(
   node: SvAST.Text,

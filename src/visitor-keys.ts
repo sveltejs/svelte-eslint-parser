@@ -1,6 +1,6 @@
 import type { SourceCode } from "eslint";
 import { unionWith } from "eslint-visitor-keys";
-import type { SvelteNode } from "./ast";
+import type { SvelteNode } from "./ast/index.js";
 
 type SvelteKeysType<T extends SvelteNode = SvelteNode> = {
   [key in SvelteNode["type"]]: T extends { type: key }

@@ -1,19 +1,21 @@
-/* global require -- node */
 import assert from "assert";
 import fs from "fs";
 import semver from "semver";
 
-import { traverseNodes } from "../../../src/traverse";
-import { parseForESLint } from "../../../src";
+import { traverseNodes } from "../../../src/traverse.js";
+import { parseForESLint } from "../../../src/index.js";
 import {
   generateParserOptions,
   listupFixtures,
   astToJson,
   scopeToJSON,
-} from "./test-utils";
-import type { Comment, SvelteProgram, Token } from "../../../src/ast";
-import { sortNodes } from "../../../src/parser/sort";
-import { sortJson } from "./test-utils";
+} from "./test-utils.js";
+import type { Comment, SvelteProgram, Token } from "../../../src/ast/index.js";
+import { sortNodes } from "../../../src/parser/sort.js";
+import { sortJson } from "./test-utils.js";
+import Module from "module";
+
+const require = Module.createRequire(import.meta.url);
 
 function parse(code: string, filePath: string, config: any) {
   return parseForESLint(code, generateParserOptions({ filePath }, config));
@@ -52,7 +54,6 @@ describe("Check for AST.", () => {
           if (
             result.services?.program // use ts parser
           ) {
-            // eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-var-requires -- ignore
             const pkg = require("@typescript-eslint/parser/package.json");
             if (!semver.satisfies(pkg.version, "^5.6.0")) {
               // adjust global scope

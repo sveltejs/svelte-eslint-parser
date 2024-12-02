@@ -3,12 +3,13 @@ import fs from "fs";
 import path from "path";
 import type { Node } from "postcss";
 
-import { parseForESLint } from "../../../src";
-import type { SourceLocation } from "../../../src/ast";
-import { generateParserOptions, listupFixtures } from "./test-utils";
+import { parseForESLint } from "../../../src/index.js";
+import { generateParserOptions, listupFixtures } from "./test-utils.js";
+import type { SourceLocation } from "../../../src/ast/common.js";
 
+const dirname = path.dirname(new URL(import.meta.url).pathname);
 const STYLE_CONTEXT_FIXTURE_ROOT = path.resolve(
-  __dirname,
+  dirname,
   "../../fixtures/parser/style-location-converter",
 );
 

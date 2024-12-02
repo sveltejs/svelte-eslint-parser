@@ -1,8 +1,8 @@
-import type * as Compiler from "./svelte-ast-types-for-v5";
-import type * as SvAST from "./svelte-ast-types";
-import type { NormalizedParserOptions } from "./parser-options";
-import { compilerVersion, svelteVersion } from "./svelte-version";
-import type { SvelteConfig } from "../svelte-config";
+import type * as Compiler from "./svelte-ast-types-for-v5.js";
+import type * as SvAST from "./svelte-ast-types.js";
+import type { NormalizedParserOptions } from "./parser-options.js";
+import { compilerVersion, svelteVersion } from "./svelte-version.js";
+import type { SvelteConfig } from "../svelte-config/index.js";
 
 /** The context for parsing. */
 export type SvelteParseContext = {

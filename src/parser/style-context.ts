@@ -2,8 +2,8 @@ import type { Node, Parser, Root } from "postcss";
 import postcss from "postcss";
 import { parse as SCSSparse } from "postcss-scss";
 
-import type { Context } from "../context";
-import type { SourceLocation, SvelteStyleElement } from "../ast";
+import type { Context } from "../context/index.js";
+import type { SourceLocation, SvelteStyleElement } from "../ast/index.js";
 
 export type StyleContext =
   | StyleContextNoStyleElement

@@ -2,9 +2,11 @@ import { Linter } from "eslint";
 import assert from "assert";
 import semver from "semver";
 import globals from "globals";
-import * as parser from "../../../src/index";
-import { generateParserOptions } from "./test-utils";
+import * as parser from "../../../src/index.js";
+import { generateParserOptions } from "./test-utils.js";
+import { Module } from "module";
 
+const require = Module.createRequire(import.meta.url);
 //------------------------------------------------------------------------------
 // Tests
 //------------------------------------------------------------------------------
@@ -220,11 +222,7 @@ describe("eslint custom parser", () => {
         output: null,
         messages: [],
       },
-      ...(semver.satisfies(
-        // eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-var-requires -- ignore
-        require("eslint/package.json").version,
-        ">=8.0.0",
-      )
+      ...(semver.satisfies(require("eslint/package.json").version, ">=8.0.0")
         ? [
             {
               // test for ecmaVersion latest

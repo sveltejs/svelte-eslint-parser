@@ -1,8 +1,8 @@
 import fs from "fs";
 import path from "path";
 import { Linter } from "eslint";
-import * as parser from "../src/index";
-import { parseForESLint } from "../src/parser";
+import * as parser from "../src/index.js";
+import { parseForESLint } from "../src/parser/index.js";
 import {
   generateParserOptions,
   getMessageData,
@@ -11,23 +11,24 @@ import {
   normalizeError,
   scopeToJSON,
   styleContextToJson,
-} from "../tests/src/parser/test-utils";
+} from "../tests/src/parser/test-utils.js";
 import type ts from "typescript";
 import type ESTree from "estree";
 import globals from "globals";
-import type { SourceLocation } from "../src/ast";
+import type { SourceLocation } from "../src/ast/index.js";
 
+const dirname = path.dirname(new URL(import.meta.url).pathname);
 const ERROR_FIXTURE_ROOT = path.resolve(
-  __dirname,
+  dirname,
   "../tests/fixtures/parser/error",
 );
 
 const STYLE_CONTEXT_FIXTURE_ROOT = path.resolve(
-  __dirname,
+  dirname,
   "../tests/fixtures/parser/style-context",
 );
 const STYLE_LOCATION_FIXTURE_ROOT = path.resolve(
-  __dirname,
+  dirname,
   "../tests/fixtures/parser/style-location-converter",
 );
 

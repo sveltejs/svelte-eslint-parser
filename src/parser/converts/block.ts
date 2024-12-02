@@ -1,5 +1,5 @@
-import type * as SvAST from "../svelte-ast-types";
-import type * as Compiler from "../svelte-ast-types-for-v5";
+import type * as SvAST from "../svelte-ast-types.js";
+import type * as Compiler from "../svelte-ast-types-for-v5.js";
 import type {
   SvelteAwaitBlock,
   SvelteAwaitBlockAwaitCatch,
@@ -16,10 +16,10 @@ import type {
   SvelteIfBlockElseIf,
   SvelteKeyBlock,
   SvelteSnippetBlock,
-} from "../../ast";
-import type { Context } from "../../context";
-import { convertChildren } from "./element";
-import { getWithLoc, indexOf, lastIndexOf } from "./common";
+} from "../../ast/index.js";
+import type { Context } from "../../context/index.js";
+import { convertChildren } from "./element.js";
+import { getWithLoc, indexOf, lastIndexOf } from "./common.js";
 import type * as ESTree from "estree";
 import {
   getAlternateFromIfBlock,
@@ -33,7 +33,7 @@ import {
   getTestFromIfBlock,
   getThenFromAwaitBlock,
   trimChildren,
-} from "../compat";
+} from "../compat.js";
 
 /** Get start index of block */
 function startBlockIndex(

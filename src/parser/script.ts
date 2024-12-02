@@ -1,9 +1,9 @@
-import type { ESLintExtendedProgram } from ".";
-import { analyzeScope } from "./analyze-scope";
-import { traverseNodes } from "../traverse";
-import { getParser } from "./resolve-parser";
-import { isEnhancedParserObject } from "./parser-object";
-import type { NormalizedParserOptions } from "./parser-options";
+import type { ESLintExtendedProgram } from "./index.js";
+import { analyzeScope } from "./analyze-scope.js";
+import { traverseNodes } from "../traverse.js";
+import { getParser } from "./resolve-parser.js";
+import { isEnhancedParserObject } from "./parser-object.js";
+import type { NormalizedParserOptions } from "./parser-options.js";
 
 /**
  * Parse for <script>

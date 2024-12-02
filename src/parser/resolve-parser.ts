@@ -1,6 +1,7 @@
-import { getEspree } from "./espree";
-import type { ParserObject } from "./parser-object";
-import { isParserObject } from "./parser-object";
+import { getEspree } from "./espree.js";
+import type { ParserObject } from "./parser-object.js";
+import { isParserObject } from "./parser-object.js";
+import Module from "module";
 
 export type UserOptionParser =
   | string
@@ -37,7 +38,7 @@ export function getParser(
     return parserValue;
   }
   if (parserValue !== "espree") {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports -- ignore
+    const require = Module.createRequire(import.meta.url);
     return require(parserValue);
   }
   return getEspree();

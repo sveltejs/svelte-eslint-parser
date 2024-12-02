@@ -1,6 +1,6 @@
 import path from "path";
 import fs from "fs";
-import { parseConfig } from "./parser";
+import { parseConfig } from "./parser.js";
 import type * as Compiler from "svelte/compiler";
 
 export type SvelteConfig = {

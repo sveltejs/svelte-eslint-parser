@@ -3,11 +3,11 @@ import type {
   SvelteMustacheTag,
   SvelteMustacheTagRaw,
   SvelteMustacheTagText,
-} from "../../ast";
-import type { Context } from "../../context";
-import type * as SvAST from "../svelte-ast-types";
-import { hasTypeInfo } from "../../utils";
-import type * as Compiler from "../svelte-ast-types-for-v5";
+} from "../../ast/index.js";
+import type { Context } from "../../context/index.js";
+import type * as SvAST from "../svelte-ast-types.js";
+import { hasTypeInfo } from "../../utils/index.js";
+import type * as Compiler from "../svelte-ast-types-for-v5.js";
 
 /** Convert for MustacheTag */
 export function convertMustacheTag(

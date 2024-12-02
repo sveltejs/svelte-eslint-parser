@@ -1,7 +1,7 @@
 import type * as ESTree from "estree";
-import type { Comment, Locations, Token } from "../ast";
-import type { Context } from ".";
-import { traverseNodes } from "../traverse";
+import type { Comment, Locations, Token } from "../ast/index.js";
+import type { Context } from "./index.js";
+import { traverseNodes } from "../traverse.js";
 
 /** Fix locations */
 export function fixLocations(

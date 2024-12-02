@@ -1,5 +1,5 @@
-import type * as SvAST from "../svelte-ast-types";
-import type * as Compiler from "../svelte-ast-types-for-v5";
+import type * as SvAST from "../svelte-ast-types.js";
+import type * as Compiler from "../svelte-ast-types-for-v5.js";
 import type {
   SvelteAttribute,
   SvelteGenericsDirective,
@@ -8,25 +8,25 @@ import type {
   SvelteProgram,
   SvelteScriptElement,
   SvelteStyleElement,
-} from "../../ast";
-import {} from "./common";
-import type { Context } from "../../context";
-import { convertChildren, extractElementTags } from "./element";
-import { convertAttributes } from "./attr";
+} from "../../ast/index.js";
+import {} from "./common.js";
+import type { Context } from "../../context/index.js";
+import { convertChildren, extractElementTags } from "./element.js";
+import { convertAttributes } from "./attr.js";
 import type { Scope } from "eslint-scope";
-import { parseScriptWithoutAnalyzeScope } from "../script";
-import type { TSESParseForESLintResult } from "../typescript/types";
+import { parseScriptWithoutAnalyzeScope } from "../script.js";
+import type { TSESParseForESLintResult } from "../typescript/types.js";
 import type * as ESTree from "estree";
 import type { TSESTree } from "@typescript-eslint/types";
-import { fixLocations } from "../../context/fix-locations";
+import { fixLocations } from "../../context/fix-locations.js";
 import {
   getChildren,
   getFragmentFromRoot,
   getInstanceFromRoot,
   getModuleFromRoot,
   getOptionsFromRoot,
-} from "../compat";
-import { sortNodes } from "../sort";
+} from "../compat.js";
+import { sortNodes } from "../sort.js";
 
 /**
  * Convert root

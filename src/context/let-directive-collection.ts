@@ -1,6 +1,6 @@
-import type { SvelteLetDirective, SvelteName } from "../ast";
+import type { SvelteLetDirective, SvelteName } from "../ast/index.js";
 import type * as ESTree from "estree";
-import type { ScriptLetBlockParam, ScriptLetCallback } from "./script-let";
+import type { ScriptLetBlockParam, ScriptLetCallback } from "./script-let.js";
 
 /** A class that collects pattern nodes for Let directives. */
 export class LetDirectiveCollection {

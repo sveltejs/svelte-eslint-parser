@@ -1,4 +1,4 @@
-import type { BaseNode } from "./base";
+import type { BaseNode } from "./base.js";
 
 export interface Position {
   /** >= 1 */
