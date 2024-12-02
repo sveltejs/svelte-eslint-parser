@@ -36,7 +36,7 @@ import {
 } from "./style-context";
 import { getGlobalsForSvelte, getGlobalsForSvelteScript } from "./globals";
 import type { NormalizedParserOptions } from "./parser-options";
-import { isTypeScript, normalizeParserOptions } from "./parser-options";
+import { getLanguage, normalizeParserOptions } from "./parser-options";
 import { getFragmentFromRoot } from "./compat";
 import {
   isEnableRunes,
@@ -140,18 +140,24 @@ function parseAsSvelte(
   );
 
   const scripts = ctx.sourceCode.scripts;
-  const resultScript = ctx.isTypeScript()
-    ? parseTypeScriptInSvelte(
-        scripts.getCurrentVirtualCodeInfo(),
-        scripts.attrs,
-        parserOptions,
-        { slots: ctx.slots, svelteParseContext },
-      )
-    : parseScriptInSvelte(
-        scripts.getCurrentVirtualCode(),
-        scripts.attrs,
-        parserOptions,
-      );
+  const language = ctx.getLanguage();
+
+  const resultScript =
+    language === "ts" || language === "jsdoc"
+      ? parseTypeScriptInSvelte(
+          scripts.getCurrentVirtualCodeInfo(),
+          {
+            ...scripts.attrs,
+            lang: language === "jsdoc" ? "ts" : scripts.attrs.lang,
+          },
+          parserOptions,
+          { slots: ctx.slots, svelteParseContext },
+        )
+      : parseScriptInSvelte(
+          scripts.getCurrentVirtualCode(),
+          scripts.attrs,
+          parserOptions,
+        );
   ctx.scriptLet.restore(resultScript);
   ctx.tokens.push(...resultScript.ast.tokens);
   ctx.comments.push(...resultScript.ast.comments);
@@ -249,10 +255,17 @@ function parseAsScript(
   parserOptions: NormalizedParserOptions,
   svelteParseContext: SvelteParseContext,
 ): ParseResult {
-  const lang = parserOptions.filePath?.split(".").pop();
-  const resultScript = isTypeScript(parserOptions, lang)
-    ? parseTypeScript(code, { lang }, parserOptions, svelteParseContext)
-    : parseScript(code, { lang }, parserOptions);
+  const rawLang = parserOptions.filePath?.split(".").pop();
+  const lang = getLanguage(parserOptions, rawLang, code);
+  const resultScript =
+    lang === "ts" || lang === "jsdoc"
+      ? parseTypeScript(
+          code,
+          { lang: lang === "jsdoc" ? "ts" : rawLang },
+          parserOptions,
+          svelteParseContext,
+        )
+      : parseScript(code, { lang: rawLang }, parserOptions);
 
   // Add $$xxx variable
   addGlobalVariables(
