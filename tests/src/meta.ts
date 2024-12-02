@@ -9,6 +9,6 @@ const expectedMeta = {
 
 describe("Test for meta object", () => {
   it("A parser should have a meta object.", () => {
-    assert.deepStrictEqual({ ...parser.meta }, expectedMeta);
+    assert.deepStrictEqual(parser.meta, expectedMeta);
   });
 });

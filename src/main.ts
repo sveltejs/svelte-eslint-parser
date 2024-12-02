@@ -10,8 +10,13 @@ export {
   type StyleContextSuccess,
   type StyleContextUnknownLang,
 } from "./parser/index.js";
-export * as meta from "./meta.js";
 export { name } from "./meta.js";
+// If we use `export * as meta from "./meta.js"`,
+// the structuredClone performed by eslint-plugin-prettier will fail,
+// so we will need to re-export it as a plain object.
+// https://github.com/prettier/eslint-plugin-prettier/blob/b307125faeb58b6dbfd5d8812b2dffcfdc8358df/eslint-plugin-prettier.js#L199
+import * as metaModule from "./meta.js";
+export const meta = { ...metaModule };
 export type { SvelteConfig } from "./svelte-config/index.js";
 
 export { AST, ParseError };
