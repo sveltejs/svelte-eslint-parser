@@ -1,5 +1,11 @@
 # svelte-eslint-parser
 
+## 1.0.0-next.2
+
+### Major Changes
+
+- [#599](https://github.com/sveltejs/svelte-eslint-parser/pull/599) [`cefd17a`](https://github.com/sveltejs/svelte-eslint-parser/commit/cefd17a17d2e0318a4c982f5958f21307024bc95) Thanks [@ota-meshi](https://github.com/ota-meshi)! - feat!: change the parser to an ESM-only package
+
 ## 1.0.0-next.1
 
 ### Major Changes
