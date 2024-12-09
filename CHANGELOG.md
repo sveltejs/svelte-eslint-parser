@@ -1,5 +1,11 @@
 # svelte-eslint-parser
 
+## 1.0.0-next.4
+
+### Minor Changes
+
+- [#617](https://github.com/sveltejs/svelte-eslint-parser/pull/617) [`1e0b874`](https://github.com/sveltejs/svelte-eslint-parser/commit/1e0b8743f9a687d4e4089a2b9ab7407c86b22453) Thanks [@ota-meshi](https://github.com/ota-meshi)! - feat: add support `{#each}` without `as` (svelte v5.4.0)
+
 ## 1.0.0-next.3
 
 ### Patch Changes
