@@ -347,7 +347,7 @@ export interface SvelteElseBlockElseIf extends BaseSvelteElseBlock {
 export interface SvelteEachBlock extends BaseNode {
   type: "SvelteEachBlock";
   expression: ESTree.Expression;
-  context: ESTree.Pattern;
+  context: ESTree.Pattern | null;
   index: ESTree.Identifier | null;
   key: ESTree.Expression | null;
   children: Child[];
