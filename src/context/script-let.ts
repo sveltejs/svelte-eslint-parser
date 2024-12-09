@@ -433,22 +433,26 @@ export class ScriptLetContext {
 
   public nestEachBlock(
     expression: ESTree.Expression,
-    context: ESTree.Pattern,
+    context: ESTree.Pattern | null,
     indexRange: { start: number; end: number } | null,
     eachBlock: SvelteEachBlock,
     callback: (
       expr: ESTree.Expression,
-      ctx: ESTree.Pattern,
+      ctx: ESTree.Pattern | null,
       index: ESTree.Identifier | null,
     ) => void,
   ): void {
     const exprRange = getNodeRange(expression);
-    const ctxRange = getNodeRange(context);
+    const ctxRange = context && getNodeRange(context);
     let source = "Array.from(";
     const exprOffset = source.length;
     source += `${this.ctx.code.slice(...exprRange)}).forEach((`;
     const ctxOffset = source.length;
-    source += this.ctx.code.slice(...ctxRange);
+    if (ctxRange) {
+      source += this.ctx.code.slice(...ctxRange);
+    } else {
+      source += "__$ctx__";
+    }
     let idxOffset: number | null = null;
     if (indexRange) {
       source += ",";
@@ -473,7 +477,7 @@ export class ScriptLetContext {
         const scope = result.getScope(fn.body);
 
         // Process for nodes
-        callback(expr, ctx, idx);
+        callback(expr, context ? ctx : null, idx);
 
         // Process for scope
         result.registerNodeToScope(eachBlock, scope);
@@ -483,6 +487,10 @@ export class ScriptLetContext {
               def.node = eachBlock;
             }
           }
+        }
+        if (!context) {
+          // remove `__$ctx__` variable
+          removeIdentifierVariable(ctx, scope);
         }
         // remove Array reference
         const arrayId = (callArrayFrom.callee as ESTree.MemberExpression)
@@ -512,18 +520,24 @@ export class ScriptLetContext {
         tokens.pop(); // )
         tokens.pop(); // ;
 
-        const map = [
+        const map: {
+          offset: number;
+          range: [number, number];
+          newNode: ESTree.Expression | ESTree.Pattern;
+        }[] = [
           {
             offset: exprOffset,
             range: exprRange,
             newNode: expr,
           },
-          {
+        ];
+        if (ctxRange) {
+          map.push({
             offset: ctxOffset,
             range: ctxRange,
             newNode: ctx,
-          },
-        ];
+          });
+        }
         if (indexRange) {
           map.push({
             offset: idxOffset!,

@@ -269,7 +269,7 @@ export function convertEachBlock(
   const eachBlock: SvelteEachBlock = {
     type: "SvelteEachBlock",
     expression: null as any,
-    context: null as any,
+    context: null,
     index: null,
     key: null,
     children: [],
@@ -281,7 +281,10 @@ export function convertEachBlock(
   let indexRange: null | { start: number; end: number } = null;
 
   if (node.index) {
-    const start = ctx.code.indexOf(node.index, getWithLoc(node.context).end);
+    const start = ctx.code.indexOf(
+      node.index,
+      getWithLoc(node.context ?? node.expression).end,
+    );
     indexRange = {
       start,
       end: start + node.index.length,
@@ -300,11 +303,13 @@ export function convertEachBlock(
     },
   );
 
-  const asStart = ctx.code.indexOf("as", getWithLoc(node.expression).end);
-  ctx.addToken("Keyword", {
-    start: asStart,
-    end: asStart + 2,
-  });
+  if (node.context) {
+    const asStart = ctx.code.indexOf("as", getWithLoc(node.expression).end);
+    ctx.addToken("Keyword", {
+      start: asStart,
+      end: asStart + 2,
+    });
+  }
 
   if (node.key) {
     ctx.scriptLet.addExpression(node.key, eachBlock, null, (key) => {
@@ -335,7 +340,7 @@ export function convertEachBlock(
   const elseStart = startBlockIndexForElse(
     fallbackFragment,
     body,
-    node.key || indexRange || node.context,
+    node.key || indexRange || node.context || node.expression,
     ctx,
   );
 
