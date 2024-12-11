@@ -15,6 +15,7 @@ import {
   selectorAstToJson,
   styleContextToJson,
 } from "../tests/src/parser/test-utils.js";
+import { extractSelectorLocations } from "../tests/src/parser/style-selector-location-converter-utils.js";
 import type ts from "typescript";
 import type ESTree from "estree";
 import globals from "globals";
@@ -37,6 +38,10 @@ const STYLE_LOCATION_CONVERTER_FIXTURE_ROOT = path.resolve(
 const SELECTOR_PARSING_FIXTURE_ROOT = path.resolve(
   dirname,
   "../tests/fixtures/parser/selector-parsing",
+);
+const SELECTOR_CONVERTER_FIXTURE_ROOT = path.resolve(
+  dirname,
+  "../tests/fixtures/parser/style-selector-location-converter",
 );
 
 const RULES = [
@@ -228,6 +233,29 @@ for (const {
   fs.writeFileSync(
     outputFileName,
     `${selectorAstToJson(selectorASTs)}\n`,
+    "utf8",
+  );
+}
+
+for (const {
+  input,
+  inputFileName,
+  outputFileName,
+  config,
+  meetRequirements,
+} of listupFixtures(SELECTOR_CONVERTER_FIXTURE_ROOT)) {
+  if (!meetRequirements("parse")) {
+    continue;
+  }
+  const services = parse(input, inputFileName, config).services;
+  const styleContext = services.getStyleContext();
+  if (styleContext.status !== "success") {
+    continue;
+  }
+  const locations = extractSelectorLocations(services, styleContext.sourceAst);
+  fs.writeFileSync(
+    outputFileName,
+    `${JSON.stringify(locations, undefined, 2)}\n`,
     "utf8",
   );
 }
