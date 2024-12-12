@@ -1,6 +1,8 @@
 import fs from "fs";
 import path from "path";
 import { Linter } from "eslint";
+import type { Node } from "postcss";
+import type { Root as SelectorRoot } from "postcss-selector-parser";
 import * as parser from "../src/index.js";
 import { parseForESLint } from "../src/parser/index.js";
 import {
@@ -10,6 +12,7 @@ import {
   astToJson,
   normalizeError,
   scopeToJSON,
+  selectorAstToJson,
   styleContextToJson,
 } from "../tests/src/parser/test-utils.js";
 import type ts from "typescript";
@@ -30,6 +33,10 @@ const STYLE_CONTEXT_FIXTURE_ROOT = path.resolve(
 const STYLE_LOCATION_CONVERTER_FIXTURE_ROOT = path.resolve(
   dirname,
   "../tests/fixtures/parser/style-location-converter",
+);
+const SELECTOR_PARSING_FIXTURE_ROOT = path.resolve(
+  dirname,
+  "../tests/fixtures/parser/selector-parsing",
 );
 
 const RULES = [
@@ -196,6 +203,31 @@ for (const {
   fs.writeFileSync(
     outputFileName,
     `${JSON.stringify(locations, undefined, 2)}\n`,
+    "utf8",
+  );
+}
+
+for (const {
+  input,
+  inputFileName,
+  outputFileName,
+  config,
+  meetRequirements,
+} of listupFixtures(SELECTOR_PARSING_FIXTURE_ROOT)) {
+  if (!meetRequirements("parse")) {
+    continue;
+  }
+  const services = parse(input, inputFileName, config).services;
+  const styleContext = services.getStyleContext();
+  const selectorASTs: SelectorRoot[] = [];
+  styleContext.sourceAst.walk((node: Node) => {
+    if (node.type === "rule") {
+      selectorASTs.push(services.getStyleSelectorAST(node));
+    }
+  });
+  fs.writeFileSync(
+    outputFileName,
+    `${selectorAstToJson(selectorASTs)}\n`,
     "utf8",
   );
 }

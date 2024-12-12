@@ -480,6 +480,17 @@ export function styleContextToJson(styleContext: StyleContext): string {
   }
 }
 
+export function selectorAstToJson(ast: any): string {
+  return JSON.stringify(ast, nodeReplacer, 2);
+
+  function nodeReplacer(key: string, value: any): any {
+    if (key === "parent" || key.startsWith("_")) {
+      return undefined;
+    }
+    return value;
+  }
+}
+
 function normalizeScope(scope: Scope | TSESScopes.Scope): any {
   let variables = scope.variables as TSESScopes.Variable[];
   if (scope.type === "global") {
