@@ -8,7 +8,7 @@ import { generateParserOptions, listupFixtures } from "./test-utils.js";
 import type { SourceLocation } from "../../../src/ast/common.js";
 
 const dirname = path.dirname(new URL(import.meta.url).pathname);
-const STYLE_CONTEXT_FIXTURE_ROOT = path.resolve(
+const STYLE_LOCATION_CONVERTER_FIXTURE_ROOT = path.resolve(
   dirname,
   "../../fixtures/parser/style-location-converter",
 );
@@ -24,7 +24,7 @@ describe("Check for AST.", () => {
     outputFileName,
     config,
     meetRequirements,
-  } of listupFixtures(STYLE_CONTEXT_FIXTURE_ROOT)) {
+  } of listupFixtures(STYLE_LOCATION_CONVERTER_FIXTURE_ROOT)) {
     describe(inputFileName, () => {
       let services: any;
 
@@ -36,16 +36,19 @@ describe("Check for AST.", () => {
         const styleContext = services.getStyleContext();
         assert.strictEqual(styleContext.status, "success");
         const locations: [
+          string,
           Partial<SourceLocation>,
           [number | undefined, number | undefined],
         ][] = [
           [
+            "root",
             services.styleNodeLoc(styleContext.sourceAst),
             services.styleNodeRange(styleContext.sourceAst),
           ],
         ];
         styleContext.sourceAst.walk((node: Node) => {
           locations.push([
+            node.type,
             services.styleNodeLoc(node),
             services.styleNodeRange(node),
           ]);

@@ -27,7 +27,7 @@ const STYLE_CONTEXT_FIXTURE_ROOT = path.resolve(
   dirname,
   "../tests/fixtures/parser/style-context",
 );
-const STYLE_LOCATION_FIXTURE_ROOT = path.resolve(
+const STYLE_LOCATION_CONVERTER_FIXTURE_ROOT = path.resolve(
   dirname,
   "../tests/fixtures/parser/style-location-converter",
 );
@@ -165,7 +165,7 @@ for (const {
   outputFileName,
   config,
   meetRequirements,
-} of listupFixtures(STYLE_LOCATION_FIXTURE_ROOT)) {
+} of listupFixtures(STYLE_LOCATION_CONVERTER_FIXTURE_ROOT)) {
   if (!meetRequirements("parse")) {
     continue;
   }
@@ -176,16 +176,19 @@ for (const {
     continue;
   }
   const locations: [
+    string,
     Partial<SourceLocation>,
     [number | undefined, number | undefined],
   ][] = [
     [
+      "root",
       services.styleNodeLoc(styleContext.sourceAst),
       services.styleNodeRange(styleContext.sourceAst),
     ],
   ];
   styleContext.sourceAst.walk((node) => {
     locations.push([
+      node.type,
       services.styleNodeLoc(node),
       services.styleNodeRange(node),
     ]);
