@@ -1,6 +1,11 @@
-import type { Node, Parser, Root } from "postcss";
+import type { Node, Parser, Root, Rule } from "postcss";
 import postcss from "postcss";
 import { parse as SCSSparse } from "postcss-scss";
+import {
+  default as selectorParser,
+  type Node as SelectorNode,
+  type Root as SelectorRoot,
+} from "postcss-selector-parser";
 
 import type { Context } from "../context/index.js";
 import type { SourceLocation, SvelteStyleElement } from "../ast/index.js";
@@ -77,8 +82,23 @@ export function parseStyleContext(
     return { status: "parse-error", sourceLang, error };
   }
   fixPostCSSNodeLocation(sourceAst, styleElement);
-  sourceAst.walk((node) => fixPostCSSNodeLocation(node, styleElement));
+  sourceAst.walk((node) => {
+    fixPostCSSNodeLocation(node, styleElement);
+  });
   return { status: "success", sourceLang, sourceAst };
+}
+
+/**
+ * Parses a PostCSS Rule node's selector and returns its AST.
+ */
+export function parseSelector(rule: Rule): SelectorRoot {
+  const processor = selectorParser();
+  const root = processor.astSync(rule.selector);
+  fixSelectorNodeLocation(root, rule);
+  root.walk((node) => {
+    fixSelectorNodeLocation(node, rule);
+  });
+  return root;
 }
 
 /**
@@ -142,5 +162,33 @@ function fixPostCSSNodeLocation(node: Node, styleElement: SvelteStyleElement) {
   }
   if (node.source?.end?.line === styleElement.loc.start.line) {
     node.source.end.column += styleElement.startTag.loc.end.column;
+  }
+}
+
+/**
+ * Fixes selector AST locations to be relative to the whole file instead of relative to their parent rule.
+ */
+function fixSelectorNodeLocation(node: SelectorNode, rule: Rule) {
+  if (node.source === undefined) {
+    return;
+  }
+  const ruleLoc = styleNodeLoc(rule);
+
+  if (node.source.start !== undefined && ruleLoc.start !== undefined) {
+    if (node.source.start.line === 1) {
+      node.source.start.column += ruleLoc.start.column;
+    }
+    node.source.start.line += ruleLoc.start.line - 1;
+  } else {
+    node.source.start = undefined;
+  }
+
+  if (node.source.end !== undefined && ruleLoc.start !== undefined) {
+    if (node.source.end.line === 1) {
+      node.source.end.column += ruleLoc.start.column;
+    }
+    node.source.end.line += ruleLoc.start.line - 1;
+  } else {
+    node.source.end = undefined;
   }
 }

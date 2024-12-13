@@ -10,6 +10,8 @@ import type {
 import type { Program } from "estree";
 import type { ScopeManager } from "eslint-scope";
 import { Variable } from "eslint-scope";
+import type { Rule } from "postcss";
+import type { Root as SelectorRoot } from "postcss-selector-parser";
 import { parseScript, parseScriptInSvelte } from "./script.js";
 import type * as SvAST from "./svelte-ast-types.js";
 import type * as Compiler from "./svelte-ast-types-for-v5.js";
@@ -29,6 +31,7 @@ import {
 import { addReference } from "../scope/index.js";
 import {
   parseStyleContext,
+  parseSelector,
   type StyleContext,
   type StyleContextNoStyleElement,
   type StyleContextParseError,
@@ -84,6 +87,7 @@ type ParseResult = {
           isSvelteScript: false;
           getSvelteHtmlAst: () => SvAST.Fragment | Compiler.Fragment;
           getStyleContext: () => StyleContext;
+          getStyleSelectorAST: (rule: Rule) => SelectorRoot;
           svelteParseContext: SvelteParseContext;
         }
       | {
@@ -221,6 +225,7 @@ function parseAsSvelte(
     (b): b is SvelteStyleElement => b.type === "SvelteStyleElement",
   );
   let styleContext: StyleContext | null = null;
+  const selectorASTs: Map<Rule, SelectorRoot> = new Map();
 
   resultScript.ast = ast as any;
   resultScript.services = Object.assign(resultScript.services || {}, {
@@ -234,6 +239,15 @@ function parseAsSvelte(
         styleContext = parseStyleContext(styleElement, ctx);
       }
       return styleContext;
+    },
+    getStyleSelectorAST(rule: Rule) {
+      const cached = selectorASTs.get(rule);
+      if (cached !== undefined) {
+        return cached;
+      }
+      const ast = parseSelector(rule);
+      selectorASTs.set(rule, ast);
+      return ast;
     },
     styleNodeLoc,
     styleNodeRange,
