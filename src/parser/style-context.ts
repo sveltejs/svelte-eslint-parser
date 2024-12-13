@@ -142,6 +142,24 @@ export function styleNodeRange(
 }
 
 /**
+ * Extracts a node location (like that of any ESLint node) from a parsed svelte selector node.
+ */
+export function styleSelectorNodeLoc(
+  node: SelectorNode,
+): Partial<SourceLocation> {
+  return {
+    start:
+      node.source?.start !== undefined
+        ? {
+            line: node.source.start.line,
+            column: node.source.start.column - 1,
+          }
+        : undefined,
+    end: node.source?.end,
+  };
+}
+
+/**
  * Fixes PostCSS AST locations to be relative to the whole file instead of relative to the <style> element.
  */
 function fixPostCSSNodeLocation(node: Node, styleElement: SvelteStyleElement) {

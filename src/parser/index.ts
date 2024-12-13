@@ -39,6 +39,7 @@ import {
   type StyleContextUnknownLang,
   styleNodeLoc,
   styleNodeRange,
+  styleSelectorNodeLoc,
 } from "./style-context.js";
 import { getGlobalsForSvelte, getGlobalsForSvelteScript } from "./globals.js";
 import type { NormalizedParserOptions } from "./parser-options.js";
@@ -251,6 +252,7 @@ function parseAsSvelte(
     },
     styleNodeLoc,
     styleNodeRange,
+    styleSelectorNodeLoc,
     svelteParseContext,
   });
   resultScript.visitorKeys = Object.assign({}, KEYS, resultScript.visitorKeys);
