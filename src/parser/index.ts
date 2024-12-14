@@ -2,6 +2,7 @@ import { KEYS } from "../visitor-keys.js";
 import { Context } from "../context/index.js";
 import type {
   Comment,
+  SourceLocation,
   SvelteProgram,
   SvelteScriptElement,
   SvelteStyleElement,
@@ -10,6 +11,11 @@ import type {
 import type { Program } from "estree";
 import type { ScopeManager } from "eslint-scope";
 import { Variable } from "eslint-scope";
+import type { Rule, Node } from "postcss";
+import type {
+  Node as SelectorNode,
+  Root as SelectorRoot,
+} from "postcss-selector-parser";
 import { parseScript, parseScriptInSvelte } from "./script.js";
 import type * as SvAST from "./svelte-ast-types.js";
 import type * as Compiler from "./svelte-ast-types-for-v5.js";
@@ -29,6 +35,7 @@ import {
 import { addReference } from "../scope/index.js";
 import {
   parseStyleContext,
+  parseSelector,
   type StyleContext,
   type StyleContextNoStyleElement,
   type StyleContextParseError,
@@ -36,6 +43,7 @@ import {
   type StyleContextUnknownLang,
   styleNodeLoc,
   styleNodeRange,
+  styleSelectorNodeLoc,
 } from "./style-context.js";
 import { getGlobalsForSvelte, getGlobalsForSvelteScript } from "./globals.js";
 import type { NormalizedParserOptions } from "./parser-options.js";
@@ -84,6 +92,12 @@ type ParseResult = {
           isSvelteScript: false;
           getSvelteHtmlAst: () => SvAST.Fragment | Compiler.Fragment;
           getStyleContext: () => StyleContext;
+          getStyleSelectorAST: (rule: Rule) => SelectorRoot;
+          styleNodeLoc: (node: Node) => Partial<SourceLocation>;
+          styleNodeRange: (
+            node: Node,
+          ) => [number | undefined, number | undefined];
+          styleSelectorNodeLoc: (node: SelectorNode) => Partial<SourceLocation>;
           svelteParseContext: SvelteParseContext;
         }
       | {
@@ -221,6 +235,7 @@ function parseAsSvelte(
     (b): b is SvelteStyleElement => b.type === "SvelteStyleElement",
   );
   let styleContext: StyleContext | null = null;
+  const selectorASTs: Map<Rule, SelectorRoot> = new Map();
 
   resultScript.ast = ast as any;
   resultScript.services = Object.assign(resultScript.services || {}, {
@@ -235,8 +250,18 @@ function parseAsSvelte(
       }
       return styleContext;
     },
+    getStyleSelectorAST(rule: Rule) {
+      const cached = selectorASTs.get(rule);
+      if (cached !== undefined) {
+        return cached;
+      }
+      const ast = parseSelector(rule);
+      selectorASTs.set(rule, ast);
+      return ast;
+    },
     styleNodeLoc,
     styleNodeRange,
+    styleSelectorNodeLoc,
     svelteParseContext,
   });
   resultScript.visitorKeys = Object.assign({}, KEYS, resultScript.visitorKeys);

@@ -2,15 +2,19 @@ import assert from "assert";
 import fs from "fs";
 import path from "path";
 import type { Node } from "postcss";
+import type { Root as SelectorRoot } from "postcss-selector-parser";
 
 import { parseForESLint } from "../../../src/index.js";
-import { generateParserOptions, listupFixtures } from "./test-utils.js";
-import type { SourceLocation } from "../../../src/ast/common.js";
+import {
+  generateParserOptions,
+  listupFixtures,
+  selectorAstToJson,
+} from "./test-utils.js";
 
 const dirname = path.dirname(new URL(import.meta.url).pathname);
-const STYLE_CONTEXT_FIXTURE_ROOT = path.resolve(
+const SELECTOR_PARSING_FIXTURE_ROOT = path.resolve(
   dirname,
-  "../../fixtures/parser/style-location-converter",
+  "../../fixtures/parser/selector-parsing",
 );
 
 function parse(code: string, filePath: string, config: any) {
@@ -24,37 +28,28 @@ describe("Check for AST.", () => {
     outputFileName,
     config,
     meetRequirements,
-  } of listupFixtures(STYLE_CONTEXT_FIXTURE_ROOT)) {
+  } of listupFixtures(SELECTOR_PARSING_FIXTURE_ROOT)) {
+    if (!meetRequirements("parse")) {
+      continue;
+    }
     describe(inputFileName, () => {
       let services: any;
 
-      it("most to generate the expected style context.", () => {
+      it("most to generate the expected selector AST.", () => {
         services = parse(input, inputFileName, config).services;
         if (!meetRequirements("test")) {
           return;
         }
         const styleContext = services.getStyleContext();
         assert.strictEqual(styleContext.status, "success");
-        const locations: [
-          Partial<SourceLocation>,
-          [number | undefined, number | undefined],
-        ][] = [
-          [
-            services.styleNodeLoc(styleContext.sourceAst),
-            services.styleNodeRange(styleContext.sourceAst),
-          ],
-        ];
+        const selectorASTs: SelectorRoot[] = [];
         styleContext.sourceAst.walk((node: Node) => {
-          locations.push([
-            services.styleNodeLoc(node),
-            services.styleNodeRange(node),
-          ]);
+          if (node.type === "rule") {
+            selectorASTs.push(services.getStyleSelectorAST(node));
+          }
         });
         const output = fs.readFileSync(outputFileName, "utf8");
-        assert.strictEqual(
-          `${JSON.stringify(locations, undefined, 2)}\n`,
-          output,
-        );
+        assert.strictEqual(`${selectorAstToJson(selectorASTs)}\n`, output);
       });
     });
   }
