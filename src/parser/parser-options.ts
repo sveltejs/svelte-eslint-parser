@@ -63,23 +63,37 @@ const TS_PARSER_NAMES = [
   "typescript-eslint-parser-for-extra-files",
 ];
 
-export function isTypeScript(
+export function getLanguage(
   parserOptions: NormalizedParserOptions,
   lang: string | undefined,
-): boolean {
-  if (!lang) {
-    return false;
+  code: string | undefined,
+): "js" | "ts" | "jsdoc" | string {
+  const hasJsDoc = code ? jsdocTags.some((tag) => tag.test(code)) : false;
+  if (!lang && !hasJsDoc) {
+    return "js";
   }
-  const parserValue = getParserForLang(lang, parserOptions?.parser);
+
+  function getFinalLang(isTS: boolean): string {
+    if (isTS) {
+      if (lang) return lang;
+      return hasJsDoc ? "jsdoc" : "ts";
+    }
+    return lang || "js";
+  }
+
+  const parserValue = getParserForLang(
+    lang || (hasJsDoc ? "ts" : undefined),
+    parserOptions?.parser,
+  );
   if (typeof parserValue !== "string") {
-    return (
+    const isTS =
       maybeTSESLintParserObject(parserValue) ||
-      isTSESLintParserObject(parserValue)
-    );
+      isTSESLintParserObject(parserValue);
+    return getFinalLang(isTS);
   }
   const parserName = parserValue;
   if (TS_PARSER_NAMES.includes(parserName)) {
-    return true;
+    return getFinalLang(true);
   }
   if (TS_PARSER_NAMES.some((nm) => parserName.includes(nm))) {
     let targetPath = parserName;
@@ -87,11 +101,12 @@ export function isTypeScript(
       const pkgPath = path.join(targetPath, "package.json");
       if (fs.existsSync(pkgPath)) {
         try {
-          return TS_PARSER_NAMES.includes(
+          const isTS = TS_PARSER_NAMES.includes(
             JSON.parse(fs.readFileSync(pkgPath, "utf-8"))?.name,
           );
+          return getFinalLang(isTS);
         } catch {
-          return false;
+          return getFinalLang(false);
         }
       }
       const parent = path.dirname(targetPath);
@@ -102,5 +117,23 @@ export function isTypeScript(
     }
   }
 
-  return false;
+  return getFinalLang(false);
 }
+
+const jsdocTags = [
+  /@type\s/,
+  /@param\s/,
+  /@arg\s/,
+  /@argument\s/,
+  /@returns\s/,
+  /@return\s/,
+  /@typedef\s/,
+  /@callback\s/,
+  /@template\s/,
+  /@class\s/,
+  /@constructor\s/,
+  /@this\s/,
+  /@extends\s/,
+  /@augments\s/,
+  /@enum\s/,
+] as const;
