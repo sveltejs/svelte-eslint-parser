@@ -1,5 +1,11 @@
 # svelte-eslint-parser
 
+## 1.0.0-next.6
+
+### Minor Changes
+
+- [#626](https://github.com/sveltejs/svelte-eslint-parser/pull/626) [`cde2baf`](https://github.com/sveltejs/svelte-eslint-parser/commit/cde2baf38ee3d87c6bf4628b4f9d9b06cbabfd8e) Thanks [@baseballyama](https://github.com/baseballyama)! - feat: Add `warningFilter` to `SvelteConfig`
+
 ## 1.0.0-next.5
 
 ### Minor Changes
