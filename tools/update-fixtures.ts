@@ -1,6 +1,8 @@
 import fs from "fs";
 import path from "path";
 import { Linter } from "eslint";
+import type { Node } from "postcss";
+import type { Root as SelectorRoot } from "postcss-selector-parser";
 import * as parser from "../src/index.js";
 import { parseForESLint } from "../src/parser/index.js";
 import {
@@ -10,8 +12,10 @@ import {
   astToJson,
   normalizeError,
   scopeToJSON,
+  selectorAstToJson,
   styleContextToJson,
 } from "../tests/src/parser/test-utils.js";
+import { extractSelectorLocations } from "../tests/src/parser/style-selector-location-converter-utils.js";
 import type ts from "typescript";
 import type ESTree from "estree";
 import globals from "globals";
@@ -27,9 +31,17 @@ const STYLE_CONTEXT_FIXTURE_ROOT = path.resolve(
   dirname,
   "../tests/fixtures/parser/style-context",
 );
-const STYLE_LOCATION_FIXTURE_ROOT = path.resolve(
+const STYLE_LOCATION_CONVERTER_FIXTURE_ROOT = path.resolve(
   dirname,
   "../tests/fixtures/parser/style-location-converter",
+);
+const SELECTOR_PARSING_FIXTURE_ROOT = path.resolve(
+  dirname,
+  "../tests/fixtures/parser/selector-parsing",
+);
+const SELECTOR_CONVERTER_FIXTURE_ROOT = path.resolve(
+  dirname,
+  "../tests/fixtures/parser/style-selector-location-converter",
 );
 
 const RULES = [
@@ -165,7 +177,7 @@ for (const {
   outputFileName,
   config,
   meetRequirements,
-} of listupFixtures(STYLE_LOCATION_FIXTURE_ROOT)) {
+} of listupFixtures(STYLE_LOCATION_CONVERTER_FIXTURE_ROOT)) {
   if (!meetRequirements("parse")) {
     continue;
   }
@@ -176,20 +188,71 @@ for (const {
     continue;
   }
   const locations: [
+    string,
     Partial<SourceLocation>,
     [number | undefined, number | undefined],
   ][] = [
     [
+      "root",
       services.styleNodeLoc(styleContext.sourceAst),
       services.styleNodeRange(styleContext.sourceAst),
     ],
   ];
   styleContext.sourceAst.walk((node) => {
     locations.push([
+      node.type,
       services.styleNodeLoc(node),
       services.styleNodeRange(node),
     ]);
   });
+  fs.writeFileSync(
+    outputFileName,
+    `${JSON.stringify(locations, undefined, 2)}\n`,
+    "utf8",
+  );
+}
+
+for (const {
+  input,
+  inputFileName,
+  outputFileName,
+  config,
+  meetRequirements,
+} of listupFixtures(SELECTOR_PARSING_FIXTURE_ROOT)) {
+  if (!meetRequirements("parse")) {
+    continue;
+  }
+  const services = parse(input, inputFileName, config).services;
+  const styleContext = services.getStyleContext();
+  const selectorASTs: SelectorRoot[] = [];
+  styleContext.sourceAst.walk((node: Node) => {
+    if (node.type === "rule") {
+      selectorASTs.push(services.getStyleSelectorAST(node));
+    }
+  });
+  fs.writeFileSync(
+    outputFileName,
+    `${selectorAstToJson(selectorASTs)}\n`,
+    "utf8",
+  );
+}
+
+for (const {
+  input,
+  inputFileName,
+  outputFileName,
+  config,
+  meetRequirements,
+} of listupFixtures(SELECTOR_CONVERTER_FIXTURE_ROOT)) {
+  if (!meetRequirements("parse")) {
+    continue;
+  }
+  const services = parse(input, inputFileName, config).services;
+  const styleContext = services.getStyleContext();
+  if (styleContext.status !== "success") {
+    continue;
+  }
+  const locations = extractSelectorLocations(services, styleContext.sourceAst);
   fs.writeFileSync(
     outputFileName,
     `${JSON.stringify(locations, undefined, 2)}\n`,
