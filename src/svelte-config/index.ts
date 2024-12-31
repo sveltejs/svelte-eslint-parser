@@ -13,6 +13,7 @@ export type SvelteConfig = {
     warning: Compiler.Warning,
     defaultHandler: (warning: Compiler.Warning) => void,
   ) => void;
+  warningFilter?: (warning: Compiler.Warning) => boolean;
   [key: string]: unknown;
 };
 
