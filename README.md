@@ -198,7 +198,7 @@ export default [
     languageOptions: {
       parser: svelteParser,
       parserOptions: {
-        svelteConfig: svelteConfig,
+        svelteConfig,
       },
     },
   },
