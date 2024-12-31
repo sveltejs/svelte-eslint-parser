@@ -1,5 +1,11 @@
 # svelte-eslint-parser
 
+## 1.0.0-next.5
+
+### Minor Changes
+
+- [#619](https://github.com/sveltejs/svelte-eslint-parser/pull/619) [`002e3b0`](https://github.com/sveltejs/svelte-eslint-parser/commit/002e3b0cc5174be56adc0fc0aa16f0d1826864ac) Thanks [@marekdedic](https://github.com/marekdedic)! - feat: added support for style selector parsing
+
 ## 1.0.0-next.4
 
 ### Minor Changes
