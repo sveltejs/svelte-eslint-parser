@@ -89,6 +89,9 @@ function hasRuneSymbol(ast: Compiler.Script | SvAST.Script): boolean {
   let hasRuneSymbol = false;
   traverseNodes(ast as unknown as ESTree.Node, {
     enterNode(node) {
+      if (hasRuneSymbol) {
+        return;
+      }
       if (node.type === "Identifier" && runeSymbols.includes(node.name)) {
         hasRuneSymbol = true;
       }
