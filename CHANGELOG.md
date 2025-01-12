@@ -1,5 +1,11 @@
 # svelte-eslint-parser
 
+## 1.0.0-next.7
+
+### Patch Changes
+
+- [#633](https://github.com/sveltejs/svelte-eslint-parser/pull/633) [`1178032`](https://github.com/sveltejs/svelte-eslint-parser/commit/1178032e298fd09cff47aedbc140327e1f1cd912) Thanks [@baseballyama](https://github.com/baseballyama)! - fix: assign actual `runes` value to `SvelteParseContext`
+
 ## 1.0.0-next.6
 
 ### Minor Changes
