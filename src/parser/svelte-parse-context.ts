@@ -1,8 +1,20 @@
 import type * as Compiler from "./svelte-ast-types-for-v5.js";
 import type * as SvAST from "./svelte-ast-types.js";
+import type * as ESTree from "estree";
 import type { NormalizedParserOptions } from "./parser-options.js";
 import { compilerVersion, svelteVersion } from "./svelte-version.js";
 import type { SvelteConfig } from "../svelte-config/index.js";
+import { traverseNodes } from "../traverse.js";
+
+const runeSymbols: string[] = [
+  "$state",
+  "$derived",
+  "$effect",
+  "$props",
+  "$bindable",
+  "$inspect",
+  "$host",
+] as const;
 
 /** The context for parsing. */
 export type SvelteParseContext = {
@@ -18,36 +30,13 @@ export type SvelteParseContext = {
   svelteConfig: SvelteConfig | null;
 };
 
-export function isEnableRunes(
-  svelteConfig: SvelteConfig | null,
-  parserOptions: NormalizedParserOptions,
-): boolean {
-  if (!svelteVersion.gte(5)) return false;
-  if (parserOptions.svelteFeatures?.runes != null) {
-    return Boolean(parserOptions.svelteFeatures.runes);
-  }
-  if (svelteConfig?.compilerOptions?.runes != null) {
-    return Boolean(svelteConfig.compilerOptions.runes);
-  }
-  return true;
-}
-
 export function resolveSvelteParseContextForSvelte(
   svelteConfig: SvelteConfig | null,
   parserOptions: NormalizedParserOptions,
   svelteAst: Compiler.Root | SvAST.AstLegacy,
 ): SvelteParseContext {
-  const svelteOptions = (svelteAst as Compiler.Root).options;
-  if (svelteOptions?.runes != null) {
-    return {
-      runes: svelteOptions.runes,
-      compilerVersion,
-      svelteConfig,
-    };
-  }
-
   return {
-    runes: isEnableRunes(svelteConfig, parserOptions),
+    runes: isRunes(svelteConfig, parserOptions, svelteAst),
     compilerVersion,
     svelteConfig,
   };
@@ -55,18 +44,62 @@ export function resolveSvelteParseContextForSvelte(
 
 export function resolveSvelteParseContextForSvelteScript(
   svelteConfig: SvelteConfig | null,
-  parserOptions: NormalizedParserOptions,
-): SvelteParseContext {
-  return resolveSvelteParseContext(svelteConfig, parserOptions);
-}
-
-function resolveSvelteParseContext(
-  svelteConfig: SvelteConfig | null,
-  parserOptions: NormalizedParserOptions,
 ): SvelteParseContext {
   return {
-    runes: isEnableRunes(svelteConfig, parserOptions),
+    // .svelte.js files are always in Runes mode for Svelte 5.
+    runes: svelteVersion.gte(5),
     compilerVersion,
     svelteConfig,
   };
+}
+
+function isRunes(
+  svelteConfig: SvelteConfig | null,
+  parserOptions: NormalizedParserOptions,
+  svelteAst: Compiler.Root | SvAST.AstLegacy,
+): boolean {
+  // Svelte 3/4 does not support Runes mode.
+  if (!svelteVersion.gte(5)) {
+    return false;
+  }
+
+  // Compiler option.
+  if (parserOptions.svelteFeatures?.runes != null) {
+    return parserOptions.svelteFeatures?.runes;
+  }
+  if (svelteConfig?.compilerOptions?.runes != null) {
+    return svelteConfig?.compilerOptions?.runes;
+  }
+
+  // `<svelte:options>`.
+  const svelteOptions = (svelteAst as Compiler.Root).options;
+  if (svelteOptions?.runes != null) {
+    return svelteOptions?.runes;
+  }
+
+  // Static analysis.
+  const { module, instance } = svelteAst;
+  return (
+    (module != null && hasRuneSymbol(module)) ||
+    (instance != null && hasRuneSymbol(instance))
+  );
+}
+
+function hasRuneSymbol(ast: Compiler.Script | SvAST.Script): boolean {
+  let hasRuneSymbol = false;
+  traverseNodes(ast as unknown as ESTree.Node, {
+    enterNode(node) {
+      if (hasRuneSymbol) {
+        return;
+      }
+      if (node.type === "Identifier" && runeSymbols.includes(node.name)) {
+        hasRuneSymbol = true;
+      }
+    },
+    leaveNode() {
+      // do nothing
+    },
+  });
+
+  return hasRuneSymbol;
 }
