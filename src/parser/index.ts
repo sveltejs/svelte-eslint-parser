@@ -50,6 +50,7 @@ import type { NormalizedParserOptions } from "./parser-options.js";
 import { isTypeScript, normalizeParserOptions } from "./parser-options.js";
 import { getFragmentFromRoot } from "./compat.js";
 import {
+  hasRunesSymbol,
   resolveSvelteParseContextForSvelte,
   resolveSvelteParseContextForSvelteScript,
   type SvelteParseContext,
@@ -142,6 +143,7 @@ function parseAsSvelte(
     ctx,
     parserOptions,
   );
+
   const svelteParseContext = resolveSvelteParseContextForSvelte(
     svelteConfig,
     parserOptions,
@@ -161,6 +163,7 @@ function parseAsSvelte(
         scripts.attrs,
         parserOptions,
       );
+
   ctx.scriptLet.restore(resultScript);
   ctx.tokens.push(...resultScript.ast.tokens);
   ctx.comments.push(...resultScript.ast.comments);
@@ -254,7 +257,10 @@ function parseAsSvelte(
     styleNodeLoc,
     styleNodeRange,
     styleSelectorNodeLoc,
-    svelteParseContext,
+    svelteParseContext: {
+      ...svelteParseContext,
+      runes: svelteParseContext.runes ?? hasRunesSymbol(resultScript.ast),
+    },
   });
   resultScript.visitorKeys = Object.assign({}, KEYS, resultScript.visitorKeys);
 

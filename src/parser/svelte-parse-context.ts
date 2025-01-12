@@ -5,6 +5,7 @@ import type { NormalizedParserOptions } from "./parser-options.js";
 import { compilerVersion, svelteVersion } from "./svelte-version.js";
 import type { SvelteConfig } from "../svelte-config/index.js";
 import { traverseNodes } from "../traverse.js";
+import type { ESLintProgram } from "./index.js";
 
 const runeSymbols: string[] = [
   "$state",
@@ -23,7 +24,7 @@ export type SvelteParseContext = {
    * May be `true` if the user is using Svelte v5.
    * Resolved from `svelte.config.js` or `parserOptions`, but may be overridden by `<svelte:options>`.
    */
-  runes: boolean;
+  runes?: boolean;
   /** The version of "svelte/compiler". */
   compilerVersion: string;
   /** The result of static analysis of `svelte.config.js`. */
@@ -36,7 +37,7 @@ export function resolveSvelteParseContextForSvelte(
   svelteAst: Compiler.Root | SvAST.AstLegacy,
 ): SvelteParseContext {
   return {
-    runes: isRunes(svelteConfig, parserOptions, svelteAst),
+    runes: isRunesAsParseContext(svelteConfig, parserOptions, svelteAst),
     compilerVersion,
     svelteConfig,
   };
@@ -53,11 +54,11 @@ export function resolveSvelteParseContextForSvelteScript(
   };
 }
 
-function isRunes(
+function isRunesAsParseContext(
   svelteConfig: SvelteConfig | null,
   parserOptions: NormalizedParserOptions,
   svelteAst: Compiler.Root | SvAST.AstLegacy,
-): boolean {
+): boolean | undefined {
   // Svelte 3/4 does not support Runes mode.
   if (!svelteVersion.gte(5)) {
     return false;
@@ -77,17 +78,12 @@ function isRunes(
     return svelteOptions?.runes;
   }
 
-  // Static analysis.
-  const { module, instance } = svelteAst;
-  return (
-    (module != null && hasRuneSymbol(module)) ||
-    (instance != null && hasRuneSymbol(instance))
-  );
+  return undefined;
 }
 
-function hasRuneSymbol(ast: Compiler.Script | SvAST.Script): boolean {
+export function hasRunesSymbol(ast: ESLintProgram): boolean {
   let hasRuneSymbol = false;
-  traverseNodes(ast as unknown as ESTree.Node, {
+  traverseNodes(ast, {
     enterNode(node) {
       if (hasRuneSymbol) {
         return;
