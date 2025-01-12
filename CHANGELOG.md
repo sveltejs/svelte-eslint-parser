@@ -1,5 +1,11 @@
 # svelte-eslint-parser
 
+## 1.0.0-next.8
+
+### Patch Changes
+
+- [#630](https://github.com/sveltejs/svelte-eslint-parser/pull/630) [`8b179dd`](https://github.com/sveltejs/svelte-eslint-parser/commit/8b179ddb5e25665f66e710c8ded4cd0fd033b84b) Thanks [@baseballyama](https://github.com/baseballyama)! - fix: prevent errors when `<script>` tags are used inside `{@html}`
+
 ## 1.0.0-next.7
 
 ### Patch Changes
