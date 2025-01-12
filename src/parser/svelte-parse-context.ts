@@ -19,9 +19,14 @@ const runeSymbols: string[] = [
 /** The context for parsing. */
 export type SvelteParseContext = {
   /**
-   * Whether to use Runes mode.
-   * May be `true` if the user is using Svelte v5.
-   * Resolved from `svelte.config.js` or `parserOptions`, but may be overridden by `<svelte:options>`.
+   * Determines if the file is in Runes mode.
+   *
+   * - Svelte 3/4 does not support Runes mode.
+   * - Checks if `runes` configuration exists in:
+   *   - `parserOptions`
+   *   - `svelte.config.js`
+   *   - `<svelte:options>` in the Svelte file.
+   * - Returns `true` if the `runes` symbol is present in the Svelte file.
    */
   runes?: boolean;
   /** The version of "svelte/compiler". */

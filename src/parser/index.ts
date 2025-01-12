@@ -259,6 +259,7 @@ function parseAsSvelte(
     styleSelectorNodeLoc,
     svelteParseContext: {
       ...svelteParseContext,
+      // The compiler decides if runes mode is used after parsing.
       runes: svelteParseContext.runes ?? hasRunesSymbol(resultScript.ast),
     },
   });
