@@ -383,6 +383,14 @@ type SelfClosingBlock = {
   startTagRange: [number, number];
 };
 
+function isValidStartTagOpenIndex(
+  code: string,
+  startTagOpenIndex: number,
+): boolean {
+  const prev = code.slice(0, startTagOpenIndex);
+  return />\s*$|^\s*$/m.test(prev);
+}
+
 /** Extract <script> blocks */
 function* extractBlocks(code: string): IterableIterator<Block> {
   const startTagOpenRe = /<!--[\s\S]*?-->|<(script|style|template)([\s>])/giu;
@@ -396,6 +404,10 @@ function* extractBlocks(code: string): IterableIterator<Block> {
       continue;
     }
     const startTagStart = startTagOpenMatch.index;
+    if (!isValidStartTagOpenIndex(code, startTagStart)) {
+      continue;
+    }
+
     let startTagEnd = startTagOpenRe.lastIndex;
 
     const lowerTag = tag.toLowerCase() as "script" | "style" | "template";
