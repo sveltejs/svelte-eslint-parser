@@ -1,6 +1,5 @@
 import type * as Compiler from "./svelte-ast-types-for-v5.js";
 import type * as SvAST from "./svelte-ast-types.js";
-import type * as ESTree from "estree";
 import type { NormalizedParserOptions } from "./parser-options.js";
 import { compilerVersion, svelteVersion } from "./svelte-version.js";
 import type { SvelteConfig } from "../svelte-config/index.js";
