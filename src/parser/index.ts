@@ -50,7 +50,6 @@ import type { NormalizedParserOptions } from "./parser-options.js";
 import { isTypeScript, normalizeParserOptions } from "./parser-options.js";
 import { getFragmentFromRoot } from "./compat.js";
 import {
-  isEnableRunes,
   resolveSvelteParseContextForSvelte,
   resolveSvelteParseContextForSvelteScript,
   type SvelteParseContext,
@@ -117,20 +116,13 @@ export function parseForESLint(code: string, options?: any): ParseResult {
   const parserOptions = normalizeParserOptions(options);
 
   if (
-    isEnableRunes(svelteConfig, parserOptions) &&
     parserOptions.filePath &&
-    !parserOptions.filePath.endsWith(".svelte") &&
-    // If no `filePath` is set in ESLint, "<input>" will be specified.
-    parserOptions.filePath !== "<input>"
+    (parserOptions.filePath.endsWith(".svelte.js") ||
+      parserOptions.filePath.endsWith(".svelte.ts"))
   ) {
-    const trimmed = code.trim();
-    if (!trimmed.startsWith("<") && !trimmed.endsWith(">")) {
-      const svelteParseContext = resolveSvelteParseContextForSvelteScript(
-        svelteConfig,
-        parserOptions,
-      );
-      return parseAsScript(code, parserOptions, svelteParseContext);
-    }
+    const svelteParseContext =
+      resolveSvelteParseContextForSvelteScript(svelteConfig);
+    return parseAsScript(code, parserOptions, svelteParseContext);
   }
 
   return parseAsSvelte(code, svelteConfig, parserOptions);
