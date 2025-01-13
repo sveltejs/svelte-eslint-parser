@@ -1,5 +1,11 @@
 # svelte-eslint-parser
 
+## 1.0.0-next.10
+
+### Patch Changes
+
+- [#638](https://github.com/sveltejs/svelte-eslint-parser/pull/638) [`df461c3`](https://github.com/sveltejs/svelte-eslint-parser/commit/df461c3019b5b964a83c45fc16888fe8b706a3a1) Thanks [@baseballyama](https://github.com/baseballyama)! - fix: resolve issues in Runes mode detection causing parser malfunctions
+
 ## 1.0.0-next.9
 
 ### Patch Changes
