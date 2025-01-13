@@ -16,7 +16,8 @@ type Global =
 export function getGlobalsForSvelte(
   svelteParseContext: SvelteParseContext,
 ): readonly Global[] {
-  if (svelteParseContext.runes) {
+  // Process if not confirmed as non-Runes mode.
+  if (svelteParseContext.runes !== false) {
     return [...globalsForSvelte, ...globalsForRunes];
   }
   return globalsForSvelte;
@@ -24,7 +25,8 @@ export function getGlobalsForSvelte(
 export function getGlobalsForSvelteScript(
   svelteParseContext: SvelteParseContext,
 ): readonly Global[] {
-  if (svelteParseContext.runes) {
+  // Process if not confirmed as non-Runes mode.
+  if (svelteParseContext.runes !== false) {
     return globalsForRunes;
   }
   return [];

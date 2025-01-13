@@ -377,7 +377,10 @@ function analyzeRuneVariables(
   ctx: VirtualTypeScriptContext,
   svelteParseContext: SvelteParseContext,
 ) {
-  if (!svelteParseContext.runes) return;
+  // No processing is needed if the user is determined not to be in Runes mode.
+  if (svelteParseContext.runes === false) {
+    return;
+  }
   const scopeManager = result.scopeManager;
   for (const globalName of globalsForRunes) {
     if (
@@ -583,7 +586,8 @@ function* analyzeDollarDerivedScopes(
   result: TSESParseForESLintResult,
   svelteParseContext: SvelteParseContext,
 ): Iterable<TransformInfo> {
-  if (!svelteParseContext.runes) return;
+  // No processing is needed if the user is determined not to be in Runes mode.
+  if (svelteParseContext.runes === false) return;
   const scopeManager = result.scopeManager;
   const derivedReferences = scopeManager.globalScope!.through.filter(
     (reference) => reference.identifier.name === "$derived",

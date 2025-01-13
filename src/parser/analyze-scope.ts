@@ -191,7 +191,8 @@ export function analyzePropsScope(
         }
       }
     } else if (node.type === "VariableDeclaration") {
-      if (svelteParseContext.runes) {
+      // Process if not confirmed as non-Runes mode.
+      if (svelteParseContext.runes !== false) {
         // Process for Svelte v5 Runes props. e.g. `let { x = $bindable() } = $props()`;
         for (const decl of node.declarations) {
           if (
