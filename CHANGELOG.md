@@ -1,5 +1,11 @@
 # svelte-eslint-parser
 
+## 1.0.0-next.11
+
+### Minor Changes
+
+- [#641](https://github.com/sveltejs/svelte-eslint-parser/pull/641) [`89e053a`](https://github.com/sveltejs/svelte-eslint-parser/commit/89e053a28d81a0c19a19998befc9dcc4b5f08b3a) Thanks [@ota-meshi](https://github.com/ota-meshi)! - feat: replace `declaration` property of SvelteConstTag with `declarations` property
+
 ## 1.0.0-next.10
 
 ### Patch Changes
