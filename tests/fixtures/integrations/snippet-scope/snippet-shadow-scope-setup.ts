@@ -23,7 +23,10 @@ export function getConfig(): Linter.Config {
       },
     },
     rules: {
-      "@typescript-eslint/no-unused-vars": "error",
+      "no-shadow": "error",
+      "@typescript-eslint/no-shadow": "error",
+      "no-undef": "error",
+      "no-unused-vars": "error",
     },
   };
 }

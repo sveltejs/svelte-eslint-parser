@@ -7,7 +7,12 @@ import type {
   SvelteScriptElement,
   SvelteSnippetBlock,
 } from "../ast/index.js";
-import { addReference, addVariable, getScopeFromNode } from "../scope/index.js";
+import {
+  addReference,
+  addVariable,
+  getScopeFromNode,
+  removeIdentifierVariable,
+} from "../scope/index.js";
 import { addElementToSortedArray } from "../utils/index.js";
 import type { NormalizedParserOptions } from "./parser-options.js";
 import type { SvelteParseContext } from "./svelte-parse-context.js";
@@ -304,11 +309,27 @@ export function analyzeSnippetsScope(
       if (!upperScope) continue;
       const variable = upperScope.set.get(snippet.id.name);
       if (!variable) continue;
-      // Add the virtual reference for reading.
-      const reference = addVirtualReference(snippet.id, variable, upperScope, {
-        read: true,
-      });
-      (reference as any).svelteSnippetReference = true;
+      const defIds = variable.defs.map((d) => d.name);
+      const refs = variable.references.filter(
+        (id) => !defIds.includes(id.identifier),
+      );
+
+      if (refs.length <= 0) {
+        // If the snippet is not referenced,
+        // remove the a variable from the upperScope.
+        removeIdentifierVariable(snippet.id, upperScope);
+      } else {
+        // Add the virtual reference for reading.
+        const reference = addVirtualReference(
+          snippet.id,
+          variable,
+          upperScope,
+          {
+            read: true,
+          },
+        );
+        (reference as any).svelteSnippetReference = true;
+      }
     }
   }
 }
