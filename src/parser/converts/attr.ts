@@ -20,6 +20,7 @@ import type {
   SvelteStyleElement,
   SvelteElseBlock,
   SvelteAwaitBlock,
+  SvelteFunctionBindingsExpression,
 } from "../../ast/index.js";
 import type ESTree from "estree";
 import type { Context } from "../../context/index.js";
@@ -367,6 +368,12 @@ function convertBindingDirective(
         null,
         (es, { getScope }) => {
           directive.expression = es;
+          if (isFunctionBindings(ctx, es)) {
+            (
+              directive.expression as any as SvelteFunctionBindingsExpression
+            ).type = "SvelteFunctionBindingsExpression";
+            return;
+          }
           const scope = getScope(es);
           const reference = scope.references.find(
             (ref) => ref.identifier === es,
@@ -384,6 +391,34 @@ function convertBindingDirective(
     },
   });
   return directive;
+}
+
+/**
+ * Checks whether the given expression is Function bindings (added in Svelte 5.9.0) or not.
+ * See https://svelte.dev/docs/svelte/bind#Function-bindings
+ */
+function isFunctionBindings(
+  ctx: Context,
+  expression: ESTree.Expression,
+): expression is ESTree.SequenceExpression {
+  // Svelte 3/4 does not support Function bindings.
+  if (!svelteVersion.gte(5)) {
+    return false;
+  }
+  if (
+    expression.type !== "SequenceExpression" ||
+    expression.expressions.length !== 2
+  ) {
+    return false;
+  }
+  const bindValueOpenIndex = ctx.code.lastIndexOf("{", expression.range![0]);
+  if (bindValueOpenIndex < 0) return false;
+  const betweenText = ctx.code
+    .slice(bindValueOpenIndex + 1, expression.range![0])
+    // Strip comments
+    .replace(/\/\/[^\n]*\n|\/\*[\s\S]*?\*\//g, "")
+    .trim();
+  return !betweenText;
 }
 
 /** Convert for EventHandler Directive */
@@ -774,7 +809,10 @@ function buildLetDirectiveType(
 type DirectiveProcessors<
   D extends SvAST.Directive | StandardDirective,
   S extends SvelteDirective,
-  E extends D["expression"] & S["expression"],
+  E extends Exclude<
+    D["expression"] & S["expression"],
+    SvelteFunctionBindingsExpression
+  >,
 > =
   | {
       processExpression: (
@@ -801,7 +839,10 @@ type DirectiveProcessors<
 function processDirective<
   D extends SvAST.Directive | StandardDirective,
   S extends SvelteDirective,
-  E extends D["expression"] & S["expression"],
+  E extends Exclude<
+    D["expression"] & S["expression"],
+    SvelteFunctionBindingsExpression
+  >,
 >(
   node: D & { expression: null | E },
   directive: S,
@@ -878,7 +919,7 @@ function processDirectiveKey<
 function processDirectiveExpression<
   D extends SvAST.Directive | StandardDirective,
   S extends SvelteDirective,
-  E extends D["expression"],
+  E extends Exclude<D["expression"], SvelteFunctionBindingsExpression>,
 >(
   node: D & { expression: null | E },
   directive: S,
@@ -901,7 +942,12 @@ function processDirectiveExpression<
     }
     if (processors.processExpression) {
       processors.processExpression(node.expression, shorthand).push((es) => {
-        if (node.expression && es.type !== node.expression.type) {
+        if (
+          node.expression &&
+          ((es.type as string) === "SvelteFunctionBindingsExpression"
+            ? "SequenceExpression"
+            : es.type) !== node.expression.type
+        ) {
           throw new ParseError(
             `Expected ${node.expression.type}, but ${es.type} found.`,
             es.range![0],

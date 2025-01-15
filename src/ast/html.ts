@@ -2,6 +2,7 @@ import type ESTree from "estree";
 import type { TSESTree } from "@typescript-eslint/types";
 import type { BaseNode } from "./base.js";
 import type { Token, Comment } from "./common.js";
+import type { SvelteFunctionBindingsExpression } from "./script.js";
 
 export type SvelteHTMLNode =
   | SvelteProgram
@@ -595,7 +596,7 @@ export interface SvelteBindingDirective extends BaseSvelteDirective {
   kind: "Binding";
   key: SvelteDirectiveKeyTextName;
   shorthand: boolean;
-  expression: null | ESTree.Expression;
+  expression: null | ESTree.Expression | SvelteFunctionBindingsExpression;
 }
 export interface SvelteClassDirective extends BaseSvelteDirective {
   kind: "Class";

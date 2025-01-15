@@ -1,7 +1,9 @@
 import type ESTree from "estree";
 import type { BaseNode } from "./base.js";
 
-export type SvelteScriptNode = SvelteReactiveStatement;
+export type SvelteScriptNode =
+  | SvelteReactiveStatement
+  | SvelteFunctionBindingsExpression;
 
 /** Node of `$` statement. */
 export interface SvelteReactiveStatement extends BaseNode {
@@ -9,4 +11,15 @@ export interface SvelteReactiveStatement extends BaseNode {
   label: ESTree.Identifier & { name: "$" };
   body: ESTree.Statement;
   parent: ESTree.Node;
+}
+
+/** Node of `bind:name={get, set}` expression. */
+export interface SvelteFunctionBindingsExpression extends BaseNode {
+  type: "SvelteFunctionBindingsExpression";
+  expressions: [
+    /** Getter */
+    ESTree.Expression,
+    /** Setter */
+    ESTree.Expression,
+  ];
 }

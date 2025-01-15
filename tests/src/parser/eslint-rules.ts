@@ -2,12 +2,12 @@ import { Linter } from "eslint";
 import assert from "assert";
 import fs from "fs";
 import globals from "globals";
-import * as parser from "../../../src/index";
+import * as parser from "../../../src/index.js";
 import {
   generateParserOptions,
   getMessageData,
   listupFixtures,
-} from "./test-utils";
+} from "./test-utils.js";
 
 //------------------------------------------------------------------------------
 // Tests
@@ -26,6 +26,7 @@ const RULES = [
   "spaced-comment",
   "no-redeclare",
   "template-curly-spacing",
+  "no-sequences",
 ];
 
 describe("svelte-eslint-parser with ESLint rules", () => {
