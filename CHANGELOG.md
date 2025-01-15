@@ -1,5 +1,11 @@
 # svelte-eslint-parser
 
+## 1.0.0-next.12
+
+### Minor Changes
+
+- [#647](https://github.com/sveltejs/svelte-eslint-parser/pull/647) [`10ffeec`](https://github.com/sveltejs/svelte-eslint-parser/commit/10ffeecf99b1e98568460a96b298dbbadfb87336) Thanks [@ota-meshi](https://github.com/ota-meshi)! - feat: add AST node for function bindings
+
 ## 1.0.0-next.11
 
 ### Minor Changes
