@@ -79,27 +79,72 @@ function getNodeRange(
         leadingComments?: Comment[];
         trailingComments?: Comment[];
       },
+  code: string,
 ): [number, number] {
-  let start = null;
-  let end = null;
-  if (node.leadingComments) {
-    start = getWithLoc(node.leadingComments[0]).start;
-  }
-  if (node.trailingComments) {
-    end = getWithLoc(
-      node.trailingComments[node.trailingComments.length - 1],
-    ).end;
-  }
-
   const loc =
     "range" in node
       ? { start: node.range![0], end: node.range![1] }
       : getWithLoc(node);
 
-  return [
-    start ? Math.min(start, loc.start) : loc.start,
-    end ? Math.max(end, loc.end) : loc.end,
-  ];
+  let start = loc.start;
+  let end = loc.end;
+
+  let openingParenCount = 0;
+  let closingParenCount = 0;
+  if (node.leadingComments) {
+    const commentStart = getWithLoc(node.leadingComments[0]).start;
+    if (commentStart < start) {
+      start = commentStart;
+
+      // Extract the number of parentheses before the node.
+      let leadingEnd = loc.start;
+      for (let index = node.leadingComments.length - 1; index >= 0; index--) {
+        const comment = node.leadingComments[index];
+        const loc = getWithLoc(comment);
+        for (const c of code.slice(loc.end, leadingEnd).trim()) {
+          if (c === "(") openingParenCount++;
+        }
+        leadingEnd = loc.start;
+      }
+    }
+  }
+  if (node.trailingComments) {
+    const commentEnd = getWithLoc(
+      node.trailingComments[node.trailingComments.length - 1],
+    ).end;
+    if (end < commentEnd) {
+      end = commentEnd;
+
+      // Extract the number of parentheses after the node.
+      let trailingStart = loc.end;
+      for (const comment of node.trailingComments) {
+        const loc = getWithLoc(comment);
+        for (const c of code.slice(trailingStart, loc.start).trim()) {
+          if (c === ")") closingParenCount++;
+        }
+        trailingStart = loc.end;
+      }
+    }
+  }
+
+  // Adjust the range so that the parentheses match up.
+  if (openingParenCount < closingParenCount) {
+    for (; openingParenCount < closingParenCount && start >= 0; start--) {
+      const c = code[start].trim();
+      if (c) continue;
+      if (c !== "(") break;
+      openingParenCount++;
+    }
+  } else if (openingParenCount > closingParenCount) {
+    for (; openingParenCount > closingParenCount && end < code.length; end++) {
+      const c = code[end].trim();
+      if (c) continue;
+      if (c !== ")") break;
+      closingParenCount++;
+    }
+  }
+
+  return [start, end];
 }
 
 type StatementNodeType = `${TSESTree.Statement["type"]}`;
@@ -154,7 +199,7 @@ export class ScriptLetContext {
     typing?: string | null,
     ...callbacks: ScriptLetCallback<E>[]
   ): ScriptLetCallback<E>[] {
-    const range = getNodeRange(expression);
+    const range = getNodeRange(expression, this.ctx.code);
     return this.addExpressionFromRange(range, parent, typing, ...callbacks);
   }
 
@@ -221,7 +266,7 @@ export class ScriptLetContext {
     parent: SvelteNode,
     ...callbacks: ScriptLetCallback<ObjectShorthandProperty>[]
   ): void {
-    const range = getNodeRange(identifier);
+    const range = getNodeRange(identifier, this.ctx.code);
     const part = this.ctx.code.slice(...range);
     this.appendScript(
       `({${part}});`,
@@ -260,8 +305,11 @@ export class ScriptLetContext {
     const range =
       declarator.type === "VariableDeclarator"
         ? // As of Svelte v5-next.65, VariableDeclarator nodes do not have location information.
-          [getNodeRange(declarator.id)[0], getNodeRange(declarator.init!)[1]]
-        : getNodeRange(declarator);
+          [
+            getNodeRange(declarator.id, this.ctx.code)[0],
+            getNodeRange(declarator.init!, this.ctx.code)[1],
+          ]
+        : getNodeRange(declarator, this.ctx.code);
     const part = this.ctx.code.slice(...range);
     this.appendScript(
       `const ${part};`,
@@ -398,7 +446,7 @@ export class ScriptLetContext {
     ifBlock: SvelteIfBlock,
     callback: ScriptLetCallback<ESTree.Expression>,
   ): void {
-    const range = getNodeRange(expression);
+    const range = getNodeRange(expression, this.ctx.code);
     const part = this.ctx.code.slice(...range);
     const restore = this.appendScript(
       `if(${part}){`,
@@ -442,8 +490,8 @@ export class ScriptLetContext {
       index: ESTree.Identifier | null,
     ) => void,
   ): void {
-    const exprRange = getNodeRange(expression);
-    const ctxRange = context && getNodeRange(context);
+    const exprRange = getNodeRange(expression, this.ctx.code);
+    const ctxRange = context && getNodeRange(context, this.ctx.code);
     let source = "Array.from(";
     const exprOffset = source.length;
     source += `${this.ctx.code.slice(...exprRange)}).forEach((`;
@@ -563,7 +611,7 @@ export class ScriptLetContext {
     callback: (id: ESTree.Identifier, params: ESTree.Pattern[]) => void,
   ): void {
     const scopeKind = kind || this.currentScriptScopeKind;
-    const idRange = getNodeRange(id);
+    const idRange = getNodeRange(id, this.ctx.code);
     const part = this.ctx.code.slice(idRange[0], closeParentIndex + 1);
     const restore = this.appendScript(
       `function ${part}{`,
@@ -660,7 +708,7 @@ export class ScriptLetContext {
         .map((d) => {
           return {
             ...d,
-            range: getNodeRange(d.node),
+            range: getNodeRange(d.node, this.ctx.code),
           };
         })
         .sort((a, b) => {

@@ -278,7 +278,7 @@ interface SvelteBindingDirective extends Node {
   kind: "Binding";
   key: SvelteDirectiveKey;
   shorthand: boolean;
-  expression: null | Expression;
+  expression: null | Expression | SvelteFunctionBindingsExpression;
 }
 interface SvelteClassDirective extends Node {
   type: "SvelteDirective";
@@ -599,5 +599,22 @@ interface SvelteReactiveStatement extends Node {
   type: "SvelteReactiveStatement";
   label: Identifier & { name: "$" };
   body: Statement;
+}
+```
+
+### SvelteFunctionBindingsExpression
+
+This node is a function bindings expression in `bind:name={get, set}`.\
+`SvelteFunctionBindingsExpression` is a special node to avoid confusing ESLint check rules with `SequenceExpression`.
+
+```ts
+interface SvelteFunctionBindingsExpression extends Node {
+  type: "SvelteFunctionBindingsExpression";
+  expressions: [
+    /** Getter */
+    Expression,
+    /** Setter */
+    Expression,
+  ];
 }
 ```
