@@ -1,5 +1,6 @@
 import type ESTree from "estree";
 import type { BaseNode } from "./base.js";
+import type { SvelteBindingDirective } from "./html.js";
 
 export type SvelteScriptNode =
   | SvelteReactiveStatement
@@ -22,4 +23,5 @@ export interface SvelteFunctionBindingsExpression extends BaseNode {
     /** Setter */
     ESTree.Expression,
   ];
+  parent: SvelteBindingDirective;
 }
