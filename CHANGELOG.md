@@ -1,5 +1,15 @@
 # svelte-eslint-parser
 
+## 1.0.0-next.13
+
+### Minor Changes
+
+- [#645](https://github.com/sveltejs/svelte-eslint-parser/pull/645) [`6ff7516`](https://github.com/sveltejs/svelte-eslint-parser/commit/6ff75160975fa91f31737e5fbb5244505624eeca) Thanks [@ota-meshi](https://github.com/ota-meshi)! - feat: improve scoping of snippet declarations acting as slot properties
+
+### Patch Changes
+
+- [#650](https://github.com/sveltejs/svelte-eslint-parser/pull/650) [`bc75922`](https://github.com/sveltejs/svelte-eslint-parser/commit/bc759223c158273dad7832419466b24a91a45957) Thanks [@baseballyama](https://github.com/baseballyama)! - fix: add `parent` node to `SvelteFunctionBindingsExpression`
+
 ## 1.0.0-next.12
 
 ### Minor Changes
