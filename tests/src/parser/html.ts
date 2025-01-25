@@ -1,9 +1,9 @@
 import * as chai from "chai";
-import { jestSnapshotPlugin } from "mocha-chai-jest-snapshot";
+import { chaiPlugin } from "@ota-meshi/test-snapshot/chai";
 
-import { parseAttributes } from "../../../src/parser/html";
+import { parseAttributes } from "../../../src/parser/html.js";
 
-chai.use(jestSnapshotPlugin());
+chai.use(chaiPlugin);
 describe("parseAttributes", () => {
   const testCases = [
     {
