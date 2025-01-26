@@ -14,10 +14,13 @@ export default async function ({ github, context, output }) {
   const pullRequestNumber = await getPullRequestNumber();
 
   const packages = output.packages.map((p) => {
-    const normalizedUrl =
-      pullRequestNumber && p.url.endsWith(sha)
-        ? `${p.url.slice(0, -sha.length)}${pullRequestNumber}`
-        : p.url;
+    let normalizedUrl = p.url;
+    if (pullRequestNumber && p.url.endsWith(sha)) {
+      normalizedUrl = `${p.url.slice(0, -sha.length)}${pullRequestNumber}`;
+    }
+    const repoPath = `/${context.repo.owner}/${context.repo.repo}/`;
+    normalizedUrl = normalizedUrl.replace(repoPath, "/");
+
     return {
       name: p.name,
       url: normalizedUrl,
