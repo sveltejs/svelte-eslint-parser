@@ -5,9 +5,6 @@ export default async function ({ github, context, output }) {
   // eslint-disable-next-line no-console -- For debugging on github actions.
   console.log("pkg-pr-new publish output:", JSON.stringify(output));
 
-  // eslint-disable-next-line no-console -- For debugging on github actions.
-  console.log("context: ", JSON.stringify(context));
-
   const sha =
     context.eventName === "pull_request"
       ? context.payload.pull_request.head.sha
