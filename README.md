@@ -1,13 +1,3 @@
-# svelte-eslint-parser
-
-[Svelte] parser for [ESLint].  
-You can check it on [Online DEMO](https://sveltejs.github.io/svelte-eslint-parser/playground).
-
-> [!NOTE]
-> This README is in development.\
-> Please refer to the README for the version you are using.\
-> For example, <https://github.com/sveltejs/svelte-eslint-parser/blob/v0.43.0/README.md>
-
 [![NPM license](https://img.shields.io/npm/l/svelte-eslint-parser.svg)](https://www.npmjs.com/package/svelte-eslint-parser)
 [![NPM version](https://img.shields.io/npm/v/svelte-eslint-parser.svg)](https://www.npmjs.com/package/svelte-eslint-parser)
 [![NPM downloads](https://img.shields.io/badge/dynamic/json.svg?label=downloads&colorB=green&suffix=/day&query=$.downloads&uri=https://api.npmjs.org//downloads/point/last-day/svelte-eslint-parser&maxAge=3600)](http://www.npmtrends.com/svelte-eslint-parser)
@@ -18,47 +8,67 @@ You can check it on [Online DEMO](https://sveltejs.github.io/svelte-eslint-parse
 [![Build Status](https://github.com/sveltejs/svelte-eslint-parser/workflows/CI/badge.svg?branch=main)](https://github.com/sveltejs/svelte-eslint-parser/actions?query=workflow%3ACI)
 [![Coverage Status](https://coveralls.io/repos/github/sveltejs/svelte-eslint-parser/badge.svg?branch=main)](https://coveralls.io/github/sveltejs/svelte-eslint-parser?branch=main)
 
-## ⤴️ Motivation
+<div align="center">
 
-The [svelte-eslint-parser] aims to make it easy to create your own ESLint rules for [Svelte].
+# svelte-eslint-parser
 
-The [`eslint-plugin-svelte`] is an ESLint plugin that uses the [svelte-eslint-parser]. I have already [implemented some rules].
+## [Svelte](https://svelte.dev/) parser for [ESLint](https://eslint.org/).
 
-[`eslint-plugin-svelte`]: https://github.com/sveltejs/eslint-plugin-svelte
-[implemented some rules]: https://sveltejs.github.io/eslint-plugin-svelte/rules/
+[Live DEMO](https://sveltejs.github.io/svelte-eslint-parser/playground) •
+[Discord](https://svelte.dev/chat)
+
+</div>
+
+## Motivation
+
+The `svelte-eslint-parser` aims to make it easy to create your own ESLint rules for [Svelte](https://svelte.dev/).
+
+[eslint-plugin-svelte](https://github.com/sveltejs/eslint-plugin-svelte) is an ESLint plugin built upon this parser, and it already [implements some rules](https://sveltejs.github.io/eslint-plugin-svelte/rules/).
 
 ### ESLint Plugins Using svelte-eslint-parser
 
 #### [eslint-plugin-svelte](https://sveltejs.github.io/eslint-plugin-svelte/)
 
 ESLint plugin for Svelte.  
-It provides many unique check rules by using the template AST.
+Provides a variety of template-based checks using the Svelte AST.
 
 #### [@intlify/eslint-plugin-svelte](https://github.com/intlify/eslint-plugin-svelte)
 
-ESLint plugin for internationalization (i18n) with Svelte.  
-It provides rules to help internationalization your application created with Svelte.
+ESLint plugin for internationalization (i18n) in Svelte applications, offering helpful i18n-related rules.
 
-## 💿 Installation
+---
+
+## Installation
 
 ```bash
 npm install --save-dev eslint svelte-eslint-parser
 ```
 
-## 📖 Usage
+---
 
-1. Write `parser` option into your ESLint Config file.
-2. Use glob patterns or `--ext .svelte` CLI option.
+## Usage
+
+1. In your ESLint config, set the `parser` option to `svelte-eslint-parser`.
+2. Use glob patterns or the `--ext .svelte` CLI option to include `.svelte` files.
 
 ### ESLint Config (`eslint.config.js`)
 
 ```js
 import js from "@eslint/js";
 import svelteParser from "svelte-eslint-parser";
+
 export default [
   js.configs.recommended,
   {
-    files: ["**/*.svelte", "*.svelte"],
+    files: [
+      "**/*.svelte",
+      "*.svelte",
+      // Need to specify the file extension for Svelte 5 with rune symbols
+      "**/*.svelte.js",
+      "*.svelte.js",
+      "**/*.svelte.ts",
+      "*.svelte.ts",
+    ],
     languageOptions: {
       parser: svelteParser,
     },
@@ -68,23 +78,29 @@ export default [
 
 ### CLI
 
-```console
-$ eslint "src/**/*.{js,svelte}"
+```bash
+eslint "src/**/*.{js,svelte}"
 # or
-$ eslint src --ext .svelte
+eslint src --ext .svelte
 ```
 
-## 🔧 Options
+---
 
-[`parserOptions`] has the same properties as what [espree](https://github.com/eslint/espree#usage), the default parser of ESLint, is supporting.
+## Options
+
+The [parserOptions](https://eslint.org/docs/latest/use/configure/parser#configure-parser-options) for this parser generally match what [espree](https://github.com/eslint/espree#usage)—ESLint's default parser—supports.
+
 For example:
 
 ```js
 import svelteParser from "svelte-eslint-parser";
+
 export default [
   // ...
   {
-    files: ["**/*.svelte", "*.svelte"],
+    files: [
+      // Set .svelte/.js/.ts files. See above for more details.
+    ],
     languageOptions: {
       parser: svelteParser,
       parserOptions: {
@@ -101,20 +117,18 @@ export default [
 ];
 ```
 
-[`parserOptions`]: https://eslint.org/docs/latest/use/configure/parser#configure-parser-options
-
 ### parserOptions.parser
 
-You can use `parserOptions.parser` property to specify a custom parser to parse `<script>` tags.
-Other properties than parser would be given to the specified parser.
-
-For example in `eslint.config.js`:
+Use the `parserOptions.parser` property to define a custom parser for `<script>` tags. Any additional parser options (besides the parser itself) are passed along to the specified parser.
 
 ```js
 import tsParser from "@typescript-eslint/parser";
+
 export default [
   {
-    files: ["**/*.svelte", "*.svelte"],
+    files: [
+      // Set .svelte/.js/.ts files. See above for more details.
+    ],
     languageOptions: {
       parser: svelteParser,
       parserOptions: {
@@ -125,27 +139,29 @@ export default [
 ];
 ```
 
-If you are using the `"@typescript-eslint/parser"`, and if you want to use TypeScript in `<script>` of `.svelte`, you need to add more `parserOptions` configuration.
+#### Using TypeScript in `<script>`
 
-For example in `eslint.config.js`:
+If you use `@typescript-eslint/parser` for TypeScript within `<script>` of `.svelte` files, additional configuration is needed. For example:
 
 ```js
 import tsParser from "@typescript-eslint/parser";
+
 export default [
-  // ...
+  // Other config for non-Svelte files
   {
-    // ...
     languageOptions: {
       parser: tsParser,
       parserOptions: {
-        // ...
         project: "path/to/your/tsconfig.json",
-        extraFileExtensions: [".svelte"], // This is a required setting in `@typescript-eslint/parser` v4.24.0.
+        extraFileExtensions: [".svelte"],
       },
     },
   },
+  // Svelte config
   {
-    files: ["**/*.svelte", "*.svelte"],
+    files: [
+      // Set .svelte/.js/.ts files. See above for more details.
+    ],
     languageOptions: {
       parser: svelteParser,
       // Parse the `<script>` in `.svelte` as TypeScript by adding the following configuration.
@@ -153,23 +169,23 @@ export default [
         parser: tsParser,
       },
     },
-    // ...
   },
 ];
 ```
 
 #### Multiple parsers
 
-If you want to switch the parser for each lang, specify the object.
-
-For example in `eslint.config.js`:
+To switch parsers for each language, provide an object:
 
 ```js
 import tsParser from "@typescript-eslint/parser";
 import espree from "espree";
+
 export default [
   {
-    files: ["**/*.svelte", "*.svelte"],
+    files: [
+      // Set .svelte/.js/.ts files. See above for more details.
+    ],
     languageOptions: {
       parser: svelteParser,
       parserOptions: {
@@ -186,15 +202,16 @@ export default [
 
 ### parserOptions.svelteConfig
 
-If you are using `eslint.config.js`, you can provide a `svelte.config.js` in the `parserOptions.svelteConfig` property.
-
-For example:
+If you use `eslint.config.js`, you can specify a `svelte.config.js` file via `parserOptions.svelteConfig`.
 
 ```js
 import svelteConfig from "./svelte.config.js";
+
 export default [
   {
-    files: ["**/*.svelte", "*.svelte"],
+    files: [
+      // Set .svelte/.js/.ts files. See above for more details.
+    ],
     languageOptions: {
       parser: svelteParser,
       parserOptions: {
@@ -205,28 +222,28 @@ export default [
 ];
 ```
 
-If `parserOptions.svelteConfig` is not specified, some config will be statically parsed from the `svelte.config.js` file.
-
-The `.eslintrc.*` style configuration cannot load `svelte.config.js` because it cannot use ESM. We recommend using the `eslint.config.js` style configuration.
+If `parserOptions.svelteConfig` is not set, the parser attempts to statically read some config from `svelte.config.js`.
 
 ### parserOptions.svelteFeatures
 
-You can use `parserOptions.svelteFeatures` property to specify how to parse related to Svelte features.
+You can configure how Svelte-specific features are parsed via `parserOptions.svelteFeatures`.
 
-For example in `eslint.config.js`:
+For example:
 
 ```js
 export default [
   {
-    files: ["**/*.svelte", "*.svelte"],
+    files: [
+      // Set .svelte/.js/.ts files. See above for more details.
+    ],
     languageOptions: {
       parser: svelteParser,
       parserOptions: {
         svelteFeatures: {
-          // This option is for Svelte 5. The default value is `true`.
-          // If `false`, ESLint will not recognize rune symbols.
-          // If not configured this option, The parser will try to read the option from `compilerOptions.runes` from `svelte.config.js`.
-          // If `parserOptions.svelteConfig` is not specified and the file cannot be parsed by static analysis, it will behave as `true`.
+          // This is for Svelte 5. The default is true.
+          // If false, ESLint won't recognize rune symbols.
+          // If not specified, the parser tries to read compilerOptions.runes from `svelte.config.js`.
+          // If `parserOptions.svelteConfig` is not given and static analysis fails, it defaults to true.
           runes: true,
         },
       },
@@ -235,62 +252,15 @@ export default [
 ];
 ```
 
-### Runes support
+---
 
-If you install Svelte v5 the parser will be able to parse runes, and will also be able to parse `*.js` and `*.ts` files.
-If you don't want to use Runes, you may need to configure. Please read [parserOptions.svelteFeatures](#parseroptionssveltefeatures) for more details.
-
-When using this mode in an ESLint configuration, it is recommended to set it per file pattern as below.
-
-For example in `eslint.config.js`:
-
-```js
-import svelteConfig from "./svelte.config.js";
-export default [
-  {
-    files: ["**/*.svelte", "*.svelte"],
-    languageOptions: {
-      parser: svelteParser,
-      parserOptions: {
-        parser: "...",
-        svelteConfig,
-        /* ... */
-      },
-    },
-  },
-  {
-    files: ["**/*.svelte.js", "*.svelte.js"],
-    languageOptions: {
-      parser: svelteParser,
-      parserOptions: {
-        svelteConfig,
-        /* ... */
-      },
-    },
-  },
-  {
-    files: ["**/*.svelte.ts", "*.svelte.ts"],
-    languageOptions: {
-      parser: svelteParser,
-      parserOptions: {
-        parser: "...(ts parser)...",
-        svelteConfig,
-        /* ... */
-      },
-    },
-  },
-];
-```
-
-## :computer: Editor Integrations
+## Editor Integrations
 
 ### Visual Studio Code
 
-Use the [dbaeumer.vscode-eslint](https://marketplace.visualstudio.com/items?itemName=dbaeumer.vscode-eslint) extension that Microsoft provides officially.
+Use the [dbaeumer.vscode-eslint](https://marketplace.visualstudio.com/items?itemName=dbaeumer.vscode-eslint) extension provided by Microsoft.
 
-You have to configure the `eslint.validate` option of the extension to check `.svelte` files, because the extension targets only `*.js` or `*.jsx` files by default.
-
-Example **.vscode/settings.json**:
+By default, it only targets `*.js` and `*.jsx`, so you need to configure `.svelte` file support. For example, in **.vscode/settings.json**:
 
 ```json
 {
@@ -298,25 +268,23 @@ Example **.vscode/settings.json**:
 }
 ```
 
+---
+
 ## Usage for Custom Rules / Plugins
 
-- [AST.md](./docs/AST.md) is AST specification. You can check it on the [Online DEMO](https://sveltejs.github.io/svelte-eslint-parser/).
-- The parser will generate its own [ScopeManager](https://eslint.org/docs/developer-guide/scope-manager-interface). You can check it on the [Online DEMO](https://sveltejs.github.io/svelte-eslint-parser/scope).
-- I have already [implemented some rules] in the [`eslint-plugin-svelte`]. The source code for these rules will be helpful to you.
+- See [AST.md](./docs/AST.md) for the AST specification. You can explore it on the [Live DEMO](https://sveltejs.github.io/svelte-eslint-parser/).
+- This parser generates its own [ScopeManager](https://eslint.org/docs/developer-guide/scope-manager-interface). Check the [Live DEMO](https://sveltejs.github.io/svelte-eslint-parser/scope).
+- Several rules are [already implemented] in [`eslint-plugin-svelte`], and their source code can be a helpful reference.
 
-## :beers: Contributing
+---
 
-Welcome contributing!
+## Contributing
 
-Please use GitHub's Issues/PRs.
+Contributions are welcome! Please open an issue or submit a PR on GitHub.  
+For internal details, see [internal-mechanism.md](./docs/internal-mechanism.md).
 
-See also the documentation for the internal mechanism.
+---
 
-- [internal-mechanism.md](./docs/internal-mechanism.md)
+## License
 
-## :lock: License
-
-See the [LICENSE](LICENSE) file for license rights and limitations (MIT).
-
-[Svelte]: https://svelte.dev/
-[ESLint]: https://eslint.org/
+See [LICENSE](LICENSE) (MIT) for rights and limitations.
