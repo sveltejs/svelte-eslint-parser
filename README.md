@@ -48,9 +48,6 @@ npm install --save-dev eslint svelte-eslint-parser
 
 ## Usage
 
-1. In your ESLint config, set the `parser` option to `svelte-eslint-parser`.
-2. Use glob patterns or the `--ext .svelte` CLI option to include `.svelte` files.
-
 ### ESLint Config (`eslint.config.js`)
 
 ```js
@@ -80,8 +77,6 @@ export default [
 
 ```bash
 eslint "src/**/*.{js,svelte}"
-# or
-eslint src --ext .svelte
 ```
 
 ---
