@@ -1,5 +1,55 @@
 # svelte-eslint-parser
 
+## 1.0.0
+
+### Major Changes
+
+- [#579](https://github.com/sveltejs/svelte-eslint-parser/pull/579) [`4ac8236`](https://github.com/sveltejs/svelte-eslint-parser/commit/4ac82369156bb081d131d3fb1bf4f488a16f509a) Thanks [@ota-meshi](https://github.com/ota-meshi)! - feat!: drop support for old node versions (<18, 19, 21)
+
+- [#599](https://github.com/sveltejs/svelte-eslint-parser/pull/599) [`cefd17a`](https://github.com/sveltejs/svelte-eslint-parser/commit/cefd17a17d2e0318a4c982f5958f21307024bc95) Thanks [@ota-meshi](https://github.com/ota-meshi)! - feat!: change the parser to an ESM-only package
+
+- [#459](https://github.com/sveltejs/svelte-eslint-parser/pull/459) [`d768a5c`](https://github.com/sveltejs/svelte-eslint-parser/commit/d768a5ce13d15e00fa82434c041366c00d2833b0) Thanks [@renovate](https://github.com/apps/renovate)! - fix(deps): update dependency eslint-scope to v8
+
+### Minor Changes
+
+- [#645](https://github.com/sveltejs/svelte-eslint-parser/pull/645) [`6ff7516`](https://github.com/sveltejs/svelte-eslint-parser/commit/6ff75160975fa91f31737e5fbb5244505624eeca) Thanks [@ota-meshi](https://github.com/ota-meshi)! - feat: improve scoping of snippet declarations acting as slot properties
+
+- [#609](https://github.com/sveltejs/svelte-eslint-parser/pull/609) [`47b61de`](https://github.com/sveltejs/svelte-eslint-parser/commit/47b61deb4eaf668eb07ef0697e11ae46a7790639) Thanks [@ota-meshi](https://github.com/ota-meshi)! - feat: add support for `<svelte:boundary>`
+
+- [#641](https://github.com/sveltejs/svelte-eslint-parser/pull/641) [`89e053a`](https://github.com/sveltejs/svelte-eslint-parser/commit/89e053a28d81a0c19a19998befc9dcc4b5f08b3a) Thanks [@ota-meshi](https://github.com/ota-meshi)! - feat: replace `declaration` property of SvelteConstTag with `declarations` property
+
+- [#589](https://github.com/sveltejs/svelte-eslint-parser/pull/589) [`f54c91f`](https://github.com/sveltejs/svelte-eslint-parser/commit/f54c91f2dac9b27681d9ea9811d25ff8afe5aafe) Thanks [@marekdedic](https://github.com/marekdedic)! - feat: stabilized generics
+
+- [#647](https://github.com/sveltejs/svelte-eslint-parser/pull/647) [`10ffeec`](https://github.com/sveltejs/svelte-eslint-parser/commit/10ffeecf99b1e98568460a96b298dbbadfb87336) Thanks [@ota-meshi](https://github.com/ota-meshi)! - feat: add AST node for function bindings
+
+- [#626](https://github.com/sveltejs/svelte-eslint-parser/pull/626) [`cde2baf`](https://github.com/sveltejs/svelte-eslint-parser/commit/cde2baf38ee3d87c6bf4628b4f9d9b06cbabfd8e) Thanks [@baseballyama](https://github.com/baseballyama)! - feat: Add `warningFilter` to `SvelteConfig`
+
+- [#673](https://github.com/sveltejs/svelte-eslint-parser/pull/673) [`cab2fd2`](https://github.com/sveltejs/svelte-eslint-parser/commit/cab2fd2f9b10a3224ad0805bd9d4805db651ab2d) Thanks [@baseballyama](https://github.com/baseballyama)! - feat: support latest runes (`$props.id` and `$inspect.trace`)
+
+- [#619](https://github.com/sveltejs/svelte-eslint-parser/pull/619) [`002e3b0`](https://github.com/sveltejs/svelte-eslint-parser/commit/002e3b0cc5174be56adc0fc0aa16f0d1826864ac) Thanks [@marekdedic](https://github.com/marekdedic)! - feat: added support for style selector parsing
+
+- [#617](https://github.com/sveltejs/svelte-eslint-parser/pull/617) [`1e0b874`](https://github.com/sveltejs/svelte-eslint-parser/commit/1e0b8743f9a687d4e4089a2b9ab7407c86b22453) Thanks [@ota-meshi](https://github.com/ota-meshi)! - feat: add support `{#each}` without `as` (svelte v5.4.0)
+
+### Patch Changes
+
+- [#633](https://github.com/sveltejs/svelte-eslint-parser/pull/633) [`1178032`](https://github.com/sveltejs/svelte-eslint-parser/commit/1178032e298fd09cff47aedbc140327e1f1cd912) Thanks [@baseballyama](https://github.com/baseballyama)! - fix: assign actual `runes` value to `SvelteParseContext`
+
+- [#636](https://github.com/sveltejs/svelte-eslint-parser/pull/636) [`78f2923`](https://github.com/sveltejs/svelte-eslint-parser/commit/78f2923e86c56000f0d064fa180730b1c63dfd80) Thanks [@baseballyama](https://github.com/baseballyama)! - fix: correct detection of runes mode in parsed files
+
+- [#638](https://github.com/sveltejs/svelte-eslint-parser/pull/638) [`df461c3`](https://github.com/sveltejs/svelte-eslint-parser/commit/df461c3019b5b964a83c45fc16888fe8b706a3a1) Thanks [@baseballyama](https://github.com/baseballyama)! - fix: resolve issues in Runes mode detection causing parser malfunctions
+
+- [#650](https://github.com/sveltejs/svelte-eslint-parser/pull/650) [`bc75922`](https://github.com/sveltejs/svelte-eslint-parser/commit/bc759223c158273dad7832419466b24a91a45957) Thanks [@baseballyama](https://github.com/baseballyama)! - fix: add `parent` node to `SvelteFunctionBindingsExpression`
+
+- [#601](https://github.com/sveltejs/svelte-eslint-parser/pull/601) [`e1c6a8a`](https://github.com/sveltejs/svelte-eslint-parser/commit/e1c6a8ac3585d2c4a0dede3f0d5eb0f511045ea9) Thanks [@baseballyama](https://github.com/baseballyama)! - chore: remove experimental for svelteFeatures.runes option parserOptions
+
+- [#612](https://github.com/sveltejs/svelte-eslint-parser/pull/612) [`9e84b3e`](https://github.com/sveltejs/svelte-eslint-parser/commit/9e84b3e7ab44e737a7f54010daeb9739d9214019) Thanks [@ota-meshi](https://github.com/ota-meshi)! - fix: compatibility with eslint-plugin-prettier
+
+- [#604](https://github.com/sveltejs/svelte-eslint-parser/pull/604) [`5ed0609`](https://github.com/sveltejs/svelte-eslint-parser/commit/5ed060950b7db8ee1d04a8106238fcad0ed02aad) Thanks [@baseballyama](https://github.com/baseballyama)! - fix: recognize script as module for Typescript type checking
+
+- [#630](https://github.com/sveltejs/svelte-eslint-parser/pull/630) [`8b179dd`](https://github.com/sveltejs/svelte-eslint-parser/commit/8b179ddb5e25665f66e710c8ded4cd0fd033b84b) Thanks [@baseballyama](https://github.com/baseballyama)! - fix: prevent errors when `<script>` tags are used inside `{@html}`
+
+- [#600](https://github.com/sveltejs/svelte-eslint-parser/pull/600) [`5586809`](https://github.com/sveltejs/svelte-eslint-parser/commit/5586809d9988323926d53b5999494a56c6442df0) Thanks [@baseballyama](https://github.com/baseballyama)! - feat: support postcss
+
 ## 1.0.0-next.13
 
 ### Minor Changes
