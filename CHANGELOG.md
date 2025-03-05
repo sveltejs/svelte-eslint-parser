@@ -1,5 +1,11 @@
 # svelte-eslint-parser
 
+## 1.0.1
+
+### Patch Changes
+
+- [#681](https://github.com/sveltejs/svelte-eslint-parser/pull/681) [`edb63e2`](https://github.com/sveltejs/svelte-eslint-parser/commit/edb63e213fae5e72604d45841b357f158d16fd3b) Thanks [@baseballyama](https://github.com/baseballyama)! - fix: align required Node version with ESLint
+
 ## 1.0.0
 
 ### Major Changes
