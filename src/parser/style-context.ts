@@ -23,7 +23,7 @@ export interface StyleContextNoStyleElement {
 export interface StyleContextParseError {
   status: "parse-error";
   sourceLang: string;
-  error: any;
+  error: Error;
 }
 
 export interface StyleContextSuccess {
@@ -79,7 +79,7 @@ export function parseStyleContext(
       from: ctx.parserOptions.filePath,
     });
   } catch (error) {
-    return { status: "parse-error", sourceLang, error };
+    return { status: "parse-error", sourceLang, error: error as Error };
   }
   fixPostCSSNodeLocation(sourceAst, styleElement);
   sourceAst.walk((node) => {
