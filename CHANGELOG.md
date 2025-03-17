@@ -1,5 +1,11 @@
 # svelte-eslint-parser
 
+## 1.1.0
+
+### Minor Changes
+
+- [#686](https://github.com/sveltejs/svelte-eslint-parser/pull/686) [`f26ee51`](https://github.com/sveltejs/svelte-eslint-parser/commit/f26ee51709e286713acb3b2c223c5d807c72fecb) Thanks [@marekdedic](https://github.com/marekdedic)! - style Context parsing error type fix
+
 ## 1.0.1
 
 ### Patch Changes
