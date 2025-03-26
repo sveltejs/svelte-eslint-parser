@@ -16,6 +16,7 @@ import {
 import { addElementToSortedArray } from "../utils/index.js";
 import type { NormalizedParserOptions } from "./parser-options.js";
 import type { SvelteParseContext } from "./svelte-parse-context.js";
+import { getGlobalsForSvelte } from "./globals.js";
 /**
  * Analyze scope
  */
@@ -105,7 +106,10 @@ export function analyzeReactiveScope(scopeManager: ScopeManager): void {
 /**
  * Analyze store scope. e.g. $count
  */
-export function analyzeStoreScope(scopeManager: ScopeManager): void {
+export function analyzeStoreScope(
+  scopeManager: ScopeManager,
+  svelteParseContext: SvelteParseContext,
+): void {
   const moduleScope = scopeManager.scopes.find(
     (scope) => scope.type === "module",
   );
@@ -114,8 +118,13 @@ export function analyzeStoreScope(scopeManager: ScopeManager): void {
   }
   const toBeMarkAsUsedReferences: Reference[] = [];
 
+  const globals = getGlobalsForSvelte(svelteParseContext);
+
   for (const reference of [...scopeManager.globalScope.through]) {
-    if (reference.identifier.name.startsWith("$")) {
+    if (
+      reference.identifier.name.startsWith("$") &&
+      !globals.includes(reference.identifier.name as never)
+    ) {
       const realName = reference.identifier.name.slice(1);
       const variable = moduleScope.set.get(realName);
       if (variable) {
