@@ -1,5 +1,11 @@
 # svelte-eslint-parser
 
+## 1.1.1
+
+### Patch Changes
+
+- [#692](https://github.com/sveltejs/svelte-eslint-parser/pull/692) [`1c533d8`](https://github.com/sveltejs/svelte-eslint-parser/commit/1c533d8929c57f3bba5e97bc4d1aee06ddd9cdd0) Thanks [@baseballyama](https://github.com/baseballyama)! - fix: resolved issue of `$props` incorrectly detected as store when using variables named after runes like `$props` and `props`
+
 ## 1.1.0
 
 ### Minor Changes
