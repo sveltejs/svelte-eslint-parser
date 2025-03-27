@@ -170,9 +170,9 @@ function parseAsSvelte(
   sortNodes(ctx.comments);
   sortNodes(ctx.tokens);
   extractTokens(ctx);
-  analyzeStoreScope(resultScript.scopeManager!);
+  analyzeStoreScope(resultScript.scopeManager!, svelteParseContext);
   analyzeReactiveScope(resultScript.scopeManager!);
-  analyzeStoreScope(resultScript.scopeManager!); // for reactive vars
+  analyzeStoreScope(resultScript.scopeManager!, svelteParseContext); // for reactive vars
   analyzeSnippetsScope(ctx.snippets, resultScript.scopeManager!);
 
   // Add $$xxx variable
