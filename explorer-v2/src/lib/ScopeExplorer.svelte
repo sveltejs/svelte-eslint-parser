@@ -28,19 +28,20 @@
 		svelteValue
 	);
 	let tsParser = undefined;
+	function setTSParser(parser) {
+		if (typeof window !== 'undefined') {
+			if (!window.process) {
+				window.process = {
+					cwd: () => '',
+					env: {}
+				};
+			}
+		}
+		tsParser = parser;
+	}
 	$: {
 		if (hasLangTs && !tsParser) {
-			import('@typescript-eslint/parser').then((parser) => {
-				if (typeof window !== 'undefined') {
-					if (!window.process) {
-						window.process = {
-							cwd: () => '',
-							env: {}
-						};
-					}
-				}
-				tsParser = parser;
-			});
+			import('@typescript-eslint/parser').then(setTSParser);
 		}
 	}
 	$: {
