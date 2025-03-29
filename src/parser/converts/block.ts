@@ -147,17 +147,17 @@ export function convertIfBlock(
   });
   const consequent = getConsequentFromIfBlock(node);
 
-  ifBlock.children.push(
-    ...convertChildren(
-      {
-        nodes:
-          // Adjust for Svelte v5
-          trimChildren(getChildren(consequent)),
-      },
-      ifBlock,
-      ctx,
-    ),
-  );
+  for (const child of convertChildren(
+    {
+      nodes:
+        // Adjust for Svelte v5
+        trimChildren(getChildren(consequent)),
+    },
+    ifBlock,
+    ctx,
+  )) {
+    ifBlock.children.push(child);
+  }
 
   ctx.scriptLet.closeScope();
   if (elseif) {
@@ -218,17 +218,17 @@ export function convertIfBlock(
   ifBlock.else = elseBlock;
 
   ctx.scriptLet.nestBlock(elseBlock);
-  elseBlock.children.push(
-    ...convertChildren(
-      {
-        nodes:
-          // Adjust for Svelte v5
-          trimChildren(elseChildren),
-      },
-      elseBlock,
-      ctx,
-    ),
-  );
+  for (const child of convertChildren(
+    {
+      nodes:
+        // Adjust for Svelte v5
+        trimChildren(elseChildren),
+    },
+    elseBlock,
+    ctx,
+  )) {
+    elseBlock.children.push(child);
+  }
   ctx.scriptLet.closeScope();
   extractMustacheBlockTokens(elseBlock, ctx, { startOnly: true });
 
