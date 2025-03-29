@@ -1,10 +1,10 @@
 // eslint-disable-next-line @eslint-community/eslint-comments/disable-enable-pair -- ignore
 /* eslint-disable no-console -- ignore */
 import Benchmark from "benchmark";
-import fs from "fs";
-import { parseForESLint } from "../src/index.js";
-import { parseForESLint as parseOld } from "../node_modules/svelte-eslint-parser/lib/index.js";
+import fs from "node:fs";
 import { fileURLToPath } from "node:url";
+import { parseForESLint as parseOld } from "../node_modules/svelte-eslint-parser/lib/index.js";
+import { parseForESLint } from "../src/index.js";
 
 const contents = `${fs.readFileSync(
   fileURLToPath(
