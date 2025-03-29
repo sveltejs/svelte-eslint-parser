@@ -5,11 +5,11 @@ import fs from "fs";
 import { parseForESLint } from "../src/index.js";
 import { parseForESLint as parseOld } from "../node_modules/svelte-eslint-parser/lib/index.js";
 import { fileURLToPath } from "node:url";
-import path from "node:path";
 
-const dirname = fileURLToPath(new URL(".", import.meta.url));
 const contents = `${fs.readFileSync(
-  path.resolve(dirname, "../explorer-v2/src/lib/RulesSettings.svelte"),
+  fileURLToPath(
+    import.meta.resolve("../explorer-v2/src/lib/RulesSettings.svelte"),
+  ),
   "utf-8",
 )}// comments`;
 
