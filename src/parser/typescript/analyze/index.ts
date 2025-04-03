@@ -73,15 +73,26 @@ export function analyzeTypeScriptInSvelte(
 
   analyzeRuneVariables(result, ctx, context.svelteParseContext);
 
-  applyTransforms(
-    [
-      ...analyzeReactiveScopes(result),
-      ...analyzeDollarDerivedScopes(result, context.svelteParseContext),
-    ],
-    ctx,
-  );
+  const scriptTransformers: TransformInfo[] = [
+    ...analyzeReactiveScopes(result),
+  ];
+  const templateTransformers: TransformInfo[] = [];
+  for (const transform of analyzeDollarDerivedScopes(
+    result,
+    context.svelteParseContext,
+  )) {
+    if (transform.node.range[0] < code.script.length) {
+      scriptTransformers.push(transform);
+    } else {
+      templateTransformers.push(transform);
+    }
+  }
 
-  analyzeRenderScopes(code, ctx);
+  applyTransforms(scriptTransformers, ctx);
+
+  analyzeRenderScopes(code, ctx, () =>
+    applyTransforms(templateTransformers, ctx),
+  );
 
   // When performing type checking on TypeScript code that is not a module, the error `Cannot redeclare block-scoped variable 'xxx'`. occurs. To fix this, add an `export`.
   // see: https://github.com/sveltejs/svelte-eslint-parser/issues/557
@@ -625,10 +636,12 @@ function* analyzeDollarDerivedScopes(
 function analyzeRenderScopes(
   code: { script: string; render: string; rootScope: string },
   ctx: VirtualTypeScriptContext,
+  analyzeInTemplate: () => void,
 ) {
   ctx.appendOriginal(code.script.length);
   const renderFunctionName = ctx.generateUniqueId("render");
   ctx.appendVirtualScript(`export function ${renderFunctionName}(){`);
+  analyzeInTemplate();
   ctx.appendOriginal(code.script.length + code.render.length);
   ctx.appendVirtualScript(`}`);
   ctx.restoreContext.addRestoreStatementProcess((node, result) => {
