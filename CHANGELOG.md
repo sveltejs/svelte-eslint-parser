@@ -1,5 +1,11 @@
 # svelte-eslint-parser
 
+## 1.1.2
+
+### Patch Changes
+
+- [#698](https://github.com/sveltejs/svelte-eslint-parser/pull/698) [`8188302`](https://github.com/sveltejs/svelte-eslint-parser/commit/81883020381ddef27490ddc27ea719135abee89e) Thanks [@ota-meshi](https://github.com/ota-meshi)! - fix: crash with `$derived()` in template using ts
+
 ## 1.1.1
 
 ### Patch Changes
