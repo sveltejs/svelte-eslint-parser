@@ -1,6 +1,7 @@
 {
   "name": "svelte-eslint-parser",
   "version": "1.1.2",
+  "type": "module",
   "description": "Svelte parser for ESLint",
   "repository": "git+https://github.com/sveltejs/svelte-eslint-parser.git",
   "homepage": "https://github.com/sveltejs/svelte-eslint-parser#readme",
@@ -14,7 +15,6 @@
   "engines": {
     "node": "^18.18.0 || ^20.9.0 || >=21.1.0"
   },
-  "type": "module",
   "main": "lib/index.js",
   "files": [
     "lib"
@@ -40,10 +40,10 @@
     "prerelease": "pnpm run clean && pnpm run build",
     "preversion": "pnpm run lint && pnpm run test",
     "release": "changeset publish",
+    "run-update-fixtures": "pnpm run ts ./tools/update-fixtures.ts",
     "test": "pnpm run mocha \"tests/src/**/*.ts\" --reporter dot --timeout 60000",
     "ts": "node --import tsx/esm",
     "update-fixtures": "git add package.json && pnpm i -D svelte@4 && git checkout package.json && pnpm run run-update-fixtures && pnpm i && pnpm run run-update-fixtures",
-    "run-update-fixtures": "pnpm run ts ./tools/update-fixtures.ts",
     "version:ci": "env-cmd -e version-ci pnpm run build:meta && changeset version"
   },
   "peerDependencies": {
