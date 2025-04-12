@@ -123,11 +123,12 @@ TypeScript's type inference is pretty good, so parsing Svelte as-is gives some w
 
 e.g.
 
+<!-- prettier-ignore -->
 ```ts
 export let foo: { bar: number } | null = null;
 
 $: console.log(foo && foo.bar);
-// ^ never type
+                   // ^ never type
 ```
 
 (You can see it on [TypeScript Online Playground](https://www.typescriptlang.org/play?#code/KYDwDg9gTgLgBAG2PAZhCAuOBvOAjAQyiwDsBXAWz2CjgF84AfOchBOAXhbLYFgAoAQBIsAYwgkAzhCQA6BBADmACjQQ4AMg1w1swlACUAbgFwz5i5YsB6a3AB6LYADcacGAE8wwAUA))
