@@ -27,6 +27,7 @@ import {
   getOptionsFromRoot,
 } from "../compat.js";
 import { sortNodes } from "../sort.js";
+import { withoutProjectParserOptions } from "../parser-options.js";
 
 /**
  * Convert root
@@ -259,11 +260,7 @@ function convertGenericsAttribute(script: SvelteScriptElement, ctx: Context) {
     result = parseScriptWithoutAnalyzeScope(
       scriptLet,
       ctx.sourceCode.scripts.attrs,
-      {
-        ...ctx.parserOptions,
-        // Without typings
-        project: null,
-      },
+      withoutProjectParserOptions(ctx.parserOptions),
     ) as unknown as TSESParseForESLintResult;
   } catch {
     // ignore
