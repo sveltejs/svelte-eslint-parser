@@ -1,5 +1,11 @@
 # svelte-eslint-parser
 
+## 1.1.3
+
+### Patch Changes
+
+- [#704](https://github.com/sveltejs/svelte-eslint-parser/pull/704) [`0436da6`](https://github.com/sveltejs/svelte-eslint-parser/commit/0436da6b7190208284de45ce7a54e18c4d31c032) Thanks [@mcous](https://github.com/mcous)! - Strip `projectService` from TS options when type information not needed
+
 ## 1.1.2
 
 ### Patch Changes
