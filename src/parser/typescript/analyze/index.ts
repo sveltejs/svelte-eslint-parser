@@ -23,6 +23,7 @@ import type { NormalizedParserOptions } from "../../parser-options.js";
 import { setParent } from "../set-parent.js";
 import { getGlobalsForSvelte, globalsForRunes } from "../../globals.js";
 import type { SvelteParseContext } from "../../svelte-parse-context.js";
+import { withoutProjectParserOptions } from "../../parser-options.js";
 
 export type AnalyzeTypeScriptContext = {
   slots: Set<SvelteHTMLElement>;
@@ -53,11 +54,7 @@ export function analyzeTypeScriptInSvelte(
   const result = parseScriptWithoutAnalyzeScope(
     code.script + code.render + code.rootScope,
     attrs,
-    {
-      ...parserOptions,
-      // Without typings
-      project: null,
-    },
+    withoutProjectParserOptions(parserOptions),
   ) as unknown as TSESParseForESLintResult;
 
   ctx._beforeResult = result;
@@ -118,11 +115,11 @@ export function analyzeTypeScript(
   const ctx = new VirtualTypeScriptContext(code);
   ctx.appendOriginal(/^\s*/u.exec(code)![0].length);
 
-  const result = parseScriptWithoutAnalyzeScope(code, attrs, {
-    ...parserOptions,
-    // Without typings
-    project: null,
-  }) as unknown as TSESParseForESLintResult;
+  const result = parseScriptWithoutAnalyzeScope(
+    code,
+    attrs,
+    withoutProjectParserOptions(parserOptions),
+  ) as unknown as TSESParseForESLintResult;
 
   ctx._beforeResult = result;
 

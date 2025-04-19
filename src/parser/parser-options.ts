@@ -9,6 +9,8 @@ import { getParserForLang, type UserOptionParser } from "./resolve-parser.js";
 export type NormalizedParserOptions = {
   parser?: UserOptionParser;
   project?: string | string[] | null;
+  projectService?: unknown;
+  EXPERIMENTAL_useProjectService?: unknown;
 
   ecmaVersion: number | "latest";
   sourceType: "module" | "script";
@@ -103,4 +105,25 @@ export function isTypeScript(
   }
 
   return false;
+}
+
+/**
+ * Remove typing-related options from parser options.
+ *
+ * Allows the typescript-eslint parser to parse a file without
+ * trying to collect typing information from TypeScript.
+ *
+ * See https://typescript-eslint.io/packages/parser#withoutprojectparseroptionsparseroptions
+ */
+export function withoutProjectParserOptions(
+  options: NormalizedParserOptions,
+): NormalizedParserOptions {
+  const {
+    project: _strippedProject,
+    projectService: _strippedProjectService,
+    EXPERIMENTAL_useProjectService: _strippedExperimentalUseProjectService,
+    ...result
+  } = options;
+
+  return result;
 }
