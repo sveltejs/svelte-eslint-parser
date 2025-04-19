@@ -38,23 +38,26 @@ For example, if you enter `*.svelte` template to listen for input events:
 
 ```svelte
 <script lang="ts">
-    function inputHandler () {
-        // process
-    }
+  function inputHandler() {
+    // process
+  }
 </script>
-<input on:input={inputHandler}>
+
+<input on:input={inputHandler} />
 ```
 
 Parse the following virtual script code as a script:
 
 ```ts
-                  
-    function inputHandler () {
-        // process
-    }
-;function $_render1(){        
-                               
-(inputHandler) as ((e:'input' extends keyof HTMLElementEventMap ? HTMLElementEventMap['input'] : CustomEvent<any>) => void );
+function inputHandler() {
+  // process
+}
+function $_render1() {
+  inputHandler as (
+    e: "input" extends keyof HTMLElementEventMap
+      ? HTMLElementEventMap["input"]
+      : CustomEvent<any>,
+  ) => void;
 }
 ```
 
@@ -78,25 +81,24 @@ For example, when using `{#each}` and `{@const}`:
 
 ```svelte
 <script lang="ts">
-    const array = [1, 2, 3]
+  const array = [1, 2, 3];
 </script>
+
 {#each array as e}
-    {@const ee = e * 2}
-    {ee}
+  {@const ee = e * 2}
+  {ee}
 {/each}
 ```
 
 Parse the following virtual script code as a script:
 
 ```ts
-                  
-    const array = [1, 2, 3]
-;function $_render1(){        
-                  
-Array.from(array).forEach((e) => {
+const array = [1, 2, 3];
+function $_render1() {
+  Array.from(array).forEach((e) => {
     const ee = e * 2;
-    (ee);
-});
+    ee;
+  });
 }
 ```
 
@@ -121,8 +123,9 @@ TypeScript's type inference is pretty good, so parsing Svelte as-is gives some w
 
 e.g.
 
+<!-- prettier-ignore -->
 ```ts
-export let foo: { bar: number } | null = null
+export let foo: { bar: number } | null = null;
 
 $: console.log(foo && foo.bar);
                    // ^ never type
@@ -139,13 +142,13 @@ For example:
 
 ```svelte
 <script lang="ts">
-export let foo: { bar: number } | null = null
+  export let foo: { bar: number } | null = null;
 
-$: console.log(foo && foo.bar);
+  $: console.log(foo && foo.bar);
 
-$: r = foo && foo.bar;
+  $: r = foo && foo.bar;
 
-$: ({ bar: n } = foo || { bar: 42 });
+  $: ({ bar: n } = foo || { bar: 42 });
 </script>
 
 {foo && foo.bar}
@@ -154,26 +157,24 @@ $: ({ bar: n } = foo || { bar: 42 });
 Parse the following virtual script code as a script:
 
 ```ts
-                  
-export let foo: { bar: number } | null = null
+export let foo: { bar: number } | null = null;
 
-$: function $_reactiveStatementScopeFunction1(){
-    console.log(foo && foo.bar);
+$: function $_reactiveStatementScopeFunction1() {
+  console.log(foo && foo.bar);
 }
 
-$: let r =$_reactiveVariableScopeFunction2();
-function $_reactiveVariableScopeFunction2(){
-    let $_tmpVar3;
-    return ($_tmpVar3 =  foo && foo.bar);
+$: let r = $_reactiveVariableScopeFunction2();
+function $_reactiveVariableScopeFunction2() {
+  let $_tmpVar3;
+  return ($_tmpVar3 = foo && foo.bar);
 }
 
-$: let { bar: n } =$_reactiveVariableScopeFunction4();
-function $_reactiveVariableScopeFunction4(){
-    let $_tmpVar5;
-    return ($_tmpVar5 =  foo || { bar: 42 });
+$: let { bar: n } = $_reactiveVariableScopeFunction4();
+function $_reactiveVariableScopeFunction4() {
+  let $_tmpVar5;
+  return ($_tmpVar5 = foo || { bar: 42 });
 }
-;function $_render6(){        
-
-(foo && foo.bar);
+function $_render6() {
+  foo && foo.bar;
 }
 ```
