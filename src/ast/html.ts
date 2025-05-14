@@ -31,6 +31,7 @@ export type SvelteHTMLNode =
   | SvelteAttribute
   | SvelteShorthandAttribute
   | SvelteSpreadAttribute
+  | SvelteAttachTag
   | SvelteDirective
   | SvelteStyleDirective
   | SvelteSpecialDirective
@@ -142,6 +143,7 @@ export interface SvelteStartTag extends BaseNode {
     | SvelteAttribute
     | SvelteShorthandAttribute
     | SvelteSpreadAttribute
+    | SvelteAttachTag
     | SvelteDirective
     | SvelteStyleDirective
     | SvelteSpecialDirective
@@ -538,6 +540,12 @@ export interface SvelteShorthandAttribute extends BaseNode {
 export interface SvelteSpreadAttribute extends BaseNode {
   type: "SvelteSpreadAttribute";
   argument: ESTree.Expression;
+  parent: SvelteStartTag;
+}
+
+export interface SvelteAttachTag extends BaseNode {
+  type: "SvelteAttachTag";
+  expression: ESTree.Expression;
   parent: SvelteStartTag;
 }
 

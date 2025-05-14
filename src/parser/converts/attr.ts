@@ -3,6 +3,7 @@ import type {
   SvelteAnimationDirective,
   SvelteAttribute,
   SvelteShorthandAttribute,
+  SvelteAttachTag,
   SvelteBindingDirective,
   SvelteClassDirective,
   SvelteDirective,
@@ -56,6 +57,7 @@ export function* convertAttributes(
   | SvelteAttribute
   | SvelteShorthandAttribute
   | SvelteSpreadAttribute
+  | SvelteAttachTag
   | SvelteDirective
   | SvelteStyleDirective
 > {
@@ -66,6 +68,10 @@ export function* convertAttributes(
     }
     if (attr.type === "SpreadAttribute" || attr.type === "Spread") {
       yield convertSpreadAttribute(attr, parent, ctx);
+      continue;
+    }
+    if (attr.type === "AttachTag") {
+      yield convertAttachTag(attr, parent, ctx);
       continue;
     }
     if (attr.type === "BindDirective" || attr.type === "Binding") {
@@ -342,6 +348,25 @@ function convertSpreadAttribute(
   });
 
   return attribute;
+}
+
+function convertAttachTag(
+  node: SvAST.AttachTag | Compiler.AttachTag,
+  parent: SvelteAttachTag["parent"],
+  ctx: Context,
+): SvelteAttachTag {
+  const attachTag: SvelteAttachTag = {
+    type: "SvelteAttachTag",
+    expression: node.expression,
+    parent,
+    ...ctx.getConvertLocation(node),
+  };
+
+  ctx.scriptLet.addExpression(node.expression, attachTag, null, (es) => {
+    attachTag.expression = es;
+  });
+
+  return attachTag;
 }
 
 /** Convert for Binding Directive */
