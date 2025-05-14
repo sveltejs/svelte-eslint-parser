@@ -212,7 +212,6 @@ export interface AttachTag extends BaseNode {
 export type AttributeOrDirective =
   | Attribute
   | Spread
-  | AttachTag
   | Directive
   | StyleDirective;
 

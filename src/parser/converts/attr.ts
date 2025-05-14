@@ -49,6 +49,7 @@ export function* convertAttributes(
     | SvAST.AttributeOrDirective
     | Compiler.Attribute
     | Compiler.SpreadAttribute
+    | Compiler.AttachTag
     | Compiler.Directive
   )[],
   parent: SvelteStartTag,
