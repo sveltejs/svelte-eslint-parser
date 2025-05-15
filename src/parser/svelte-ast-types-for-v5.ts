@@ -37,6 +37,7 @@ export type SnippetBlock = AST.SnippetBlock;
 export type Comment = AST.Comment;
 export type Attribute = AST.Attribute;
 export type SpreadAttribute = AST.SpreadAttribute;
+export type AttachTag = AST.AttachTag;
 export type AnimateDirective = AST.AnimateDirective;
 export type BindDirective = AST.BindDirective;
 export type ClassDirective = AST.ClassDirective;

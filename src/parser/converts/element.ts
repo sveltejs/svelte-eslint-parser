@@ -223,13 +223,19 @@ export function* convertChildren(
 function extractLetDirectives(fragment: {
   attributes:
     | SvAST.AttributeOrDirective[]
-    | (Compiler.Attribute | Compiler.SpreadAttribute | Compiler.Directive)[];
+    | (
+        | Compiler.Attribute
+        | Compiler.SpreadAttribute
+        | Compiler.AttachTag
+        | Compiler.Directive
+      )[];
 }): {
   letDirectives: (SvAST.LetDirective | Compiler.LetDirective)[];
   attributes: Exclude<
     | SvAST.AttributeOrDirective
     | Compiler.Attribute
     | Compiler.SpreadAttribute
+    | Compiler.AttachTag
     | Compiler.Directive,
     SvAST.LetDirective | Compiler.LetDirective
   >[];
@@ -239,6 +245,7 @@ function extractLetDirectives(fragment: {
     | SvAST.AttributeOrDirective
     | Compiler.Attribute
     | Compiler.SpreadAttribute
+    | Compiler.AttachTag
     | Compiler.Directive,
     SvAST.LetDirective | Compiler.LetDirective
   >[] = [];

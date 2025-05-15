@@ -169,6 +169,7 @@ interface SvelteStartTag extends Node {
     | SvelteAttribute
     | SvelteShorthandAttribute
     | SvelteSpreadAttribute
+    | SvelteAttachTag
     | SvelteDirective
     | SvelteStyleDirective
     | SvelteSpecialDirective
@@ -448,6 +449,18 @@ interface SvelteRenderTag extends Node {
   type: "SvelteRenderTag";
   callee: Identifier;
   arguments: (Expression | SpreadElement)[];
+}
+```
+
+### SvelteAttachTag
+
+This is `{@attach}` tag node.
+
+```ts
+export interface SvelteAttachTag extends BaseNode {
+  type: "SvelteAttachTag";
+  expression: ESTree.Expression;
+  parent: SvelteStartTag;
 }
 ```
 

@@ -3,6 +3,7 @@ import type {
   SvelteAnimationDirective,
   SvelteAttribute,
   SvelteShorthandAttribute,
+  SvelteAttachTag,
   SvelteBindingDirective,
   SvelteClassDirective,
   SvelteDirective,
@@ -48,6 +49,7 @@ export function* convertAttributes(
     | SvAST.AttributeOrDirective
     | Compiler.Attribute
     | Compiler.SpreadAttribute
+    | Compiler.AttachTag
     | Compiler.Directive
   )[],
   parent: SvelteStartTag,
@@ -56,6 +58,7 @@ export function* convertAttributes(
   | SvelteAttribute
   | SvelteShorthandAttribute
   | SvelteSpreadAttribute
+  | SvelteAttachTag
   | SvelteDirective
   | SvelteStyleDirective
 > {
@@ -66,6 +69,10 @@ export function* convertAttributes(
     }
     if (attr.type === "SpreadAttribute" || attr.type === "Spread") {
       yield convertSpreadAttribute(attr, parent, ctx);
+      continue;
+    }
+    if (attr.type === "AttachTag") {
+      yield convertAttachTag(attr, parent, ctx);
       continue;
     }
     if (attr.type === "BindDirective" || attr.type === "Binding") {
@@ -342,6 +349,31 @@ function convertSpreadAttribute(
   });
 
   return attribute;
+}
+
+function convertAttachTag(
+  node: Compiler.AttachTag,
+  parent: SvelteAttachTag["parent"],
+  ctx: Context,
+): SvelteAttachTag {
+  const attachTag: SvelteAttachTag = {
+    type: "SvelteAttachTag",
+    expression: node.expression,
+    parent,
+    ...ctx.getConvertLocation(node),
+  };
+
+  ctx.scriptLet.addExpression(node.expression, attachTag, null, (es) => {
+    attachTag.expression = es;
+  });
+
+  const atAttachStart = ctx.code.indexOf("@attach", attachTag.range[0]);
+  ctx.addToken("MustacheKeyword", {
+    start: atAttachStart,
+    end: atAttachStart + 7,
+  });
+
+  return attachTag;
 }
 
 /** Convert for Binding Directive */
