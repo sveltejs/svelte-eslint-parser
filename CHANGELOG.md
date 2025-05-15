@@ -1,5 +1,11 @@
 # svelte-eslint-parser
 
+## 1.2.0
+
+### Minor Changes
+
+- [#714](https://github.com/sveltejs/svelte-eslint-parser/pull/714) [`855af3b`](https://github.com/sveltejs/svelte-eslint-parser/commit/855af3b9fe4dc94d0af025b0b443579fa6e2c507) Thanks [@baseballyama](https://github.com/baseballyama)! - feat: support `{@attach ...}`
+
 ## 1.1.3
 
 ### Patch Changes
