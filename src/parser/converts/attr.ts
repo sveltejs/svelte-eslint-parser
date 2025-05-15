@@ -352,7 +352,7 @@ function convertSpreadAttribute(
 }
 
 function convertAttachTag(
-  node: SvAST.AttachTag | Compiler.AttachTag,
+  node: Compiler.AttachTag,
   parent: SvelteAttachTag["parent"],
   ctx: Context,
 ): SvelteAttachTag {
@@ -365,6 +365,12 @@ function convertAttachTag(
 
   ctx.scriptLet.addExpression(node.expression, attachTag, null, (es) => {
     attachTag.expression = es;
+  });
+
+  const atAttachStart = ctx.code.indexOf("@attach", attachTag.range[0]);
+  ctx.addToken("MustacheKeyword", {
+    start: atAttachStart,
+    end: atAttachStart + 7,
   });
 
   return attachTag;

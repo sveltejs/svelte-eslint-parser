@@ -1,10 +1,20 @@
 <script lang="ts">
-	import type { HTMLButtonAttributes } from 'svelte/elements';
+	import tippy from 'tippy.js';
+	import Button from './Button.svelte';
+	import type { Attachment } from 'svelte/attachments';
 
-	let { children, ...props }: HTMLButtonAttributes = $props();
+	let content = $state('Hello!');
+
+	function tooltip(content: string): Attachment {
+		return (element) => {
+			const tooltip = tippy(element, { content });
+			return tooltip.destroy;
+		};
+	}
 </script>
 
-<!-- `props` includes attachments -->
-<button {...props}>
-	{@render children?.()}
-</button>
+<input bind:value={content} />
+
+<Button {@attach tooltip(content)}>
+	Hover me
+</Button>

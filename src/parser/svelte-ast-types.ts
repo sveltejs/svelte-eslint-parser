@@ -203,12 +203,6 @@ export interface AttributeShorthand extends BaseNode {
   type: "AttributeShorthand";
   expression: ESTree.Identifier;
 }
-
-export interface AttachTag extends BaseNode {
-  type: "AttachTag";
-  expression: ESTree.Expression;
-}
-
 export type AttributeOrDirective =
   | Attribute
   | Spread
