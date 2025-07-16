@@ -100,7 +100,7 @@ export default [
       parser: svelteParser,
       parserOptions: {
         sourceType: "module",
-        ecmaVersion: 2022,
+        ecmaVersion: 2024,
         ecmaFeatures: {
           globalReturn: false,
           impliedStrict: false,
