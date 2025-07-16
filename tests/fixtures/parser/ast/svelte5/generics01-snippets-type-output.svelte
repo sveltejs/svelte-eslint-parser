@@ -6,7 +6,7 @@
 		data: A[]; // data: unknown[], A: unknown
 		children: Snippet; // children: Snippet<[]>, Snippet: Snippet<Parameters>
 		row: Snippet<[A]>; // row: Snippet<[unknown]>, Snippet: Snippet<Parameters>, A: unknown
-	} = $props(); // $props(): any
+	} = $props(); // $props(): { data: unknown[]; children: Snippet<[]>; row: Snippet<[unknown]>; }
 </script>
 
 <table>

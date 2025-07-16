@@ -13,7 +13,7 @@
 //     y++
 // }`,
 //     {
-//         ecmaVersion: 2020,
+//         ecmaVersion: 2022,
 //         sourceType: "module",
 //         loc: true,
 //         range: true,

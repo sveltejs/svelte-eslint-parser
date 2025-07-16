@@ -22,7 +22,7 @@ describe("Check for typescript analyze result.", () => {
     }
     describe(inputFileName, () => {
       const parserOptions = generateParserOptions(config, {
-        ecmaVersion: 2020,
+        ecmaVersion: 2022,
         sourceType: "module",
         loc: true,
         range: true,

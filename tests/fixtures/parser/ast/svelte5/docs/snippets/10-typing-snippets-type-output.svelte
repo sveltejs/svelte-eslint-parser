@@ -5,7 +5,7 @@
 		data: any[]; // data: any[]
 		children: Snippet; // children: Snippet<[]>, Snippet: Snippet<Parameters>
 		row: Snippet<[any]>; // row: Snippet<[any]>, Snippet: Snippet<Parameters>
-	} = $props(); // $props(): any
+	} = $props(); // $props(): { data: any[]; children: Snippet<[]>; row: Snippet<[any]>; }
 </script>
 
 <table>
