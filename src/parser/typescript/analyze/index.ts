@@ -441,7 +441,7 @@ function analyzeRuneVariables(
       // See https://github.com/sveltejs/svelte/blob/3fa3dd78a1cbaa88a1571977b76bf6f02ed4231d/packages/svelte/types/index.d.ts#L3416
       case "$props": {
         // Use type parameters to avoid `@typescript-eslint/no-unsafe-assignment` errors.
-        appendDeclareFunctionVirtualScripts(globalName, ["any"]);
+        appendDeclareFunctionVirtualScripts(globalName, ["(): any"]);
         appendDeclareNamespaceVirtualScripts(globalName, [
           "export function id(): string;",
         ]);
