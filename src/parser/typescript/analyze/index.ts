@@ -458,7 +458,7 @@ function analyzeRuneVariables(
       // See https://github.com/sveltejs/svelte/blob/3fa3dd78a1cbaa88a1571977b76bf6f02ed4231d/packages/svelte/types/index.d.ts#L3502
       case "$inspect": {
         appendDeclareFunctionVirtualScripts(globalName, [
-          `<T extends any[]>(...values: T): { with: (fn: (type: 'init' | 'update', ...values: T) => void) => void };`,
+          `<T extends any[]>(...values: T): { with: (fn: (type: 'init' | 'update', ...values: T) => void) => void }`,
         ]);
         appendDeclareNamespaceVirtualScripts(globalName, [
           "export function trace(name?: string): void;",
