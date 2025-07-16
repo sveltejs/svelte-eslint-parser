@@ -1,5 +1,11 @@
 # svelte-eslint-parser
 
+## 1.3.0
+
+### Minor Changes
+
+- [#725](https://github.com/sveltejs/svelte-eslint-parser/pull/725) [`1710145`](https://github.com/sveltejs/svelte-eslint-parser/commit/1710145c2e9f3d87103276e8a8517997833aae6b) Thanks [@baseballyama](https://github.com/baseballyama)! - feat: support asynchronous svelte
+
 ## 1.2.0
 
 ### Minor Changes
