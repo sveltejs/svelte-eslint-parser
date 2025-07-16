@@ -16,7 +16,8 @@ const require = Module.createRequire(import.meta.url);
 const dirname = path.dirname(new URL(import.meta.url).pathname);
 const AST_FIXTURE_ROOT = path.resolve(dirname, "../../fixtures/parser/ast");
 const BASIC_PARSER_OPTIONS: Linter.ParserOptions = {
-  ecmaVersion: 2020,
+  ecmaVersion: 2022,
+  sourceType: "module",
   parser: {
     ts: "@typescript-eslint/parser",
     typescript: require.resolve("@typescript-eslint/parser"),

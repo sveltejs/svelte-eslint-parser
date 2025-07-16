@@ -2,10 +2,10 @@
 	import type { Snippet } from 'svelte'; // Snippet: Snippet<Parameters>, Snippet: Snippet<Parameters>
 
 	let { data, children, row }: { // data: unknown[], data: unknown[], children: Snippet<[]>, children: Snippet<[]>, row: Snippet<[unknown]>, row: Snippet<[unknown]>
-		data: T[]; // T: unknown, data: unknown[]
-		children: Snippet; // Snippet: Snippet<Parameters>, children: Snippet<[]>
-		row: Snippet<[T]>; // Snippet: Snippet<Parameters>, T: unknown, row: Snippet<[unknown]>
-	} = $props(); // $props(): { data: unknown[]; children: Snippet<[]>; row: Snippet<[unknown]>; }
+		data: T[]; // data: unknown[], T: unknown
+		children: Snippet; // children: Snippet<[]>, Snippet: Snippet<Parameters>
+		row: Snippet<[T]>; // row: Snippet<[unknown]>, Snippet: Snippet<Parameters>, T: unknown
+	} = $props(); // $props(): any
 </script>
 
 <table>

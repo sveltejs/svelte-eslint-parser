@@ -3,9 +3,9 @@
 
 	let { data, children, row }: { // data: any[], data: any[], children: Snippet<[]>, children: Snippet<[]>, row: Snippet<[any]>, row: Snippet<[any]>
 		data: any[]; // data: any[]
-		children: Snippet; // Snippet: Snippet<Parameters>, children: Snippet<[]>
-		row: Snippet<[any]>; // Snippet: Snippet<Parameters>, row: Snippet<[any]>
-	} = $props(); // $props(): { data: any[]; children: Snippet<[]>; row: Snippet<[any]>; }
+		children: Snippet; // children: Snippet<[]>, Snippet: Snippet<Parameters>
+		row: Snippet<[any]>; // row: Snippet<[any]>, Snippet: Snippet<Parameters>
+	} = $props(); // $props(): any
 </script>
 
 <table>
