@@ -3,9 +3,9 @@
 
 	type A = T // A: unknown, T: unknown
 	let { data, children, row }:{ // data: unknown[], data: unknown[], children: Snippet<[]>, children: Snippet<[]>, row: Snippet<[unknown]>, row: Snippet<[unknown]>
-		data: A[]; // A: unknown, data: unknown[]
-		children: Snippet; // Snippet: Snippet<Parameters>, children: Snippet<[]>
-		row: Snippet<[A]>; // Snippet: Snippet<Parameters>, A: unknown, row: Snippet<[unknown]>
+		data: A[]; // data: unknown[], A: unknown
+		children: Snippet; // children: Snippet<[]>, Snippet: Snippet<Parameters>
+		row: Snippet<[A]>; // row: Snippet<[unknown]>, Snippet: Snippet<Parameters>, A: unknown
 	} = $props(); // $props(): { data: unknown[]; children: Snippet<[]>; row: Snippet<[unknown]>; }
 </script>
 

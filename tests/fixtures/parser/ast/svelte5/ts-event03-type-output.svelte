@@ -1,6 +1,6 @@
 <script lang="ts">
     const {onfoo}:{ // onfoo: (e: { detail: number; }) => void, onfoo: (e: { detail: number; }) => void
-        onfoo: (e: { detail: number }) => void // e: { detail: number; }, onfoo: (e: { detail: number; }) => void
+        onfoo: (e: { detail: number }) => void // onfoo: (e: { detail: number; }) => void, e: { detail: number; }
     } = $props() // $props(): { onfoo: (e: { detail: number; }) => void; }
     onfoo({detail: 1}) // onfoo({detail: 1}): void
 </script>

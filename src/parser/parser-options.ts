@@ -41,7 +41,7 @@ export type NormalizedParserOptions = {
 /** Normalize parserOptions */
 export function normalizeParserOptions(options: any): NormalizedParserOptions {
   const parserOptions = {
-    ecmaVersion: 2020,
+    ecmaVersion: 2024,
     sourceType: "module",
     loc: true,
     range: true,

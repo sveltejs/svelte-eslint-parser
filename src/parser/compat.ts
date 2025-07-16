@@ -4,6 +4,7 @@ import type * as SvAST from "./svelte-ast-types.js";
 import type * as Compiler from "./svelte-ast-types-for-v5.js";
 
 export type Child =
+  | Compiler.AttachTag
   | Compiler.Text
   | Compiler.Tag
   | Compiler.ElementLike

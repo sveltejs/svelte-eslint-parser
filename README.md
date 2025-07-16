@@ -12,7 +12,7 @@
 
 # svelte-eslint-parser
 
-## [Svelte](https://svelte.dev/) parser for [ESLint](https://eslint.org/).
+## [Svelte](https://svelte.dev/) parser for [ESLint](https://eslint.org/)
 
 [Live DEMO](https://sveltejs.github.io/svelte-eslint-parser/playground) •
 [Discord](https://svelte.dev/chat)
@@ -100,7 +100,7 @@ export default [
       parser: svelteParser,
       parserOptions: {
         sourceType: "module",
-        ecmaVersion: 2021,
+        ecmaVersion: 2024,
         ecmaFeatures: {
           globalReturn: false,
           impliedStrict: false,
