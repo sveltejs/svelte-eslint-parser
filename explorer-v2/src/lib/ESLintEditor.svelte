@@ -3,6 +3,7 @@
 	import MonacoEditor from './MonacoEditor.svelte';
 	import { loadMonacoEditor } from './scripts/monaco-loader';
 	import { createEventDispatcher, onMount } from 'svelte';
+	import { SvelteMap } from 'svelte/reactivity';
 
 	const dispatch = createEventDispatcher();
 
@@ -16,7 +17,7 @@
 	let leftMarkers = [];
 	let rightMarkers = [];
 
-	let messageMap = new Map();
+	let messageMap = new SvelteMap();
 
 	$: showApplyFix = fix && fixedValue !== code;
 	$: {
