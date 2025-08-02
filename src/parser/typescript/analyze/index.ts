@@ -946,17 +946,18 @@ function transformForReactiveStatement(
 }
 
 /**
- * Transform for `$derived(expr)` to `$derived((()=>{ return fn(); function fn () { return expr } })())`
+ * Transform for `$derived(expr)` to `$derived((()=>{ type This = typeof this;  return fn(); function fn (this: This) { return expr } })())`
  */
 function transformForDollarDerived(
   derivedCall: TSESTree.CallExpression,
   ctx: VirtualTypeScriptContext,
 ) {
   const functionId = ctx.generateUniqueId("$derivedArgument");
+  const thisTypeId = ctx.generateUniqueId("$This");
   const expression = derivedCall.arguments[0];
   ctx.appendOriginal(expression.range[0]);
   ctx.appendVirtualScript(
-    `(()=>{return ${functionId}();function ${functionId}(){return `,
+    `(()=>{type ${thisTypeId} = typeof this; return ${functionId}();function ${functionId}(this: ${thisTypeId}){return `,
   );
   ctx.appendOriginal(expression.range[1]);
   ctx.appendVirtualScript(`}})()`);
@@ -977,21 +978,40 @@ function transformForDollarDerived(
         arg.arguments.length !== 0 ||
         arg.callee.type !== "ArrowFunctionExpression" ||
         arg.callee.body.type !== "BlockStatement" ||
-        arg.callee.body.body.length !== 2 ||
-        arg.callee.body.body[0].type !== "ReturnStatement" ||
-        arg.callee.body.body[0].argument?.type !== "CallExpression" ||
-        arg.callee.body.body[0].argument.callee.type !== "Identifier" ||
-        arg.callee.body.body[0].argument.callee.name !== functionId ||
-        arg.callee.body.body[1].type !== "FunctionDeclaration" ||
-        arg.callee.body.body[1].id.name !== functionId
+        arg.callee.body.body.length !== 3
       ) {
         return false;
       }
-      const fnNode = arg.callee.body.body[1];
+      const thisTypeNode = arg.callee.body.body[0];
       if (
+        thisTypeNode.type !== "TSTypeAliasDeclaration" ||
+        thisTypeNode.id.name !== thisTypeId
+      ) {
+        return false;
+      }
+      const returnNode = arg.callee.body.body[1];
+      if (
+        returnNode.type !== "ReturnStatement" ||
+        returnNode.argument?.type !== "CallExpression" ||
+        returnNode.argument.callee.type !== "Identifier" ||
+        returnNode.argument.callee.name !== functionId
+      ) {
+        return false;
+      }
+
+      const fnNode = arg.callee.body.body[2];
+      if (
+        fnNode.type !== "FunctionDeclaration" ||
+        fnNode.id.name !== functionId ||
         fnNode.body.body.length !== 1 ||
         fnNode.body.body[0].type !== "ReturnStatement" ||
-        !fnNode.body.body[0].argument
+        !fnNode.body.body[0].argument ||
+        fnNode.params[0]?.type !== "Identifier" ||
+        !fnNode.params[0].typeAnnotation ||
+        fnNode.params[0].typeAnnotation.typeAnnotation.type !==
+          "TSTypeReference" ||
+        fnNode.params[0].typeAnnotation.typeAnnotation.typeName.type !==
+          "Identifier"
       ) {
         return false;
       }
@@ -1002,11 +1022,16 @@ function transformForDollarDerived(
       expr.parent = node;
 
       const scopeManager = result.scopeManager as ScopeManager;
-      removeFunctionScope(arg.callee.body.body[1], scopeManager);
+      const fnScope = scopeManager.acquire(fnNode)!;
+      removeIdentifierVariable(fnNode.params[0], fnScope);
       removeIdentifierReference(
-        arg.callee.body.body[0].argument.callee,
-        scopeManager.acquire(arg.callee)!,
+        fnNode.params[0].typeAnnotation.typeAnnotation.typeName,
+        fnScope,
       );
+      removeFunctionScope(fnNode, scopeManager);
+      const scope = scopeManager.acquire(arg.callee)!;
+      removeIdentifierVariable(thisTypeNode.id, scope);
+      removeIdentifierReference(returnNode.argument.callee, scope);
       removeFunctionScope(arg.callee, scopeManager);
       return true;
     },
