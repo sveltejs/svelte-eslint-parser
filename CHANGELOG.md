@@ -1,5 +1,11 @@
 # svelte-eslint-parser
 
+## 1.3.1
+
+### Patch Changes
+
+- [#732](https://github.com/sveltejs/svelte-eslint-parser/pull/732) [`1350734`](https://github.com/sveltejs/svelte-eslint-parser/commit/1350734793ad8cf86b660aa8e3337be3c48fb5d4) Thanks [@ota-meshi](https://github.com/ota-meshi)! - fix: `$derived` argument expression to apply correct type information to `this`
+
 ## 1.3.0
 
 ### Minor Changes
