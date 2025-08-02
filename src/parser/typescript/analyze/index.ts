@@ -946,7 +946,7 @@ function transformForReactiveStatement(
 }
 
 /**
- * Transform for `$derived(expr)` to `$derived((()=>{ return fn(); function fn () { return expr } })())`
+ * Transform for `$derived(expr)` to `$derived((()=>{ type This = typeof this;  return fn(); function fn (this: This) { return expr } })())`
  */
 function transformForDollarDerived(
   derivedCall: TSESTree.CallExpression,
