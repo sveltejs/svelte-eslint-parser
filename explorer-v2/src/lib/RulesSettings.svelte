@@ -1,5 +1,6 @@
 <script>
 	import { categories } from './scripts/rules.js';
+	import { resolve } from '$app/paths';
 
 	export let rules = {};
 	let categoryState = Object.fromEntries(
@@ -90,7 +91,7 @@
 										{rule.ruleId}
 									</label>
 									<a
-										href={rule.url}
+										href={resolve(rule.url)}
 										target="_blank"
 										rel="noopener noreferrer"
 										aria-label="open in new tab"
