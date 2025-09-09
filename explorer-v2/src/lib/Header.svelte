@@ -1,36 +1,33 @@
 <script>
 	import SnsBar from './SnsBar.svelte';
 	import { page } from '$app/stores';
-	import { base as baseUrl } from '$app/paths';
+	import { resolve } from '$app/paths';
 
 	function isActive(pathname, path) {
 		const normalizedPathname = pathname.replace(/\/$/u, '');
 		const normalizedPath = path.replace(/\/$/u, '');
-		return (
-			normalizedPathname === normalizedPath || normalizedPathname === `${baseUrl}${normalizedPath}`
-		);
+		return normalizedPathname === normalizedPath || normalizedPathname === resolve(normalizedPath);
 	}
 </script>
 
 <header class="header">
 	<span class="title">svelte-eslint-parser</span>
-	<a class="menu" class:active={isActive($page.url.pathname, `/`)} href="{baseUrl}/">AST</a>
+	<a class="menu" class:active={isActive($page.url.pathname, `/`)} href={resolve('/')}>AST</a>
 	<a
 		class="menu"
 		class:active={isActive($page.url.pathname, `/playground`)}
-		href="{baseUrl}/playground">Playgroud</a
+		href={resolve('/playground')}>Playgroud</a
 	>
-	<a class="menu" class:active={isActive($page.url.pathname, `/scope`)} href="{baseUrl}/scope"
+	<a class="menu" class:active={isActive($page.url.pathname, `/scope`)} href={resolve('/scope')}
 		>Scope</a
 	>
 	<a
 		class="menu"
 		class:active={isActive($page.url.pathname, `/virtual-script-code`)}
-		href="{baseUrl}/virtual-script-code">Virtual Script Code</a
+		href={resolve('/virtual-script-code')}>Virtual Script Code</a
 	>
 	<div class="debug">
 		$page.url.pathname: {$page.url.pathname}
-		baseUrl: {baseUrl}
 	</div>
 	<SnsBar />
 	<a href="https://github.com/sveltejs/svelte-eslint-parser" class="github-link">View on GitHub</a>
