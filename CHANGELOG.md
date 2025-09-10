@@ -1,5 +1,11 @@
 # svelte-eslint-parser
 
+## 1.3.2
+
+### Patch Changes
+
+- [#747](https://github.com/sveltejs/svelte-eslint-parser/pull/747) [`eddc3e3`](https://github.com/sveltejs/svelte-eslint-parser/commit/eddc3e39937bc33693096fe56abf3421d36a8181) Thanks [@ota-meshi](https://github.com/ota-meshi)! - fix: internal function hasTypeInfo misjudging and providing insufficient type information in complex cases.
+
 ## 1.3.1
 
 ### Patch Changes
