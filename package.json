@@ -47,7 +47,7 @@
     "test": "pnpm run mocha \"tests/src/**/*.ts\" --reporter dot --timeout 60000",
     "ts": "node --import tsx/esm",
     "update-fixtures": "git add package.json && pnpm i -D svelte@4 && git checkout package.json && pnpm run run-update-fixtures && pnpm i && pnpm run run-update-fixtures",
-    "version:ci": "env-cmd -e version-ci pnpm run build:meta && changeset version"
+    "version:ci": "IN_VERSION_CI_SCRIPT=true pnpm run build:meta && changeset version"
   },
   "peerDependencies": {
     "svelte": "^3.37.0 || ^4.0.0 || ^5.0.0"
@@ -85,7 +85,6 @@
     "benchmark": "^2.1.4",
     "c8": "^10.1.3",
     "chai": "^6.0.1",
-    "env-cmd": "^11.0.0",
     "esbuild": "^0.25.9",
     "eslint": "~9.35.0",
     "eslint-config-prettier": "^10.1.8",
