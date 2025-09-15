@@ -84,10 +84,24 @@ export async function loadMonacoEditor() {
 		(editorLoaded = new Promise((resolve) => {
 			if (typeof window !== 'undefined') {
 				// eslint-disable-next-line n/no-missing-require -- ignore
-				window.require(['vs/editor/editor.main'], (r) => {
-					resolve(r);
+				window.require(['vs/editor/editor.main'], () => {
+					waitForMonacoReady().then(() => resolve(window.monaco));
 				});
 			}
 		}))
 	);
+}
+
+function waitForMonacoReady() {
+	return new Promise((resolve) => {
+		function check() {
+			if (window.monaco && window.monaco.editor && window.monaco.editor.create) {
+				resolve();
+				return;
+			}
+			setTimeout(check, 0);
+		}
+
+		check();
+	});
 }
