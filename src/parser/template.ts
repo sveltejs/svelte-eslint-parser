@@ -43,6 +43,11 @@ export function parseTemplate(
       (err as any).svelteCompilerError = e;
       throw err;
     }
+    if (Array.isArray(e.position) && typeof e.position[0] === "number") {
+      const err = new ParseError(e.message, e.position[0], ctx);
+      (err as any).svelteCompilerError = e;
+      throw err;
+    }
     throw e;
   }
 }
