@@ -1,5 +1,11 @@
 # svelte-eslint-parser
 
+## 1.3.3
+
+### Patch Changes
+
+- [#762](https://github.com/sveltejs/svelte-eslint-parser/pull/762) [`6b9cc59`](https://github.com/sveltejs/svelte-eslint-parser/commit/6b9cc5924eefc3609f05b496233391fff5c930b7) Thanks [@baseballyama](https://github.com/baseballyama)! - fix: show proper parse error position
+
 ## 1.3.2
 
 ### Patch Changes
