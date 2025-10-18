@@ -38,7 +38,7 @@
     "cover": "c8 --reporter=lcov pnpm run test",
     "debug": "pnpm run mocha \"tests/src/**/*.ts\" --reporter dot --timeout 60000",
     "eslint-fix": "pnpm run lint --fix",
-    "lint": "eslint .",
+    "lint": "eslint . --concurrency auto",
     "mocha": "pnpm run ts ./node_modules/mocha/bin/mocha.js",
     "prebuild": "pnpm run clean",
     "prerelease": "pnpm run clean && pnpm run build",

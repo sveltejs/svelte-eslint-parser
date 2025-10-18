@@ -46,6 +46,9 @@ export default [
       "@typescript-eslint/no-shadow": "off",
       "no-warning-comments": "warn",
       "jsdoc/require-jsdoc": "off",
+      // FIXME: Turning off this rule because it causes `TypeError: aVer.compare is not a function` error.
+      // Most likely the root cause needs to be fixed on the rule side.
+      "node-dependencies/compat-engines": "off",
       complexity: "off",
 
       "prettier/prettier": [
