@@ -30,7 +30,6 @@
     "parser"
   ],
   "scripts": {
-    "reinstall": "rm -rf node_modules && rm -f pnpm-lock.yaml && pnpm install",
     "benchmark": "pnpm run ts benchmark/index.ts",
     "build": "pnpm run build:meta && pnpm run build:tsc",
     "build:meta": "pnpm run ts ./tools/update-meta.ts",
@@ -48,7 +47,7 @@
     "run-update-fixtures": "pnpm run ts ./tools/update-fixtures.ts",
     "test": "pnpm run mocha \"tests/src/**/*.ts\" --reporter dot --timeout 60000",
     "ts": "node --import tsx/esm",
-    "update-fixtures": "git add package.json && pnpm i -D svelte@4 && git checkout package.json && pnpm run run-update-fixtures && pnpm i && pnpm run run-update-fixtures",
+    "update-fixtures": "git add package.json && pnpm i -D svelte@4 && pnpm run run-update-fixtures && git checkout package.json pnpm-lock.yaml && pnpm i --frozen-lockfile && pnpm run run-update-fixtures",
     "version:ci": "IN_VERSION_CI_SCRIPT=true pnpm run build:meta && changeset version"
   },
   "peerDependencies": {
