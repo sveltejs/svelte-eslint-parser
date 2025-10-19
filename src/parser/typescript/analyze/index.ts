@@ -399,11 +399,14 @@ function analyzeRuneVariables(
       continue;
     }
     switch (globalName) {
-      // See https://github.com/sveltejs/svelte/blob/3fa3dd78a1cbaa88a1571977b76bf6f02ed4231d/packages/svelte/types/index.d.ts#L3093
+      // See https://github.com/sveltejs/svelte/blob/bd2d3db6d0d7a931c2e84c38a5c537e30dda1dbe/packages/svelte/types/index.d.ts#L3124
       case "$state": {
         appendDeclareFunctionVirtualScripts(globalName, [
           "<T>(initial: T): T",
           "<T>(): T | undefined",
+        ]);
+        appendDeclareNamespaceVirtualScripts(globalName, [
+          "export function eager<T>(value: T): T",
         ]);
         appendDeclareNamespaceVirtualScripts(globalName, [
           "export function raw<T>(initial: T): T;",
