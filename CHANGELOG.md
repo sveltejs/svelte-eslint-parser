@@ -1,5 +1,11 @@
 # svelte-eslint-parser
 
+## 1.4.0
+
+### Minor Changes
+
+- [#774](https://github.com/sveltejs/svelte-eslint-parser/pull/774) [`cafbfdf`](https://github.com/sveltejs/svelte-eslint-parser/commit/cafbfdf418988393ccdce4ec29477c2764e17c09) Thanks [@baseballyama](https://github.com/baseballyama)! - feat: add `$state.eager`
+
 ## 1.3.3
 
 ### Patch Changes
