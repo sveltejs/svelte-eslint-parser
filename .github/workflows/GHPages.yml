@@ -29,10 +29,10 @@ jobs:
       - uses: actions/setup-node@v4
       - name: Install And Build
         run: |+
-          pnpm install
+          pnpm install --frozen-lockfile
           pnpm run build
           cd explorer-v2
-          pnpm install
+          pnpm install --frozen-lockfile
           pnpm run pre-build
           pnpm run build
       - name: Setup Pages
