@@ -83,30 +83,36 @@ function parseAttribute(state: State): Compiler.Attribute {
     return {
       type: "Attribute",
       name: key,
+      // name_loc is required in Svelte 5.42+
+      name_loc: null,
       value: true,
       start,
       end: keyEnd,
-    };
+    } as Compiler.Attribute;
   }
   state.skipSpaces();
   if (state.eof()) {
     return {
       type: "Attribute",
       name: key,
+      // name_loc is required in Svelte 5.42+
+      name_loc: null,
       value: true,
       start,
       end: keyEnd,
-    };
+    } as Compiler.Attribute;
   }
   // parse value
   const value = parseAttributeValue(state);
   return {
     type: "Attribute",
     name: key,
+    // name_loc is required in Svelte 5.42+
+    name_loc: null,
     value: [value],
     start,
     end: state.index,
-  };
+  } as Compiler.Attribute;
 }
 
 /** Parse HTML attribute key */

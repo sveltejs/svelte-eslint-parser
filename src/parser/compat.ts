@@ -34,9 +34,17 @@ export function getOptionsFromRoot(
 ): Compiler.SvelteOptionsRaw | null {
   const root = svelteAst as Compiler.Root;
   if (root.options) {
+    // The name "svelte:options" starts after the opening "<"
+    const nameStart = root.options.start + 1;
+    const nameEnd = nameStart + "svelte:options".length;
     return {
       type: "SvelteOptions",
       name: "svelte:options",
+      // name_loc is required in Svelte 5.42+
+      name_loc: {
+        start: { line: 0, column: nameStart },
+        end: { line: 0, column: nameEnd },
+      },
       attributes: root.options.attributes,
       fragment: {
         type: "Fragment",
@@ -44,7 +52,7 @@ export function getOptionsFromRoot(
       },
       start: root.options.start,
       end: root.options.end,
-    };
+    } as Compiler.SvelteOptionsRaw;
   }
   return null;
 }
