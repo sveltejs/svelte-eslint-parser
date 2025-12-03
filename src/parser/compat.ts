@@ -37,6 +37,8 @@ export function getOptionsFromRoot(
     return {
       type: "SvelteOptions",
       name: "svelte:options",
+      // @ts-expect-error - name_loc is required in Svelte since 5.45.3 but we can not set it.
+      name_loc: null,
       attributes: root.options.attributes,
       fragment: {
         type: "Fragment",
