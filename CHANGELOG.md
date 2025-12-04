@@ -1,5 +1,11 @@
 # svelte-eslint-parser
 
+## 1.4.1
+
+### Patch Changes
+
+- [#801](https://github.com/sveltejs/svelte-eslint-parser/pull/801) [`e1b92c0`](https://github.com/sveltejs/svelte-eslint-parser/commit/e1b92c0b68234fc7a500ce65a700e2c889cc3db1) Thanks [@baseballyama](https://github.com/baseballyama)! - fix: Support `name_loc` property
+
 ## 1.4.0
 
 ### Minor Changes
