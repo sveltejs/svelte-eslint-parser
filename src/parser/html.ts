@@ -83,6 +83,7 @@ function parseAttribute(state: State): Compiler.Attribute {
     return {
       type: "Attribute",
       name: key,
+      name_loc: null,
       value: true,
       start,
       end: keyEnd,
@@ -93,6 +94,7 @@ function parseAttribute(state: State): Compiler.Attribute {
     return {
       type: "Attribute",
       name: key,
+      name_loc: null,
       value: true,
       start,
       end: keyEnd,
@@ -103,6 +105,7 @@ function parseAttribute(state: State): Compiler.Attribute {
   return {
     type: "Attribute",
     name: key,
+    name_loc: null,
     value: [value],
     start,
     end: state.index,
