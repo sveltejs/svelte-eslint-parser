@@ -38,7 +38,7 @@ importers:
         version: 4.0.13
       '@ota-meshi/eslint-plugin':
         specifier: ^0.19.0
-        version: 0.19.0(@eslint-community/eslint-plugin-eslint-comments@4.5.0(eslint@9.38.0))(eslint-plugin-regexp@2.10.0(eslint@9.38.0))(eslint@9.38.0)
+        version: 0.19.0(@eslint-community/eslint-plugin-eslint-comments@4.5.0(eslint@9.38.0))(eslint-plugin-regexp@3.0.0(eslint@9.38.0))(eslint@9.38.0)
       '@ota-meshi/test-snapshot':
         specifier: ^1.1.1
         version: 1.1.1
@@ -121,8 +121,8 @@ importers:
         specifier: ^5.5.4
         version: 5.5.4(@types/eslint@9.6.1)(eslint-config-prettier@10.1.8(eslint@9.38.0))(eslint@9.38.0)(prettier@3.6.2)
       eslint-plugin-regexp:
-        specifier: ^2.10.0
-        version: 2.10.0(eslint@9.38.0)
+        specifier: ^3.0.0
+        version: 3.0.0(eslint@9.38.0)
       eslint-plugin-svelte:
         specifier: ^3.12.2
         version: 3.12.4(eslint@9.38.0)(svelte@5.45.4)
@@ -1184,11 +1184,11 @@ packages:
       eslint-config-prettier:
         optional: true
 
-  eslint-plugin-regexp@2.10.0:
-    resolution: {integrity: sha512-ovzQT8ESVn5oOe5a7gIDPD5v9bCSjIFJu57sVPDqgPRXicQzOnYfFN21WoQBQF18vrhT5o7UMKFwJQVVjyJ0ng==}
-    engines: {node: ^18 || >=20}
+  eslint-plugin-regexp@3.0.0:
+    resolution: {integrity: sha512-iW7hgAV8NOG6E2dz+VeKpq67YLQ9jaajOKYpoOSic2/q8y9BMdXBKkSR9gcMtbqEhNQzdW41E3wWzvhp8ExYwQ==}
+    engines: {node: ^20.19.0 || ^22.13.0 || >=24}
     peerDependencies:
-      eslint: '>=8.44.0'
+      eslint: '>=9.38.0'
 
   eslint-plugin-svelte@3.12.4:
     resolution: {integrity: sha512-hD7wPe+vrPgx3U2X2b/wyTMtWobm660PygMGKrWWYTc9lvtY8DpNFDaU2CJQn1szLjGbn/aJ3g8WiXuKakrEkw==}
@@ -1518,10 +1518,6 @@ packages:
   js-yaml@4.1.0:
     resolution: {integrity: sha512-wpxZs9NoxZaJESJGIZTyDEaYpl0FKSA+FB9aJiyemKhMwkxQg63h4T1KJgUGHpTqPDNRcmmYLugrRjJlBtWvRA==}
     hasBin: true
-
-  jsdoc-type-pratt-parser@4.8.0:
-    resolution: {integrity: sha512-iZ8Bdb84lWRuGHamRXFyML07r21pcwBrLkHEuHgEY5UbCouBwv7ECknDRKzsQIXMiqpPymqtIf8TC/shYKB5rw==}
-    engines: {node: '>=12.0.0'}
 
   jsdoc-type-pratt-parser@7.0.0:
     resolution: {integrity: sha512-c7YbokssPOSHmqTbSAmTtnVgAVa/7lumWNYqomgd5KOMyPrRve2anx6lonfOsXEQacqF9FKVUj7bLg4vRSvdYA==}
@@ -2678,12 +2674,12 @@ snapshots:
       '@nodelib/fs.scandir': 2.1.5
       fastq: 1.19.1
 
-  '@ota-meshi/eslint-plugin@0.19.0(@eslint-community/eslint-plugin-eslint-comments@4.5.0(eslint@9.38.0))(eslint-plugin-regexp@2.10.0(eslint@9.38.0))(eslint@9.38.0)':
+  '@ota-meshi/eslint-plugin@0.19.0(@eslint-community/eslint-plugin-eslint-comments@4.5.0(eslint@9.38.0))(eslint-plugin-regexp@3.0.0(eslint@9.38.0))(eslint@9.38.0)':
     dependencies:
       '@eslint-community/eslint-plugin-eslint-comments': 4.5.0(eslint@9.38.0)
       '@eslint/js': 9.38.0
       eslint: 9.38.0
-      eslint-plugin-regexp: 2.10.0(eslint@9.38.0)
+      eslint-plugin-regexp: 3.0.0(eslint@9.38.0)
       semver: 7.7.3
 
   '@ota-meshi/test-snapshot@1.1.1':
@@ -3224,13 +3220,13 @@ snapshots:
       '@types/eslint': 9.6.1
       eslint-config-prettier: 10.1.8(eslint@9.38.0)
 
-  eslint-plugin-regexp@2.10.0(eslint@9.38.0):
+  eslint-plugin-regexp@3.0.0(eslint@9.38.0):
     dependencies:
       '@eslint-community/eslint-utils': 4.9.0(eslint@9.38.0)
       '@eslint-community/regexpp': 4.12.1
       comment-parser: 1.4.1
       eslint: 9.38.0
-      jsdoc-type-pratt-parser: 4.8.0
+      jsdoc-type-pratt-parser: 7.0.0
       refa: 0.12.1
       regexp-ast-analysis: 0.7.1
       scslre: 0.3.0
@@ -3578,8 +3574,6 @@ snapshots:
   js-yaml@4.1.0:
     dependencies:
       argparse: 2.0.1
-
-  jsdoc-type-pratt-parser@4.8.0: {}
 
   jsdoc-type-pratt-parser@7.0.0: {}
 
