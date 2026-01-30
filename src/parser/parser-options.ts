@@ -27,6 +27,11 @@ export type NormalizedParserOptions = {
     // If not configured this option, The parser will try to read the option from `compilerOptions.runes` from `svelte.config.js`.
     // If `parserOptions.svelteConfig` is not specified and the file cannot be parsed by static analysis, it will behave as `true`.
     runes?: boolean;
+    // Enable virtual code caching to speed up type-aware linting.
+    // When enabled, the parser generates virtual TypeScript files for all Svelte files
+    // in the project and creates a tsconfig that includes them.
+    // Default: false
+    experimentalGenerateVirtualCodeCache?: boolean;
   };
   loc: boolean;
   range: boolean;
@@ -36,6 +41,9 @@ export type NormalizedParserOptions = {
   eslintVisitorKeys: boolean;
   eslintScopeManager: boolean;
   filePath?: string;
+
+  // Internal use: tsconfig paths for import rewriting
+  __tsconfigPaths?: Record<string, string[]> | null;
 };
 
 /** Normalize parserOptions */

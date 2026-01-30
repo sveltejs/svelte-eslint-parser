@@ -57,6 +57,8 @@ import {
 } from "./svelte-parse-context.js";
 import type { SvelteConfig } from "../svelte-config/index.js";
 import { resolveSvelteConfigFromOption } from "../svelte-config/index.js";
+import { getVirtualCodeCacheManager } from "../virtual-code/index.js";
+import { initializeVirtualCodeCache } from "./virtual-code-initializer.js";
 
 export {
   StyleContext,
@@ -115,6 +117,21 @@ type ParseResult = {
 export function parseForESLint(code: string, options?: any): ParseResult {
   const svelteConfig = resolveSvelteConfigFromOption(options);
   const parserOptions = normalizeParserOptions(options);
+
+  // Initialize virtual code cache for TypeScript type-aware linting
+  // Only enabled when svelteFeatures.experimentalGenerateVirtualCodeCache is true
+  // Note: We only initialize the cache here; the actual tsconfig/filePath replacement
+  // happens in parseTypeScriptInSvelte to ensure we have a valid virtual file path
+  if (
+    parserOptions.svelteFeatures?.experimentalGenerateVirtualCodeCache &&
+    (parserOptions.projectService || parserOptions.project)
+  ) {
+    const cacheManager = getVirtualCodeCacheManager();
+
+    if (!cacheManager.isInitialized() && parserOptions.filePath) {
+      initializeVirtualCodeCache(parserOptions.filePath, parserOptions);
+    }
+  }
 
   if (
     parserOptions.filePath &&
