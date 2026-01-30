@@ -15,7 +15,10 @@ import {
   sortedLastIndex,
 } from "../../../utils/index.js";
 import { parseScriptWithoutAnalyzeScope } from "../../script.js";
-import { VirtualTypeScriptContext } from "../context.js";
+import {
+  VirtualTypeScriptContext,
+  extractSvelteImportsFromAST,
+} from "../context.js";
 import type { TSESParseForESLintResult } from "../types.js";
 import type ESTree from "estree";
 import type { SvelteAttribute, SvelteHTMLElement } from "../../../ast/index.js";
@@ -99,6 +102,10 @@ export function analyzeTypeScriptInSvelte(
 
   ctx.appendOriginalToEnd();
 
+  // Extract .svelte imports from AST and compute their positions in virtual code
+  const svelteImportPaths = extractSvelteImportsFromAST(result.ast);
+  ctx.computeSvelteImportPositions(svelteImportPaths);
+
   return ctx;
 }
 /**
@@ -131,6 +138,10 @@ export function analyzeTypeScript(
   );
 
   ctx.appendOriginalToEnd();
+
+  // Extract .svelte imports from AST and compute their positions in virtual code
+  const svelteImportPaths = extractSvelteImportsFromAST(result.ast);
+  ctx.computeSvelteImportPositions(svelteImportPaths);
 
   return ctx;
 }

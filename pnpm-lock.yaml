@@ -17,6 +17,9 @@ importers:
       espree:
         specifier: ^10.0.0
         version: 10.4.0
+      ignore:
+        specifier: ^7.0.5
+        version: 7.0.5
       postcss:
         specifier: ^8.4.49
         version: 8.5.10
@@ -26,6 +29,9 @@ importers:
       postcss-selector-parser:
         specifier: ^7.0.0
         version: 7.1.0
+      proper-lockfile:
+        specifier: ^4.1.2
+        version: 4.1.2
       semver:
         specifier: ^7.7.2
         version: 7.7.4
@@ -43,8 +49,8 @@ importers:
         specifier: ^4.6.0
         version: 4.6.0(eslint@9.38.0)
       '@ota-meshi/eslint-plugin':
-        specifier: ^0.18.0
-        version: 0.18.0(@eslint-community/eslint-plugin-eslint-comments@4.6.0(eslint@9.38.0))(eslint-plugin-regexp@3.0.0(eslint@9.38.0))(eslint@9.38.0)
+        specifier: ^0.19.0
+        version: 0.19.0(@eslint-community/eslint-plugin-eslint-comments@4.6.0(eslint@9.38.0))(eslint-plugin-regexp@3.0.0(eslint@9.38.0))(eslint@9.38.0)
       '@ota-meshi/test-snapshot':
         specifier: ^1.1.1
         version: 1.1.1
@@ -75,6 +81,9 @@ importers:
       '@types/node':
         specifier: ^24.0.0
         version: 24.9.1
+      '@types/proper-lockfile':
+        specifier: ^4.1.4
+        version: 4.1.4
       '@types/semver':
         specifier: ^7.7.1
         version: 7.7.1
@@ -703,13 +712,13 @@ packages:
     resolution: {integrity: sha512-Jgp8rBprSMIDY0IuokbESFozd5SSa/LZsQ9/xiNooDdiy+WK2LlA51f+GjgBKq8CE4YpfK5kdBjNtbwlThApoQ==}
     engines: {node: ^20.19.0 || ^22.13.0 || >=24}
 
-  '@ota-meshi/eslint-plugin@0.18.0':
-    resolution: {integrity: sha512-xi8veF+CMqw7VKvBnFD0+9GzEJCs2sY/w3UMOO6K3WPxtqEX6NQCP7W9OVO5Ahpkuu/5jplKUzWcjE8anBJ9kQ==}
+  '@ota-meshi/eslint-plugin@0.19.0':
+    resolution: {integrity: sha512-pumFXOvJFoto805a4taS07Et7dJ/OU5TGNRqt8pgGOa3/nx5kWlxp5Q3liHow4MU99t2J4T+U7NRqpyj87tBOg==}
     engines: {node: ^18.18.0||^20.9.0||>=21.1.0}
     peerDependencies:
       '@eslint-community/eslint-plugin-eslint-comments': ^4.3.0
-      eslint: ^7.0.0 || ^8.0.0 || ^9.0.0
-      eslint-plugin-regexp: ^2.5.0
+      eslint: ^7.0.0 || ^8.0.0 || ^9.0.0 || ^10.0.0
+      eslint-plugin-regexp: ^2.5.0 || ^3.0.0
 
   '@ota-meshi/test-snapshot@1.1.1':
     resolution: {integrity: sha512-vhv9iVkUle5oUCahZiZuXCi2UbmXAjWuDST2O5xIBaV9aF1JiFnRgpzTHxPA0ZyYCsVPv/Vkw1x2p1i+mv1DXg==}
@@ -789,6 +798,12 @@ packages:
 
   '@types/node@24.9.1':
     resolution: {integrity: sha512-QoiaXANRkSXK6p0Duvt56W208du4P9Uye9hWLWgGMDTEoKPhuenzNcC4vGUmrNkiOKTlIrBoyNQYNpSwfEZXSg==}
+
+  '@types/proper-lockfile@4.1.4':
+    resolution: {integrity: sha512-uo2ABllncSqg9F1D4nugVl9v93RmjxF6LJzQLMLDdPaXCUIDPeOJ21Gbqi43xNKzBi/WQ0Q0dICqufzQbMjipQ==}
+
+  '@types/retry@0.12.5':
+    resolution: {integrity: sha512-3xSjTp3v03X/lSQLkczaN9UIEwJMoMCA1+Nb5HfbJEQWogdeQIyVtTvxPXDQjZ5zws8rFQfVfRdz03ARihPJgw==}
 
   '@types/semver@7.7.1':
     resolution: {integrity: sha512-FmgJfu+MOcQ370SD0ev7EI8TlCAfKYU+B4m5T3yXc1CiRN94g/SZPtsCkk506aUDtlMnFZvasDwHHUcZUEaYuA==}
@@ -1868,6 +1883,9 @@ packages:
     resolution: {integrity: sha512-iG+GYldRf2BQ0UDUAd6JQ/RwzaQy6mXmsk/IzlYyal4A4SNFw54MeH4/tLkF4I5WoWG9SQwuqWzS99jaFQHBuQ==}
     engines: {node: ^20.17.0 || >=22.9.0}
 
+  proper-lockfile@4.1.2:
+    resolution: {integrity: sha512-TjNPblN4BwAWMXU8s9AEz4JmQxnD1NNL7bNOY/AKUzyamc379FWASUhc/K1pL2noVb+XmZKLL68cjzLsiOAMaA==}
+
   proto-list@1.2.4:
     resolution: {integrity: sha512-vtK/94akxsTMhe0/cbfpR+syPuszcuwhqVjJq26CuNDgFGj682oRBXOP5MJpv2r7JtE8MsiepGIqvvOTBwn2vA==}
 
@@ -1938,6 +1956,10 @@ packages:
   resolve-pkg-maps@1.0.0:
     resolution: {integrity: sha512-seS2Tj26TBVOC2NIc2rOe2y2ZO7efxITtLZcGSOnHHNOQ7CkiUBfw0Iw2ck6xkIhPwLhKNLS8BO+hEpngQlqzw==}
 
+  retry@0.12.0:
+    resolution: {integrity: sha512-9LkiTwjUh6rT555DtE9rTX+BKByPfrMzEAtnlEtdEwr3Nkffwiihqe2bWADg+OQRjt9gl6ICdmB/ZFDCGAtSow==}
+    engines: {node: '>= 4'}
+
   reusify@1.1.0:
     resolution: {integrity: sha512-g6QUff04oZpHs0eG5p83rFLhHeV00ug/Yf9nZM6fLeUrPguBTkTQOdpAWWspMh55TZfVQDPaN3NQJfbVRAxdIw==}
     engines: {iojs: '>=1.0.0', node: '>=0.10.0'}
@@ -1983,6 +2005,9 @@ packages:
   shebang-regex@3.0.0:
     resolution: {integrity: sha512-7++dFhtcx3353uBaq8DDR4NuxBetBzC7ZQOhmTQInHEd6bSrXdiEyzCvG07Z44UYdLShWUyXt5M/yhz8ekcb1A==}
     engines: {node: '>=8'}
+
+  signal-exit@3.0.7:
+    resolution: {integrity: sha512-wnD2ZE+l+SPC/uoS0vXeE9L1+0wuaMqKlfz9AMUo38JsyLSBWSFcHR1Rri62LZc12vLr1gb3jl7iwQhgwpAbGQ==}
 
   signal-exit@4.1.0:
     resolution: {integrity: sha512-bzyZ1e88w9O1iNJbKnOlvYTrWPDl46O1bG0D3XInv+9tkPrxrN8jUUTiFlDkkmKWgn1M6CfIA13SuGqOa9Korw==}
@@ -2721,13 +2746,13 @@ snapshots:
 
   '@ota-meshi/ast-token-store@0.2.3': {}
 
-  '@ota-meshi/eslint-plugin@0.18.0(@eslint-community/eslint-plugin-eslint-comments@4.6.0(eslint@9.38.0))(eslint-plugin-regexp@3.0.0(eslint@9.38.0))(eslint@9.38.0)':
+  '@ota-meshi/eslint-plugin@0.19.0(@eslint-community/eslint-plugin-eslint-comments@4.6.0(eslint@9.38.0))(eslint-plugin-regexp@3.0.0(eslint@9.38.0))(eslint@9.38.0)':
     dependencies:
       '@eslint-community/eslint-plugin-eslint-comments': 4.6.0(eslint@9.38.0)
       '@eslint/js': 9.38.0
       eslint: 9.38.0
       eslint-plugin-regexp: 3.0.0(eslint@9.38.0)
-      semver: 7.7.4
+      semver: 7.8.0
 
   '@ota-meshi/test-snapshot@1.1.1':
     dependencies:
@@ -2803,6 +2828,12 @@ snapshots:
   '@types/node@24.9.1':
     dependencies:
       undici-types: 7.16.0
+
+  '@types/proper-lockfile@4.1.4':
+    dependencies:
+      '@types/retry': 0.12.5
+
+  '@types/retry@0.12.5': {}
 
   '@types/semver@7.7.1': {}
 
@@ -3928,6 +3959,12 @@ snapshots:
 
   proc-log@6.1.0: {}
 
+  proper-lockfile@4.1.2:
+    dependencies:
+      graceful-fs: 4.2.11
+      retry: 0.12.0
+      signal-exit: 3.0.7
+
   proto-list@1.2.4: {}
 
   punycode@2.3.1: {}
@@ -3987,6 +4024,8 @@ snapshots:
 
   resolve-pkg-maps@1.0.0: {}
 
+  retry@0.12.0: {}
+
   reusify@1.1.0: {}
 
   rimraf@6.0.1:
@@ -4023,6 +4062,8 @@ snapshots:
       shebang-regex: 3.0.0
 
   shebang-regex@3.0.0: {}
+
+  signal-exit@3.0.7: {}
 
   signal-exit@4.1.0: {}
 

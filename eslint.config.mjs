@@ -25,6 +25,7 @@ export default [
       "!.github",
       "explorer-v2/.svelte-kit",
       ".changeset/pre.json",
+      ".svelte-eslint-parser",
     ],
   },
   ...myPlugin.config({
