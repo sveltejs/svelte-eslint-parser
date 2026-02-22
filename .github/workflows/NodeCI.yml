@@ -45,7 +45,7 @@ jobs:
       - name: Install Packages
         run: pnpm install --frozen-lockfile
       - name: Install ESLint v10
-        run: npm set
+        run: |+
           pnpm install -D eslint@10
           rm -rf node_modules
       - name: Test
