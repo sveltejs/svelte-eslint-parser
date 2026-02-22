@@ -9,8 +9,8 @@ import type {
   Token,
 } from "../ast/index.js";
 import type { Program } from "estree";
-import type { ScopeManager } from "eslint-scope";
-import { Variable } from "eslint-scope";
+import type * as eslintScope from "eslint-scope";
+import type * as eslint from "eslint";
 import type { Rule, Node } from "postcss";
 import type {
   Node as SelectorNode,
@@ -57,6 +57,7 @@ import {
 } from "./svelte-parse-context.js";
 import type { SvelteConfig } from "../svelte-config/index.js";
 import { resolveSvelteConfigFromOption } from "../svelte-config/index.js";
+import { getESLintScope } from "./eslint-scope.js";
 
 export {
   StyleContext,
@@ -77,7 +78,7 @@ export interface ESLintExtendedProgram {
   ast: ESLintProgram;
   services?: Record<string, any>;
   visitorKeys?: { [type: string]: string[] };
-  scopeManager?: ScopeManager;
+  scopeManager?: eslint.Scope.ScopeManager;
 
   // For debug
   // The code used to parse the script.
@@ -107,7 +108,7 @@ type ParseResult = {
         }
     );
   visitorKeys: { [type: string]: string[] };
-  scopeManager: ScopeManager;
+  scopeManager: eslint.Scope.ScopeManager;
 };
 /**
  * Parse source code
@@ -297,13 +298,16 @@ function parseAsScript(
 }
 
 function addGlobalVariables(
-  scopeManager: ScopeManager,
+  scopeManager: eslint.Scope.ScopeManager,
   globals: readonly string[],
 ) {
-  const globalScope = scopeManager.globalScope;
+  const globalScope = scopeManager.globalScope!;
   for (const globalName of globals) {
     if (globalScope.set.has(globalName)) continue;
-    const variable = new Variable();
+
+    // eslint-disable-next-line @typescript-eslint/naming-convention -- class name
+    const { Variable } = getESLintScope();
+    const variable = new Variable(globalName, globalScope as eslintScope.Scope);
     variable.name = globalName;
     (variable as any).scope = globalScope;
     globalScope.variables.push(variable);

@@ -3,7 +3,7 @@ import fs from "fs";
 import semver from "semver";
 import type { Linter, Scope as ESLintScope } from "eslint";
 import { LinesAndColumns } from "../../../src/context/index.js";
-import type { Reference, Scope, ScopeManager, Variable } from "eslint-scope";
+import type { Scope, ScopeManager, Variable } from "eslint-scope";
 import type * as TSESScopes from "@typescript-eslint/scope-manager";
 import type { SvelteNode } from "../../../src/ast/index.js";
 import type { StyleContext } from "../../../src/index.js";
@@ -515,7 +515,9 @@ function normalizeVar(v: Variable | TSESScopes.Variable) {
   };
 }
 
-function normalizeReference(reference: Reference | TSESScopes.Reference) {
+function normalizeReference(
+  reference: ESLintScope.Reference | TSESScopes.Reference,
+) {
   return {
     identifier: reference.identifier,
     from: reference.from.type,

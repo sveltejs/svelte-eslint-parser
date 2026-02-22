@@ -1,4 +1,3 @@
-import type { ScopeManager, Scope, Reference, Variable } from "eslint-scope";
 import type * as ESTree from "estree";
 import type { TSESTree } from "@typescript-eslint/types";
 import { traverseNodes } from "../traverse.js";
@@ -6,6 +5,7 @@ import {
   addElementsToSortedArray,
   addElementToSortedArray,
 } from "../utils/index.js";
+import type * as eslint from "eslint";
 
 /** Remove all scope, variable, and reference */
 export function removeAllScopeAndVariableAndReference(
@@ -16,14 +16,14 @@ export function removeAllScopeAndVariableAndReference(
       | {
           readonly [type: string]: readonly string[] | undefined;
         };
-    scopeManager: ScopeManager;
+    scopeManager: eslint.Scope.ScopeManager;
   },
 ): void {
-  const targetScopes = new Set<Scope>();
+  const targetScopes = new Set<eslint.Scope.Scope>();
   traverseNodes(target, {
     visitorKeys: info.visitorKeys,
     enterNode(node) {
-      const scope = info.scopeManager.acquire(node);
+      const scope = info.scopeManager.acquire(node as ESTree.Node);
       if (scope) {
         targetScopes.add(scope);
         return;
@@ -60,9 +60,9 @@ export function removeAllScopeAndVariableAndReference(
  * Gets the scope for the current node
  */
 export function getScopeFromNode(
-  scopeManager: ScopeManager,
+  scopeManager: eslint.Scope.ScopeManager,
   currentNode: ESTree.Node,
-): Scope {
+): eslint.Scope.Scope {
   let node: ESTree.Node | null = currentNode;
   for (; node; node = (node as any).parent || null) {
     const scope = scopeManager.acquire(node, false);
@@ -80,7 +80,7 @@ export function getScopeFromNode(
       return scope;
     }
   }
-  const global = scopeManager.globalScope;
+  const global = scopeManager.globalScope!;
   return global;
 }
 
@@ -88,10 +88,10 @@ export function getScopeFromNode(
  * Find the variable of a given identifier.
  */
 export function findVariable(
-  scopeManager: ScopeManager,
+  scopeManager: eslint.Scope.ScopeManager,
   node: ESTree.Identifier,
-): Variable | null {
-  let scope: Scope | null = getScopeFromNode(scopeManager, node);
+): eslint.Scope.Variable | null {
+  let scope: eslint.Scope.Scope | null = getScopeFromNode(scopeManager, node);
 
   while (scope != null) {
     const variable = scope.set.get(node.name);
@@ -106,8 +106,10 @@ export function findVariable(
 /**
  * Gets the scope for the Program node
  */
-export function getProgramScope(scopeManager: ScopeManager): Scope {
-  const globalScope = scopeManager.globalScope;
+export function getProgramScope(
+  scopeManager: eslint.Scope.ScopeManager,
+): eslint.Scope.Scope {
+  const globalScope = scopeManager.globalScope!;
   return (
     globalScope.childScopes.find((s) => s.type === "module") || globalScope
   );
@@ -120,7 +122,7 @@ export function removeIdentifierVariable(
     | TSESTree.BindingName
     | TSESTree.RestElement
     | TSESTree.DestructuringPattern,
-  scope: Scope,
+  scope: eslint.Scope.Scope,
 ): void {
   if (node.type === "ObjectPattern") {
     for (const prop of node.properties) {
@@ -189,8 +191,8 @@ export function* getAllReferences(
     | TSESTree.BindingName
     | TSESTree.RestElement
     | TSESTree.DestructuringPattern,
-  scope: Scope,
-): Iterable<Reference> {
+  scope: eslint.Scope.Scope,
+): Iterable<eslint.Scope.Reference> {
   if (node.type === "ObjectPattern") {
     for (const prop of node.properties) {
       if (prop.type === "Property") {
@@ -230,7 +232,7 @@ export function* getAllReferences(
 /** Remove reference */
 export function removeIdentifierReference(
   node: ESTree.Identifier,
-  scope: Scope,
+  scope: eslint.Scope.Scope,
 ): boolean {
   const reference = scope.references.find((ref) => ref.identifier === node);
   if (reference) {
@@ -260,7 +262,10 @@ export function removeIdentifierReference(
 }
 
 /** Remove reference */
-export function removeReference(reference: Reference, baseScope: Scope): void {
+export function removeReference(
+  reference: eslint.Scope.Reference,
+  baseScope: eslint.Scope.Scope,
+): void {
   if (reference.resolved) {
     if (reference.resolved.defs.some((d) => d.name === reference.identifier)) {
       // remove var
@@ -280,7 +285,7 @@ export function removeReference(reference: Reference, baseScope: Scope): void {
     }
   }
 
-  let scope: Scope | null = baseScope;
+  let scope: eslint.Scope.Scope | null = baseScope;
   while (scope) {
     const refIndex = scope.references.indexOf(reference);
     if (refIndex >= 0) {
@@ -295,8 +300,11 @@ export function removeReference(reference: Reference, baseScope: Scope): void {
 }
 
 /** Move reference to through */
-function referencesToThrough(references: Reference[], baseScope: Scope) {
-  let scope: Scope | null = baseScope;
+function referencesToThrough(
+  references: eslint.Scope.Reference[],
+  baseScope: eslint.Scope.Scope,
+) {
+  let scope: eslint.Scope.Scope | null = baseScope;
   while (scope) {
     addAllReferences(scope.through, references);
     scope = scope.upper;
@@ -304,7 +312,10 @@ function referencesToThrough(references: Reference[], baseScope: Scope) {
 }
 
 /** Remove scope */
-export function removeScope(scopeManager: ScopeManager, scope: Scope): void {
+export function removeScope(
+  scopeManager: eslint.Scope.ScopeManager,
+  scope: eslint.Scope.Scope,
+): void {
   while (scope.childScopes[0]) {
     removeScope(scopeManager, scope.childScopes[0]);
   }
@@ -326,9 +337,9 @@ export function removeScope(scopeManager: ScopeManager, scope: Scope): void {
 }
 /** Replace scope */
 export function replaceScope(
-  scopeManager: ScopeManager,
-  scope: Scope,
-  newChildScopes: Scope[] = [],
+  scopeManager: eslint.Scope.ScopeManager,
+  scope: eslint.Scope.Scope,
+  newChildScopes: eslint.Scope.Scope[] = [],
 ): void {
   // remove scope from scopeManager
   scopeManager.scopes = scopeManager.scopes.filter((s) => s !== scope);
@@ -348,7 +359,10 @@ export function replaceScope(
   }
 
   /** Replace variableScope  */
-  function replaceVariableScope(child: Scope, replaceTarget: Scope) {
+  function replaceVariableScope(
+    child: eslint.Scope.Scope,
+    replaceTarget: eslint.Scope.Scope,
+  ) {
     if (child.variableScope === replaceTarget) {
       child.variableScope = child.upper!.variableScope;
       for (const c of child.childScopes) {
@@ -361,7 +375,10 @@ export function replaceScope(
 /**
  * Add variable to array
  */
-export function addVariable(list: Variable[], variable: Variable): void {
+export function addVariable(
+  list: eslint.Scope.Variable[],
+  variable: eslint.Scope.Variable,
+): void {
   addElementToSortedArray(list, variable, (a, b) => {
     const idA = getFirstId(a);
     const idB = getFirstId(b);
@@ -369,14 +386,17 @@ export function addVariable(list: Variable[], variable: Variable): void {
   });
 
   /** Get first id from give variable */
-  function getFirstId(v: Variable): ESTree.Identifier {
+  function getFirstId(v: eslint.Scope.Variable): ESTree.Identifier {
     return v.identifiers[0] || v.defs[0]?.name || v.references[0]?.identifier;
   }
 }
 /**
  * Add reference to array
  */
-export function addReference(list: Reference[], reference: Reference): void {
+export function addReference(
+  list: eslint.Scope.Reference[],
+  reference: eslint.Scope.Reference,
+): void {
   addElementToSortedArray(
     list,
     reference,
@@ -387,8 +407,8 @@ export function addReference(list: Reference[], reference: Reference): void {
  * Add all references to array
  */
 export function addAllReferences(
-  list: Reference[],
-  elements: Reference[],
+  list: eslint.Scope.Reference[],
+  elements: eslint.Scope.Reference[],
 ): void {
   addElementsToSortedArray(
     list,
@@ -401,7 +421,7 @@ export function addAllReferences(
  * Simplify scope data.
  * @deprecated For Debug
  */
-export function simplifyScope(scope: Scope): unknown {
+export function simplifyScope(scope: eslint.Scope.Scope): unknown {
   return {
     type: scope.type,
     childScopes: scope.childScopes.map(simplifyScope),
@@ -423,7 +443,7 @@ export function simplifyScope(scope: Scope): unknown {
  * Simplify variables data.
  * @deprecated For Debug
  */
-function simplifyVariables(variables: Variable[]) {
+function simplifyVariables(variables: eslint.Scope.Variable[]) {
   return Object.fromEntries(
     variables.map((v) => [
       v.name,
@@ -438,7 +458,7 @@ function simplifyVariables(variables: Variable[]) {
  * Simplify reference data.
  * @deprecated For Debug
  */
-function simplifyReference(reference: Reference) {
+function simplifyReference(reference: eslint.Scope.Reference) {
   return {
     name: reference.identifier.name,
     loc: JSON.stringify(reference.identifier.loc),

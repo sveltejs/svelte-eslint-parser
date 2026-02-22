@@ -4,7 +4,14 @@ export function assertResult(
   bRoot: unknown,
   _info: any,
 ): boolean {
-  const buffers = new Set([{ a: aRoot, b: bRoot, path: "$" }]);
+  const buffers = new Set([
+    {
+      a: aRoot,
+      b: bRoot,
+      path: "$",
+      parent: null as unknown,
+    },
+  ]);
   const pairs = new Map<unknown, unknown>();
   while (buffers.size) {
     for (const data of buffers) {
@@ -45,7 +52,12 @@ export function assertResult(
         }
         const len = Math.max(a.length, b.length);
         for (let index = 0; index < len; index++) {
-          buffers.add({ a: a[index], b: b[index], path: `${path}[${index}]` });
+          buffers.add({
+            a: a[index],
+            b: b[index],
+            path: `${path}[${index}]`,
+            parent: data,
+          });
         }
         continue;
       }
@@ -56,6 +68,7 @@ export function assertResult(
             a: a.get(key),
             b: b.get(key),
             path: `${path}.${key}`,
+            parent: data,
           });
         }
         continue;
@@ -76,10 +89,10 @@ export function assertResult(
       }
 
       const aKeys = Object.getOwnPropertyNames(a).filter(
-        (key) => !ignoreKey(key),
+        (key) => !ignoreKey(key, a),
       );
       const bKeys = Object.getOwnPropertyNames(b).filter(
-        (key) => !ignoreKey(key),
+        (key) => !ignoreKey(key, b),
       );
       const keys = new Set([...aKeys, ...bKeys]);
       for (const key of keys) {
@@ -95,14 +108,24 @@ export function assertResult(
           a: aVal,
           b: bVal,
           path: `${path}.${key}`,
+          parent: data,
         });
       }
     }
   }
   return true;
 
-  function ignoreKey(key: string): boolean {
-    return key === "$id" || key === "implicit";
+  function ignoreKey(key: string, obj: object): boolean {
+    if (key === "$id" || key === "implicit") {
+      // Always ignore these keys
+      return true;
+    }
+    if (key === "argument" && (obj as any).type === "TSImportType") {
+      // Ignore the "argument" property of TSImportType.
+      // Because the "argument" property is a duplicated property that is not used in the latest version of typescript-eslint
+      return true;
+    }
+    return false;
   }
 
   function error(_path: string, message: string): Error {

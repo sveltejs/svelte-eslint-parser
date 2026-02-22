@@ -1,6 +1,6 @@
 import type ESTree from "estree";
-import type { Scope, ScopeManager } from "eslint-scope";
-import { Variable, Reference, analyze } from "eslint-scope";
+import type * as eslintScope from "eslint-scope";
+import type * as eslint from "eslint";
 import { getFallbackKeys } from "../traverse.js";
 import type {
   SvelteReactiveStatement,
@@ -17,13 +17,15 @@ import { addElementToSortedArray } from "../utils/index.js";
 import type { NormalizedParserOptions } from "./parser-options.js";
 import type { SvelteParseContext } from "./svelte-parse-context.js";
 import { getGlobalsForSvelte } from "./globals.js";
+import { getESLintScope } from "./eslint-scope.js";
+
 /**
  * Analyze scope
  */
 export function analyzeScope(
   node: ESTree.Node,
   parserOptions: NormalizedParserOptions,
-): ScopeManager {
+): eslint.Scope.ScopeManager {
   const ecmaVersion = parserOptions.ecmaVersion || 2020;
   const ecmaFeatures = parserOptions.ecmaFeatures || {};
   const sourceType = parserOptions.sourceType || "module";
@@ -37,6 +39,7 @@ export function analyzeScope(
           sourceType,
         };
 
+  const { analyze } = getESLintScope();
   return analyze(root, {
     ignoreEval: true,
     nodejsScope: false,
@@ -48,15 +51,17 @@ export function analyzeScope(
 }
 
 /** Analyze reactive scope */
-export function analyzeReactiveScope(scopeManager: ScopeManager): void {
-  for (const reference of [...scopeManager.globalScope.through]) {
+export function analyzeReactiveScope(
+  scopeManager: eslint.Scope.ScopeManager,
+): void {
+  for (const reference of [...scopeManager.globalScope!.through]) {
     const parent = reference.writeExpr && getParent(reference.writeExpr);
     if (parent?.type === "AssignmentExpression") {
       const pp = getParent(parent);
       if (pp?.type === "ExpressionStatement") {
         const ppp = getParent(pp) as ESTree.Node | SvelteReactiveStatement;
         if (ppp?.type === "SvelteReactiveStatement" && ppp.label.name === "$") {
-          const referenceScope: Scope = reference.from;
+          const referenceScope = reference.from;
           if (referenceScope.type === "module") {
             // It is computed
             transformComputedVariable(parent, ppp, reference);
@@ -71,13 +76,15 @@ export function analyzeReactiveScope(scopeManager: ScopeManager): void {
   function transformComputedVariable(
     node: ESTree.AssignmentExpression,
     parent: SvelteReactiveStatement,
-    reference: Reference,
+    reference: eslint.Scope.Reference,
   ) {
-    const referenceScope: Scope = reference.from;
+    const referenceScope = reference.from;
     const name = reference.identifier.name;
     let variable = referenceScope.set.get(name);
     if (!variable) {
-      variable = new Variable();
+      // eslint-disable-next-line @typescript-eslint/naming-convention -- class name
+      const { Variable } = getESLintScope();
+      variable = new Variable(name, referenceScope as eslintScope.Scope);
       (variable as any).scope = referenceScope;
       variable.name = name;
       addElementToSortedArray(
@@ -107,7 +114,7 @@ export function analyzeReactiveScope(scopeManager: ScopeManager): void {
  * Analyze store scope. e.g. $count
  */
 export function analyzeStoreScope(
-  scopeManager: ScopeManager,
+  scopeManager: eslint.Scope.ScopeManager,
   svelteParseContext: SvelteParseContext,
 ): void {
   const moduleScope = scopeManager.scopes.find(
@@ -116,11 +123,11 @@ export function analyzeStoreScope(
   if (!moduleScope) {
     return;
   }
-  const toBeMarkAsUsedReferences: Reference[] = [];
+  const toBeMarkAsUsedReferences: eslint.Scope.Reference[] = [];
 
   const globals = getGlobalsForSvelte(svelteParseContext);
 
-  for (const reference of [...scopeManager.globalScope.through]) {
+  for (const reference of [...scopeManager.globalScope!.through]) {
     if (
       reference.identifier.name.startsWith("$") &&
       !globals.includes(reference.identifier.name as never)
@@ -174,7 +181,7 @@ export function analyzeStoreScope(
 /** Transform props exports */
 export function analyzePropsScope(
   body: SvelteScriptElement,
-  scopeManager: ScopeManager,
+  scopeManager: eslint.Scope.ScopeManager,
   svelteParseContext: SvelteParseContext,
 ): void {
   const moduleScope = scopeManager.scopes.find(
@@ -265,7 +272,10 @@ export function analyzePropsScope(
   }
 
   /** Add virtual prop reference */
-  function addPropReference(node: ESTree.Identifier, scope: Scope) {
+  function addPropReference(
+    node: ESTree.Identifier,
+    scope: eslint.Scope.Scope,
+  ) {
     for (const variable of scope.variables) {
       if (variable.name !== node.name) {
         continue;
@@ -302,7 +312,7 @@ export function analyzePropsScope(
 /** Analyze snippets in component scope */
 export function analyzeSnippetsScope(
   snippets: SvelteSnippetBlock[],
-  scopeManager: ScopeManager,
+  scopeManager: eslint.Scope.ScopeManager,
 ): void {
   for (const snippet of snippets) {
     const parent = snippet.parent;
@@ -344,10 +354,13 @@ export function analyzeSnippetsScope(
 }
 
 /** Remove reference from through */
-function removeReferenceFromThrough(reference: Reference, baseScope: Scope) {
+function removeReferenceFromThrough(
+  reference: eslint.Scope.Reference,
+  baseScope: eslint.Scope.Scope,
+) {
   const variable = reference.resolved!;
   const name = reference.identifier.name;
-  let scope: Scope | null = baseScope;
+  let scope: eslint.Scope.Scope | null = baseScope;
   while (scope) {
     scope.through = scope.through.filter((ref) => {
       if (reference === ref) {
@@ -370,11 +383,22 @@ function removeReferenceFromThrough(reference: Reference, baseScope: Scope) {
  */
 function addVirtualReference(
   node: ESTree.Identifier,
-  variable: Variable,
-  scope: Scope,
+  variable: eslint.Scope.Variable,
+  scope: eslint.Scope.Scope,
   readWrite: { read?: boolean; write?: boolean },
-) {
-  const reference = new Reference();
+): eslint.Scope.Reference {
+  // eslint-disable-next-line @typescript-eslint/naming-convention -- class name
+  const { Reference } = getESLintScope();
+  const reference: eslint.Scope.Reference = new Reference(
+    node,
+    scope as eslintScope.Scope,
+    (readWrite.write ? 0x1 : 0) | (readWrite.read ? 0x2 : 0),
+    null,
+    false,
+    false,
+    // for backwards compatibility
+    null as any,
+  );
   (reference as any).svelteVirtualReference = true;
   reference.from = scope;
   reference.identifier = node;
