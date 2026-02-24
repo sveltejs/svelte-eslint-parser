@@ -21,12 +21,11 @@ const config = {
 			util: resolve('./build-system/shim/util.js'),
 			fs: resolve('./build-system/shim/fs.js'),
 			module: resolve('./build-system/shim/module.js'),
+			'node:module': resolve('./build-system/shim/module.js'),
 
 			globby: resolve('./build-system/shim/globby.js'),
 			'fast-glob': resolve('./build-system/shim/fast-glob.js'),
-			tslib: resolve('./node_modules/tslib/tslib.es6.js'),
-			'svelte-eslint-parser': resolve('./build-system/shim/svelte-eslint-parser.js'),
-			'svelte/compiler': resolve('./build-system/shim/svelte/compiler.js')
+			tslib: resolve('./node_modules/tslib/tslib.es6.js')
 		}
 	},
 	define: {

@@ -5,7 +5,8 @@ export default {
 	resolve,
 	dirname,
 	basename,
-	parse
+	parse,
+	relative
 };
 
 export function extname(p) {
@@ -38,4 +39,7 @@ export function dirname(p) {
 export function basename(p, ext) {
 	const base = p.split('/').pop() || p;
 	return base.endsWith(ext) ? base.slice(0, -ext.length) : base;
+}
+export function relative(_from, to) {
+	return to;
 }

@@ -4,6 +4,7 @@
 
 <script>
 	import { onDestroy, onMount, createEventDispatcher } from 'svelte';
+	import { DARK_THEME_NAME } from './scripts/monaco-loader';
 
 	const dispatch = createEventDispatcher();
 
@@ -66,7 +67,7 @@
 		const options = {
 			value: code,
 			readOnly,
-			theme: 'vs-dark',
+			theme: DARK_THEME_NAME,
 			language,
 			automaticLayout: true,
 			fontSize: 14,

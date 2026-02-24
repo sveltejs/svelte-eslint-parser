@@ -1,40 +1,44 @@
-async function setupMonaco() {
-	if (typeof window !== 'undefined') {
-		const monacoScript =
-			Array.from(document.head.querySelectorAll('script')).find(
-				(script) => script.src && script.src.includes('monaco') && script.src.includes('vs/loader')
-			) || (await appendMonacoEditorScript());
-		window.require.config({
-			paths: {
-				vs: monacoScript.src.replace(/\/vs\/.*$/u, '/vs')
-			},
-			'vs/nls': {
-				availableLanguages: {
-					'*': 'ja'
-				}
-			}
-		});
-	}
+export const DARK_THEME_NAME = 'github-dark';
+export const LIGHT_THEME_NAME = 'github-light';
+
+let editorLoaded = null;
+
+export async function loadMonacoEditor() {
+	let rawMonaco = await (editorLoaded || (editorLoaded = loadMonacoFromEsmCdn()));
+	const monaco = 'm' in rawMonaco ? rawMonaco.m || rawMonaco : rawMonaco;
+	setupEnhancedLanguages(monaco);
+	await new Promise((resolve) => setTimeout(resolve, 1000));
+	return monaco;
 }
 
-async function appendMonacoEditorScript() {
+/** Load the Monaco editor from the ESM CDN. */
+async function loadMonacoFromEsmCdn() {
 	let error = new Error();
 	const urlList = [
-		'https://cdn.jsdelivr.net/npm/monaco-editor/dev/vs/loader.min.js',
-		'https://unpkg.com/monaco-editor@latest/min/vs/loader.js'
+		{
+			script: 'https://cdn.jsdelivr.net/npm/monaco-editor/+esm',
+			style: 'https://cdn.jsdelivr.net/npm/monaco-editor/min/vs/editor/editor.main.css'
+		}
 	];
 
 	/* global MONACO_EDITOR_VERSION -- Define monaco-editor version */
 	if (typeof MONACO_EDITOR_VERSION !== 'undefined') {
-		urlList.unshift(
-			`https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/${MONACO_EDITOR_VERSION}/min/vs/loader.min.js`,
-			`https://cdn.jsdelivr.net/npm/monaco-editor@${MONACO_EDITOR_VERSION}/dev/vs/loader.min.js`,
-			`https://unpkg.com/monaco-editor/${MONACO_EDITOR_VERSION}/min/vs/loader.min.js`
-		);
+		urlList.unshift({
+			script: `https://cdn.jsdelivr.net/npm/monaco-editor@${MONACO_EDITOR_VERSION}/+esm`,
+			style: `https://cdn.jsdelivr.net/npm/monaco-editor@${MONACO_EDITOR_VERSION}/min/vs/editor/editor.main.css`
+		});
 	}
 	for (const url of urlList) {
 		try {
-			return await appendScript(url);
+			const result = await importFromCDN(url.script);
+
+			if (typeof document !== 'undefined') {
+				const link = document.createElement('link');
+				link.rel = 'stylesheet';
+				link.href = url.style;
+				document.head.append(link);
+			}
+			return result;
 		} catch (e) {
 			// eslint-disable-next-line no-console -- OK
 			console.warn(`Failed to retrieve resource from ${url}`);
@@ -44,64 +48,61 @@ async function appendMonacoEditorScript() {
 	throw error;
 }
 
-/** Appends a script tag. */
-function appendScript(src) {
-	const script = document.createElement('script');
-
-	return new Promise((resolve, reject) => {
-		script.src = src;
-		script.onload = () => {
-			script.onload = null;
-
-			watch();
-
-			function watch() {
-				// @ts-expect-error -- global Monaco's require
-				if (window.require) {
-					resolve(script);
-
-					return;
-				}
-
-				setTimeout(watch, 200);
-			}
-		};
-		script.onerror = (e) => {
-			reject(e);
-			document.head.removeChild(script);
-		};
-		document.head.append(script);
+/**
+ * Register a syntax highlighter using Shiki.
+ */
+async function setupEnhancedLanguages(monaco) {
+	const monacoLanguageIds = new Set(monaco.languages.getLanguages().map((l) => l.id));
+	const [shikiWeb, shikiMonaco, oniguruma] = await Promise.all([
+		importFromEsmSh('shiki/bundle/web'),
+		importFromEsmSh('@shikijs/monaco'),
+		importFromEsmSh('shiki/engine/oniguruma')
+	]);
+	const highlighter = await shikiWeb.createHighlighter({
+		themes: [DARK_THEME_NAME, LIGHT_THEME_NAME],
+		langs: [],
+		engine: oniguruma.createOnigurumaEngine(importFromEsmSh('shiki/wasm'))
 	});
-}
-
-let setupedMonaco = null;
-let editorLoaded = null;
-
-export async function loadMonacoEditor() {
-	await (setupedMonaco || (setupedMonaco = setupMonaco()));
-	return (
-		editorLoaded ||
-		(editorLoaded = new Promise((resolve) => {
-			if (typeof window !== 'undefined') {
-				// eslint-disable-next-line n/no-missing-require -- ignore
-				window.require(['vs/editor/editor.main'], () => {
-					waitForMonacoReady().then(() => resolve(window.monaco));
-				});
+	// Register the themes from Shiki, and provide syntax highlighting for Monaco.
+	shikiMonaco.shikiToMonaco(highlighter, monaco);
+	await Promise.all(
+		['javascript', 'typescript', 'json', 'html', 'svelte'].map(async (id) => {
+			if (!monacoLanguageIds.has(id)) {
+				monaco.languages.register({ id });
 			}
-		}))
+			await registerShikiHighlighter(monaco, highlighter, id);
+		})
 	);
 }
 
-function waitForMonacoReady() {
-	return new Promise((resolve) => {
-		function check() {
-			if (window.monaco && window.monaco.editor && window.monaco.editor.create) {
-				resolve();
-				return;
-			}
-			setTimeout(check, 0);
-		}
+async function registerShikiHighlighter(monaco, highlighter, languageId) {
+	const models = monaco.editor.getModels().filter((model) => model.getLanguageId() === languageId);
+	if (!models.length) {
+		monaco.languages.onLanguageEncountered(languageId, async () => {
+			await registerShikiHighlighterLanguage(monaco, highlighter, languageId);
+		});
+	} else {
+		await registerShikiHighlighterLanguage(monaco, highlighter, languageId);
+	}
+}
 
-		check();
+async function registerShikiHighlighterLanguage(monaco, highlighter, languageId) {
+	const [shikiMonaco] = await Promise.all([importFromEsmSh('@shikijs/monaco')]);
+	await highlighter.loadLanguage(languageId);
+	const editorThemes = monaco.editor.getEditors().map((editor) => {
+		return [editor, editor.getRawOptions().theme];
 	});
+	// Register the themes from Shiki, and provide syntax highlighting for Monaco.
+	shikiMonaco.shikiToMonaco(highlighter, monaco);
+	for (const [editor, theme] of editorThemes) {
+		editor.updateOptions({ theme });
+	}
+}
+
+function importFromCDN(path) {
+	return import(/* @vite-ignore */ path);
+}
+
+function importFromEsmSh(path) {
+	return importFromCDN(`https://esm.sh/${path}`);
 }
