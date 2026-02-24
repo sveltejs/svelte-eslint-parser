@@ -1,5 +1,5 @@
 import type { TSESTree } from "@typescript-eslint/types";
-import type { ScopeManager } from "eslint-scope";
+import type * as eslint from "eslint";
 import {
   addAllReferences,
   addVariable,
@@ -158,7 +158,9 @@ function analyzeStoreReferenceNames(
 ) {
   const globals = getGlobalsForSvelte(svelteParseContext);
   const scopeManager = result.scopeManager;
-  const programScope = getProgramScope(scopeManager as ScopeManager);
+  const programScope = getProgramScope(
+    scopeManager as eslint.Scope.ScopeManager,
+  );
   const maybeStoreRefNames = new Set<string>();
 
   for (const reference of scopeManager.globalScope!.through) {
@@ -195,7 +197,7 @@ function analyzeStoreReferenceNames(
       const program = result.ast;
       program.body.splice(program.body.indexOf(node), 1);
 
-      const scopeManager = result.scopeManager as ScopeManager;
+      const scopeManager = result.scopeManager as eslint.Scope.ScopeManager;
       // Remove `type` scope
       removeAllScopeAndVariableAndReference(node, {
         visitorKeys: result.visitorKeys,
@@ -222,7 +224,7 @@ function analyzeStoreReferenceNames(
         const program = result.ast;
         program.body.splice(program.body.indexOf(node), 1);
 
-        const scopeManager = result.scopeManager as ScopeManager;
+        const scopeManager = result.scopeManager as eslint.Scope.ScopeManager;
 
         // Remove `declare` variable
         removeAllScopeAndVariableAndReference(node, {
@@ -335,7 +337,7 @@ function analyzeDollarDollarVariables(
       const program = result.ast;
       program.body.splice(program.body.indexOf(node), 1);
 
-      const scopeManager = result.scopeManager as ScopeManager;
+      const scopeManager = result.scopeManager as eslint.Scope.ScopeManager;
 
       // Remove `declare` variable
       removeAllScopeAndVariableAndReference(node, {
@@ -364,7 +366,7 @@ function appendDummyExport(ctx: VirtualTypeScriptContext) {
     const program = result.ast;
     program.body.splice(program.body.indexOf(node), 1);
 
-    const scopeManager = result.scopeManager as ScopeManager;
+    const scopeManager = result.scopeManager as eslint.Scope.ScopeManager;
 
     // Remove `declare` variable
     removeAllScopeAndVariableAndReference(node, {
@@ -497,7 +499,7 @@ function analyzeRuneVariables(
         const program = result.ast;
         program.body.splice(program.body.indexOf(node), 1);
 
-        const scopeManager = result.scopeManager as ScopeManager;
+        const scopeManager = result.scopeManager as eslint.Scope.ScopeManager;
 
         // Remove `declare` variable
         removeAllScopeAndVariableAndReference(node, {
@@ -528,7 +530,7 @@ function analyzeRuneVariables(
         const program = result.ast;
         program.body.splice(program.body.indexOf(node), 1);
 
-        const scopeManager = result.scopeManager as ScopeManager;
+        const scopeManager = result.scopeManager as eslint.Scope.ScopeManager;
 
         // Remove `declare` variable
         removeAllScopeAndVariableAndReference(node, {
@@ -663,7 +665,7 @@ function analyzeRenderScopes(
       body.parent = program;
     }
 
-    const scopeManager = result.scopeManager as ScopeManager;
+    const scopeManager = result.scopeManager as eslint.Scope.ScopeManager;
     removeFunctionScope(node.declaration, scopeManager);
     return true;
   });
@@ -890,7 +892,7 @@ function transformForDeclareReactiveVar(
       (a, b) => a.range[0] - b.range[0],
     );
 
-    const scopeManager = result.scopeManager as ScopeManager;
+    const scopeManager = result.scopeManager as eslint.Scope.ScopeManager;
     removeAllScopeAndVariableAndReference(tmpVarDeclaration, {
       visitorKeys: result.visitorKeys,
       scopeManager,
@@ -942,7 +944,7 @@ function transformForReactiveStatement(
     reactiveStatement.body = body.declaration.body.body[0];
     reactiveStatement.body.parent = reactiveStatement;
 
-    const scopeManager = result.scopeManager as ScopeManager;
+    const scopeManager = result.scopeManager as eslint.Scope.ScopeManager;
     removeFunctionScope(body.declaration, scopeManager);
     return true;
   });
@@ -1024,15 +1026,15 @@ function transformForDollarDerived(
       node.arguments[0] = expr;
       expr.parent = node;
 
-      const scopeManager = result.scopeManager as ScopeManager;
-      const fnScope = scopeManager.acquire(fnNode)!;
+      const scopeManager = result.scopeManager as eslint.Scope.ScopeManager;
+      const fnScope = scopeManager.acquire(fnNode as ESTree.Node)!;
       removeIdentifierVariable(fnNode.params[0], fnScope);
       removeIdentifierReference(
         fnNode.params[0].typeAnnotation.typeAnnotation.typeName,
         fnScope,
       );
       removeFunctionScope(fnNode, scopeManager);
-      const scope = scopeManager.acquire(arg.callee)!;
+      const scope = scopeManager.acquire(arg.callee as ESTree.Node)!;
       removeIdentifierVariable(thisTypeNode.id, scope);
       removeIdentifierReference(returnNode.argument.callee, scope);
       removeFunctionScope(arg.callee, scopeManager);
@@ -1047,9 +1049,9 @@ function removeFunctionScope(
     | TSESTree.FunctionDeclaration
     | TSESTree.FunctionExpression
     | TSESTree.ArrowFunctionExpression,
-  scopeManager: ScopeManager,
+  scopeManager: eslint.Scope.ScopeManager,
 ) {
-  const scope = scopeManager.acquire(node)!;
+  const scope = scopeManager.acquire(node as ESTree.Node)!;
   const upper = scope.upper!;
   // Remove render function variable
   if (node.id) {

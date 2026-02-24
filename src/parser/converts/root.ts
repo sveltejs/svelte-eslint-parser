@@ -13,7 +13,7 @@ import {} from "./common.js";
 import type { Context } from "../../context/index.js";
 import { convertChildren, extractElementTags } from "./element.js";
 import { convertAttributes } from "./attr.js";
-import type { Scope } from "eslint-scope";
+import type * as eslint from "eslint";
 import { parseScriptWithoutAnalyzeScope } from "../script.js";
 import type { TSESParseForESLintResult } from "../typescript/types.js";
 import type * as ESTree from "estree";
@@ -184,7 +184,7 @@ export function convertSvelteRoot(
       _comments,
       { scopeManager, registerNodeToScope, addPostProcess },
     ) => {
-      const scopes: Scope[] = [];
+      const scopes: eslint.Scope.Scope[] = [];
       for (const scope of scopeManager.scopes) {
         if (scope.block === node) {
           registerNodeToScope(ast, scope);
@@ -195,7 +195,7 @@ export function convertSvelteRoot(
         // Reverts the node indicated by `block` to the original Program node.
         // This state is incorrect, but `eslint-utils`'s `referenceTracker.iterateEsmReferences()` tracks import statements
         // from Program nodes set to `block` in global scope. This can only be handled by the original Program node.
-        scopeManager.globalScope.block = node;
+        scopeManager.globalScope!.block = node;
       });
     },
   );

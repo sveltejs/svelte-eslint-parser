@@ -1,11 +1,10 @@
 import type { SvelteConfig } from "./index.js";
 import type * as ESTree from "estree";
 import type { Scope } from "eslint";
-import type { ScopeManager } from "eslint-scope";
 import { getFallbackKeys, traverseNodes } from "../traverse.js";
 import { getEspree } from "../parser/espree.js";
-import { analyze } from "eslint-scope";
 import { findVariable } from "../scope/index.js";
+import { getESLintScope } from "../parser/eslint-scope.js";
 
 export function parseConfig(code: string): SvelteConfig | null {
   const espree = getEspree();
@@ -25,6 +24,7 @@ export function parseConfig(code: string): SvelteConfig | null {
     },
   });
   // Analyze scopes.
+  const { analyze } = getESLintScope();
   const scopeManager = analyze(ast, {
     ignoreEval: true,
     nodejsScope: false,
@@ -37,7 +37,7 @@ export function parseConfig(code: string): SvelteConfig | null {
 
 function parseAst(
   ast: ESTree.Program,
-  scopeManager: ScopeManager,
+  scopeManager: Scope.ScopeManager,
 ): SvelteConfig {
   const edd = ast.body.find(
     (node): node is ESTree.ExportDefaultDeclaration =>
@@ -52,7 +52,7 @@ function parseAst(
 
 function parseSvelteConfigExpression(
   node: ESTree.Expression,
-  scopeManager: ScopeManager,
+  scopeManager: Scope.ScopeManager,
 ): SvelteConfig {
   const evaluated = evaluateExpression(node, scopeManager);
   if (evaluated?.type !== EvaluatedType.object) return {};
@@ -180,7 +180,7 @@ class EvaluatedObject {
 
 function evaluateExpression(
   node: ESTree.Expression,
-  scopeManager: ScopeManager,
+  scopeManager: Scope.ScopeManager,
 ): Evaluated | null {
   const tracked = new Map<ESTree.Identifier, Scope.Definition[]>();
   return parseExpression(node);

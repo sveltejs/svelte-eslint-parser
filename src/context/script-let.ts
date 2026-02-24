@@ -1,4 +1,4 @@
-import type { ScopeManager, Scope } from "eslint-scope";
+import type * as eslint from "eslint";
 import type * as ESTree from "estree";
 import type { TSESTree } from "@typescript-eslint/types";
 import type { Scope as TSScope } from "@typescript-eslint/scope-manager";
@@ -43,9 +43,9 @@ export type ScriptLetCallback<E extends ESTree.Node> = (
 ) => void;
 
 export type ScriptLetCallbackOption = {
-  getScope: (node: ESTree.Node) => Scope;
-  registerNodeToScope: (node: any, scope: Scope) => void;
-  scopeManager: ScopeManager;
+  getScope: (node: ESTree.Node) => eslint.Scope.Scope;
+  registerNodeToScope: (node: any, scope: eslint.Scope.Scope) => void;
+  scopeManager: eslint.Scope.ScopeManager;
   visitorKeys?: { [type: string]: string[] };
 };
 export type ScriptLetRestoreCallback = (
@@ -55,9 +55,9 @@ export type ScriptLetRestoreCallback = (
   options: ScriptLetRestoreCallbackOption,
 ) => void;
 type ScriptLetRestoreCallbackOption = {
-  getScope: (node: ESTree.Node) => Scope;
-  registerNodeToScope: (node: any, scope: Scope) => void;
-  scopeManager: ScopeManager;
+  getScope: (node: ESTree.Node) => eslint.Scope.Scope;
+  registerNodeToScope: (node: any, scope: eslint.Scope.Scope) => void;
+  scopeManager: eslint.Scope.ScopeManager;
   visitorKeys?: { [type: string]: string[] };
   addPostProcess: (callback: () => void) => void;
 };
@@ -913,7 +913,7 @@ export class ScriptLetContext {
     }
 
     /** Register node to scope */
-    function registerNodeToScope(node: any, scope: Scope): void {
+    function registerNodeToScope(node: any, scope: eslint.Scope.Scope): void {
       // If we replace the `scope.block` at this time,
       // the scope restore calculation will not work, so we will replace the `scope.block` later.
       postprocessList.push(() => {
@@ -1222,14 +1222,14 @@ function getTokenIndex(
 
 /** Get the node to scope map from given scope manager  */
 function getNodeToScope(
-  scopeManager: ScopeManager,
-): WeakMap<ESTree.Node, Scope[]> {
+  scopeManager: eslint.Scope.ScopeManager,
+): WeakMap<ESTree.Node, eslint.Scope.Scope[]> {
   if ("__nodeToScope" in scopeManager) {
     return (scopeManager as any).__nodeToScope;
   }
 
   // transform scopeManager
-  const nodeToScope = new WeakMap<ESTree.Node, Scope[]>();
+  const nodeToScope = new WeakMap<ESTree.Node, eslint.Scope.Scope[]>();
   for (const scope of scopeManager.scopes) {
     const scopes = nodeToScope.get(scope.block);
     if (scopes) {
@@ -1242,7 +1242,7 @@ function getNodeToScope(
     /**
      * predicate
      */
-    function predicate(testScope: Scope) {
+    function predicate(testScope: eslint.Scope.Scope) {
       if (testScope.type === "function" && testScope.functionExpressionScope) {
         return false;
       }
@@ -1289,8 +1289,8 @@ function getNodeToScope(
 function extractTypeNodeScopes(
   node: TSESTree.TypeNode | TSParenthesizedType,
   result: ScriptLetCallbackOption,
-): Iterable<Scope> {
-  const scopes = new Set<Scope>();
+): Iterable<eslint.Scope.Scope> {
+  const scopes = new Set<eslint.Scope.Scope>();
   for (const scope of iterateTypeNodeScopes(node)) {
     scopes.add(scope);
   }
@@ -1300,7 +1300,7 @@ function extractTypeNodeScopes(
   /** Iterate the type scope of the given node. */
   function* iterateTypeNodeScopes(
     node: TSESTree.TypeNode | TSParenthesizedType,
-  ): Iterable<Scope> {
+  ): Iterable<eslint.Scope.Scope> {
     if (node.type === "TSParenthesizedType") {
       // Skip TSParenthesizedType.
       yield* iterateTypeNodeScopes(node.typeAnnotation);

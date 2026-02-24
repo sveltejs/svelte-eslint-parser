@@ -1,11 +1,11 @@
 import { Linter } from "eslint";
 import assert from "assert";
-import * as parser from "../../../src/index";
-import type { Scope } from "eslint-scope";
+import * as parser from "../../../src/index.js";
+import type * as eslint from "eslint";
 
 function generateScopeTestCase(code: string, selector: string, type: string) {
   const linter = new Linter();
-  let scope: Scope;
+  let scope: eslint.Scope.Scope;
   linter.verify(code, {
     plugins: {
       test: {
@@ -14,7 +14,7 @@ function generateScopeTestCase(code: string, selector: string, type: string) {
             create(context) {
               return {
                 [selector](node: any) {
-                  scope = context.sourceCode.getScope(node);
+                  scope = (context.sourceCode as any).getScope(node);
                 },
               };
             },
