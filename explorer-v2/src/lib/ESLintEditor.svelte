@@ -197,7 +197,7 @@
 	<MonacoEditor
 		bind:code
 		bind:rightCode={fixedValue}
-		language="html"
+		language="svelte"
 		diffEditor={fix}
 		markers={leftMarkers}
 		{rightMarkers}

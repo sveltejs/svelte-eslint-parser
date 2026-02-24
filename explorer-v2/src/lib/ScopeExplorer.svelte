@@ -313,7 +313,7 @@
 		<MonacoEditor
 			bind:this={sourceEditor}
 			bind:code={svelteValue}
-			language="html"
+			language="svelte"
 			on:focusEditorText={() => handleFocus('source')}
 			on:changeCursorPosition={(e) => handleCursor(e.detail, 'source')}
 		/>

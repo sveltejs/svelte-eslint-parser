@@ -101,7 +101,7 @@
 <div class="ast-explorer-root">
 	<div class="ast-tools">{time}</div>
 	<div class="ast-explorer">
-		<MonacoEditor bind:this={sourceEditor} bind:code language="html" />
+		<MonacoEditor bind:this={sourceEditor} bind:code language="svelte" />
 		<MonacoEditor
 			bind:this={vscriptEditor}
 			code={virtualScriptCode}
