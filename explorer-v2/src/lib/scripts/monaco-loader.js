@@ -1,9 +1,17 @@
 export const DARK_THEME_NAME = 'github-dark';
 export const LIGHT_THEME_NAME = 'github-light';
 
+import { browser } from '$app/environment';
+
 let editorLoaded = null;
 
 export async function loadMonacoEditor() {
+	if (!browser) {
+		// Monaco editor can only be loaded in the browser.
+		return new Promise(() => {
+			// Never resolve, since Monaco editor cannot be loaded in the server environment.
+		});
+	}
 	let rawMonaco = await (editorLoaded || (editorLoaded = loadMonacoFromEsmCdn()));
 	const monaco = 'm' in rawMonaco ? rawMonaco.m || rawMonaco : rawMonaco;
 	setupEnhancedLanguages(monaco);
