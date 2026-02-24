@@ -1,5 +1,11 @@
 # svelte-eslint-parser
 
+## 1.5.0
+
+### Minor Changes
+
+- [#836](https://github.com/sveltejs/svelte-eslint-parser/pull/836) [`9927649`](https://github.com/sveltejs/svelte-eslint-parser/commit/9927649cc60acaaf4b48029d0a424a72ce5b1f73) Thanks [@ota-meshi](https://github.com/ota-meshi)! - fix: improve compatibility with ESLint v10
+
 ## 1.4.1
 
 ### Patch Changes
