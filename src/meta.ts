@@ -2,4 +2,4 @@
 // This file has been automatically generated,
 // in order to update its content execute "pnpm run build:meta"
 export const name = "svelte-eslint-parser" as const;
-export const version = "1.5.0" as const;
+export const version = "1.5.1" as const;

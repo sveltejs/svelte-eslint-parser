@@ -1,5 +1,11 @@
 # svelte-eslint-parser
 
+## 1.5.1
+
+### Patch Changes
+
+- [#842](https://github.com/sveltejs/svelte-eslint-parser/pull/842) [`df12f13`](https://github.com/sveltejs/svelte-eslint-parser/commit/df12f135ad0c474dc61afa78c72d6caddaa478f3) Thanks [@DMartens](https://github.com/DMartens)! - fix: move semver dependency from dev to production dependency
+
 ## 1.5.0
 
 ### Minor Changes
