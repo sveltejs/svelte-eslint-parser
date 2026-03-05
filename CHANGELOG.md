@@ -1,5 +1,11 @@
 # svelte-eslint-parser
 
+## 1.6.0
+
+### Minor Changes
+
+- [#851](https://github.com/sveltejs/svelte-eslint-parser/pull/851) [`dca89f3`](https://github.com/sveltejs/svelte-eslint-parser/commit/dca89f3043b39e6b2ff97691cddff798ca5b16b2) Thanks [@ota-meshi](https://github.com/ota-meshi)! - feat: add support for comments in tags
+
 ## 1.5.1
 
 ### Patch Changes
