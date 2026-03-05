@@ -2,11 +2,13 @@ import type * as SvAST from "../svelte-ast-types.js";
 import type * as Compiler from "../svelte-ast-types-for-v5.js";
 import type {
   SvelteAttribute,
+  SvelteElement,
   SvelteGenericsDirective,
   SvelteLiteral,
   SvelteName,
   SvelteProgram,
   SvelteScriptElement,
+  SvelteStartTag,
   SvelteStyleElement,
 } from "../../ast/index.js";
 import {} from "./common.js";
@@ -28,6 +30,7 @@ import {
 } from "../compat.js";
 import { sortNodes } from "../sort.js";
 import { withoutProjectParserOptions } from "../parser-options.js";
+import { ParseError } from "../../main.js";
 
 /**
  * Convert root
@@ -175,6 +178,73 @@ export function convertSvelteRoot(
   }
   body.push(...convertChildren({ nodes: snippetChildren }, ast, ctx));
   if (script) convertGenericsAttribute(script, ctx);
+
+  // Process for comments in tags
+  const comments = (svelteAst as Compiler.Root).comments;
+  if (comments && Array.isArray(comments) && comments.length > 0) {
+    const tags: SvelteStartTag[] = [];
+    // Extract tags in order to check whether comments are inside tags or not.
+    const elementsBuffer = [
+      ...body.filter(
+        (
+          node,
+        ): node is SvelteScriptElement | SvelteStyleElement | SvelteElement => {
+          return (
+            node.type === "SvelteScriptElement" ||
+            node.type === "SvelteStyleElement" ||
+            node.type === "SvelteElement"
+          );
+        },
+      ),
+    ];
+    let element:
+      | SvelteScriptElement
+      | SvelteStyleElement
+      | SvelteElement
+      | undefined;
+    while ((element = elementsBuffer.shift())) {
+      tags.push(element.startTag);
+      if (element.type === "SvelteElement") {
+        elementsBuffer.unshift(
+          ...element.children.filter(
+            (node): node is SvelteElement => node.type === "SvelteElement",
+          ),
+        );
+      }
+    }
+
+    // Process all comments from Svelte compiler
+    for (const comment of comments) {
+      if (comment.type !== "Block" && comment.type !== "Line") {
+        throw new ParseError(
+          `Unknown comment type: ${comment.type}`,
+          comment.start,
+          ctx,
+        );
+      }
+      const tag = tags.find(
+        (tag) => tag.range[0] <= comment.start && comment.end <= tag.range[1],
+      );
+      if (!tag) {
+        // If the comment is outside of all tags, it will be skipped.
+        continue;
+      }
+      if (
+        tag.attributes.some(
+          (attr) =>
+            attr.range[0] <= comment.start && comment.end <= attr.range[1],
+        )
+      ) {
+        // If the comment is inside the attributes, it will be skipped because it is a comment inside an expression.
+        continue;
+      }
+      ctx.addComment({
+        type: comment.type === "Block" ? "Block" : "Line",
+        value: comment.value,
+        ...ctx.getConvertLocation(comment),
+      });
+    }
+  }
 
   // Set the scope of the Program node.
   ctx.scriptLet.addProgramRestore(
