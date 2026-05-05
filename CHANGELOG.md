@@ -1,5 +1,11 @@
 # svelte-eslint-parser
 
+## 1.6.1
+
+### Patch Changes
+
+- [#870](https://github.com/sveltejs/svelte-eslint-parser/pull/870) [`bf736eb`](https://github.com/sveltejs/svelte-eslint-parser/commit/bf736eb085fa92e5d9172c6c24bafc8c57093101) Thanks [@teemingc](https://github.com/teemingc)! - fix: use the Svelte config `compilerOptions.runes` function value if set
+
 ## 1.6.0
 
 ### Minor Changes
