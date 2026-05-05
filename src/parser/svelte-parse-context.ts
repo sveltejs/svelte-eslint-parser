@@ -73,7 +73,11 @@ function isRunesAsParseContext(
     return parserOptions.svelteFeatures?.runes;
   }
   if (svelteConfig?.compilerOptions?.runes != null) {
-    return svelteConfig?.compilerOptions?.runes;
+    return typeof svelteConfig.compilerOptions?.runes === "function"
+      ? svelteConfig.compilerOptions.runes({
+          filename: parserOptions.filePath ?? "",
+        })
+      : svelteConfig.compilerOptions?.runes;
   }
 
   // `<svelte:options>`.
