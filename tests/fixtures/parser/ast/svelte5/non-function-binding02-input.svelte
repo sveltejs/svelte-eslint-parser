@@ -1,5 +1,5 @@
 <input bind:value={
     /* Foo */
-    (x,
-    y)
+    x,
+    y
     }/>

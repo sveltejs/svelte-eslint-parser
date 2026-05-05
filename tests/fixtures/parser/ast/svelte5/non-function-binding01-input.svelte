@@ -1,1 +1,1 @@
-<input bind:value={(x, y)}/>
+<input bind:value={x, y}/>
