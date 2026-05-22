@@ -112,8 +112,8 @@ importers:
         specifier: ^3.2.0
         version: 3.2.0(eslint@9.38.0)
       eslint-plugin-jsdoc:
-        specifier: ^62.0.0
-        version: 62.0.0(eslint@9.38.0)
+        specifier: ^63.0.0
+        version: 63.0.0(eslint@9.38.0)
       eslint-plugin-json-schema-validator:
         specifier: ^6.0.0
         version: 6.0.0(eslint@9.38.0)
@@ -252,8 +252,8 @@ packages:
   '@changesets/write@0.4.0':
     resolution: {integrity: sha512-CdTLvIOPiCNuH71pyDu3rA+Q0n65cmAbXnwWH84rKGiFumFzkmHNT8KHTMEchcxN+Kl8I54xGUhJ7l3E7X396Q==}
 
-  '@es-joy/jsdoccomment@0.79.0':
-    resolution: {integrity: sha512-q/Nc241VsVRC5b1dgbsOI0fnWfrb1S9sdceFewpDHto4+4r2o6SSCpcY+Z+EdLdMPN6Nsj/PjlPcKag6WbU6XQ==}
+  '@es-joy/jsdoccomment@0.86.0':
+    resolution: {integrity: sha512-ukZmRQ81WiTpDWO6D/cTBM7XbrNtutHKvAVnZN/8pldAwLoJArGOvkNyxPTBGsPjsoaQBJxlH+tE2TNA/92Qgw==}
     engines: {node: ^20.19.0 || ^22.13.0 || >=24}
 
   '@es-joy/resolve.exports@1.2.0':
@@ -838,6 +838,10 @@ packages:
     resolution: {integrity: sha512-DBsLPs3GsWhX5HylbP9HNG15U0bnwut55Lx12bHB9MpXxQ+R5GC8MwQe+N1UFXxAeQDvEsEDY6ZYwX03K7Z6HQ==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
 
+  '@typescript-eslint/types@8.59.4':
+    resolution: {integrity: sha512-F1o7WJcCq+bc8dwcO/YsSEOudAH8RDtaOhM6wcAQhcUsFhnWQl81JKy48q1hoxAU0qrzM89+31GYh1515Zde3Q==}
+    engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
+
   '@typescript-eslint/typescript-estree@8.56.0':
     resolution: {integrity: sha512-ex1nTUMWrseMltXUHmR2GAQ4d+WjkZCT4f+4bVsps8QEdh0vlBsaCokKTPlnqBFqqGaxilDNJG7b8dolW2m43Q==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
@@ -1004,6 +1008,10 @@ packages:
     resolution: {integrity: sha512-buhp5kePrmda3vhc5B9t7pUQXAb2Tnd0qgpkIhPhkHXxJpiPJ11H0ZEU0oBpJ2QztSbzG/ZxMj/CHsYJqRHmyg==}
     engines: {node: '>= 12.0.0'}
 
+  comment-parser@1.4.6:
+    resolution: {integrity: sha512-ObxuY6vnbWTN6Od72xfwN9DbzC7Y2vv8u1Soi9ahRKL37gb6y1qk6/dgjs+3JWuXJHWvsg3BXIwzd/rkmAwavg==}
+    engines: {node: '>= 12.0.0'}
+
   concat-map@0.0.1:
     resolution: {integrity: sha512-/Srv4dswyQNBfohGpz9o6Yb3Gz3SrUDqBH5rTuhGR7ahtlbYKnVxw2bCFMRljaA7EXHaXZ8wsHdodFvbkhKmqg==}
 
@@ -1149,11 +1157,11 @@ packages:
     peerDependencies:
       eslint: '>=4.19.1'
 
-  eslint-plugin-jsdoc@62.0.0:
-    resolution: {integrity: sha512-sNdIGLAvjFK3pB0SYFW74iXODZ4ifF8Ax13Wgq8jKepKnrCFzGo7+jRZfLf70h81SD7lPYnTE7MR2nhYSvaLTA==}
-    engines: {node: ^20.19.0 || ^22.13.0 || >=24}
+  eslint-plugin-jsdoc@63.0.0:
+    resolution: {integrity: sha512-eDHuVGyZydr4BKgjXouU7bsn5qaqUlObXBSWRJk3vXcQgXVFnrwWIqpP7uBhRX9NQpk6NIIFyRc6F6omZNi/8g==}
+    engines: {node: ^22.13.0 || >=24}
     peerDependencies:
-      eslint: ^7.0.0 || ^8.0.0 || ^9.0.0
+      eslint: ^7.0.0 || ^8.0.0 || ^9.0.0 || ^10.0.0
 
   eslint-plugin-json-schema-validator@6.0.0:
     resolution: {integrity: sha512-55/aPUP8mfTMVirSC15jix0hvnCeboCpkwccVfawJUmCEs+gpAlNih0Q2LJQHTAU6bmJW3Lu7QZYGB4tjhN0CQ==}
@@ -1231,6 +1239,10 @@ packages:
     resolution: {integrity: sha512-A0XeIi7CXU7nPlfHS9loMYEKxUaONu/hTEzHTGba9Huu94Cq1hPivf+DE5erJozZOky0LfvXAyrV/tcswpLI0Q==}
     engines: {node: ^20.19.0 || ^22.13.0 || >=24}
 
+  eslint-visitor-keys@5.0.1:
+    resolution: {integrity: sha512-tD40eHxA35h0PEIZNeIjkHoDR4YjjJp34biM0mDvplBe//mB+IHCqHDGV7pxF+7MklTvighcCPPZC7ynWyjdTA==}
+    engines: {node: ^20.19.0 || ^22.13.0 || >=24}
+
   eslint@9.38.0:
     resolution: {integrity: sha512-t5aPOpmtJcZcz5UJyY2GbvpDlsK5E8JqRqoKtfiKE3cNh437KIqfJr3A3AKf5k64NPx6d0G3dno6XDY05PqPtw==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
@@ -1248,8 +1260,8 @@ packages:
     resolution: {integrity: sha512-j6PAQ2uUr79PZhBjP5C5fhl8e39FmRnOjsD5lGnWrFU8i2G776tBK7+nP8KuQUTTyAZUwfQqXAgrVH5MbH9CYQ==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
 
-  espree@11.0.0:
-    resolution: {integrity: sha512-+gMeWRrIh/NsG+3NaLeWHuyeyk70p2tbvZIWBYcqQ4/7Xvars6GYTZNhF1sIeLcc6Wb11He5ffz3hsHyXFrw5A==}
+  espree@11.2.0:
+    resolution: {integrity: sha512-7p3DrVEIopW1B1avAGLuCSh1jubc01H2JHc8B4qqGblmg5gI9yumBgACjWo4JlIc04ufug4xJ3SQI8HkS/Rgzw==}
     engines: {node: ^20.19.0 || ^22.13.0 || >=24}
 
   espree@9.6.1:
@@ -1534,6 +1546,10 @@ packages:
 
   jsdoc-type-pratt-parser@7.0.0:
     resolution: {integrity: sha512-c7YbokssPOSHmqTbSAmTtnVgAVa/7lumWNYqomgd5KOMyPrRve2anx6lonfOsXEQacqF9FKVUj7bLg4vRSvdYA==}
+    engines: {node: '>=20.0.0'}
+
+  jsdoc-type-pratt-parser@7.2.0:
+    resolution: {integrity: sha512-dh140MMgjyg3JhJZY/+iEzW+NO5xR2gpbDFKHqotCmexElVntw7GjWjt511+C/Ef02RU5TKYrJo/Xlzk+OLaTw==}
     engines: {node: '>=20.0.0'}
 
   json-buffer@3.0.1:
@@ -1941,6 +1957,11 @@ packages:
 
   semver@7.7.4:
     resolution: {integrity: sha512-vFKC2IEtQnVhpT78h1Yp8wzwrf8CM+MzKMHGJZfBtzhZNycRFnXsHk6E5TxIkkMsgNS7mdX3AGB7x2QM2di4lA==}
+    engines: {node: '>=10'}
+    hasBin: true
+
+  semver@7.8.0:
+    resolution: {integrity: sha512-AcM7dV/5ul4EekoQ29Agm5vri8JNqRyj39o0qpX6vDF2GZrtutZl5RwgD1XnZjiTAfncsJhMI48QQH3sN87YNA==}
     engines: {node: '>=10'}
     hasBin: true
 
@@ -2378,13 +2399,13 @@ snapshots:
       human-id: 4.1.2
       prettier: 2.8.8
 
-  '@es-joy/jsdoccomment@0.79.0':
+  '@es-joy/jsdoccomment@0.86.0':
     dependencies:
       '@types/estree': 1.0.8
-      '@typescript-eslint/types': 8.56.0
-      comment-parser: 1.4.1
+      '@typescript-eslint/types': 8.59.4
+      comment-parser: 1.4.6
       esquery: 1.7.0
-      jsdoc-type-pratt-parser: 7.0.0
+      jsdoc-type-pratt-parser: 7.2.0
 
   '@es-joy/resolve.exports@1.2.0': {}
 
@@ -2839,6 +2860,8 @@ snapshots:
 
   '@typescript-eslint/types@8.56.0': {}
 
+  '@typescript-eslint/types@8.59.4': {}
+
   '@typescript-eslint/typescript-estree@8.56.0(typescript@5.9.3)':
     dependencies:
       '@typescript-eslint/project-service': 8.56.0(typescript@5.9.3)
@@ -2998,6 +3021,8 @@ snapshots:
   color-name@1.1.4: {}
 
   comment-parser@1.4.1: {}
+
+  comment-parser@1.4.6: {}
 
   concat-map@0.0.1: {}
 
@@ -3162,21 +3187,21 @@ snapshots:
       eslint: 9.38.0
       ignore: 5.3.2
 
-  eslint-plugin-jsdoc@62.0.0(eslint@9.38.0):
+  eslint-plugin-jsdoc@63.0.0(eslint@9.38.0):
     dependencies:
-      '@es-joy/jsdoccomment': 0.79.0
+      '@es-joy/jsdoccomment': 0.86.0
       '@es-joy/resolve.exports': 1.2.0
       are-docs-informative: 0.0.2
-      comment-parser: 1.4.1
+      comment-parser: 1.4.6
       debug: 4.4.3(supports-color@8.1.1)
       escape-string-regexp: 4.0.0
       eslint: 9.38.0
-      espree: 11.0.0
+      espree: 11.2.0
       esquery: 1.7.0
       html-entities: 2.6.0
       object-deep-merge: 2.0.0
       parse-imports-exports: 0.2.4
-      semver: 7.7.4
+      semver: 7.8.0
       spdx-expression-parse: 4.0.0
       to-valid-identifier: 1.0.0
     transitivePeerDependencies:
@@ -3303,6 +3328,8 @@ snapshots:
 
   eslint-visitor-keys@5.0.0: {}
 
+  eslint-visitor-keys@5.0.1: {}
+
   eslint@9.38.0:
     dependencies:
       '@eslint-community/eslint-utils': 4.9.1(eslint@9.38.0)
@@ -3350,11 +3377,11 @@ snapshots:
       acorn-jsx: 5.3.2(acorn@8.16.0)
       eslint-visitor-keys: 4.2.1
 
-  espree@11.0.0:
+  espree@11.2.0:
     dependencies:
       acorn: 8.16.0
       acorn-jsx: 5.3.2(acorn@8.16.0)
-      eslint-visitor-keys: 5.0.0
+      eslint-visitor-keys: 5.0.1
 
   espree@9.6.1:
     dependencies:
@@ -3608,6 +3635,8 @@ snapshots:
       argparse: 2.0.1
 
   jsdoc-type-pratt-parser@7.0.0: {}
+
+  jsdoc-type-pratt-parser@7.2.0: {}
 
   json-buffer@3.0.1: {}
 
@@ -3974,6 +4003,8 @@ snapshots:
   scule@1.3.0: {}
 
   semver@7.7.4: {}
+
+  semver@7.8.0: {}
 
   serialize-javascript@6.0.2:
     dependencies:
