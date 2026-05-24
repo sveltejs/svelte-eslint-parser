@@ -18,6 +18,7 @@ export type SvelteHTMLNode =
   | SvelteMustacheTag
   | SvelteDebugTag
   | SvelteConstTag
+  | SvelteDeclarationTag
   | SvelteRenderTag
   | SvelteIfBlock
   | SvelteElseBlock
@@ -185,6 +186,7 @@ type Child =
   | SvelteMustacheTag
   | SvelteDebugTag
   | SvelteConstTag
+  | SvelteDeclarationTag
   | SvelteRenderTag
   | SvelteIfBlockAlone
   | SvelteEachBlock
@@ -270,6 +272,23 @@ export interface SvelteConstTag extends BaseNode {
    */
   declaration: ESTree.VariableDeclarator; // TODO Remove in v2 and later.
   declarations: [ESTree.VariableDeclarator];
+  parent:
+    | SvelteProgram
+    | SvelteElement
+    | SvelteIfBlock
+    | SvelteElseBlockAlone
+    | SvelteEachBlock
+    | SvelteAwaitPendingBlock
+    | SvelteAwaitThenBlock
+    | SvelteAwaitCatchBlock
+    | SvelteKeyBlock
+    | SvelteSnippetBlock
+    | SvelteAttribute;
+}
+/** Node of declaration tag. e.g. `{let foo = bar}` */
+export interface SvelteDeclarationTag extends BaseNode {
+  type: "SvelteDeclarationTag";
+  declaration: ESTree.VariableDeclaration | ESTree.FunctionDeclaration;
   parent:
     | SvelteProgram
     | SvelteElement

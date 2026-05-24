@@ -10,6 +10,7 @@ export type Text = AST.Text;
 export type ExpressionTag = AST.ExpressionTag;
 export type HtmlTag = AST.HtmlTag;
 export type ConstTag = AST.ConstTag;
+export type DeclarationTag = AST.DeclarationTag;
 export type DebugTag = AST.DebugTag;
 export type RenderTag = AST.RenderTag;
 
@@ -47,7 +48,13 @@ export type StyleDirective = AST.StyleDirective;
 export type TransitionDirective = AST.TransitionDirective;
 export type UseDirective = AST.UseDirective;
 
-export type Tag = ExpressionTag | HtmlTag | ConstTag | DebugTag | RenderTag;
+export type Tag =
+  | ExpressionTag
+  | HtmlTag
+  | ConstTag
+  | DeclarationTag
+  | DebugTag
+  | RenderTag;
 export type ElementLike =
   | Component
   | TitleElement
