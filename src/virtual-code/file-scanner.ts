@@ -34,10 +34,7 @@ export function scanSvelteFiles(projectRoot: string): string[] {
 
     for (const entry of entries) {
       if (entry.isDirectory()) {
-        if (
-          entry.name.startsWith(".") ||
-          EXCLUDED_BUILD_DIRS.has(entry.name)
-        ) {
+        if (entry.name.startsWith(".") || EXCLUDED_BUILD_DIRS.has(entry.name)) {
           continue;
         }
         scanDirectory(path.join(dir, entry.name));
