@@ -90,10 +90,7 @@ export class VirtualCodeCacheManager {
     this.cacheDir = getCacheDirectory(this.projectRoot);
 
     try {
-      // Create cache directory if it doesn't exist
-      if (!fs.existsSync(this.cacheDir)) {
-        fs.mkdirSync(this.cacheDir, { recursive: true });
-      }
+      fs.mkdirSync(this.cacheDir, { recursive: true });
 
       // Load existing hash map
       this.hashMap = loadHashMap(this.cacheDir, PARSER_VERSION);
@@ -241,14 +238,12 @@ export class VirtualCodeCacheManager {
       return true;
     }
 
-    // Check if virtual file exists
     const virtualFilePath = this.getVirtualFilePath(relativePath);
     if (!fs.existsSync(virtualFilePath)) {
       return true;
     }
 
     try {
-      // Fast path: check mtime first
       const stats = fs.statSync(svelteFilePath);
       const currentMtime = stats.mtimeMs;
       const cachedMtime = this.mtimeMap.get(relativePath);
@@ -383,10 +378,7 @@ export class VirtualCodeCacheManager {
     const virtualFilePath = this.getVirtualFilePath(relativePath);
     const virtualDir = path.dirname(virtualFilePath);
 
-    // Ensure directory exists
-    if (!fs.existsSync(virtualDir)) {
-      fs.mkdirSync(virtualDir, { recursive: true });
-    }
+    fs.mkdirSync(virtualDir, { recursive: true });
 
     // Rewrite import paths using AST-extracted positions
     const context: ImportRewriterContext | null =
@@ -431,9 +423,7 @@ export class VirtualCodeCacheManager {
     const dtsDir = path.dirname(dtsFilePath);
 
     try {
-      if (!fs.existsSync(dtsDir)) {
-        fs.mkdirSync(dtsDir, { recursive: true });
-      }
+      fs.mkdirSync(dtsDir, { recursive: true });
       fs.writeFileSync(dtsFilePath, dtsContent, "utf-8");
     } catch {
       // Silently ignore write errors

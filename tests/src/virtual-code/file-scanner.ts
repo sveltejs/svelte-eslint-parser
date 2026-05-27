@@ -89,5 +89,75 @@ describe("file-scanner", () => {
 
       assert.strictEqual(files.length, 0);
     });
+
+    it("should exclude all dot-prefixed directories", () => {
+      fs.mkdirSync(path.join(tempDir, ".svelte-kit"));
+      fs.mkdirSync(path.join(tempDir, ".custom-tool"));
+      fs.writeFileSync(path.join(tempDir, "App.svelte"), "<script></script>");
+      fs.writeFileSync(
+        path.join(tempDir, ".svelte-kit", "Generated.svelte"),
+        "<script></script>",
+      );
+      fs.writeFileSync(
+        path.join(tempDir, ".custom-tool", "Hidden.svelte"),
+        "<script></script>",
+      );
+
+      const files = scanSvelteFiles(tempDir);
+
+      assert.strictEqual(files.length, 1);
+      assert.ok(files[0].endsWith("App.svelte"));
+    });
+
+    it("should exclude common build directories (dist, build, out, coverage)", () => {
+      for (const dir of ["dist", "build", "out", "coverage"]) {
+        fs.mkdirSync(path.join(tempDir, dir));
+        fs.writeFileSync(
+          path.join(tempDir, dir, "In.svelte"),
+          "<script></script>",
+        );
+      }
+      fs.writeFileSync(path.join(tempDir, "App.svelte"), "<script></script>");
+
+      const files = scanSvelteFiles(tempDir);
+
+      assert.strictEqual(files.length, 1);
+      assert.ok(files[0].endsWith("App.svelte"));
+    });
+
+    it("should scan directories with names that contain but are not exactly an excluded name", () => {
+      fs.mkdirSync(path.join(tempDir, "dist-stuff"));
+      fs.writeFileSync(
+        path.join(tempDir, "dist-stuff", "Kept.svelte"),
+        "<script></script>",
+      );
+
+      const files = scanSvelteFiles(tempDir);
+
+      assert.strictEqual(files.length, 1);
+      assert.ok(files[0].endsWith("Kept.svelte"));
+    });
+
+    it("should NOT exclude svelte files based on .gitignore", () => {
+      fs.writeFileSync(
+        path.join(tempDir, ".gitignore"),
+        "src/fixtures\nGenerated.svelte\n",
+      );
+      fs.mkdirSync(path.join(tempDir, "src"));
+      fs.mkdirSync(path.join(tempDir, "src", "fixtures"));
+      fs.writeFileSync(
+        path.join(tempDir, "src", "fixtures", "Fixture.svelte"),
+        "<script></script>",
+      );
+      fs.writeFileSync(
+        path.join(tempDir, "Generated.svelte"),
+        "<script></script>",
+      );
+      fs.writeFileSync(path.join(tempDir, "App.svelte"), "<script></script>");
+
+      const files = scanSvelteFiles(tempDir);
+
+      assert.strictEqual(files.length, 3);
+    });
   });
 });

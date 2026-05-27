@@ -2,42 +2,25 @@ import fs from "fs";
 import path from "path";
 
 /**
- * Directories that should never be scanned for .svelte files.
+ * Non-dot directories never scanned for `.svelte` files. Dot-prefixed
+ * directories (`.git`, `.svelte-kit`, `.next`, etc.) are excluded by the
+ * `startsWith(".")` rule below; they don't need to be listed here.
  *
- * We intentionally do NOT honor `.gitignore` here. Generated svelte files
- * (e.g., test fixtures, codegen output) are often listed in `.gitignore`
- * but are still linted by ESLint and type-checked by TypeScript, so they
- * must be pre-processed into virtual files; otherwise each lint invocation
- * lazily writes a new virtual file, which forces TypeScript's projectService
- * to invalidate and re-resolve the program for every file — the dominant
- * cause of the cold-cache slowdown this cache exists to eliminate.
+ * `.gitignore` is intentionally NOT consulted: generated `.svelte` files
+ * (test fixtures, codegen output) are routinely gitignored yet still linted
+ * and type-checked, so they must be pre-processed into virtual files.
+ * Otherwise each lint invocation writes a new virtual file lazily, forcing
+ * TypeScript's projectService to re-resolve the program on every file —
+ * defeating the cache this module exists to provide.
  */
-const ALWAYS_EXCLUDED_DIRS = new Set([
+const EXCLUDED_BUILD_DIRS = new Set([
   "node_modules",
-  ".git",
-  ".svelte-eslint-parser",
-  ".svelte-kit",
-  ".next",
-  ".nuxt",
-  ".cache",
-  ".turbo",
-  ".vercel",
-  ".netlify",
-  ".output",
-  ".parcel-cache",
   "dist",
   "build",
   "out",
   "coverage",
-  ".nyc_output",
-  ".idea",
-  ".vscode-test",
 ]);
 
-/**
- * Scan for all .svelte files in the project root.
- * Excludes a fixed list of build/cache directories. `.gitignore` is intentionally not consulted.
- */
 export function scanSvelteFiles(projectRoot: string): string[] {
   const svelteFiles: string[] = [];
 
@@ -52,8 +35,8 @@ export function scanSvelteFiles(projectRoot: string): string[] {
     for (const entry of entries) {
       if (entry.isDirectory()) {
         if (
-          ALWAYS_EXCLUDED_DIRS.has(entry.name) ||
-          entry.name.startsWith(".")
+          entry.name.startsWith(".") ||
+          EXCLUDED_BUILD_DIRS.has(entry.name)
         ) {
           continue;
         }
