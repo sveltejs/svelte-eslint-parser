@@ -7,6 +7,7 @@ const GENERATED_TSCONFIG_FILENAME = "tsconfig.json";
 interface GeneratedTsConfig {
   extends: string;
   include: string[];
+  exclude: string[];
   compilerOptions: {
     rootDirs: string[];
     baseUrl?: string;
@@ -53,6 +54,15 @@ export function generateTsconfig(
       `${relativeToRoot}/**/*.js`,
       "./**/*.svelte.__virtual__.ts",
     ],
+    // Override the extended tsconfig's `include`/`exclude` to keep the original
+    // `.svelte` files out of the program. If the user's tsconfig already lists
+    // `.svelte` (common in SvelteKit projects), TypeScript would load each
+    // component twice — once as the opaque `.svelte` source and once as the
+    // virtual `.svelte.__virtual__.ts`. That doubles file bookkeeping, watcher
+    // entries, and memory pressure in `projectService`. The virtual file is the
+    // type-checked representation; the original `.svelte` should not be a
+    // source unit of this program.
+    exclude: [`${relativeToRoot}/**/*.svelte`],
     compilerOptions: {
       // rootDirs allows TypeScript to treat multiple directories as a single root.
       // This makes relative imports in virtual files resolve correctly to the project root.
