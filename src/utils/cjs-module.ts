@@ -7,12 +7,7 @@ const cachedRequires: {
   fromCwd?: NodeJS.Require;
 } = {};
 
-/**
- * Load the given module from the user's environment, picking the newest
- * version when more than one is reachable. Tries the linter's require
- * first (so we match what ESLint and its parsers resolve), then cwd,
- * then this package.
- */
+/** Load the newest reachable copy of a module (linter → cwd → self). */
 export function loadNewestModule<T>(module: string): T {
   const requires = [
     getRequireFromLinter(),
