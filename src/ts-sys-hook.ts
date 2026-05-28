@@ -98,31 +98,31 @@ function patchTsSys(sys: TsLike["sys"]): void {
 }
 
 /**
- * Resolve TypeScript using the parser's shared loader, which tries the
- * linter's require first (matching what typescript-eslint resolves) before
- * falling back to cwd and this package.
+ * Force-load the project's TypeScript so it lands in `require.cache`. The
+ * patch then happens through `patchAllLoadedTypeScripts`; no need to capture
+ * the returned module ourselves.
  */
-function loadProjectTypeScript(): TsLike | null {
+function ensureTypeScriptLoaded(): void {
   try {
-    return loadNewestModule<TsLike>("typescript");
+    loadNewestModule<TsLike>("typescript");
   } catch {
-    return null;
+    // TypeScript isn't installed in the project; the hook has nothing to
+    // patch and will simply be a no-op.
   }
 }
 
 /** Patch every `typescript.js` already in `require.cache`. */
 function patchAllLoadedTypeScripts(): void {
-  const req = createRequire(import.meta.url);
-  const cache = (req as unknown as { cache?: Record<string, NodeModule> })
-    .cache;
+  const cache = createRequire(import.meta.url).cache as
+    | Record<string, { exports?: TsLike } | undefined>
+    | undefined;
   if (!cache) return;
   for (const [resolvedPath, mod] of Object.entries(cache)) {
     if (
       resolvedPath.includes(`${path.sep}typescript${path.sep}`) &&
       resolvedPath.endsWith(`${path.sep}typescript.js`)
     ) {
-      const exports = (mod as { exports?: TsLike } | undefined)?.exports;
-      patchTsSys(exports?.sys);
+      patchTsSys(mod?.exports?.sys);
     }
   }
 }
@@ -133,8 +133,7 @@ export function installTsSysHook(): void {
   // eslint-disable-next-line no-process-env -- intentional opt-in gate
   if (process.env[ENV_FLAG] !== "1") return;
 
-  const ts = loadProjectTypeScript();
-  if (ts?.sys) patchTsSys(ts.sys);
+  ensureTypeScriptLoaded();
   patchAllLoadedTypeScripts();
   installed = true;
   // Arm a one-shot rescan; see `rememberParserOptions`.

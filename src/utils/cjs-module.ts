@@ -8,7 +8,10 @@ const cachedRequires: {
 } = {};
 
 /**
- * Get the newest `espree` kind from the loaded ESLint or dependency.
+ * Load the given module from the user's environment, picking the newest
+ * version when more than one is reachable. Tries the linter's require
+ * first (so we match what ESLint and its parsers resolve), then cwd,
+ * then this package.
  */
 export function loadNewestModule<T>(module: string): T {
   const requires = [
