@@ -253,7 +253,7 @@ export default [
 
 ### `ts.sys.readFile` hook for type-aware Svelte lint
 
-> ⚠️ **Experimental.** Opt-in only; behaviour may change or be removed.
+> ⚠️ **Experimental.** Opt-in only; behavior may change or be removed.
 
 Speeds up type-aware lint of `.svelte` files. Your ESLint config must
 already list `.svelte` via `parserOptions.extraFileExtensions`.

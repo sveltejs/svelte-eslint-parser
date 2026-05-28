@@ -154,7 +154,7 @@ export function installTsSysHook(): void {
   // Visible on every lint run so users know they opted into an experiment.
   process.stderr.write(
     `[svelte-eslint-parser] ${ENV_FLAG}=1 enables an experimental ts.sys.readFile hook. ` +
-      `Behaviour and API may change or be removed in any release.\n`,
+      `Behavior and API may change or be removed in any release.\n`,
   );
 }
 
