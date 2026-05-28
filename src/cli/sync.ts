@@ -1,5 +1,6 @@
 import path from "path";
 import fs from "fs";
+import { createRequire } from "module";
 import {
   getVirtualCodeCacheManager,
   resetVirtualCodeCacheManager,
@@ -15,6 +16,36 @@ export interface SyncOptions {
    * `cwd` looking for `tsconfig.json` next to `package.json`.
    */
   project?: string;
+  /**
+   * TypeScript-aware ESLint parser used to generate virtual code. Accepts a
+   * parser module/object or a module name resolvable from the project.
+   * Defaults to "@typescript-eslint/parser".
+   */
+  parser?: string | object;
+}
+
+/**
+ * Resolve and require a TypeScript-aware ESLint parser from the project.
+ * Returns null if it cannot be resolved.
+ */
+function resolveTsParser(
+  cwd: string,
+  parser: SyncOptions["parser"],
+): string | object | null {
+  if (parser && typeof parser !== "string") {
+    return parser;
+  }
+  const name =
+    typeof parser === "string" ? parser : "@typescript-eslint/parser";
+  try {
+    const req = createRequire(path.join(cwd, "package.json"));
+    return req(name) as object;
+  } catch {
+    // Fall back to the bare name so the cache manager can attempt its own
+    // resolution. Virtual-code generation will skip files we cannot parse,
+    // but the cache directory and tsconfig.generated.json still get created.
+    return name;
+  }
 }
 
 /**
@@ -40,9 +71,12 @@ export function syncVirtualCode(options: SyncOptions = {}): {
 
   resetVirtualCodeCacheManager();
 
+  const resolvedParser = resolveTsParser(cwd, options.parser);
+
   const parserOptions = normalizeParserOptions({
     filePath: startPath,
     project: options.project ?? path.join(cwd, "tsconfig.json"),
+    parser: resolvedParser ?? undefined,
     svelteFeatures: {
       experimentalGenerateVirtualCodeCache: true,
     },

@@ -13,7 +13,7 @@ import { syncVirtualCode } from "../lib/index.js";
  * `parserOptions.svelteFeatures.experimentalVirtualCodeMode = "prepared"`.
  */
 
-/** @type {{ cwd?: string; project?: string }} */
+/** @type {{ cwd?: string; project?: string; parser?: string }} */
 const options = {};
 const positional = [];
 const args = process.argv.slice(2);
@@ -22,9 +22,11 @@ for (let i = 0; i < args.length; i++) {
   const arg = args[i];
   if (arg === "--project" || arg === "-p") {
     options.project = args[++i];
+  } else if (arg === "--parser") {
+    options.parser = args[++i];
   } else if (arg === "--help" || arg === "-h") {
     process.stdout.write(
-      "Usage: svelte-eslint-parser-sync [cwd] [--project <tsconfig>]\n",
+      "Usage: svelte-eslint-parser-sync [cwd] [--project <tsconfig>] [--parser <name>]\n",
     );
     process.exit(0);
   } else {
