@@ -2,7 +2,6 @@
 "svelte-eslint-parser": minor
 ---
 
-Add an experimental `ts.sys.readFile` hook for type-aware Svelte lint.
-Activate with `SVELTE_ESLINT_PARSER_TS_SYS_HOOK=1`; TypeScript reads each
-`.svelte` file as virtual TypeScript on demand, no cache directory or CLI
-sync required. See the Experimental section in the README.
+Add an experimental `ts.sys.readFile` hook that speeds up type-aware lint
+of `.svelte` files. Opt in with `SVELTE_ESLINT_PARSER_TS_SYS_HOOK=1`. See
+the Experimental section in the README for details.
