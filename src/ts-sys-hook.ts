@@ -1,9 +1,9 @@
 import fs from "fs";
 import path from "path";
 import { createRequire } from "module";
-import { fileURLToPath } from "url";
 import type { NormalizedParserOptions } from "./parser/parser-options.js";
 import { svelteToVirtualTypeScript } from "./parser/svelte-to-virtual-ts.js";
+import { loadNewestModule } from "./utils/cjs-module.js";
 
 /**
  * Experimental hook that intercepts `ts.sys.readFile` and returns virtual
@@ -97,25 +97,14 @@ function patchTsSys(sys: TsLike["sys"]): void {
   };
 }
 
-/** Resolve TypeScript from the user's project (cwd → here → self). */
+/**
+ * Resolve TypeScript using the parser's shared loader, which tries the
+ * linter's require first (matching what typescript-eslint resolves) before
+ * falling back to cwd and this package.
+ */
 function loadProjectTypeScript(): TsLike | null {
-  const here =
-    typeof __dirname !== "undefined"
-      ? __dirname
-      : path.dirname(fileURLToPath(import.meta.url));
-  const requireRoots = [
-    path.join(process.cwd(), "package.json"),
-    path.join(here, "package.json"),
-  ];
-  for (const requireRoot of requireRoots) {
-    try {
-      return createRequire(requireRoot)("typescript") as TsLike;
-    } catch {
-      // try next root
-    }
-  }
   try {
-    return createRequire(import.meta.url)("typescript") as TsLike;
+    return loadNewestModule<TsLike>("typescript");
   } catch {
     return null;
   }
