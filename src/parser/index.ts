@@ -60,6 +60,7 @@ import { resolveSvelteConfigFromOption } from "../svelte-config/index.js";
 import { getESLintScope } from "./eslint-scope.js";
 import { getVirtualCodeCacheManager } from "../virtual-code/index.js";
 import { initializeVirtualCodeCache } from "./virtual-code-initializer.js";
+import { rememberParserOptions } from "../ts-sys-hook.js";
 
 export {
   StyleContext,
@@ -118,6 +119,11 @@ type ParseResult = {
 export function parseForESLint(code: string, options?: any): ParseResult {
   const svelteConfig = resolveSvelteConfigFromOption(options);
   const parserOptions = normalizeParserOptions(options);
+
+  // The ts.sys.readFile hook needs the same parser/svelte settings ESLint
+  // hands us in order to translate `.svelte` files on demand. Refresh them on
+  // every parse; the last set wins for subsequent in-process TS reads.
+  rememberParserOptions(parserOptions);
 
   // Initialize virtual code cache for TypeScript type-aware linting
   // Only enabled when svelteFeatures.experimentalGenerateVirtualCodeCache is true

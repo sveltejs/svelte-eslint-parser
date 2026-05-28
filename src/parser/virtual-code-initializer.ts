@@ -39,7 +39,7 @@ export function initializeVirtualCodeCache(
  * Generate virtual TypeScript code for a Svelte file.
  * Returns null if the file cannot be processed or is not TypeScript.
  */
-function generateVirtualCodeForFile(
+export function generateVirtualCodeForFile(
   filePath: string,
   content: string,
   parserOptions: NormalizedParserOptions,

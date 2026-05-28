@@ -36,3 +36,10 @@ export { syncVirtualCode, type SyncOptions } from "./cli/sync.js";
 // that don't opt in pay nothing. See `tsconfig-interceptor.ts` for rationale.
 import { installTsconfigInterceptor } from "./virtual-code/tsconfig-interceptor.js";
 installTsconfigInterceptor();
+
+// Install the `ts.sys.readFile` hook that serves Svelte files as virtual TS
+// directly to TypeScript's projectService — no `.svelte-eslint-parser/`
+// directory, no generated tsconfig, no CLI sync. Opt-in via
+// `SVELTE_ESLINT_PARSER_TS_SYS_HOOK=1`.
+import { installTsSysHook } from "./ts-sys-hook.js";
+installTsSysHook();
