@@ -6,37 +6,9 @@ import type { NormalizedParserOptions } from "./parser/parser-options.js";
 import { svelteToVirtualTypeScript } from "./parser/svelte-to-virtual-ts.js";
 
 /**
- * In-memory bridge that lets TypeScript's projectService type-check Svelte
- * files without any on-disk artifacts.
- *
- * When installed, the hook intercepts `ts.sys.readFile`. For paths ending in
- * `.svelte`, it converts the source to virtual TypeScript on demand and
- * returns that string. Every other read passes through untouched, so
- * ESLint's own file reads still see the original Svelte source.
- *
- * Activation:
- *   `SVELTE_ESLINT_PARSER_TS_SYS_HOOK=1`
- *
- * Notes on positions:
- *   - Type-aware lint of `.svelte` files always works against the parser's
- *     virtual TypeScript shim. `services.getTypeAtLocation(node)` is fine
- *     because the parser restores node positions to the Svelte source,
- *     but rules that read raw TS diagnostics
- *     (`program.getSemanticDiagnostics(sourceFile)` and friends) see
- *     positions inside the shim. The hook does not change this — the
- *     diagnostics would already be in shim coordinates without it, because
- *     TypeScript only ever sees the shim either way. What the hook does
- *     improve is cross-file resolution: a sibling `import './Other.svelte'`
- *     resolves to real virtual TypeScript instead of opaque
- *     `declare module '*.svelte'`.
- *
- * Monorepo notes:
- *   - In layouts that install multiple TypeScript packages without
- *     hoisting, `@typescript-eslint/parser` may resolve a TS instance this
- *     module hasn't patched. The hook patches every TS already in
- *     `require.cache` at install time and re-scans on every parse, but a
- *     freshly imported peer TS between parses may slip through until the
- *     next call.
+ * Experimental hook that intercepts `ts.sys.readFile` and returns virtual
+ * TypeScript for `.svelte` paths. ESLint's own reads go through `fs` and
+ * are unaffected. Activate with `SVELTE_ESLINT_PARSER_TS_SYS_HOOK=1`.
  */
 
 const ENV_FLAG = "SVELTE_ESLINT_PARSER_TS_SYS_HOOK";
@@ -57,23 +29,14 @@ const patchedSysObjects = new WeakSet();
 let activeParserOptions: NormalizedParserOptions | null = null;
 let installed = false;
 
-/**
- * Record the parser options ESLint just normalized. Translation needs them
- * (parser, svelteFeatures, sourceType, ecmaVersion, ...); the parse entry
- * point is the only place they flow through.
- */
+/** Called from `parseForESLint` so translation has the user's parser config. */
 export function rememberParserOptions(options: NormalizedParserOptions): void {
   activeParserOptions = options;
-  // Re-scanning `require.cache` is only safe — and only useful — once the
-  // hook is active. Without this guard we would patch every TS instance the
-  // moment any Svelte file is parsed, breaking unrelated tooling (e.g. the
-  // parser's own `update-fixtures` script, which relies on svelte2tsx's view
-  // of `.svelte` files, not ours).
+  // Off when not installed: otherwise we'd patch TS instances loaded by
+  // unrelated tooling (e.g. svelte2tsx in `update-fixtures`).
   if (!installed) return;
-  // A late-loaded TypeScript instance (think: typescript-eslint resolving a
-  // workspace-local TS after we already patched the root's) won't have
-  // received the patch yet. Re-scan `require.cache` every parse so the next
-  // TS instance to surface gets a chance to be patched.
+  // Catch TypeScript instances loaded after `installTsSysHook` ran (peer
+  // resolution in non-hoisted monorepos).
   patchAllLoadedTypeScripts();
 }
 
@@ -131,17 +94,7 @@ function patchTsSys(sys: TsLike["sys"]): void {
   };
 }
 
-/**
- * Try to resolve and load TypeScript from the user's project so we end up
- * patching the same instance `@typescript-eslint/parser` will later use.
- *
- * Resolution order:
- *   1. `process.cwd()` — where the user runs ESLint from. Matches what
- *      tools resolving "the project's TypeScript" do by convention.
- *   2. The directory containing this module — works when this package and
- *      `typescript` are hoisted together.
- *   3. `import.meta.url` — last-resort relative to our own location.
- */
+/** Resolve TypeScript from the user's project (cwd → here → self). */
 function loadProjectTypeScript(): TsLike | null {
   const here =
     typeof __dirname !== "undefined"
@@ -165,11 +118,7 @@ function loadProjectTypeScript(): TsLike | null {
   }
 }
 
-/**
- * Walk Node's `require.cache` looking for any already-loaded TypeScript
- * module and patch its `sys.readFile`. Catches the (uncommon but real) case
- * where typescript-eslint has resolved a TS instance we didn't.
- */
+/** Patch every `typescript.js` already in `require.cache`. */
 function patchAllLoadedTypeScripts(): void {
   const req = createRequire(import.meta.url);
   const cache = (req as unknown as { cache?: Record<string, NodeModule> })
@@ -186,15 +135,7 @@ function patchAllLoadedTypeScripts(): void {
   }
 }
 
-/**
- * Install the `ts.sys.readFile` patch. Idempotent. No-op unless
- * `SVELTE_ESLINT_PARSER_TS_SYS_HOOK=1` is set.
- *
- * Two passes: load TypeScript from the user's project explicitly (so it
- * lands in `require.cache` and projectService later finds the patched
- * instance), then walk `require.cache` for any other TS instance that may
- * already be loaded.
- */
+/** Idempotent. No-op unless `SVELTE_ESLINT_PARSER_TS_SYS_HOOK=1`. */
 export function installTsSysHook(): void {
   if (installed) return;
   // eslint-disable-next-line no-process-env -- intentional opt-in gate
@@ -205,20 +146,14 @@ export function installTsSysHook(): void {
   patchAllLoadedTypeScripts();
   installed = true;
 
-  // Surface the experimental status at runtime. `eslint --quiet` does not
-  // filter stderr, so users running the hook will see this on every lint.
+  // Visible on every lint run so users know they opted into an experiment.
   process.stderr.write(
     `[svelte-eslint-parser] ${ENV_FLAG}=1 enables an experimental ts.sys.readFile hook. ` +
       `Behaviour and API may change or be removed in any release.\n`,
   );
 }
 
-/**
- * Test seam — clears the in-memory translation cache. The `ts.sys` patches
- * themselves are intentionally not removable; restoring would require
- * holding the original references for every TS instance and is unnecessary
- * for our use case (parser-lifetime install).
- */
+/** Test seam. The `ts.sys` patches themselves are intentionally permanent. */
 export function _resetTranslationCacheForTesting(): void {
   translations.clear();
   activeParserOptions = null;

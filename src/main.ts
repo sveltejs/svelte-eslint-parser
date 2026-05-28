@@ -28,9 +28,6 @@ export const VisitorKeys = KEYS;
 // tools
 export { traverseNodes };
 
-// Install the `ts.sys.readFile` hook that lets TypeScript type-check Svelte
-// files through `@typescript-eslint/parser`'s projectService without any
-// on-disk artifacts. Gated by `SVELTE_ESLINT_PARSER_TS_SYS_HOOK=1`, so
-// projects that don't opt in pay nothing.
+// Opt-in `ts.sys.readFile` hook. See `ts-sys-hook.ts`.
 import { installTsSysHook } from "./ts-sys-hook.js";
 installTsSysHook();

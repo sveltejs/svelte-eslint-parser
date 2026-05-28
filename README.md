@@ -253,46 +253,20 @@ export default [
 
 ### `ts.sys.readFile` hook for type-aware Svelte lint
 
-> ⚠️ **Experimental.** Opt-in only, may change or be removed in any release.
-> Please report regressions before relying on it for CI.
+> ⚠️ **Experimental.** Opt-in only; behaviour may change or be removed.
 
-Type-aware lint of `.svelte` files with `@typescript-eslint/parser`'s
-`projectService: true` is normally expensive: `projectService` discovers a
-`tsconfig.json` per file, which makes every `.svelte` walk through
-TypeScript's project resolution every time it is read.
-
-Setting the environment variable below installs an in-process hook on
-`ts.sys.readFile`. When TypeScript reads a `.svelte` file, the parser
-translates it to virtual TypeScript on demand and returns the shim. ESLint's
-own reads of `.svelte` go through `fs` and are unaffected, and TypeScript
-sees exactly one program — the user's existing `tsconfig.json` (which must
-list `.svelte` via `parserOptions.extraFileExtensions`).
+Speeds up type-aware lint of `.svelte` files. Your ESLint config must
+already list `.svelte` via `parserOptions.extraFileExtensions`.
 
 ```sh
 SVELTE_ESLINT_PARSER_TS_SYS_HOOK=1 \
   eslint --no-cache --concurrency auto .
 ```
 
-No cache directory, no generated tsconfig, no CLI sync step. Translations
-are memoized by `(path, mtime)`, so an edit invalidates automatically.
-
-#### Notes on positions
-
-Type-aware lint of `.svelte` files always works against the parser's
-virtual TypeScript shim: `services.getTypeAtLocation(node)` is fine
-because the node positions are restored to the original Svelte source by
-the parser's `restoreContext`, but a rule that reads raw diagnostics out
-of TypeScript (`program.getSemanticDiagnostics(sourceFile)` and friends)
-sees positions that index into the shim, not the Svelte source.
-
-This is a pre-existing characteristic of type-aware Svelte lint —
-TypeScript only ever sees the shim, regardless of whether the hook is
-on. The hook does not change positions for the file being parsed.
-
-What the hook does change is cross-file resolution: a sibling
-`import './Other.svelte'` resolves to actual virtual TypeScript instead
-of an opaque `declare module '*.svelte'`, so type-aware rules report
-better information through the affected nodes.
+Caveat: rules that read raw TypeScript diagnostics
+(`program.getSemanticDiagnostics()` and friends) report positions inside
+the parser's virtual shim — a pre-existing property of type-aware Svelte
+lint, not specific to the hook.
 
 ---
 
