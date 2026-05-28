@@ -58,6 +58,7 @@ import {
 import type { SvelteConfig } from "../svelte-config/index.js";
 import { resolveSvelteConfigFromOption } from "../svelte-config/index.js";
 import { getESLintScope } from "./eslint-scope.js";
+import { rememberParserOptions } from "../ts-sys-hook.js";
 
 export {
   StyleContext,
@@ -116,6 +117,10 @@ type ParseResult = {
 export function parseForESLint(code: string, options?: any): ParseResult {
   const svelteConfig = resolveSvelteConfigFromOption(options);
   const parserOptions = normalizeParserOptions(options);
+
+  // Keep the `ts.sys` hook in sync with the parser/svelte config ESLint is
+  // currently using. The latest set wins for any in-process TS read.
+  rememberParserOptions(parserOptions);
 
   if (
     parserOptions.filePath &&
