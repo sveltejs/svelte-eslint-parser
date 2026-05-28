@@ -226,7 +226,10 @@ export class VirtualCodeCacheManager {
     }
     const cacheDir = getCacheDirectory(projectRoot);
 
-    const generatedTsconfigPath = path.join(cacheDir, "tsconfig.json");
+    const generatedTsconfigPath = path.join(
+      cacheDir,
+      "tsconfig.svelte-virtual.json",
+    );
     if (!fs.existsSync(generatedTsconfigPath)) {
       return false;
     }

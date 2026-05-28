@@ -30,3 +30,9 @@ export { traverseNodes };
 
 // CLI / sync entry points
 export { syncVirtualCode, type SyncOptions } from "./cli/sync.js";
+
+// Install the in-process `tsconfig.json` interceptor as early as possible.
+// The hook is gated by `SVELTE_ESLINT_PARSER_TSCONFIG_PATCH=1`, so projects
+// that don't opt in pay nothing. See `tsconfig-interceptor.ts` for rationale.
+import { installTsconfigInterceptor } from "./virtual-code/tsconfig-interceptor.js";
+installTsconfigInterceptor();

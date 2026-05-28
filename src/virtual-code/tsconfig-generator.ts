@@ -2,7 +2,14 @@ import fs from "fs";
 import path from "path";
 import { readTsConfigWithExtends } from "./tsconfig-reader.js";
 
-const GENERATED_TSCONFIG_FILENAME = "tsconfig.json";
+// IMPORTANT: this MUST NOT be `tsconfig.json`. If it were, TypeScript's
+// projectService would discover it when walking up from a virtual file and
+// build a second program for `.svelte` files, defeating the purpose of the
+// cache. Using a custom name keeps the file invisible to projectService's
+// auto-discovery; the parser still points at it explicitly when in legacy
+// `project` mode, and the in-process tsconfig interceptor patches the user's
+// real tsconfig instead.
+const GENERATED_TSCONFIG_FILENAME = "tsconfig.svelte-virtual.json";
 
 interface GeneratedTsConfig {
   extends: string;
