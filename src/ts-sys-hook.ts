@@ -28,15 +28,18 @@ const translations = new Map<string, TranslationEntry>();
 const patchedSysObjects = new WeakSet();
 let activeParserOptions: NormalizedParserOptions | null = null;
 let installed = false;
+let needsParseTimeRescan = false;
 
 /** Called from `parseForESLint` so translation has the user's parser config. */
 export function rememberParserOptions(options: NormalizedParserOptions): void {
   activeParserOptions = options;
-  // Off when not installed: otherwise we'd patch TS instances loaded by
-  // unrelated tooling (e.g. svelte2tsx in `update-fixtures`).
-  if (!installed) return;
-  // Catch TypeScript instances loaded after `installTsSysHook` ran (peer
-  // resolution in non-hoisted monorepos).
+  // Catch a TypeScript instance that landed in `require.cache` between
+  // `installTsSysHook` and the first parse (e.g. typescript-eslint loaded
+  // after svelte-eslint-parser in `eslint.config.js`). Walking on every
+  // subsequent parse would be wasteful and gains nothing — TS instances
+  // are not added back later in a typical lint run.
+  if (!needsParseTimeRescan) return;
+  needsParseTimeRescan = false;
   patchAllLoadedTypeScripts();
 }
 
@@ -145,6 +148,8 @@ export function installTsSysHook(): void {
   if (ts?.sys) patchTsSys(ts.sys);
   patchAllLoadedTypeScripts();
   installed = true;
+  // Arm a one-shot rescan; see `rememberParserOptions`.
+  needsParseTimeRescan = true;
 
   // Visible on every lint run so users know they opted into an experiment.
   process.stderr.write(
@@ -157,4 +162,5 @@ export function installTsSysHook(): void {
 export function _resetTranslationCacheForTesting(): void {
   translations.clear();
   activeParserOptions = null;
+  needsParseTimeRescan = false;
 }
