@@ -57,16 +57,21 @@ export function parseTypeScriptInSvelte(
           };
         }
 
-        // Only update virtual file if the source file has changed
-        // This check uses the original Svelte file content hash from initialize()
-        const needsUpdate = cacheManager.needsUpdateByFilePath(
-          parserOptions.filePath,
-        );
-        if (needsUpdate) {
-          cacheManager.updateVirtualCodeByFilePath(parserOptions.filePath, {
-            code: tsCtx.script,
-            svelteImports: tsCtx.svelteImports,
-          });
+        // In prepared mode, the on-disk cache is authoritative — skip the
+        // per-parse hash/mtime check and write. This keeps ESLint worker
+        // processes purely read-only against the cache directory.
+        if (!cacheManager.isReadOnly()) {
+          // Only update virtual file if the source file has changed
+          // This check uses the original Svelte file content hash from initialize()
+          const needsUpdate = cacheManager.needsUpdateByFilePath(
+            parserOptions.filePath,
+          );
+          if (needsUpdate) {
+            cacheManager.updateVirtualCodeByFilePath(parserOptions.filePath, {
+              code: tsCtx.script,
+              svelteImports: tsCtx.svelteImports,
+            });
+          }
         }
       }
     }

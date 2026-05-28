@@ -27,3 +27,6 @@ export const VisitorKeys = KEYS;
 
 // tools
 export { traverseNodes };
+
+// CLI / sync entry points
+export { syncVirtualCode, type SyncOptions } from "./cli/sync.js";

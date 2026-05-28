@@ -130,7 +130,15 @@ export function parseForESLint(code: string, options?: any): ParseResult {
     const cacheManager = getVirtualCodeCacheManager();
 
     if (!cacheManager.isInitialized() && parserOptions.filePath) {
-      initializeVirtualCodeCache(parserOptions.filePath, parserOptions);
+      // In "prepared" mode, only read the pre-generated cache. Each ESLint
+      // worker just loads the hash map from disk; no scanning, no writes,
+      // no inter-worker contention.
+      const mode = parserOptions.svelteFeatures.experimentalVirtualCodeMode;
+      if (mode === "prepared") {
+        cacheManager.loadFromDisk(parserOptions.filePath, parserOptions);
+      } else {
+        initializeVirtualCodeCache(parserOptions.filePath, parserOptions);
+      }
     }
   }
 
