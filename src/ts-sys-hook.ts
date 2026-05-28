@@ -197,6 +197,13 @@ export function installTsSysHook(): void {
   if (ts?.sys) patchTsSys(ts.sys);
   patchAllLoadedTypeScripts();
   installed = true;
+
+  // Surface the experimental status at runtime. `eslint --quiet` does not
+  // filter stderr, so users running the hook will see this on every lint.
+  process.stderr.write(
+    `[svelte-eslint-parser] ${ENV_FLAG}=1 enables an experimental ts.sys.readFile hook. ` +
+      `Behaviour and API may change or be removed in any release.\n`,
+  );
 }
 
 /**
