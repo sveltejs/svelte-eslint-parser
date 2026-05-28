@@ -57,6 +57,12 @@ let installed = false;
  */
 export function rememberParserOptions(options: NormalizedParserOptions): void {
   activeParserOptions = options;
+  // Re-scanning `require.cache` is only safe — and only useful — once the
+  // hook is active. Without this guard we would patch every TS instance the
+  // moment any Svelte file is parsed, breaking unrelated tooling (e.g. the
+  // parser's own `update-fixtures` script, which relies on svelte2tsx's view
+  // of `.svelte` files, not ours).
+  if (!installed) return;
   // A late-loaded TypeScript instance (think: typescript-eslint resolving a
   // workspace-local TS after we already patched the root's) won't have
   // received the patch yet. Re-scan `require.cache` every parse so the next
