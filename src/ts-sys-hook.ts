@@ -17,19 +17,26 @@ import { svelteToVirtualTypeScript } from "./parser/svelte-to-virtual-ts.js";
  * Activation:
  *   `SVELTE_ESLINT_PARSER_TS_SYS_HOOK=1`
  *
- * Limitations to be aware of:
- *   - Lint rules that surface raw TypeScript diagnostics
- *     (e.g. `program.getSemanticDiagnostics(sourceFile)`) will report
- *     positions that index into the virtual TS, not the original Svelte
- *     source. Type-aware rules that go through the parser's AST positions
- *     via `services.getTypeAtLocation(node)` are unaffected.
- *   - In monorepos that install multiple TypeScript packages without
- *     hoisting, `@typescript-eslint/parser` may resolve to a TS instance
- *     this module hasn't patched. The hook patches every TS already in
+ * Notes on positions:
+ *   - Type-aware lint of `.svelte` files always works against the parser's
+ *     virtual TypeScript shim. `services.getTypeAtLocation(node)` is fine
+ *     because the parser restores node positions to the Svelte source,
+ *     but rules that read raw TS diagnostics
+ *     (`program.getSemanticDiagnostics(sourceFile)` and friends) see
+ *     positions inside the shim. The hook does not change this — the
+ *     diagnostics would already be in shim coordinates without it, because
+ *     TypeScript only ever sees the shim either way. What the hook does
+ *     improve is cross-file resolution: a sibling `import './Other.svelte'`
+ *     resolves to real virtual TypeScript instead of opaque
+ *     `declare module '*.svelte'`.
+ *
+ * Monorepo notes:
+ *   - In layouts that install multiple TypeScript packages without
+ *     hoisting, `@typescript-eslint/parser` may resolve a TS instance this
+ *     module hasn't patched. The hook patches every TS already in
  *     `require.cache` at install time and re-scans on every parse, but a
  *     freshly imported peer TS between parses may slip through until the
- *     next call. Workspace-isolated TS installs should mirror what
- *     typescript-eslint resolves; if they don't, document it for users.
+ *     next call.
  */
 
 const ENV_FLAG = "SVELTE_ESLINT_PARSER_TS_SYS_HOOK";

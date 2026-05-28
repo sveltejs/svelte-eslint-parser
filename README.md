@@ -276,14 +276,23 @@ SVELTE_ESLINT_PARSER_TS_SYS_HOOK=1 \
 No cache directory, no generated tsconfig, no CLI sync step. Translations
 are memoized by `(path, mtime)`, so an edit invalidates automatically.
 
-#### Known limitation
+#### Notes on positions
 
-Lint rules that surface raw TypeScript diagnostics via
-`program.getSemanticDiagnostics()` or `program.getSuggestionDiagnostics()`
-will report positions inside the virtual TypeScript shim, not the original
-Svelte source. Type-aware rules that go through
-`services.getTypeAtLocation(node)` use the parser's AST positions and are
-unaffected.
+Type-aware lint of `.svelte` files always works against the parser's
+virtual TypeScript shim: `services.getTypeAtLocation(node)` is fine
+because the node positions are restored to the original Svelte source by
+the parser's `restoreContext`, but a rule that reads raw diagnostics out
+of TypeScript (`program.getSemanticDiagnostics(sourceFile)` and friends)
+sees positions that index into the shim, not the Svelte source.
+
+This is a pre-existing characteristic of type-aware Svelte lint —
+TypeScript only ever sees the shim, regardless of whether the hook is
+on. The hook does not change positions for the file being parsed.
+
+What the hook does change is cross-file resolution: a sibling
+`import './Other.svelte'` resolves to actual virtual TypeScript instead
+of an opaque `declare module '*.svelte'`, so type-aware rules report
+better information through the affected nodes.
 
 ---
 
