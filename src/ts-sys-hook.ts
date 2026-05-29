@@ -43,13 +43,7 @@ export function rememberParserOptions(options: NormalizedParserOptions): void {
   patchAllLoadedTypeScripts();
 }
 
-/**
- * Seed the translation cache from the parser's own pipeline. The parser
- * already produces virtual TS for the file it is currently parsing;
- * stashing it here lets `ts.sys.readFile` serve the same string without
- * re-running `analyzeTypeScriptInSvelte` if `projectService` later reaches
- * for the file on disk.
- */
+/** Seed the cache so a later `ts.sys.readFile` skips re-translating. */
 export function primeTranslationCache(
   filePath: string,
   virtualCode: string,
