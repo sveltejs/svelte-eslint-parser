@@ -9,6 +9,7 @@ import {
 } from "./analyze/index.js";
 import { setParent } from "./set-parent.js";
 import type { TSESParseForESLintResult } from "./types.js";
+import { primeTranslationCache } from "../../ts-sys-hook.js";
 
 /**
  * Parse for TypeScript in <script>
@@ -20,6 +21,14 @@ export function parseTypeScriptInSvelte(
   context: AnalyzeTypeScriptContext,
 ): ESLintExtendedProgram {
   const tsCtx = analyzeTypeScriptInSvelte(code, attrs, parserOptions, context);
+
+  // Share the freshly-produced shim with the `ts.sys` hook. If the hook is
+  // off this is a no-op; if it is on it spares projectService from running
+  // `analyzeTypeScriptInSvelte` again when it reaches for the same file
+  // through `ts.sys.readFile`.
+  if (parserOptions.filePath) {
+    primeTranslationCache(parserOptions.filePath, tsCtx.script);
+  }
 
   const result = parseScriptInSvelte(tsCtx.script, attrs, parserOptions);
 
