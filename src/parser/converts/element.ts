@@ -6,6 +6,7 @@ import type {
   SvelteAwaitThenBlock,
   SvelteComponentElement,
   SvelteConstTag,
+  SvelteDeclarationTag,
   SvelteDebugTag,
   SvelteEachBlock,
   SvelteElement,
@@ -48,6 +49,7 @@ import {
 import { convertText } from "./text.js";
 import { convertAttributes } from "./attr.js";
 import { convertConstTag } from "./const.js";
+import { convertDeclarationTag } from "./declaration.js";
 import { sortNodes } from "../sort.js";
 import type { ScriptLetBlockParam } from "../../context/script-let.js";
 import { ParseError } from "../../index.js";
@@ -79,6 +81,7 @@ export function* convertChildren(
   | SvelteMustacheTag
   | SvelteDebugTag
   | SvelteConstTag
+  | SvelteDeclarationTag
   | SvelteRenderTag
   | SvelteIfBlockAlone
   | SvelteEachBlock
@@ -202,6 +205,10 @@ export function* convertChildren(
       yield convertConstTag(child, parent, ctx);
       continue;
     }
+    if (child.type === "DeclarationTag") {
+      yield convertDeclarationTag(child, parent, ctx);
+      continue;
+    }
     if (child.type === "RenderTag") {
       yield convertRenderTag(child, parent, ctx);
       continue;
@@ -271,6 +278,9 @@ function needScopeByChildren(
   if (!children) return false;
   for (const child of children) {
     if (child.type === "ConstTag") {
+      return true;
+    }
+    if (child.type === "DeclarationTag") {
       return true;
     }
     if (child.type === "SnippetBlock") {

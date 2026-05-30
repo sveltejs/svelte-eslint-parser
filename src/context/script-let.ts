@@ -345,6 +345,49 @@ export class ScriptLetContext {
     return callbacks;
   }
 
+  public addDeclaration<D extends ESTree.VariableDeclaration>(
+    declaration: D,
+    parent: SvelteNode,
+    ...callbacks: ScriptLetCallback<D>[]
+  ): ScriptLetCallback<D>[] {
+    const range = getNodeRange(declaration, this.ctx.code);
+    const part = this.ctx.code.slice(...range);
+    this.appendScript(
+      `${part};`,
+      range[0],
+      this.currentScriptScopeKind,
+      "VariableDeclaration",
+      (st, tokens, _comments, result) => {
+        const node = st as D;
+        for (const callback of callbacks) {
+          callback(node, result);
+        }
+
+        (node as any).parent = parent;
+
+        result.addPostProcess(() => {
+          fixLocations(
+            node,
+            [],
+            [],
+            range[0] - node.range![0],
+            result.visitorKeys,
+            this.ctx,
+          );
+          const locs = this.ctx.getConvertLocation({
+            start: range[0],
+            end: range[1],
+          });
+          node.range = locs.range;
+          node.loc = locs.loc;
+        });
+
+        tokens.pop(); // ;
+      },
+    );
+    return callbacks;
+  }
+
   public addGenericTypeAliasDeclaration(
     param: TSESTree.TSTypeParameter,
     callbackId: (id: TSESTree.Identifier, type: TSESTree.TypeNode) => void,
@@ -825,7 +868,7 @@ export class ScriptLetContext {
       node: ESTree.Node,
       tokens: Token[],
       comments: Comment[],
-      options: ScriptLetCallbackOption,
+      options: ScriptLetRestoreCallbackOption,
     ) => void,
   ) {
     const resultCallback = this.appendScriptWithoutOffset(
@@ -855,7 +898,7 @@ export class ScriptLetContext {
       node: ESTree.Node,
       tokens: Token[],
       comments: Comment[],
-      options: ScriptLetCallbackOption,
+      options: ScriptLetRestoreCallbackOption,
     ) => void,
   ) {
     const { start: startOffset, end: endOffset } = this.script.addLet(
