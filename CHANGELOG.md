@@ -1,5 +1,15 @@
 # svelte-eslint-parser
 
+## 1.7.0
+
+### Minor Changes
+
+- [#891](https://github.com/sveltejs/svelte-eslint-parser/pull/891) [`05dd7f0`](https://github.com/sveltejs/svelte-eslint-parser/commit/05dd7f0f3cc04cd0d97186572b28eeb2eb6a581f) Thanks [@dummdidumm](https://github.com/dummdidumm)! - feat: support Svelte 5 declaration tags
+
+### Patch Changes
+
+- [#897](https://github.com/sveltejs/svelte-eslint-parser/pull/897) [`aba2993`](https://github.com/sveltejs/svelte-eslint-parser/commit/aba29936450699a6a867c58fe4fef5d7a66bdc79) Thanks [@ota-meshi](https://github.com/ota-meshi)! - fix: wrong parent type for some nodes
+
 ## 1.6.1
 
 ### Patch Changes
