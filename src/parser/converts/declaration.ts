@@ -13,6 +13,7 @@ import type {
 } from "../../ast/index.js";
 import type { Context } from "../../context/index.js";
 import type * as Compiler from "../svelte-ast-types-for-v5.js";
+import type ESTree from "estree";
 
 /** Convert for DeclarationTag */
 export function convertDeclarationTag(
@@ -37,8 +38,12 @@ export function convertDeclarationTag(
     ...ctx.getConvertLocation(node),
   };
 
-  ctx.scriptLet.addDeclaration(node.declaration, declarationTag, (declaration) => {
-    declarationTag.declaration = declaration;
-  });
+  ctx.scriptLet.addDeclaration(
+    node.declaration as ESTree.VariableDeclaration & { kind: "let" | "const" },
+    declarationTag,
+    (declaration) => {
+      declarationTag.declaration = declaration;
+    },
+  );
   return declarationTag;
 }

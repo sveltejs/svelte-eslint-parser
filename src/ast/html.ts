@@ -285,10 +285,11 @@ export interface SvelteConstTag extends BaseNode {
     | SvelteSnippetBlock
     | SvelteAttribute;
 }
+
 /** Node of declaration tag. e.g. `{let foo = bar}` */
 export interface SvelteDeclarationTag extends BaseNode {
   type: "SvelteDeclarationTag";
-  declaration: ESTree.VariableDeclaration | ESTree.FunctionDeclaration;
+  declaration: ESTree.VariableDeclaration & { kind: "let" | "const" };
   parent:
     | SvelteProgram
     | SvelteElement

@@ -345,21 +345,18 @@ export class ScriptLetContext {
     return callbacks;
   }
 
-  public addDeclaration<
-    D extends ESTree.VariableDeclaration | ESTree.FunctionDeclaration,
-  >(
+  public addDeclaration<D extends ESTree.VariableDeclaration>(
     declaration: D,
     parent: SvelteNode,
     ...callbacks: ScriptLetCallback<D>[]
   ): ScriptLetCallback<D>[] {
     const range = getNodeRange(declaration, this.ctx.code);
     const part = this.ctx.code.slice(...range);
-    const source = declaration.type === "VariableDeclaration" ? `${part};` : part;
     this.appendScript(
-      source,
+      `${part};`,
       range[0],
       this.currentScriptScopeKind,
-      declaration.type,
+      "VariableDeclaration",
       (st, tokens, _comments, result) => {
         const node = st as D;
         for (const callback of callbacks) {
@@ -385,9 +382,7 @@ export class ScriptLetContext {
           node.loc = locs.loc;
         });
 
-        if (declaration.type === "VariableDeclaration") {
-          tokens.pop(); // ;
-        }
+        tokens.pop(); // ;
       },
     );
     return callbacks;
