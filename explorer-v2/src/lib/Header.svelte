@@ -6,7 +6,9 @@
 	function isActive(pathname, path) {
 		const normalizedPathname = pathname.replace(/\/$/u, '');
 		const normalizedPath = path.replace(/\/$/u, '');
-		return normalizedPathname === normalizedPath || normalizedPathname === resolve(normalizedPath);
+		return (
+			normalizedPathname === normalizedPath || normalizedPathname === resolve(normalizedPath || '/')
+		);
 	}
 </script>
 
