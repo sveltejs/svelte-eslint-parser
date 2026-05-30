@@ -9,10 +9,15 @@ import { loadNewestModule } from "./utils/cjs-module.js";
  * Experimental hook that intercepts `ts.sys.readFile` and returns virtual
  * TypeScript for `.svelte` paths. ESLint's own reads go through `fs` and
  * are unaffected. Activate with `SVELTE_ESLINT_PARSER_TS_SYS_HOOK=1`.
+ *
+ * Several preconditions must hold for the hook to actually speed anything up
+ * (extraFileExtensions includes '.svelte', type-aware lint is on, the TS
+ * instance is reachable through CJS require.cache). When the hook is opted
+ * in but a precondition fails, a warning is emitted so users can diagnose
+ * why no speed-up materialised.
  */
 
 const ENV_FLAG = "SVELTE_ESLINT_PARSER_TS_SYS_HOOK";
-const DEBUG_FLAG = "SVELTE_ESLINT_PARSER_TS_SYS_HOOK_DEBUG";
 
 interface TranslationEntry {
   mtimeMs: number;
@@ -27,91 +32,25 @@ interface TsLike {
 
 const translations = new Map<string, TranslationEntry>();
 const patchedSysObjects = new WeakSet();
-const patchedTsPaths = new Set<string>();
 let activeParserOptions: NormalizedParserOptions | null = null;
 let installed = false;
 let needsParseTimeRescan = false;
-let firstParserOptionsLogged = false;
+let parserOptionsInspected = false;
+let patchAppliedCount = 0;
+let primeStoredCount = 0;
+let svelteReadFileCount = 0;
 
-// Debug counters. Cheap when DEBUG flag is off; useful when on.
-const counters = {
-  readFileCalls: 0,
-  readFileSvelte: 0,
-  readFileSvelteCacheHit: 0,
-  readFileSvelteTranslated: 0,
-  readFileSvelteFallback: 0,
-  readFileNonSvelte: 0,
-  primeCalls: 0,
-  primeSkippedNotInstalled: 0,
-  primeSkippedNoMtime: 0,
-  primeStored: 0,
-  rescans: 0,
-  patchAttempts: 0,
-  patchApplied: 0,
-};
-
-function debug(msg: string): void {
-  // eslint-disable-next-line no-process-env -- intentional opt-in gate
-  if (process.env[DEBUG_FLAG] !== "1") return;
-  process.stderr.write(`[svelte-eslint-parser:ts-sys-hook] ${msg}\n`);
-}
-
-function isDebug(): boolean {
-  // eslint-disable-next-line no-process-env -- intentional opt-in gate
-  return process.env[DEBUG_FLAG] === "1";
+function warn(msg: string): void {
+  process.stderr.write(`[svelte-eslint-parser:ts-sys-hook] WARNING: ${msg}\n`);
 }
 
 /** Called from `parseForESLint` so translation has the user's parser config. */
 export function rememberParserOptions(options: NormalizedParserOptions): void {
   activeParserOptions = options;
 
-  if (isDebug() && !firstParserOptionsLogged) {
-    firstParserOptionsLogged = true;
-    // `extraFileExtensions` lives on the raw options object; normalize spreads
-    // it through, even though it isn't part of the typed interface.
-    const raw = options as unknown as Record<string, unknown>;
-    const extra = raw.extraFileExtensions;
-    const hasSvelteExt =
-      Array.isArray(extra) && (extra as unknown[]).includes(".svelte");
-    debug(
-      `first parserOptions: ` +
-        `installed=${installed} ` +
-        `filePath=${options.filePath ?? "<none>"} ` +
-        `project=${
-          options.project == null ? "<none>" : JSON.stringify(options.project)
-        } ` +
-        `projectService=${
-          options.projectService == null
-            ? "<none>"
-            : JSON.stringify(options.projectService)
-        } ` +
-        `EXPERIMENTAL_useProjectService=${
-          options.EXPERIMENTAL_useProjectService == null
-            ? "<none>"
-            : JSON.stringify(options.EXPERIMENTAL_useProjectService)
-        } ` +
-        `extraFileExtensions=${
-          extra == null ? "<none>" : JSON.stringify(extra)
-        } ` +
-        `extraFileExtensions.includes('.svelte')=${hasSvelteExt}`,
-    );
-    if (!hasSvelteExt) {
-      debug(
-        "WARNING: parserOptions.extraFileExtensions does not include '.svelte'. " +
-          "ts.sys.readFile will not be called for .svelte paths, so the hook " +
-          "cannot speed anything up.",
-      );
-    }
-    if (
-      options.project == null &&
-      options.projectService == null &&
-      options.EXPERIMENTAL_useProjectService == null
-    ) {
-      debug(
-        "WARNING: neither project nor projectService is configured. The hook " +
-          "only helps when typescript-eslint is doing type-aware lint.",
-      );
-    }
+  if (installed && !parserOptionsInspected) {
+    parserOptionsInspected = true;
+    inspectParserOptions(options);
   }
 
   // Catch a TypeScript instance that landed in `require.cache` between
@@ -121,9 +60,33 @@ export function rememberParserOptions(options: NormalizedParserOptions): void {
   // are not added back later in a typical lint run.
   if (!needsParseTimeRescan) return;
   needsParseTimeRescan = false;
-  counters.rescans++;
-  debug("parse-time rescan triggered");
   patchAllLoadedTypeScripts();
+}
+
+function inspectParserOptions(options: NormalizedParserOptions): void {
+  // `extraFileExtensions` lives on the raw options object; normalize spreads
+  // it through, even though it isn't part of the typed interface.
+  const raw = options as unknown as Record<string, unknown>;
+  const extra = raw.extraFileExtensions;
+  const hasSvelteExt =
+    Array.isArray(extra) && (extra as unknown[]).includes(".svelte");
+  if (!hasSvelteExt) {
+    warn(
+      "parserOptions.extraFileExtensions does not include '.svelte'. " +
+        "ts.sys.readFile will not be called for .svelte paths, so the hook " +
+        "cannot speed anything up.",
+    );
+  }
+  if (
+    options.project == null &&
+    options.projectService == null &&
+    options.EXPERIMENTAL_useProjectService == null
+  ) {
+    warn(
+      "neither `project` nor `projectService` is configured. The hook only " +
+        "helps when typescript-eslint is doing type-aware lint.",
+    );
+  }
 }
 
 /** Seed the cache so a later `ts.sys.readFile` skips re-translating. */
@@ -131,20 +94,11 @@ export function primeTranslationCache(
   filePath: string,
   virtualCode: string,
 ): void {
-  counters.primeCalls++;
-  if (!installed) {
-    counters.primeSkippedNotInstalled++;
-    return;
-  }
+  if (!installed) return;
   const mtimeMs = statMtimeMs(filePath);
-  if (mtimeMs === null) {
-    counters.primeSkippedNoMtime++;
-    debug(`primeTranslationCache: skipped (no mtime) ${filePath}`);
-    return;
-  }
+  if (mtimeMs === null) return;
   translations.set(filePath, { mtimeMs, virtualCode });
-  counters.primeStored++;
-  debug(`primeTranslationCache: stored ${filePath} (${virtualCode.length}B)`);
+  primeStoredCount++;
 }
 
 function statMtimeMs(filePath: string): number | null {
@@ -163,75 +117,41 @@ function readUtf8(filePath: string): string | null {
   }
 }
 
-type TranslateOutcome =
-  | { kind: "cache-hit"; virtualCode: string }
-  | { kind: "translated"; virtualCode: string }
-  | { kind: "no-parser-options" }
-  | { kind: "no-mtime" }
-  | { kind: "no-source" }
-  | { kind: "translation-failed" };
-
-function translateOnDemand(filePath: string): TranslateOutcome {
-  if (!activeParserOptions) return { kind: "no-parser-options" };
+function translateOnDemand(filePath: string): string | null {
+  if (!activeParserOptions) return null;
 
   const mtimeMs = statMtimeMs(filePath);
-  if (mtimeMs === null) return { kind: "no-mtime" };
+  if (mtimeMs === null) return null;
 
   const cached = translations.get(filePath);
-  if (cached && cached.mtimeMs === mtimeMs) {
-    return { kind: "cache-hit", virtualCode: cached.virtualCode };
-  }
+  if (cached && cached.mtimeMs === mtimeMs) return cached.virtualCode;
 
   const svelteSource = readUtf8(filePath);
-  if (svelteSource === null) return { kind: "no-source" };
+  if (svelteSource === null) return null;
 
   const virtualCode = svelteToVirtualTypeScript(
     filePath,
     svelteSource,
     activeParserOptions,
   );
-  if (virtualCode === null) return { kind: "translation-failed" };
+  if (virtualCode === null) return null;
 
   translations.set(filePath, { mtimeMs, virtualCode });
-  return { kind: "translated", virtualCode };
+  return virtualCode;
 }
 
-function patchTsSys(sys: TsLike["sys"], origin: string): void {
-  counters.patchAttempts++;
-  if (!sys || typeof sys.readFile !== "function") {
-    debug(`patchTsSys: skipped (no sys.readFile) origin=${origin}`);
-    return;
-  }
-  if (patchedSysObjects.has(sys)) {
-    debug(`patchTsSys: skipped (already patched) origin=${origin}`);
-    return;
-  }
+function patchTsSys(sys: TsLike["sys"]): void {
+  if (!sys || typeof sys.readFile !== "function") return;
+  if (patchedSysObjects.has(sys)) return;
   patchedSysObjects.add(sys);
-  counters.patchApplied++;
-  debug(`patchTsSys: applied origin=${origin}`);
+  patchAppliedCount++;
 
   const originalReadFile = sys.readFile.bind(sys);
   sys.readFile = (filePath: string, encoding?: string) => {
-    counters.readFileCalls++;
     if (typeof filePath === "string" && filePath.endsWith(".svelte")) {
-      counters.readFileSvelte++;
-      const outcome = translateOnDemand(filePath);
-      switch (outcome.kind) {
-        case "cache-hit":
-          counters.readFileSvelteCacheHit++;
-          debug(`readFile: cache-hit ${filePath}`);
-          return outcome.virtualCode;
-        case "translated":
-          counters.readFileSvelteTranslated++;
-          debug(`readFile: translated ${filePath}`);
-          return outcome.virtualCode;
-        default:
-          counters.readFileSvelteFallback++;
-          debug(`readFile: fallback (${outcome.kind}) ${filePath}`);
-          break;
-      }
-    } else {
-      counters.readFileNonSvelte++;
+      svelteReadFileCount++;
+      const virtual = translateOnDemand(filePath);
+      if (virtual !== null) return virtual;
     }
     return originalReadFile(filePath, encoding);
   };
@@ -245,12 +165,11 @@ function patchTsSys(sys: TsLike["sys"], origin: string): void {
 function ensureTypeScriptLoaded(): void {
   try {
     loadNewestModule<TsLike>("typescript");
-    debug("ensureTypeScriptLoaded: ok");
   } catch (e) {
-    debug(
-      `ensureTypeScriptLoaded: failed (${
+    warn(
+      `failed to load 'typescript' from the project: ${
         e instanceof Error ? e.message : String(e)
-      })`,
+      }. The hook has nothing to patch.`,
     );
   }
 }
@@ -260,87 +179,49 @@ function patchAllLoadedTypeScripts(): void {
   const cache = createRequire(import.meta.url).cache as
     | Record<string, { exports?: TsLike } | undefined>
     | undefined;
-  if (!cache) {
-    debug("patchAllLoadedTypeScripts: require.cache unavailable");
-    return;
-  }
-  const matched: string[] = [];
+  if (!cache) return;
   for (const [resolvedPath, mod] of Object.entries(cache)) {
     if (
       resolvedPath.includes(`${path.sep}typescript${path.sep}`) &&
       resolvedPath.endsWith(`${path.sep}typescript.js`)
     ) {
-      matched.push(resolvedPath);
-      patchedTsPaths.add(resolvedPath);
-      patchTsSys(mod?.exports?.sys, resolvedPath);
+      patchTsSys(mod?.exports?.sys);
     }
   }
-  debug(
-    `patchAllLoadedTypeScripts: scanned ${
-      Object.keys(cache).length
-    } entries, matched ${matched.length} typescript.js`,
-  );
-  for (const p of matched) debug(`  match: ${p}`);
 }
 
 /** Idempotent. No-op unless `SVELTE_ESLINT_PARSER_TS_SYS_HOOK=1`. */
 export function installTsSysHook(): void {
-  if (installed) {
-    debug("installTsSysHook: already installed");
-    return;
-  }
+  if (installed) return;
   // eslint-disable-next-line no-process-env -- intentional opt-in gate
-  const envValue = process.env[ENV_FLAG];
-  if (envValue !== "1") {
-    debug(
-      `installTsSysHook: env flag ${ENV_FLAG}=${
-        envValue == null ? "<unset>" : JSON.stringify(envValue)
-      }, not installing`,
-    );
-    return;
-  }
+  if (process.env[ENV_FLAG] !== "1") return;
 
-  debug(`installTsSysHook: ${ENV_FLAG}=1, installing`);
   ensureTypeScriptLoaded();
   patchAllLoadedTypeScripts();
   installed = true;
   // Arm a one-shot rescan; see `rememberParserOptions`.
   needsParseTimeRescan = true;
 
-  if (isDebug()) {
-    debug(
-      `installTsSysHook: complete. patched=${counters.patchApplied} ` +
-        `(skipped=${counters.patchAttempts - counters.patchApplied})`,
-    );
-    process.on("exit", () => {
-      debug(
-        `summary: readFile total=${counters.readFileCalls} ` +
-          `(.svelte=${counters.readFileSvelte}, non-.svelte=${counters.readFileNonSvelte})`,
+  // End-of-run check: if .svelte files were linted but the patched readFile
+  // was never hit for any of them, the hook silently did nothing.
+  process.on("exit", () => {
+    if (primeStoredCount > 0 && svelteReadFileCount === 0) {
+      warn(
+        "ts.sys.readFile was never called for a .svelte path even though " +
+          `${primeStoredCount} .svelte file(s) were parsed. Likely causes: ` +
+          "parserOptions.extraFileExtensions missing '.svelte', " +
+          "typescript-eslint not running type-aware lint, " +
+          "or the TS instance it uses was not in CJS require.cache " +
+          "(e.g. ESM-loaded).",
       );
-      debug(
-        `summary: .svelte readFile cache-hit=${counters.readFileSvelteCacheHit} ` +
-          `translated=${counters.readFileSvelteTranslated} ` +
-          `fallback=${counters.readFileSvelteFallback}`,
+    } else if (patchAppliedCount === 0) {
+      warn(
+        "no `typescript.js` was found in CJS require.cache, so nothing was " +
+          "patched. The TS instance used by typescript-eslint may be " +
+          "ESM-loaded or otherwise outside the cache.",
       );
-      debug(
-        `summary: prime calls=${counters.primeCalls} stored=${counters.primeStored} ` +
-          `skip-not-installed=${counters.primeSkippedNotInstalled} ` +
-          `skip-no-mtime=${counters.primeSkippedNoMtime}`,
-      );
-      debug(
-        `summary: patch attempts=${counters.patchAttempts} applied=${counters.patchApplied} ` +
-          `rescans=${counters.rescans} ts-paths=${patchedTsPaths.size}`,
-      );
-      if (counters.readFileSvelte === 0) {
-        debug(
-          "summary: WARNING — ts.sys.readFile was never called for a .svelte path. " +
-            "Likely causes: parserOptions.extraFileExtensions missing '.svelte', " +
-            "typescript-eslint not running type-aware lint, " +
-            "or the TS instance it uses was not in CJS require.cache (e.g. ESM-loaded).",
-        );
-      }
-    });
-  }
+    }
+  });
 
   // Visible on every lint run so users know they opted into an experiment.
   process.stderr.write(
