@@ -21,7 +21,7 @@ export function convertMustacheTag(
 /** Convert for MustacheTag */
 export function convertRawMustacheTag(
   node: SvAST.RawMustacheTag | Compiler.HtmlTag,
-  parent: SvelteMustacheTag["parent"],
+  parent: SvelteMustacheTagRaw["parent"],
   ctx: Context,
 ): SvelteMustacheTagRaw {
   const mustache: SvelteMustacheTagRaw = convertMustacheTag0(

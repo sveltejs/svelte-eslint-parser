@@ -246,6 +246,10 @@ export interface SvelteMustacheTagText extends BaseSvelteMustacheTag {
 /** Node of mustache tag. e.g. `{@html ...}`. Like JSXExpressionContainer */
 export interface SvelteMustacheTagRaw extends BaseSvelteMustacheTag {
   kind: "raw";
+  parent: Exclude<
+    BaseSvelteMustacheTag["parent"],
+    SvelteAttribute | SvelteStyleDirective
+  >;
 }
 /** Node of debug mustache tag. e.g. `{@debug}` */
 export interface SvelteDebugTag extends BaseNode {
@@ -261,8 +265,7 @@ export interface SvelteDebugTag extends BaseNode {
     | SvelteAwaitThenBlock
     | SvelteAwaitCatchBlock
     | SvelteKeyBlock
-    | SvelteSnippetBlock
-    | SvelteAttribute;
+    | SvelteSnippetBlock;
 }
 /** Node of const tag. e.g. `{@const}` */
 export interface SvelteConstTag extends BaseNode {
@@ -282,8 +285,7 @@ export interface SvelteConstTag extends BaseNode {
     | SvelteAwaitThenBlock
     | SvelteAwaitCatchBlock
     | SvelteKeyBlock
-    | SvelteSnippetBlock
-    | SvelteAttribute;
+    | SvelteSnippetBlock;
 }
 
 /** Node of declaration tag. e.g. `{let foo = bar}` */
@@ -300,8 +302,7 @@ export interface SvelteDeclarationTag extends BaseNode {
     | SvelteAwaitThenBlock
     | SvelteAwaitCatchBlock
     | SvelteKeyBlock
-    | SvelteSnippetBlock
-    | SvelteAttribute;
+    | SvelteSnippetBlock;
 }
 /** Node of render tag. e.g. `{@render}` */
 export interface SvelteRenderTag extends BaseNode {
