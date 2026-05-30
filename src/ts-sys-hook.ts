@@ -21,7 +21,9 @@ const ENV_FLAG = "SVELTE_ESLINT_PARSER_TS_SYS_HOOK";
 
 interface TranslationEntry {
   mtimeMs: number;
-  virtualCode: string;
+  // `null` means "no virtual translation at this mtime" — a negative cache
+  // so JS-only `.svelte` files don't pay a full Svelte parse on every read.
+  virtualCode: string | null;
 }
 
 interface TsLike {
@@ -95,6 +97,10 @@ export function primeTranslationCache(
   virtualCode: string,
 ): void {
   if (!installed) return;
+  // Skip the stat + write if on-demand translation already cached a positive
+  // entry — the prime is redundant when ts.sys read the file before ESLint did.
+  const existing = translations.get(filePath);
+  if (existing && existing.virtualCode !== null) return;
   const mtimeMs = statMtimeMs(filePath);
   if (mtimeMs === null) return;
   translations.set(filePath, { mtimeMs, virtualCode });
@@ -127,15 +133,17 @@ function translateOnDemand(filePath: string): string | null {
   if (cached && cached.mtimeMs === mtimeMs) return cached.virtualCode;
 
   const svelteSource = readUtf8(filePath);
-  if (svelteSource === null) return null;
+  if (svelteSource === null) {
+    translations.set(filePath, { mtimeMs, virtualCode: null });
+    return null;
+  }
 
   const virtualCode = svelteToVirtualTypeScript(
     filePath,
     svelteSource,
     activeParserOptions,
   );
-  if (virtualCode === null) return null;
-
+  // Store the outcome — including `null` — to negative-cache failed translations.
   translations.set(filePath, { mtimeMs, virtualCode });
   return virtualCode;
 }
