@@ -35,13 +35,48 @@ type TransformInfo = {
   transform: (ctx: VirtualTypeScriptContext) => void;
 };
 
+type SvelteTypeScriptCode = {
+  /**
+   * User-authored <script> content.
+   *
+   * Example:
+   *   <script lang="ts">
+   *     const x = $derived(0);
+   *   </script>
+   */
+  script: string;
+
+  /**
+   * Template code that is wrapped in the synthetic render function, where
+   * template scopes are modeled.
+   *
+   * Example:
+   *   {#if ok}
+   *     {const x = $derived(0)}
+   *   {/if}
+   */
+  render: string;
+
+  /**
+   * Template-generated code that must stay outside the render wrapper, such as
+   * top-level snippets.
+   *
+   * Example:
+   *   {#snippet s()}
+   *     {const x = $derived(0)}
+   *   {/snippet}
+   */
+  rootScope: string;
+};
+
 /**
- * Analyze TypeScript source code in <script>.
+ * Analyze TypeScript source code in Svelte.
  * Generate virtual code to provide correct type information for Svelte store reference names, scopes, and runes.
  * See https://github.com/sveltejs/svelte-eslint-parser/blob/main/docs/internal-mechanism.md#scope-types
  */
 export function analyzeTypeScriptInSvelte(
-  code: { script: string; rootScope: string; render: string },
+  /** Split virtual code generated from the Svelte component. */
+  code: SvelteTypeScriptCode,
   attrs: Record<string, string | undefined>,
   parserOptions: NormalizedParserOptions,
   context: AnalyzeTypeScriptContext,
@@ -73,29 +108,47 @@ export function analyzeTypeScriptInSvelte(
   const scriptTransformers: TransformInfo[] = [
     ...analyzeReactiveScopes(result),
   ];
-  const templateTransformers: TransformInfo[] = [];
+  const renderTransformers: TransformInfo[] = [];
+  const rootScopeTransformers: TransformInfo[] = [];
+  const renderStart = code.script.length;
+  const rootScopeStart = code.script.length + code.render.length;
   for (const transform of analyzeDollarDerivedScopes(
     result,
     context.svelteParseContext,
   )) {
-    if (transform.node.range[0] < code.script.length) {
+    if (transform.node.range[0] < renderStart) {
       scriptTransformers.push(transform);
+    } else if (transform.node.range[0] < rootScopeStart) {
+      renderTransformers.push(transform);
     } else {
-      templateTransformers.push(transform);
+      rootScopeTransformers.push(transform);
     }
   }
 
   applyTransforms(scriptTransformers, ctx);
 
   analyzeRenderScopes(code, ctx, () =>
-    applyTransforms(templateTransformers, ctx),
+    applyTransforms(renderTransformers, ctx),
   );
 
-  // When performing type checking on TypeScript code that is not a module, the error `Cannot redeclare block-scoped variable 'xxx'`. occurs. To fix this, add an `export`.
-  // see: https://github.com/sveltejs/svelte-eslint-parser/issues/557
+  // Type checking non-module TypeScript code can report
+  // `Cannot redeclare block-scoped variable 'xxx'`, so add a dummy export.
+  // Keep it before consuming `rootScope` so it remains a standalone statement
+  // at the render/rootScope boundary instead of splitting transformed rootScope
+  // expressions such as `{#snippet s()}{const x = $derived(0)}{/snippet}`.
+  // See https://github.com/sveltejs/svelte-eslint-parser/issues/557
   if (!hasExportDeclaration(result.ast)) {
     appendDummyExport(ctx);
   }
+
+  // This starts consuming `rootScope`. Keep it after `analyzeRenderScopes()` so
+  // top-level snippet code is emitted outside the synthetic render function:
+  //   {#snippet s()}
+  //     {const x = $derived(0)}
+  //   {/snippet}
+  // Keep it after the dummy export above so the export can stay at the
+  // render/rootScope boundary.
+  applyTransforms(rootScopeTransformers, ctx);
 
   ctx.appendOriginalToEnd();
 
@@ -637,7 +690,7 @@ function* analyzeDollarDerivedScopes(
  * Transform source code to provide the correct type information in the HTML templates.
  */
 function analyzeRenderScopes(
-  code: { script: string; render: string; rootScope: string },
+  code: SvelteTypeScriptCode,
   ctx: VirtualTypeScriptContext,
   analyzeInTemplate: () => void,
 ) {
