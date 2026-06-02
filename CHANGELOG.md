@@ -1,5 +1,11 @@
 # svelte-eslint-parser
 
+## 1.7.1
+
+### Patch Changes
+
+- [#899](https://github.com/sveltejs/svelte-eslint-parser/pull/899) [`009dd55`](https://github.com/sveltejs/svelte-eslint-parser/commit/009dd5537dad974ff7fd2ef8dcc12c7e5dd4c018) Thanks [@ota-meshi](https://github.com/ota-meshi)! - Fix parsing TypeScript `$derived(...)` declaration tags inside top-level snippets.
+
 ## 1.7.0
 
 ### Minor Changes
