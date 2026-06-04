@@ -186,7 +186,7 @@ describe("synthetic component default export", () => {
 <p>{value}{count}</p>`);
     assert.match(
       code,
-      /export default null as unknown as import\('svelte'\)\.Component<\{ value: string; count\?: number \}>;/,
+      /import\('svelte'\)\.SvelteComponent<\{ value: string; count\?: number \}, /,
     );
   });
 
@@ -196,10 +196,7 @@ describe("synthetic component default export", () => {
   let props: Props = $props();
 </script>
 <p>{props.a}</p>`);
-    assert.match(
-      code,
-      /export default null as unknown as import\('svelte'\)\.Component<Props>;/,
-    );
+    assert.match(code, /import\('svelte'\)\.SvelteComponent<Props, /);
   });
 
   it("falls back to a permissive props type when none can be recovered", () => {
@@ -209,7 +206,7 @@ describe("synthetic component default export", () => {
 <p>{value}</p>`);
     assert.match(
       code,
-      /export default null as unknown as import\('svelte'\)\.Component<Record<string, any>>;/,
+      /import\('svelte'\)\.SvelteComponent<Record<string, any>, /,
     );
   });
 
@@ -217,7 +214,8 @@ describe("synthetic component default export", () => {
     const code = translate(`<script lang="ts" context="module">
   export default 42;
 </script>`);
-    assert.doesNotMatch(code, /import\('svelte'\)\.Component</);
+    assert.doesNotMatch(code, /import\('svelte'\)\.SvelteComponent</);
+    assert.match(code, /export default 42/);
   });
 
   it("synthesizes props from legacy `export let` declarations", () => {
@@ -228,7 +226,7 @@ describe("synthetic component default export", () => {
 <p>{value}{count}</p>`);
     assert.match(
       code,
-      /export default null as unknown as import\('svelte'\)\.Component<\{ value: string; count\?: typeof count \}>;/,
+      /import\('svelte'\)\.SvelteComponent<\{ value: string; count\?: typeof count \}, /,
     );
   });
 
@@ -239,7 +237,7 @@ describe("synthetic component default export", () => {
 <p>{value}</p>`);
     assert.match(
       code,
-      /export default null as unknown as import\('svelte'\)\.Component<\{ value\?: string \}>;/,
+      /import\('svelte'\)\.SvelteComponent<\{ value\?: string \}, /,
     );
   });
 
@@ -250,10 +248,7 @@ describe("synthetic component default export", () => {
   export let count = 0;
 </script>
 <p>{value}{count}</p>`);
-    assert.match(
-      code,
-      /export default null as unknown as import\('svelte'\)\.Component<\$\$Props>;/,
-    );
+    assert.match(code, /import\('svelte'\)\.SvelteComponent<\$\$Props, /);
   });
 
   it("uses a legacy `$$Props` type alias", () => {
@@ -262,10 +257,7 @@ describe("synthetic component default export", () => {
   export let a: number;
 </script>
 <p>{a}</p>`);
-    assert.match(
-      code,
-      /export default null as unknown as import\('svelte'\)\.Component<\$\$Props>;/,
-    );
+    assert.match(code, /import\('svelte'\)\.SvelteComponent<\$\$Props, /);
   });
 
   it("infers prop names and optionality from an un-annotated `$props()`", () => {
@@ -275,7 +267,7 @@ describe("synthetic component default export", () => {
 <p>{value}{count}</p>`);
     assert.match(
       code,
-      /export default null as unknown as import\('svelte'\)\.Component<\{ value: any; count\?: any \}>;/,
+      /import\('svelte'\)\.SvelteComponent<\{ value: any; count\?: any \}, /,
     );
   });
 
@@ -286,7 +278,7 @@ describe("synthetic component default export", () => {
 <p>{value}</p>`);
     assert.match(
       code,
-      /export default null as unknown as import\('svelte'\)\.Component<Record<string, any>>;/,
+      /import\('svelte'\)\.SvelteComponent<Record<string, any>, /,
     );
   });
 
@@ -300,8 +292,34 @@ describe("synthetic component default export", () => {
     assert.match(code, /type T = unknown;/);
     assert.match(
       code,
-      /export default null as unknown as import\('svelte'\)\.Component<\{ items: T\[\]; selected: T \}>;/,
+      /import\('svelte'\)\.SvelteComponent<\{ items: T\[\]; selected: T \}, /,
     );
+  });
+
+  it("wires legacy `$$Events` and `$$Slots` into the component type", () => {
+    const code = translate(`<script lang="ts">
+  interface $$Props { value: string }
+  interface $$Events { foo: CustomEvent<number> }
+  interface $$Slots { default: {} }
+  export let value: string;
+</script>
+<p>{value}</p>`);
+    assert.match(
+      code,
+      /import\('svelte'\)\.SvelteComponent<\$\$Props, \$\$Events, \$\$Slots>/,
+    );
+  });
+
+  it("exposes the default export as both a value and a type", () => {
+    // `ComponentProps<typeof Foo>` needs the value, `ComponentEvents<Foo>` needs
+    // the type — so the export must carry both meanings.
+    const code = translate(`<script lang="ts">
+  let { value }: { value: string } = $props();
+</script>
+<p>{value}</p>`);
+    assert.match(code, /declare const (\$_svelteComponent\d+):/);
+    assert.match(code, /type \$_svelteComponent\d+ = /);
+    assert.match(code, /export \{ \$_svelteComponent\d+ as default \};/);
   });
 });
 
@@ -479,6 +497,52 @@ describe("imported component prop types (end-to-end type check)", () => {
       diagnostics.map((d) => d.code),
       [],
       `expected no diagnostics, got: ${diagnostics
+        .map((d) => ts.flattenDiagnosticMessageText(d.messageText, "\n"))
+        .join("; ")}`,
+    );
+  });
+
+  it("resolves legacy `$$Events` event types for importers", () => {
+    const legacyComponent = `<script lang="ts">
+  interface $$Events { foo: CustomEvent<number> }
+  export let value: string;
+</script>
+<p>{value}</p>`;
+    // `ComponentEvents<Foo>` uses `Foo` as a type. It must resolve (no TS2749)
+    // and carry the declared event detail type.
+    const diagnostics = typeCheckConsumer(
+      legacyComponent,
+      `type E = import("svelte").ComponentEvents<Foo>;\nconst bad: E["foo"] = null as unknown as CustomEvent<string>;\nvoid bad;`,
+    );
+    // `foo` is `CustomEvent<number>`, so a `CustomEvent<string>` must error and
+    // crucially `Foo` used as a type must not raise TS2749.
+    assert.ok(
+      !diagnostics.some((d) => d.code === 2749),
+      "expected `Foo` to be usable as a type (no TS2749)",
+    );
+    assert.ok(
+      diagnostics.some((d) => d.code === 2322),
+      `expected TS2322 for the wrong event detail type, got: ${diagnostics
+        .map((d) => d.code)
+        .join(", ")}`,
+    );
+  });
+
+  it("keeps `Foo` usable as a type even without `$$Events` (no regression)", () => {
+    const legacyComponent = `<script lang="ts">
+  export let value: string;
+</script>
+<p>{value}</p>`;
+    // Without `$$Events`, events stay permissive (`any`), but `ComponentEvents<Foo>`
+    // must still resolve rather than failing with "Foo refers to a value".
+    const diagnostics = typeCheckConsumer(
+      legacyComponent,
+      `type E = import("svelte").ComponentEvents<Foo>;\nconst e: E["anything"] = 1;\nvoid e;`,
+    );
+    assert.deepStrictEqual(
+      diagnostics.map((d) => d.code),
+      [],
+      `expected no diagnostics (events permissive, Foo usable as a type), got: ${diagnostics
         .map((d) => ts.flattenDiagnosticMessageText(d.messageText, "\n"))
         .join("; ")}`,
     );
