@@ -259,7 +259,7 @@ Speeds up type-aware lint of `.svelte` files. Your ESLint config must
 already list `.svelte` via `parserOptions.extraFileExtensions`.
 
 ```sh
-SVELTE_ESLINT_PARSER_TS_SYS_HOOK=1 \
+SVELTE_ESLINT_PARSER_EXPERIMENTAL_TS_SYS_HOOK=1 \
   eslint --no-cache --concurrency auto .
 ```
 

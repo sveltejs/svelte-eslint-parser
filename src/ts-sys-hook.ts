@@ -8,7 +8,7 @@ import { loadNewestModule } from "./utils/cjs-module.js";
 /**
  * Experimental hook that intercepts `ts.sys.readFile` and returns virtual
  * TypeScript for `.svelte` paths. ESLint's own reads go through `fs` and
- * are unaffected. Activate with `SVELTE_ESLINT_PARSER_TS_SYS_HOOK=1`.
+ * are unaffected. Activate with `SVELTE_ESLINT_PARSER_EXPERIMENTAL_TS_SYS_HOOK=1`.
  *
  * Several preconditions must hold for the hook to actually speed anything up
  * (extraFileExtensions includes '.svelte', type-aware lint is on, the TS
@@ -17,7 +17,7 @@ import { loadNewestModule } from "./utils/cjs-module.js";
  * why no speed-up materialised.
  */
 
-const ENV_FLAG = "SVELTE_ESLINT_PARSER_TS_SYS_HOOK";
+const ENV_FLAG = "SVELTE_ESLINT_PARSER_EXPERIMENTAL_TS_SYS_HOOK";
 
 interface TranslationEntry {
   mtimeMs: number;
@@ -198,7 +198,7 @@ function patchAllLoadedTypeScripts(): void {
   }
 }
 
-/** Idempotent. No-op unless `SVELTE_ESLINT_PARSER_TS_SYS_HOOK=1`. */
+/** Idempotent. No-op unless `SVELTE_ESLINT_PARSER_EXPERIMENTAL_TS_SYS_HOOK=1`. */
 export function installTsSysHook(): void {
   if (installed) return;
   // eslint-disable-next-line no-process-env -- intentional opt-in gate
