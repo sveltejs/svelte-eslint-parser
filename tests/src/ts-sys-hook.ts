@@ -267,6 +267,28 @@ describe("synthetic component default export", () => {
       /export default null as unknown as import\('svelte'\)\.Component<\$\$Props>;/,
     );
   });
+
+  it("infers prop names and optionality from an un-annotated `$props()`", () => {
+    const code = translate(`<script lang="ts">
+  let { value, count = 0 } = $props();
+</script>
+<p>{value}{count}</p>`);
+    assert.match(
+      code,
+      /export default null as unknown as import\('svelte'\)\.Component<\{ value: any; count\?: any \}>;/,
+    );
+  });
+
+  it("falls back when an un-annotated `$props()` has a rest element", () => {
+    const code = translate(`<script lang="ts">
+  let { value, ...rest } = $props();
+</script>
+<p>{value}</p>`);
+    assert.match(
+      code,
+      /export default null as unknown as import\('svelte'\)\.Component<Record<string, any>>;/,
+    );
+  });
 });
 
 describe("imported component prop types (end-to-end type check)", () => {
@@ -391,6 +413,23 @@ describe("imported component prop types (end-to-end type check)", () => {
       `expected TS2322 (number not assignable to string), got: ${diagnostics
         .map((d) => d.code)
         .join(", ")}`,
+    );
+  });
+
+  it("enforces required props inferred from an un-annotated `$props()`", () => {
+    const inferredComponent = `<script lang="ts">
+  let { value, count = 0 } = $props();
+</script>
+<p>{value}{count}</p>`;
+    // `value` is required (no default), `count` optional. Omitting `value`
+    // must be an error even though the prop types are `any`.
+    const diagnostics = typeCheckConsumer(
+      inferredComponent,
+      `const props: import("svelte").ComponentProps<typeof Foo> = {}; void props;`,
+    );
+    assert.ok(
+      diagnostics.length > 0,
+      "expected a missing-required-prop error for the empty props object",
     );
   });
 });
