@@ -1,5 +1,13 @@
 # svelte-eslint-parser
 
+## 1.8.0
+
+### Minor Changes
+
+- [#895](https://github.com/sveltejs/svelte-eslint-parser/pull/895) [`fe36e97`](https://github.com/sveltejs/svelte-eslint-parser/commit/fe36e97bf5a30324b318fbde19c60d9f8f6897c8) Thanks [@baseballyama](https://github.com/baseballyama)! - Add an experimental `ts.sys.readFile` hook that speeds up type-aware lint
+  of `.svelte` files. Opt in with `SVELTE_ESLINT_PARSER_EXPERIMENTAL_TS_SYS_HOOK=1`. See
+  the Experimental section in the README for details.
+
 ## 1.7.1
 
 ### Patch Changes
