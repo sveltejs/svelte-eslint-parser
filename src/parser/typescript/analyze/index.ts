@@ -485,10 +485,18 @@ function hasDefaultExport(ast: TSESParseForESLintResult["ast"]): boolean {
 }
 
 /**
- * Recover the props type text from a runes-mode `$props()` declaration with an
- * explicit type annotation, e.g. `let { value }: { value: string } = $props()`
- * returns `{ value: string }`. Returns `null` when there is no annotated
- * `$props()` call (including legacy mode), so the caller can fall back.
+ * Recover the props type text from a runes-mode `$props()` declaration.
+ *
+ * With an explicit annotation it is used as-is, e.g.
+ * `let { value }: { value: string } = $props()` returns `{ value: string }`.
+ * Without one, a best-effort object type is inferred from the destructuring
+ * pattern: each prop becomes `any`, and a default value makes it optional, e.g.
+ * `let { value, count = 0 } = $props()` returns `{ value: any; count?: any }`.
+ * This captures the prop names and which are required, even though the value
+ * types stay `any` (annotate the props for precise types).
+ *
+ * Returns `null` when there is no usable `$props()` call (including legacy mode),
+ * so the caller can fall back.
  */
 function getRunesPropsTypeText(
   result: TSESParseForESLintResult,
@@ -517,14 +525,48 @@ function getRunesPropsTypeText(
     ) {
       continue;
     }
-    const typeAnnotation = call.parent.id.typeAnnotation;
-    if (!typeAnnotation) {
-      continue;
+    const declId = call.parent.id;
+    const typeAnnotation = declId.typeAnnotation;
+    if (typeAnnotation) {
+      const typeNode = typeAnnotation.typeAnnotation;
+      return source.slice(typeNode.range[0], typeNode.range[1]);
     }
-    const typeNode = typeAnnotation.typeAnnotation;
-    return source.slice(typeNode.range[0], typeNode.range[1]);
+    if (declId.type === "ObjectPattern") {
+      const inferred = inferPropsTypeFromObjectPattern(declId);
+      if (inferred != null) {
+        return inferred;
+      }
+    }
   }
   return null;
+}
+
+/**
+ * Build a best-effort props object type from a `$props()` destructuring pattern,
+ * e.g. `{ value, count = 0 }` becomes `{ value: any; count?: any }`. A default
+ * value makes the prop optional. Returns `null` for patterns whose full shape
+ * can't be enumerated (a rest element, or computed/non-identifier keys), so the
+ * caller can fall back to a permissive type.
+ */
+function inferPropsTypeFromObjectPattern(
+  pattern: TSESTree.ObjectPattern,
+): string | null {
+  const members: string[] = [];
+  for (const prop of pattern.properties) {
+    if (
+      prop.type !== "Property" ||
+      prop.computed ||
+      prop.key.type !== "Identifier"
+    ) {
+      // A rest element or computed/non-identifier key means we can't enumerate
+      // the complete prop set.
+      return null;
+    }
+    // A default value (`AssignmentPattern`) means the prop can be omitted.
+    const optional = prop.value.type === "AssignmentPattern";
+    members.push(`${prop.key.name}${optional ? "?" : ""}: any`);
+  }
+  return `{ ${members.join("; ")} }`;
 }
 
 /**
