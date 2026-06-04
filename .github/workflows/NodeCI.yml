@@ -114,7 +114,7 @@ jobs:
         run: pnpm install --frozen-lockfile
       - name: Test with ts.sys hook enabled
         env:
-          SVELTE_ESLINT_PARSER_TS_SYS_HOOK: "1"
+          SVELTE_ESLINT_PARSER_EXPERIMENTAL_TS_SYS_HOOK: "1"
         run: pnpm run test
   update-fixtures:
     runs-on: ubuntu-latest
