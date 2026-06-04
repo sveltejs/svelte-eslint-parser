@@ -244,3 +244,8 @@ export function _resetTranslationCacheForTesting(): void {
   activeParserOptions = null;
   needsParseTimeRescan = false;
 }
+
+/** Test seam: patch a caller-supplied `sys` instead of the require.cache ones. */
+export function _patchTsSysForTesting(sys: TsLike["sys"]): void {
+  patchTsSys(sys);
+}

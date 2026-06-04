@@ -5,6 +5,7 @@ import path from "path";
 import { normalizeParserOptions } from "../../src/parser/parser-options.js";
 import { svelteToVirtualTypeScript } from "../../src/parser/svelte-to-virtual-ts.js";
 import {
+  _patchTsSysForTesting,
   _resetTranslationCacheForTesting,
   rememberParserOptions,
 } from "../../src/ts-sys-hook.js";
@@ -98,6 +99,66 @@ describe("rememberParserOptions", () => {
       assert.doesNotThrow(() => {
         rememberParserOptions(makeParserOptions(filePath));
       });
+    });
+  });
+});
+
+describe("ts.sys.readFile hook wiring", () => {
+  beforeEach(() => {
+    _resetTranslationCacheForTesting();
+  });
+
+  it("returns the virtual shim for a .svelte path once the sys is patched", () => {
+    withTempSvelteFile(TS_SCRIPT, (filePath) => {
+      // Track original-readFile calls to prove the hook short-circuits.
+      const passthrough: string[] = [];
+      const sys = {
+        readFile: (p: string) => {
+          passthrough.push(p);
+          return fs.readFileSync(p, "utf-8");
+        },
+      };
+      _patchTsSysForTesting(sys);
+      rememberParserOptions(makeParserOptions(filePath));
+
+      const result = sys.readFile(filePath);
+      assert.match(result, /let count: number/, "expected the virtual TS shim");
+      assert.deepStrictEqual(
+        passthrough,
+        [],
+        "original readFile must be bypassed for a translatable .svelte path",
+      );
+    });
+  });
+
+  it("falls through to the original readFile for non-.svelte paths", () => {
+    withTempSvelteFile(TS_SCRIPT, (filePath) => {
+      const tsPath = path.join(path.dirname(filePath), "other.ts");
+      fs.writeFileSync(tsPath, "export const x: number = 1;\n", "utf-8");
+      const sys = { readFile: (p: string) => fs.readFileSync(p, "utf-8") };
+      _patchTsSysForTesting(sys);
+      rememberParserOptions(makeParserOptions(filePath));
+
+      assert.strictEqual(sys.readFile(tsPath), "export const x: number = 1;\n");
+    });
+  });
+
+  it("falls through for a JS-only .svelte file (nothing to translate)", () => {
+    withTempSvelteFile(JS_SCRIPT, (filePath) => {
+      const sys = { readFile: (p: string) => fs.readFileSync(p, "utf-8") };
+      _patchTsSysForTesting(sys);
+      rememberParserOptions(makeParserOptions(filePath));
+
+      assert.strictEqual(sys.readFile(filePath), JS_SCRIPT);
+    });
+  });
+
+  it("does nothing before rememberParserOptions sets options", () => {
+    withTempSvelteFile(TS_SCRIPT, (filePath) => {
+      const sys = { readFile: (p: string) => fs.readFileSync(p, "utf-8") };
+      _patchTsSysForTesting(sys);
+
+      assert.strictEqual(sys.readFile(filePath), TS_SCRIPT);
     });
   });
 });
