@@ -249,6 +249,27 @@ export default [
 
 ---
 
+## Experimental
+
+### `ts.sys.readFile` hook for type-aware Svelte lint
+
+> ⚠️ **Experimental.** Opt-in only; behavior may change or be removed.
+
+Speeds up type-aware lint of `.svelte` files. Your ESLint config must
+already list `.svelte` via `parserOptions.extraFileExtensions`.
+
+```sh
+SVELTE_ESLINT_PARSER_EXPERIMENTAL_TS_SYS_HOOK=1 \
+  eslint --no-cache --concurrency auto .
+```
+
+Caveat: rules that read raw TypeScript diagnostics
+(`program.getSemanticDiagnostics()` and friends) report positions inside
+the parser's virtual shim — a pre-existing property of type-aware Svelte
+lint, not specific to the hook.
+
+---
+
 ## Editor Integrations
 
 ### Visual Studio Code

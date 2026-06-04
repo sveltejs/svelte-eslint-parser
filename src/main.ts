@@ -27,3 +27,7 @@ export const VisitorKeys = KEYS;
 
 // tools
 export { traverseNodes };
+
+// Opt-in `ts.sys.readFile` hook. See `ts-sys-hook.ts`.
+import { installTsSysHook } from "./ts-sys-hook.js";
+installTsSysHook();

@@ -7,9 +7,7 @@ const cachedRequires: {
   fromCwd?: NodeJS.Require;
 } = {};
 
-/**
- * Get the newest `espree` kind from the loaded ESLint or dependency.
- */
+/** Load the newest reachable copy of a module (linter → cwd → self). */
 export function loadNewestModule<T>(module: string): T {
   const requires = [
     getRequireFromLinter(),
