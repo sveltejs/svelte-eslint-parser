@@ -438,9 +438,9 @@ function analyzeDollarDollarVariables(
  * behavior. The statement is removed again in the restore pass so the linted
  * file itself is unaffected.
  *
- * NOTE: Experimental, alpha-stage. Currently only the runes `$props()` type
- * annotation is recognized; legacy `export let`, `$$Props`, generics, events and
- * slots are handled in follow-up work.
+ * NOTE: Experimental, alpha-stage. Currently the runes `$props()` type
+ * annotation and legacy `export let` props are recognized; `$$Props`, generics,
+ * events and slots are handled in follow-up work.
  */
 function appendComponentDefaultExport(
   result: TSESParseForESLintResult,
@@ -455,6 +455,7 @@ function appendComponentDefaultExport(
 
   const propsType =
     getRunesPropsTypeText(result, source, svelteParseContext) ??
+    getLegacyExportLetPropsType(result, source, svelteParseContext) ??
     "Record<string, any>";
 
   ctx.appendVirtualScript(
@@ -523,6 +524,55 @@ function getRunesPropsTypeText(
     return source.slice(typeNode.range[0], typeNode.range[1]);
   }
   return null;
+}
+
+/**
+ * Synthesize a props object type from legacy `export let` declarations, e.g.
+ * `export let value: string; export let count = 0;` returns
+ * `{ value: string; count?: typeof count }`. A default value makes the prop
+ * optional and an explicit annotation is used as-is (otherwise the type is
+ * inferred via `typeof`), mirroring svelte2tsx. Returns `null` in runes mode or
+ * when there are no `export let` props.
+ */
+function getLegacyExportLetPropsType(
+  result: TSESParseForESLintResult,
+  source: string,
+  svelteParseContext: SvelteParseContext,
+): string | null {
+  // `export let` is only a prop declaration in legacy (non-runes) mode.
+  if (svelteParseContext.runes === true) {
+    return null;
+  }
+  const members: string[] = [];
+  for (const node of result.ast.body) {
+    if (
+      node.type !== "ExportNamedDeclaration" ||
+      node.declaration?.type !== "VariableDeclaration" ||
+      node.declaration.kind !== "let"
+    ) {
+      continue;
+    }
+    for (const declarator of node.declaration.declarations) {
+      if (declarator.id.type !== "Identifier") {
+        continue;
+      }
+      const name = declarator.id.name;
+      // A default value (initializer) means the prop can be omitted.
+      const optional = declarator.init != null;
+      const typeAnnotation = declarator.id.typeAnnotation;
+      const typeText = typeAnnotation
+        ? source.slice(
+            typeAnnotation.typeAnnotation.range[0],
+            typeAnnotation.typeAnnotation.range[1],
+          )
+        : `typeof ${name}`;
+      members.push(`${name}${optional ? "?" : ""}: ${typeText}`);
+    }
+  }
+  if (!members.length) {
+    return null;
+  }
+  return `{ ${members.join("; ")} }`;
 }
 
 /** Append dummy export */

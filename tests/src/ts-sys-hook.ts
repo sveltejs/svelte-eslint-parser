@@ -219,6 +219,29 @@ describe("synthetic component default export", () => {
 </script>`);
     assert.doesNotMatch(code, /import\('svelte'\)\.Component</);
   });
+
+  it("synthesizes props from legacy `export let` declarations", () => {
+    const code = translate(`<script lang="ts">
+  export let value: string;
+  export let count = 0;
+</script>
+<p>{value}{count}</p>`);
+    assert.match(
+      code,
+      /export default null as unknown as import\('svelte'\)\.Component<\{ value: string; count\?: typeof count \}>;/,
+    );
+  });
+
+  it("marks `export let` props with a default value as optional", () => {
+    const code = translate(`<script lang="ts">
+  export let value: string = "x";
+</script>
+<p>{value}</p>`);
+    assert.match(
+      code,
+      /export default null as unknown as import\('svelte'\)\.Component<\{ value\?: string \}>;/,
+    );
+  });
 });
 
 describe("imported component prop types (end-to-end type check)", () => {
@@ -305,6 +328,25 @@ describe("imported component prop types (end-to-end type check)", () => {
       `expected no diagnostics, got: ${diagnostics
         .map((d) => ts.flattenDiagnosticMessageText(d.messageText, "\n"))
         .join("; ")}`,
+    );
+  });
+
+  it("resolves legacy `export let` props to their declared type for importers", () => {
+    const legacyComponent = `<script lang="ts">
+  export let value: string;
+  export let count = 0;
+</script>
+<p>{value}{count}</p>`;
+    const diagnostics = typeCheckConsumer(
+      legacyComponent,
+      `const value: import("svelte").ComponentProps<typeof Foo>["value"] = 123;`,
+    );
+    // `value` is `string`, so assigning a number must be a type error.
+    assert.ok(
+      diagnostics.some((d) => d.code === 2322),
+      `expected TS2322 (number not assignable to string), got: ${diagnostics
+        .map((d) => d.code)
+        .join(", ")}`,
     );
   });
 });
