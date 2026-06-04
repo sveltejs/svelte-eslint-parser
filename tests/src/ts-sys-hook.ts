@@ -242,6 +242,31 @@ describe("synthetic component default export", () => {
       /export default null as unknown as import\('svelte'\)\.Component<\{ value\?: string \}>;/,
     );
   });
+
+  it("uses a legacy `$$Props` interface, taking priority over `export let`", () => {
+    const code = translate(`<script lang="ts">
+  interface $$Props { value: string; count?: number }
+  export let value: string;
+  export let count = 0;
+</script>
+<p>{value}{count}</p>`);
+    assert.match(
+      code,
+      /export default null as unknown as import\('svelte'\)\.Component<\$\$Props>;/,
+    );
+  });
+
+  it("uses a legacy `$$Props` type alias", () => {
+    const code = translate(`<script lang="ts">
+  type $$Props = { a: number };
+  export let a: number;
+</script>
+<p>{a}</p>`);
+    assert.match(
+      code,
+      /export default null as unknown as import\('svelte'\)\.Component<\$\$Props>;/,
+    );
+  });
 });
 
 describe("imported component prop types (end-to-end type check)", () => {
@@ -342,6 +367,25 @@ describe("imported component prop types (end-to-end type check)", () => {
       `const value: import("svelte").ComponentProps<typeof Foo>["value"] = 123;`,
     );
     // `value` is `string`, so assigning a number must be a type error.
+    assert.ok(
+      diagnostics.some((d) => d.code === 2322),
+      `expected TS2322 (number not assignable to string), got: ${diagnostics
+        .map((d) => d.code)
+        .join(", ")}`,
+    );
+  });
+
+  it("resolves legacy `$$Props` props to their declared type for importers", () => {
+    const legacyComponent = `<script lang="ts">
+  interface $$Props { value: string; count?: number }
+  export let value: string;
+  export let count = 0;
+</script>
+<p>{value}{count}</p>`;
+    const diagnostics = typeCheckConsumer(
+      legacyComponent,
+      `const value: import("svelte").ComponentProps<typeof Foo>["value"] = 123;`,
+    );
     assert.ok(
       diagnostics.some((d) => d.code === 2322),
       `expected TS2322 (number not assignable to string), got: ${diagnostics

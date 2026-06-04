@@ -439,8 +439,8 @@ function analyzeDollarDollarVariables(
  * file itself is unaffected.
  *
  * NOTE: Experimental, alpha-stage. Currently the runes `$props()` type
- * annotation and legacy `export let` props are recognized; `$$Props`, generics,
- * events and slots are handled in follow-up work.
+ * annotation, a legacy `$$Props` interface/type and legacy `export let` props are
+ * recognized; generics, events and slots are handled in follow-up work.
  */
 function appendComponentDefaultExport(
   result: TSESParseForESLintResult,
@@ -455,6 +455,7 @@ function appendComponentDefaultExport(
 
   const propsType =
     getRunesPropsTypeText(result, source, svelteParseContext) ??
+    getDollarDollarPropsType(result, svelteParseContext) ??
     getLegacyExportLetPropsType(result, source, svelteParseContext) ??
     "Record<string, any>";
 
@@ -524,6 +525,29 @@ function getRunesPropsTypeText(
     return source.slice(typeNode.range[0], typeNode.range[1]);
   }
   return null;
+}
+
+/**
+ * Use a legacy `$$Props` interface or type alias as the props type when present.
+ * Svelte treats `$$Props` as the authoritative prop typing, so it takes priority
+ * over `export let` inference. The declaration stays in the virtual code, so it
+ * can be referenced by name. Returns `null` in runes mode or when no `$$Props`
+ * declaration exists.
+ */
+function getDollarDollarPropsType(
+  result: TSESParseForESLintResult,
+  svelteParseContext: SvelteParseContext,
+): string | null {
+  if (svelteParseContext.runes === true) {
+    return null;
+  }
+  const hasDollarProps = result.ast.body.some(
+    (node) =>
+      (node.type === "TSInterfaceDeclaration" ||
+        node.type === "TSTypeAliasDeclaration") &&
+      node.id.name === "$$Props",
+  );
+  return hasDollarProps ? "$$Props" : null;
 }
 
 /**
