@@ -2,6 +2,8 @@ import assert from "assert";
 import fs from "fs";
 import os from "os";
 import path from "path";
+import { createRequire } from "module";
+import ts from "typescript";
 import { normalizeParserOptions } from "../../src/parser/parser-options.js";
 import { svelteToVirtualTypeScript } from "../../src/parser/svelte-to-virtual-ts.js";
 import {
@@ -160,5 +162,149 @@ describe("ts.sys.readFile hook wiring", () => {
 
       assert.strictEqual(sys.readFile(filePath), TS_SCRIPT);
     });
+  });
+});
+
+describe("synthetic component default export", () => {
+  function translate(source: string): string {
+    let result: string | null = null;
+    withTempSvelteFile(source, (filePath) => {
+      result = svelteToVirtualTypeScript(
+        filePath,
+        source,
+        makeParserOptions(filePath),
+      );
+    });
+    assert.notStrictEqual(result, null, "expected non-null translation");
+    return result!;
+  }
+
+  it("recovers the props type from an annotated `$props()` declaration", () => {
+    const code = translate(`<script lang="ts">
+  let { value, count = 0 }: { value: string; count?: number } = $props();
+</script>
+<p>{value}{count}</p>`);
+    assert.match(
+      code,
+      /export default null as unknown as import\('svelte'\)\.Component<\{ value: string; count\?: number \}>;/,
+    );
+  });
+
+  it("references a named props interface as-is", () => {
+    const code = translate(`<script lang="ts">
+  interface Props { a: number; b?: string }
+  let props: Props = $props();
+</script>
+<p>{props.a}</p>`);
+    assert.match(
+      code,
+      /export default null as unknown as import\('svelte'\)\.Component<Props>;/,
+    );
+  });
+
+  it("falls back to a permissive props type when none can be recovered", () => {
+    const code = translate(`<script lang="ts">
+  let value = 1;
+</script>
+<p>{value}</p>`);
+    assert.match(
+      code,
+      /export default null as unknown as import\('svelte'\)\.Component<Record<string, any>>;/,
+    );
+  });
+
+  it("does not emit a default export when the user already has one", () => {
+    const code = translate(`<script lang="ts" context="module">
+  export default 42;
+</script>`);
+    assert.doesNotMatch(code, /import\('svelte'\)\.Component</);
+  });
+});
+
+describe("imported component prop types (end-to-end type check)", () => {
+  const require2 = createRequire(import.meta.url);
+  const svelteTypesPath = path.join(
+    path.dirname(require2.resolve("svelte/package.json")),
+    "types/index.d.ts",
+  );
+
+  /**
+   * Type-checks a consumer `.ts` against the virtual code produced for a
+   * `.svelte` component and returns the TypeScript diagnostics. The consumer
+   * resolves the component's props through `ComponentProps<typeof Foo>`, exactly
+   * like the parser's generated template code does.
+   */
+  function typeCheckConsumer(
+    componentSource: string,
+    consumerBody: string,
+  ): ts.Diagnostic[] {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "component-export-"));
+    try {
+      const componentVirtual = svelteToVirtualTypeScript(
+        path.join(dir, "Foo.svelte"),
+        componentSource,
+        makeParserOptions(path.join(dir, "Foo.svelte")),
+      );
+      assert.notStrictEqual(componentVirtual, null);
+      fs.writeFileSync(path.join(dir, "Foo.ts"), componentVirtual!, "utf-8");
+      fs.writeFileSync(
+        path.join(dir, "Bar.ts"),
+        `import Foo from "./Foo";\n${consumerBody}\n`,
+        "utf-8",
+      );
+
+      const program = ts.createProgram(
+        [path.join(dir, "Foo.ts"), path.join(dir, "Bar.ts")],
+        {
+          strict: true,
+          noEmit: true,
+          skipLibCheck: true,
+          module: ts.ModuleKind.ESNext,
+          moduleResolution: ts.ModuleResolutionKind.Bundler,
+          types: [],
+          baseUrl: dir,
+          paths: { svelte: [svelteTypesPath] },
+        },
+      );
+      return [
+        ...program.getSemanticDiagnostics(),
+        ...program.getSyntacticDiagnostics(),
+      ];
+    } finally {
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
+  }
+
+  const COMPONENT = `<script lang="ts">
+  let { value, count = 0 }: { value: string; count?: number } = $props();
+</script>
+<p>{value}{count}</p>`;
+
+  it("resolves a prop to its declared type for importers", () => {
+    const diagnostics = typeCheckConsumer(
+      COMPONENT,
+      `const value: import("svelte").ComponentProps<typeof Foo>["value"] = 123;`,
+    );
+    // `value` is `string`, so assigning a number must be a type error.
+    assert.ok(
+      diagnostics.some((d) => d.code === 2322),
+      `expected TS2322 (number not assignable to string), got: ${diagnostics
+        .map((d) => d.code)
+        .join(", ")}`,
+    );
+  });
+
+  it("accepts a correctly typed prop value from importers", () => {
+    const diagnostics = typeCheckConsumer(
+      COMPONENT,
+      `const value: import("svelte").ComponentProps<typeof Foo>["value"] = "hello";\nconst count: import("svelte").ComponentProps<typeof Foo>["count"] = 5;\nvoid value; void count;`,
+    );
+    assert.deepStrictEqual(
+      diagnostics.map((d) => d.code),
+      [],
+      `expected no diagnostics, got: ${diagnostics
+        .map((d) => ts.flattenDiagnosticMessageText(d.messageText, "\n"))
+        .join("; ")}`,
+    );
   });
 });
