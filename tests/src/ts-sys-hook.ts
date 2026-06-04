@@ -289,6 +289,20 @@ describe("synthetic component default export", () => {
       /export default null as unknown as import\('svelte'\)\.Component<Record<string, any>>;/,
     );
   });
+
+  it("references `generics` type parameters in the props type", () => {
+    // The parser already declares the generic params (`type T = unknown`), so
+    // the recovered annotation referencing them stays valid.
+    const code = translate(`<script lang="ts" generics="T">
+  let { items, selected }: { items: T[]; selected: T } = $props();
+</script>
+<p>{selected}</p>`);
+    assert.match(code, /type T = unknown;/);
+    assert.match(
+      code,
+      /export default null as unknown as import\('svelte'\)\.Component<\{ items: T\[\]; selected: T \}>;/,
+    );
+  });
 });
 
 describe("imported component prop types (end-to-end type check)", () => {
@@ -430,6 +444,43 @@ describe("imported component prop types (end-to-end type check)", () => {
     assert.ok(
       diagnostics.length > 0,
       "expected a missing-required-prop error for the empty props object",
+    );
+  });
+
+  it("resolves generic component props (type params as their constraint) for importers", () => {
+    // `generics="T extends string"`, so `v` resolves to `string`.
+    const genericComponent = `<script lang="ts" generics="T extends string">
+  let { v }: { v: T } = $props();
+</script>
+<p>{v}</p>`;
+    const diagnostics = typeCheckConsumer(
+      genericComponent,
+      `const v: import("svelte").ComponentProps<typeof Foo>["v"] = 123;`,
+    );
+    assert.ok(
+      diagnostics.some((d) => d.code === 2322),
+      `expected TS2322 (number not assignable to string), got: ${diagnostics
+        .map((d) => d.code)
+        .join(", ")}`,
+    );
+  });
+
+  it("accepts valid props on an unconstrained generic component", () => {
+    const genericComponent = `<script lang="ts" generics="T">
+  let { items, selected }: { items: T[]; selected: T } = $props();
+</script>
+<p>{selected}</p>`;
+    // `T` resolves to `unknown`, so a concrete props object is accepted.
+    const diagnostics = typeCheckConsumer(
+      genericComponent,
+      `const props: import("svelte").ComponentProps<typeof Foo> = { items: [1, 2], selected: 2 }; void props;`,
+    );
+    assert.deepStrictEqual(
+      diagnostics.map((d) => d.code),
+      [],
+      `expected no diagnostics, got: ${diagnostics
+        .map((d) => ts.flattenDiagnosticMessageText(d.messageText, "\n"))
+        .join("; ")}`,
     );
   });
 });
