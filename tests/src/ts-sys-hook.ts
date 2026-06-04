@@ -260,14 +260,14 @@ describe("synthetic component default export", () => {
     assert.match(code, /import\('svelte'\)\.SvelteComponent<\$\$Props, /);
   });
 
-  it("infers prop names and optionality from an un-annotated `$props()`", () => {
+  it("infers prop names, optionality and literal default types from an un-annotated `$props()`", () => {
     const code = translate(`<script lang="ts">
   let { value, count = 0 } = $props();
 </script>
 <p>{value}{count}</p>`);
     assert.match(
       code,
-      /import\('svelte'\)\.SvelteComponent<\{ value: any; count\?: any \}, /,
+      /import\('svelte'\)\.SvelteComponent<\{ value: any; count\?: number \}, /,
     );
   });
 
@@ -320,6 +320,23 @@ describe("synthetic component default export", () => {
     assert.match(code, /declare const (\$_svelteComponent\d+):/);
     assert.match(code, /type \$_svelteComponent\d+ = /);
     assert.match(code, /export \{ \$_svelteComponent\d+ as default \};/);
+  });
+
+  it("types the exported value as the Svelte 5 `Component` (for `typeof Foo`)", () => {
+    // The value uses `Component` so `typeof Foo` matches modern Svelte 5 usage
+    // (e.g. `mount(Foo)`), while the type alias keeps the legacy `SvelteComponent`.
+    const code = translate(`<script lang="ts">
+  let { value }: { value: string } = $props();
+</script>
+<p>{value}</p>`);
+    assert.match(
+      code,
+      /declare const \$_svelteComponent\d+: import\('svelte'\)\.Component<\{ value: string \}>;/,
+    );
+    assert.match(
+      code,
+      /type \$_svelteComponent\d+ = import\('svelte'\)\.SvelteComponent</,
+    );
   });
 });
 
@@ -545,6 +562,61 @@ describe("imported component prop types (end-to-end type check)", () => {
       `expected no diagnostics (events permissive, Foo usable as a type), got: ${diagnostics
         .map((d) => ts.flattenDiagnosticMessageText(d.messageText, "\n"))
         .join("; ")}`,
+    );
+  });
+
+  it("works with Svelte 5 `mount(Foo, ...)` value usage", () => {
+    const runesComponent = `<script lang="ts">
+  let { value }: { value: string } = $props();
+</script>
+<p>{value}</p>`;
+    // `mount` expects a Svelte 5 `Component`, so `typeof Foo` must be that type
+    // and the props must be checked.
+    const diagnostics = typeCheckConsumer(
+      runesComponent,
+      `import { mount } from "svelte";\nmount(Foo, { target: null as any, props: { value: "x" } });`,
+    );
+    assert.deepStrictEqual(
+      diagnostics.map((d) => d.code),
+      [],
+      `expected no diagnostics for mount(Foo, ...), got: ${diagnostics
+        .map((d) => ts.flattenDiagnosticMessageText(d.messageText, "\n"))
+        .join("; ")}`,
+    );
+  });
+
+  it("rejects wrong prop types via Svelte 5 `mount(Foo, ...)`", () => {
+    const runesComponent = `<script lang="ts">
+  let { value }: { value: string } = $props();
+</script>
+<p>{value}</p>`;
+    const diagnostics = typeCheckConsumer(
+      runesComponent,
+      `import { mount } from "svelte";\nmount(Foo, { target: null as any, props: { value: 123 } });`,
+    );
+    assert.ok(
+      diagnostics.some((d) => d.code === 2322 || d.code === 2769),
+      `expected a prop type error from mount(Foo, ...), got: ${diagnostics
+        .map((d) => d.code)
+        .join(", ")}`,
+    );
+  });
+
+  it("enforces literal default types inferred from an un-annotated `$props()`", () => {
+    const inferredComponent = `<script lang="ts">
+  let { count = 0 } = $props();
+</script>
+<p>{count}</p>`;
+    // `count = 0` makes `count?: number`, so a string must error for importers.
+    const diagnostics = typeCheckConsumer(
+      inferredComponent,
+      `const count: import("svelte").ComponentProps<typeof Foo>["count"] = "x";`,
+    );
+    assert.ok(
+      diagnostics.some((d) => d.code === 2322),
+      `expected TS2322 (string not assignable to number), got: ${diagnostics
+        .map((d) => d.code)
+        .join(", ")}`,
     );
   });
 });

@@ -438,9 +438,13 @@ function analyzeDollarDollarVariables(
  * to a value but is used as a type"). Instead emit a value/type pair re-exported
  * as default:
  *
- *   declare const $c: import('svelte').SvelteComponent<Props, Events, Slots>;
+ *   declare const $c: import('svelte').Component<Props>;
  *   type $c = import('svelte').SvelteComponent<Props, Events, Slots>;
  *   export { $c as default };
+ *
+ * The value is the Svelte 5 `Component`, so `typeof Foo` matches modern usage
+ * (`mount(Foo)`, `ComponentProps<typeof Foo>`); the same-named legacy
+ * `SvelteComponent` type keeps `ComponentEvents<Foo>` resolving for Svelte 4.
  *
  * `Props`/`Events`/`Slots` are recovered from the component when possible
  * (`$props()` annotation, `$$Props`/`$$Events`/`$$Slots`, `export let`), else a
@@ -475,9 +479,15 @@ function appendComponentDefaultExport(
     : "Record<string, any>";
 
   const name = ctx.generateUniqueId("svelteComponent");
-  const componentType = `import('svelte').SvelteComponent<${propsType}, ${eventsType}, ${slotsType}>`;
+  // The *value* is the Svelte 5 `Component` function type, so `typeof Foo`
+  // matches modern usage (`mount(Foo)`, `ComponentProps<typeof Foo>`). The
+  // same-named *type* is the legacy `SvelteComponent`, so `ComponentEvents<Foo>`
+  // / `ComponentProps<Foo>` (which use `Foo` as a type) keep resolving for
+  // Svelte 4 components. Both expose the same props.
+  const valueType = `import('svelte').Component<${propsType}>`;
+  const typeType = `import('svelte').SvelteComponent<${propsType}, ${eventsType}, ${slotsType}>`;
   ctx.appendVirtualScript(
-    `declare const ${name}: ${componentType};type ${name} = ${componentType};export { ${name} as default };`,
+    `declare const ${name}: ${valueType};type ${name} = ${typeType};export { ${name} as default };`,
   );
 
   // Re-export specifier: `export { <name> as default }`.
@@ -564,10 +574,10 @@ function hasNamedTypeDeclaration(
  * With an explicit annotation it is used as-is, e.g.
  * `let { value }: { value: string } = $props()` returns `{ value: string }`.
  * Without one, a best-effort object type is inferred from the destructuring
- * pattern: each prop becomes `any`, and a default value makes it optional, e.g.
- * `let { value, count = 0 } = $props()` returns `{ value: any; count?: any }`.
- * This captures the prop names and which are required, even though the value
- * types stay `any` (annotate the props for precise types).
+ * pattern: a default value makes the prop optional and contributes its literal
+ * type, e.g. `let { value, count = 0 } = $props()` returns
+ * `{ value: any; count?: number }`. Props without a literal default stay `any`
+ * (annotate the props for fully precise types).
  *
  * Returns `null` when there is no usable `$props()` call (including legacy mode),
  * so the caller can fall back.
@@ -616,11 +626,13 @@ function getRunesPropsTypeText(
 }
 
 /**
- * Build a best-effort props object type from a `$props()` destructuring pattern,
- * e.g. `{ value, count = 0 }` becomes `{ value: any; count?: any }`. A default
- * value makes the prop optional. Returns `null` for patterns whose full shape
- * can't be enumerated (a rest element, or computed/non-identifier keys), so the
- * caller can fall back to a permissive type.
+ * Build a best-effort props object type from a `$props()` destructuring pattern.
+ * A default value makes the prop optional, and a literal default contributes its
+ * primitive type, e.g. `{ value, count = 0, name = "x" }` becomes
+ * `{ value: any; count?: number; name?: string }`. Non-literal defaults and
+ * props without a default stay `any`. Returns `null` for patterns whose full
+ * shape can't be enumerated (a rest element, or computed/non-identifier keys),
+ * so the caller can fall back to a permissive type.
  */
 function inferPropsTypeFromObjectPattern(
   pattern: TSESTree.ObjectPattern,
@@ -636,11 +648,42 @@ function inferPropsTypeFromObjectPattern(
       // the complete prop set.
       return null;
     }
-    // A default value (`AssignmentPattern`) means the prop can be omitted.
-    const optional = prop.value.type === "AssignmentPattern";
-    members.push(`${prop.key.name}${optional ? "?" : ""}: any`);
+    // A default value (`AssignmentPattern`) means the prop can be omitted, and
+    // its literal type can be recovered.
+    if (prop.value.type === "AssignmentPattern") {
+      members.push(
+        `${prop.key.name}?: ${inferTypeFromDefaultExpression(prop.value.right)}`,
+      );
+    } else {
+      members.push(`${prop.key.name}: any`);
+    }
   }
   return `{ ${members.join("; ")} }`;
+}
+
+/** Map a literal default value to its primitive type, else `any`. */
+function inferTypeFromDefaultExpression(
+  expression: TSESTree.Expression,
+): string {
+  if (expression.type === "Literal") {
+    switch (typeof expression.value) {
+      case "number":
+        return "number";
+      case "string":
+        return "string";
+      case "boolean":
+        return "boolean";
+      case "bigint":
+        return "bigint";
+      default:
+        // `null` and regex literals fall through.
+        return "any";
+    }
+  }
+  if (expression.type === "TemplateLiteral") {
+    return "string";
+  }
+  return "any";
 }
 
 /**
