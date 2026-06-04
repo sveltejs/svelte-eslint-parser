@@ -423,24 +423,31 @@ function analyzeDollarDollarVariables(
 }
 
 /**
- * Append a synthetic component `export default` to the virtual code.
+ * Append a synthetic component default export to the virtual code.
  *
- * Files that import a `.svelte` component (e.g. `<Foo value={x} />`) type-check
- * its props through `import('svelte').ComponentProps<typeof Foo>`. For that to
- * resolve, the imported component's virtual code must expose a default export
- * typed as a Svelte component. The original virtual code only exported the
- * synthetic render function, so `typeof Foo` was `any` and every prop collapsed
- * to `any`.
+ * Files that import a `.svelte` component type-check it through Svelte's helper
+ * types: props via `import('svelte').ComponentProps<typeof Foo>` and legacy
+ * events via `import('svelte').ComponentEvents<Foo>`. The original virtual code
+ * only exported the synthetic render function, so `typeof Foo` was `any` and
+ * every prop collapsed to `any`.
  *
- * Emitting `export default null as unknown as import('svelte').Component<Props>`
- * fixes that. `Props` is the user's `$props()` type annotation when it can be
- * recovered, otherwise a permissive fallback that matches the previous (`any`)
- * behavior. The statement is removed again in the restore pass so the linted
- * file itself is unaffected.
+ * Note the two reference shapes: props use `typeof Foo` (the imported value)
+ * while `ComponentEvents<Foo>` uses `Foo` as a *type*. So the default export must
+ * carry both a value and a type meaning. A single `export default <expr>` only
+ * provides a value (and would make `ComponentEvents<Foo>` fail with "Foo refers
+ * to a value but is used as a type"). Instead emit a value/type pair re-exported
+ * as default:
  *
- * NOTE: Experimental, alpha-stage. Currently the runes `$props()` type
- * annotation, a legacy `$$Props` interface/type and legacy `export let` props are
- * recognized; generics, events and slots are handled in follow-up work.
+ *   declare const $c: import('svelte').SvelteComponent<Props, Events, Slots>;
+ *   type $c = import('svelte').SvelteComponent<Props, Events, Slots>;
+ *   export { $c as default };
+ *
+ * `Props`/`Events`/`Slots` are recovered from the component when possible
+ * (`$props()` annotation, `$$Props`/`$$Events`/`$$Slots`, `export let`), else a
+ * permissive fallback that matches the previous (`any`) behavior. The statements
+ * are removed again in the restore pass so the linted file itself is unaffected.
+ *
+ * NOTE: Experimental, alpha-stage.
  */
 function appendComponentDefaultExport(
   result: TSESParseForESLintResult,
@@ -448,7 +455,7 @@ function appendComponentDefaultExport(
   ctx: VirtualTypeScriptContext,
   svelteParseContext: SvelteParseContext,
 ) {
-  // Don't clash with a user-authored `export default`.
+  // Don't clash with a user-authored default export.
   if (hasDefaultExport(result.ast)) {
     return;
   }
@@ -458,30 +465,97 @@ function appendComponentDefaultExport(
     getDollarDollarPropsType(result, svelteParseContext) ??
     getLegacyExportLetPropsType(result, source, svelteParseContext) ??
     "Record<string, any>";
+  // Legacy `$$Events`/`$$Slots` declarations type events/slots; otherwise stay
+  // permissive so `on:`/slots don't get spurious errors.
+  const eventsType = hasNamedTypeDeclaration(result, "$$Events")
+    ? "$$Events"
+    : "Record<string, any>";
+  const slotsType = hasNamedTypeDeclaration(result, "$$Slots")
+    ? "$$Slots"
+    : "Record<string, any>";
 
+  const name = ctx.generateUniqueId("svelteComponent");
+  const componentType = `import('svelte').SvelteComponent<${propsType}, ${eventsType}, ${slotsType}>`;
   ctx.appendVirtualScript(
-    `export default null as unknown as import('svelte').Component<${propsType}>;`,
+    `declare const ${name}: ${componentType};type ${name} = ${componentType};export { ${name} as default };`,
   );
+
+  // Re-export specifier: `export { <name> as default }`.
   ctx.restoreContext.addRestoreStatementProcess((node, restoreResult) => {
-    if (node.type !== "ExportDefaultDeclaration") {
+    if (
+      node.type !== "ExportNamedDeclaration" ||
+      node.declaration != null ||
+      node.specifiers.length !== 1 ||
+      node.specifiers[0].local.type !== "Identifier" ||
+      node.specifiers[0].local.name !== name
+    ) {
       return false;
     }
-    const program = restoreResult.ast;
-    program.body.splice(program.body.indexOf(node), 1);
-
-    const scopeManager =
-      restoreResult.scopeManager as eslint.Scope.ScopeManager;
-    removeAllScopeAndVariableAndReference(node, {
-      visitorKeys: restoreResult.visitorKeys,
-      scopeManager,
-    });
-
+    removeSyntheticStatement(node, restoreResult);
+    return true;
+  });
+  // `declare const <name>: ...`.
+  ctx.restoreContext.addRestoreStatementProcess((node, restoreResult) => {
+    if (
+      node.type !== "VariableDeclaration" ||
+      node.declarations[0]?.id.type !== "Identifier" ||
+      node.declarations[0].id.name !== name
+    ) {
+      return false;
+    }
+    removeSyntheticStatement(node, restoreResult);
+    return true;
+  });
+  // `type <name> = ...`.
+  ctx.restoreContext.addRestoreStatementProcess((node, restoreResult) => {
+    if (node.type !== "TSTypeAliasDeclaration" || node.id.name !== name) {
+      return false;
+    }
+    removeSyntheticStatement(node, restoreResult);
     return true;
   });
 }
 
+/** Splice a synthetic statement out of the AST and clean up its scope. */
+function removeSyntheticStatement(
+  node: TSESTree.Node,
+  restoreResult: TSESParseForESLintResult,
+): void {
+  const program = restoreResult.ast;
+  program.body.splice(program.body.indexOf(node as never), 1);
+  removeAllScopeAndVariableAndReference(node, {
+    visitorKeys: restoreResult.visitorKeys,
+    scopeManager: restoreResult.scopeManager as eslint.Scope.ScopeManager,
+  });
+}
+
 function hasDefaultExport(ast: TSESParseForESLintResult["ast"]): boolean {
-  return ast.body.some((node) => node.type === "ExportDefaultDeclaration");
+  return ast.body.some((node) => {
+    if (node.type === "ExportDefaultDeclaration") {
+      return true;
+    }
+    if (node.type === "ExportNamedDeclaration") {
+      return node.specifiers.some(
+        (specifier) =>
+          specifier.exported.type === "Identifier" &&
+          specifier.exported.name === "default",
+      );
+    }
+    return false;
+  });
+}
+
+/** Whether a top-level `interface <name>` or `type <name>` is declared. */
+function hasNamedTypeDeclaration(
+  result: TSESParseForESLintResult,
+  name: string,
+): boolean {
+  return result.ast.body.some(
+    (node) =>
+      (node.type === "TSInterfaceDeclaration" ||
+        node.type === "TSTypeAliasDeclaration") &&
+      node.id.name === name,
+  );
 }
 
 /**
@@ -583,13 +657,7 @@ function getDollarDollarPropsType(
   if (svelteParseContext.runes === true) {
     return null;
   }
-  const hasDollarProps = result.ast.body.some(
-    (node) =>
-      (node.type === "TSInterfaceDeclaration" ||
-        node.type === "TSTypeAliasDeclaration") &&
-      node.id.name === "$$Props",
-  );
-  return hasDollarProps ? "$$Props" : null;
+  return hasNamedTypeDeclaration(result, "$$Props") ? "$$Props" : null;
 }
 
 /**
