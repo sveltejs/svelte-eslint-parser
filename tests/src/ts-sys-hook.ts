@@ -207,14 +207,17 @@ describeSvelte5("synthetic component default export (Svelte 5)", () => {
     );
   });
 
-  it("infers prop names, optionality and literal default types from an un-annotated `$props()`", () => {
+  it("infers an un-annotated `$props()` via a `typeof` probe of the defaults", () => {
+    // Required props are `any`; defaulted props are optional, their types left to
+    // TS inference over the probe (asserted end-to-end below).
     const code = translate(`<script lang="ts">
-  let { value, count = 0, name = "x", flag = false } = $props();
+  let { value, count = 0 } = $props();
 </script>
-<p>{value}{count}{name}{flag}</p>`);
+<p>{value}{count}</p>`);
+    assert.match(code, /const \$_propsProbe\d+ = \{ count: 0 \};/);
     assert.match(
       code,
-      /export default null as unknown as import\('svelte'\)\.Component<\{ value: any; count\?: number; name\?: string; flag\?: boolean \}>;/,
+      /import\('svelte'\)\.Component<Partial<typeof \$_propsProbe\d+> & \{ value: any \}>;/,
     );
   });
 
@@ -227,28 +230,6 @@ describeSvelte5("synthetic component default export (Svelte 5)", () => {
     assert.match(
       code,
       /export default null as unknown as import\('svelte'\)\.Component<\{ items: T\[\]; selected: T \}>;/,
-    );
-  });
-
-  it("recovers types from unary-prefixed literal defaults", () => {
-    const code = translate(`<script lang="ts">
-  let { a = -1, b = +2, c = -1.5, d = -1n, e = !0, f = ~3 } = $props();
-</script>
-<p>{a}{b}{c}{d}{e}{f}</p>`);
-    assert.match(
-      code,
-      /import\('svelte'\)\.Component<\{ a\?: number; b\?: number; c\?: number; d\?: bigint; e\?: boolean; f\?: number \}>;/,
-    );
-  });
-
-  it("unwraps the fallback type of `$bindable(...)` defaults", () => {
-    const code = translate(`<script lang="ts">
-  let { a = $bindable(0), b = $bindable("x"), c = $bindable() } = $props();
-</script>
-<p>{a}{b}{c}</p>`);
-    assert.match(
-      code,
-      /import\('svelte'\)\.Component<\{ a\?: number; b\?: string; c\?: any \}>;/,
     );
   });
 
@@ -273,17 +254,6 @@ describeSvelte5("synthetic component default export (Svelte 5)", () => {
     assert.match(
       code,
       /export default null as unknown as import\('svelte'\)\.Component<Props>;/,
-    );
-  });
-
-  it("keeps string-literal prop keys instead of dropping the whole export", () => {
-    const code = translate(`<script lang="ts">
-  let { "data-id": id = 1, value } = $props();
-</script>
-<p>{id}{value}</p>`);
-    assert.match(
-      code,
-      /import\('svelte'\)\.Component<\{ "data-id"\?: number; value: any \}>;/,
     );
   });
 
@@ -343,9 +313,9 @@ describeSvelte5("imported component prop types (end-to-end type check)", () => {
 
   /**
    * Type-checks a consumer `.ts` against the virtual code produced for a
-   * `.svelte` component and returns the TypeScript diagnostics. The consumer
-   * resolves the component's props through `ComponentProps<typeof Foo>`, exactly
-   * like the parser's generated template code does.
+   * `.svelte` component, returning only the consumer's diagnostics (the importer
+   * experience). Diagnostics internal to the producer virtual file — e.g. the
+   * pre-existing `unknown` of an un-annotated `$props()` — are excluded.
    */
   function typeCheckConsumer(
     componentSource: string,
@@ -379,10 +349,11 @@ describeSvelte5("imported component prop types (end-to-end type check)", () => {
           paths: { svelte: [svelteTypesPath] },
         },
       );
+      const barPath = path.join(dir, "Bar.ts");
       return [
         ...program.getSemanticDiagnostics(),
         ...program.getSyntacticDiagnostics(),
-      ];
+      ].filter((d) => d.file?.fileName === barPath);
     } finally {
       fs.rmSync(dir, { recursive: true, force: true });
     }
@@ -421,39 +392,75 @@ describeSvelte5("imported component prop types (end-to-end type check)", () => {
     );
   });
 
-  it("enforces literal default types inferred from an un-annotated `$props()`", () => {
-    const inferredComponent = `<script lang="ts">
-  let { count = 0 } = $props();
-</script>
-<p>{count}</p>`;
-    const diagnostics = typeCheckConsumer(
-      inferredComponent,
-      `const count: import("svelte").ComponentProps<typeof Foo>["count"] = "x";`,
-    );
-    assert.ok(
-      diagnostics.some((d) => d.code === 2322),
-      `expected TS2322 (string not assignable to number), got: ${diagnostics
-        .map((d) => d.code)
-        .join(", ")}`,
-    );
-  });
-
-  it("enforces types inferred from a negative-number default for importers", () => {
-    const inferredComponent = `<script lang="ts">
-  let { offset = -1 } = $props();
-</script>
-<p>{offset}</p>`;
-    const diagnostics = typeCheckConsumer(
-      inferredComponent,
-      `const offset: import("svelte").ComponentProps<typeof Foo>["offset"] = "x";`,
-    );
-    assert.ok(
-      diagnostics.some((d) => d.code === 2322),
-      `expected TS2322 (string not assignable to number), got: ${diagnostics
-        .map((d) => d.code)
-        .join(", ")}`,
-    );
-  });
+  // The `typeof` probe lets TS infer arbitrary default types, not just literals.
+  // Each case checks the importer-side resolved type via a good + bad assignment.
+  const INFERRED_DEFAULTS: {
+    name: string;
+    prop: string;
+    decl: string;
+    good: string;
+    bad: string;
+  }[] = [
+    { name: "number literal", prop: "n", decl: "n = 0", good: "1", bad: '"x"' },
+    {
+      name: "negative number",
+      prop: "n",
+      decl: "n = -1",
+      good: "-2",
+      bad: '"x"',
+    },
+    { name: "string", prop: "s", decl: 's = "x"', good: '"y"', bad: "1" },
+    { name: "boolean", prop: "b", decl: "b = false", good: "true", bad: "1" },
+    {
+      name: "array",
+      prop: "a",
+      decl: "a = [1, 2]",
+      good: "[3]",
+      bad: '["x"]',
+    },
+    {
+      name: "object",
+      prop: "o",
+      decl: "o = { x: 1 }",
+      good: "{ x: 2 }",
+      bad: '{ x: "s" }',
+    },
+    {
+      name: "$bindable(literal)",
+      prop: "v",
+      decl: "v = $bindable(0)",
+      good: "5",
+      bad: '"x"',
+    },
+    {
+      name: "string-literal key",
+      prop: "data-id",
+      decl: '"data-id": id = 1',
+      good: "2",
+      bad: '"x"',
+    },
+  ];
+  for (const c of INFERRED_DEFAULTS) {
+    it(`infers and enforces an un-annotated default (${c.name})`, () => {
+      const component = `<script lang="ts">\n  let { ${c.decl} } = $props();\n</script>`;
+      const t = `import("svelte").ComponentProps<typeof Foo>[${JSON.stringify(c.prop)}]`;
+      const good = typeCheckConsumer(component, `const ok: ${t} = ${c.good};`);
+      assert.deepStrictEqual(
+        good.map((d) => d.code),
+        [],
+        `expected ${c.good} to be accepted, got: ${good
+          .map((d) => ts.flattenDiagnosticMessageText(d.messageText, " "))
+          .join("; ")}`,
+      );
+      const bad = typeCheckConsumer(component, `const ng: ${t} = ${c.bad};`);
+      assert.ok(
+        bad.some((d) => d.code === 2322),
+        `expected ${c.bad} to be rejected (TS2322), got: ${bad
+          .map((d) => d.code)
+          .join(", ")}`,
+      );
+    });
+  }
 
   it("works with Svelte 5 `mount(Foo, ...)` value usage and checks props", () => {
     const diagnostics = typeCheckConsumer(

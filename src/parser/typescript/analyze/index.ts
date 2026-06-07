@@ -221,25 +221,11 @@ function hasExportDeclaration(ast: TSESParseForESLintResult["ast"]): boolean {
 }
 
 /**
- * Append a synthetic component `export default` to the virtual code.
- *
- * Files that import a `.svelte` component (e.g. `<Foo value={x} />`) type-check
- * its props through `import('svelte').ComponentProps<typeof Foo>`. For that to
- * resolve, the imported component's virtual code must expose a default export
- * typed as a Svelte component. Without it, `typeof Foo` is `any` and every prop
- * collapses to `any`.
- *
- * Emitting `export default null as unknown as import('svelte').Component<Props>`
- * fixes that. The Svelte 5 `Component` type means `typeof Foo` also matches
- * modern usage such as `mount(Foo, …)`. The statement is removed again in the
- * restore pass so the linted file itself is unaffected.
- *
- * Scope: Svelte 5 (runes) components only. `Props` is recovered from the runes
- * `$props()` declaration; in Svelte 3/4 `runes` is always `false`, so nothing is
- * emitted there and the Svelte 5 `Component` type never leaks into a legacy
- * environment.
- *
- * NOTE: Experimental, alpha-stage.
+ * Append a synthetic Svelte 5 component `export default` so importers can resolve
+ * the component's props via `ComponentProps<typeof Foo>` and use it with APIs
+ * like `mount(Foo, …)`. Removed again in the restore pass, so the linted file is
+ * unaffected. Svelte 5 (runes) only — in Svelte 3/4 `runes` is always `false`,
+ * so nothing is emitted. Experimental, alpha-stage.
  */
 function appendComponentDefaultExport(
   result: TSESParseForESLintResult,
@@ -247,36 +233,56 @@ function appendComponentDefaultExport(
   ctx: VirtualTypeScriptContext,
   svelteParseContext: SvelteParseContext,
 ) {
-  // Don't clash with a user-authored `export default`.
   if (hasDefaultExport(result.ast)) {
     return;
   }
-
-  // Only runes components with a recoverable `$props()` type get an export.
-  const propsType = getRunesPropsTypeText(result, source, svelteParseContext);
-  if (propsType == null) {
+  const props = recoverRunesProps(result, source, svelteParseContext);
+  if (props == null) {
     return;
   }
 
-  // Lead with a newline so the statement can't be swallowed by a trailing line
-  // comment in the original source that has no following newline.
-  ctx.appendVirtualScript(
-    `\nexport default null as unknown as import('svelte').Component<${propsType}>;`,
-  );
-  ctx.restoreContext.addRestoreStatementProcess((node, restoreResult) => {
-    if (node.type !== "ExportDefaultDeclaration") {
+  const names: string[] = [];
+  // Lead with a newline so a trailing line comment can't swallow the statement.
+  let code = "\n";
+  let typeArg = props.type || "{}";
+  if (props.probe != null) {
+    // Let TS infer the default value types via `typeof` of a probe object.
+    const probeName = ctx.generateUniqueId("propsProbe");
+    names.push(probeName);
+    code += `const ${probeName} = ${props.probe};`;
+    typeArg = props.type
+      ? `Partial<typeof ${probeName}> & ${props.type}`
+      : `Partial<typeof ${probeName}>`;
+  }
+  code += `export default null as unknown as import('svelte').Component<${typeArg}>;`;
+  ctx.appendVirtualScript(code);
+
+  registerRemoval(ctx, (node) => node.type === "ExportDefaultDeclaration");
+  for (const name of names) {
+    registerRemoval(
+      ctx,
+      (node) =>
+        node.type === "VariableDeclaration" &&
+        node.declarations[0]?.id.type === "Identifier" &&
+        node.declarations[0].id.name === name,
+    );
+  }
+}
+
+/** Register a restore process that splices a matching statement and cleans scope. */
+function registerRemoval(
+  ctx: VirtualTypeScriptContext,
+  match: (node: TSESTree.Node) => boolean,
+) {
+  ctx.restoreContext.addRestoreStatementProcess((node, result) => {
+    if (!match(node as TSESTree.Node)) {
       return false;
     }
-    const program = restoreResult.ast;
-    program.body.splice(program.body.indexOf(node), 1);
-
-    const scopeManager =
-      restoreResult.scopeManager as eslint.Scope.ScopeManager;
-    removeAllScopeAndVariableAndReference(node, {
-      visitorKeys: restoreResult.visitorKeys,
-      scopeManager,
+    result.ast.body.splice(result.ast.body.indexOf(node as never), 1);
+    removeAllScopeAndVariableAndReference(node as TSESTree.Node, {
+      visitorKeys: result.visitorKeys,
+      scopeManager: result.scopeManager as eslint.Scope.ScopeManager,
     });
-
     return true;
   });
 }
@@ -285,26 +291,25 @@ function hasDefaultExport(ast: TSESParseForESLintResult["ast"]): boolean {
   return ast.body.some((node) => node.type === "ExportDefaultDeclaration");
 }
 
+type RecoveredProps = {
+  /** Props type text, or `""` when every prop is optional (all defaulted). */
+  type: string;
+  /** Probe object literal of defaulted props (`{ count: 0 }`), or `null`. */
+  probe: string | null;
+};
+
 /**
- * Recover the props type text from a runes-mode `$props()` declaration.
- *
- * With an explicit annotation it is used as-is, e.g.
- * `let { value }: { value: string } = $props()` returns `{ value: string }`.
- * Without one, a best-effort object type is inferred from the destructuring
- * pattern: a default value makes the prop optional and contributes its literal
- * type, e.g. `let { value, count = 0 } = $props()` returns
- * `{ value: any; count?: number }`. Props without a literal default stay `any`
- * (annotate the props for fully precise types).
- *
- * Returns `null` when there is no usable `$props()` call. In Svelte 3/4 `runes`
- * is always `false`, so this returns `null` there and no export is emitted.
+ * Recover props from a runes `$props()` declaration. Uses an explicit
+ * annotation / `as` / `satisfies` type as-is; otherwise infers from the
+ * destructuring (required props are `any`, defaulted props are optional and
+ * typed via a `typeof` probe). Returns `null` when there is no usable `$props()`
+ * (including non-runes mode).
  */
-function getRunesPropsTypeText(
+function recoverRunesProps(
   result: TSESParseForESLintResult,
   source: string,
   svelteParseContext: SvelteParseContext,
-): string | null {
-  // In non-runes mode `$props()` is not a rune, so skip.
+): RecoveredProps | null {
   if (svelteParseContext.runes === false) {
     return null;
   }
@@ -321,8 +326,7 @@ function getRunesPropsTypeText(
     if (call?.type !== "CallExpression" || call.callee !== id) {
       continue;
     }
-    // `let p = $props() as Props` / `satisfies Props`: the cast carries the type
-    // and sits between the call and the declarator.
+    // A trailing `as`/`satisfies` cast carries the type, between call and declarator.
     let valueNode: TSESTree.Expression = call;
     let castType: TSESTree.TypeNode | null = null;
     if (
@@ -339,16 +343,19 @@ function getRunesPropsTypeText(
       continue;
     }
     if (castType) {
-      return source.slice(castType.range[0], castType.range[1]);
+      return {
+        type: source.slice(castType.range[0], castType.range[1]),
+        probe: null,
+      };
     }
     const declId = valueNode.parent.id;
-    const typeAnnotation = declId.typeAnnotation;
-    if (typeAnnotation) {
-      const typeNode = typeAnnotation.typeAnnotation;
-      return source.slice(typeNode.range[0], typeNode.range[1]);
+    const annotation = declId.typeAnnotation;
+    if (annotation) {
+      const node = annotation.typeAnnotation;
+      return { type: source.slice(node.range[0], node.range[1]), probe: null };
     }
     if (declId.type === "ObjectPattern") {
-      const inferred = inferPropsTypeFromObjectPattern(declId);
+      const inferred = inferPropsFromObjectPattern(declId, source);
       if (inferred != null) {
         return inferred;
       }
@@ -358,26 +365,22 @@ function getRunesPropsTypeText(
 }
 
 /**
- * Build a best-effort props object type from a `$props()` destructuring pattern.
- * A default value makes the prop optional, and a literal default contributes its
- * primitive type, e.g. `{ value, count = 0, name = "x" }` becomes
- * `{ value: any; count?: number; name?: string }`. Non-literal defaults and
- * props without a default stay `any`. Returns `null` for patterns whose full
- * shape can't be enumerated (a rest element, or a computed key), so the caller
- * can fall back.
+ * Infer props from a `$props()` destructuring. Required props become `any`;
+ * defaulted props go into a probe object so TS can infer their type from the
+ * default expression via `typeof`. Returns `null` for a rest element or a
+ * computed/non-string key, where the prop set can't be fully enumerated.
  */
-function inferPropsTypeFromObjectPattern(
+function inferPropsFromObjectPattern(
   pattern: TSESTree.ObjectPattern,
-): string | null {
-  const members: string[] = [];
+  source: string,
+): RecoveredProps | null {
+  const required: string[] = [];
+  const defaulted: string[] = [];
   for (const prop of pattern.properties) {
     if (prop.type !== "Property" || prop.computed) {
-      // A rest element or computed key means we can't enumerate the complete
-      // prop set.
       return null;
     }
-    // Prop name: an identifier key (`value`), or a string-literal key
-    // (`"data-id"`) used verbatim (quotes included) so it stays a valid member.
+    // Identifier key (`value`) or string-literal key (`"data-id"`, quotes kept).
     let key: string;
     if (prop.key.type === "Identifier") {
       key = prop.key.name;
@@ -389,77 +392,17 @@ function inferPropsTypeFromObjectPattern(
     } else {
       return null;
     }
-    // A default value (`AssignmentPattern`) makes the prop optional and lets us
-    // recover its literal type.
     if (prop.value.type === "AssignmentPattern") {
-      members.push(
-        `${key}?: ${inferTypeFromDefaultExpression(prop.value.right)}`,
-      );
+      const def = prop.value.right;
+      defaulted.push(`${key}: ${source.slice(def.range[0], def.range[1])}`);
     } else {
-      members.push(`${key}: any`);
+      required.push(`${key}: any`);
     }
   }
-  return `{ ${members.join("; ")} }`;
-}
-
-/**
- * Map a default value expression to a type when it is reliably known, else `any`.
- * Handles literals (`0` → number, `"x"` → string), template literals, unary
- * expressions (`-1` → number, `!x` → boolean, whose operator fixes the type),
- * and `$bindable(x)` by unwrapping its fallback argument.
- */
-function inferTypeFromDefaultExpression(
-  expression: TSESTree.Expression,
-): string {
-  if (expression.type === "Literal") {
-    switch (typeof expression.value) {
-      case "number":
-        return "number";
-      case "string":
-        return "string";
-      case "boolean":
-        return "boolean";
-      case "bigint":
-        return "bigint";
-      default:
-        // `null` and regex literals fall through.
-        return "any";
-    }
-  }
-  if (expression.type === "TemplateLiteral") {
-    return "string";
-  }
-  if (expression.type === "UnaryExpression") {
-    // The operator fixes the result type regardless of the operand.
-    switch (expression.operator) {
-      case "!":
-        return "boolean";
-      case "typeof":
-        return "string";
-      case "-":
-      case "+":
-      case "~":
-        // Numeric, except bigint negation stays bigint (`-1n`).
-        return expression.argument.type === "Literal" &&
-          typeof expression.argument.value === "bigint"
-          ? "bigint"
-          : "number";
-      default:
-        // `void`, `delete`.
-        return "any";
-    }
-  }
-  // `$bindable(fallback)` — type comes from the fallback argument.
-  if (
-    expression.type === "CallExpression" &&
-    expression.callee.type === "Identifier" &&
-    expression.callee.name === "$bindable" &&
-    expression.arguments.length === 1 &&
-    expression.arguments[0].type !== "SpreadElement"
-  ) {
-    return inferTypeFromDefaultExpression(expression.arguments[0]);
-  }
-  return "any";
+  return {
+    type: required.length ? `{ ${required.join("; ")} }` : "",
+    probe: defaulted.length ? `{ ${defaulted.join(", ")} }` : null,
+  };
 }
 
 /**
