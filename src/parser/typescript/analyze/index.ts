@@ -152,19 +152,8 @@ export function analyzeTypeScriptInSvelte(
 
   ctx.appendOriginalToEnd();
 
-  // Emit a synthetic `export default` typed as the Svelte 5 `Component`, so that
-  // other modules importing this `.svelte` file can resolve its prop types via
-  // `import('svelte').ComponentProps<typeof Component>` and use it with Svelte 5
-  // APIs (e.g. `mount(Component, …)`). It is removed again in the restore pass,
-  // so the linted file's own AST and scope are unaffected; it only matters for
-  // the virtual file consumed by the TS program (through the `ts.sys.readFile`
-  // hook) when this component is imported elsewhere.
-  //
-  // Emitted last, after every original statement (including top-level snippets)
-  // has been consumed, so it always lands as a standalone top-level statement.
-  //
-  // NOTE: This is an experimental, alpha-stage feature scoped to Svelte 5
-  // (runes) components only.
+  // Emitted last so it lands as a standalone top-level statement (see the
+  // function for details).
   appendComponentDefaultExport(
     result,
     code.script + code.render + code.rootScope,
