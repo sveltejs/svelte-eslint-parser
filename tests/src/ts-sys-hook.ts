@@ -230,6 +230,81 @@ describeSvelte5("synthetic component default export (Svelte 5)", () => {
     );
   });
 
+  it("recovers types from unary-prefixed literal defaults", () => {
+    const code = translate(`<script lang="ts">
+  let { a = -1, b = +2, c = -1.5, d = -1n, e = !0, f = ~3 } = $props();
+</script>
+<p>{a}{b}{c}{d}{e}{f}</p>`);
+    assert.match(
+      code,
+      /import\('svelte'\)\.Component<\{ a\?: number; b\?: number; c\?: number; d\?: bigint; e\?: boolean; f\?: number \}>;/,
+    );
+  });
+
+  it("unwraps the fallback type of `$bindable(...)` defaults", () => {
+    const code = translate(`<script lang="ts">
+  let { a = $bindable(0), b = $bindable("x"), c = $bindable() } = $props();
+</script>
+<p>{a}{b}{c}</p>`);
+    assert.match(
+      code,
+      /import\('svelte'\)\.Component<\{ a\?: number; b\?: string; c\?: any \}>;/,
+    );
+  });
+
+  it("recovers the props type from a `$props() as Props` cast", () => {
+    const code = translate(`<script lang="ts">
+  interface Props { v: string }
+  let p = $props() as Props;
+</script>
+<p>{p.v}</p>`);
+    assert.match(
+      code,
+      /export default null as unknown as import\('svelte'\)\.Component<Props>;/,
+    );
+  });
+
+  it("recovers the props type from a `$props() satisfies Props` expression", () => {
+    const code = translate(`<script lang="ts">
+  interface Props { v: string }
+  let p = $props() satisfies Props;
+</script>
+<p>{p.v}</p>`);
+    assert.match(
+      code,
+      /export default null as unknown as import\('svelte'\)\.Component<Props>;/,
+    );
+  });
+
+  it("keeps string-literal prop keys instead of dropping the whole export", () => {
+    const code = translate(`<script lang="ts">
+  let { "data-id": id = 1, value } = $props();
+</script>
+<p>{id}{value}</p>`);
+    assert.match(
+      code,
+      /import\('svelte'\)\.Component<\{ "data-id"\?: number; value: any \}>;/,
+    );
+  });
+
+  it("is not swallowed by a trailing line comment with no following newline", () => {
+    const code = translate(
+      `<script lang="ts">let { v }: { v: string } = $props() // trailing</script>`,
+    );
+    assert.match(
+      code,
+      /\nexport default null as unknown as import\('svelte'\)\.Component<\{ v: string \}>;/,
+    );
+  });
+
+  it("does not emit for an un-annotated `$props()` with a rest element", () => {
+    const code = translate(`<script lang="ts">
+  let { value, ...rest } = $props();
+</script>
+<p>{value}</p>`);
+    assert.doesNotMatch(code, /import\('svelte'\)\.Component</);
+  });
+
   it("does not emit for legacy `export let` components (Svelte 5 scope only)", () => {
     const code = translate(`<script lang="ts">
   export let value: string;
@@ -354,6 +429,23 @@ describeSvelte5("imported component prop types (end-to-end type check)", () => {
     const diagnostics = typeCheckConsumer(
       inferredComponent,
       `const count: import("svelte").ComponentProps<typeof Foo>["count"] = "x";`,
+    );
+    assert.ok(
+      diagnostics.some((d) => d.code === 2322),
+      `expected TS2322 (string not assignable to number), got: ${diagnostics
+        .map((d) => d.code)
+        .join(", ")}`,
+    );
+  });
+
+  it("enforces types inferred from a negative-number default for importers", () => {
+    const inferredComponent = `<script lang="ts">
+  let { offset = -1 } = $props();
+</script>
+<p>{offset}</p>`;
+    const diagnostics = typeCheckConsumer(
+      inferredComponent,
+      `const offset: import("svelte").ComponentProps<typeof Foo>["offset"] = "x";`,
     );
     assert.ok(
       diagnostics.some((d) => d.code === 2322),

@@ -258,8 +258,10 @@ function appendComponentDefaultExport(
     return;
   }
 
+  // Lead with a newline so the statement can't be swallowed by a trailing line
+  // comment in the original source that has no following newline.
   ctx.appendVirtualScript(
-    `export default null as unknown as import('svelte').Component<${propsType}>;`,
+    `\nexport default null as unknown as import('svelte').Component<${propsType}>;`,
   );
   ctx.restoreContext.addRestoreStatementProcess((node, restoreResult) => {
     if (node.type !== "ExportDefaultDeclaration") {
@@ -316,15 +318,30 @@ function getRunesPropsTypeText(
   for (const reference of propsReferences) {
     const id = reference.identifier as TSESTree.Identifier;
     const call = id.parent;
+    if (call?.type !== "CallExpression" || call.callee !== id) {
+      continue;
+    }
+    // `let p = $props() as Props` / `satisfies Props`: the cast carries the type
+    // and sits between the call and the declarator.
+    let valueNode: TSESTree.Expression = call;
+    let castType: TSESTree.TypeNode | null = null;
     if (
-      call?.type !== "CallExpression" ||
-      call.callee !== id ||
-      call.parent?.type !== "VariableDeclarator" ||
-      call.parent.init !== call
+      call.parent?.type === "TSAsExpression" ||
+      call.parent?.type === "TSSatisfiesExpression"
+    ) {
+      castType = call.parent.typeAnnotation;
+      valueNode = call.parent;
+    }
+    if (
+      valueNode.parent?.type !== "VariableDeclarator" ||
+      valueNode.parent.init !== valueNode
     ) {
       continue;
     }
-    const declId = call.parent.id;
+    if (castType) {
+      return source.slice(castType.range[0], castType.range[1]);
+    }
+    const declId = valueNode.parent.id;
     const typeAnnotation = declId.typeAnnotation;
     if (typeAnnotation) {
       const typeNode = typeAnnotation.typeAnnotation;
@@ -346,37 +363,51 @@ function getRunesPropsTypeText(
  * primitive type, e.g. `{ value, count = 0, name = "x" }` becomes
  * `{ value: any; count?: number; name?: string }`. Non-literal defaults and
  * props without a default stay `any`. Returns `null` for patterns whose full
- * shape can't be enumerated (a rest element, or computed/non-identifier keys),
- * so the caller can fall back.
+ * shape can't be enumerated (a rest element, or a computed key), so the caller
+ * can fall back.
  */
 function inferPropsTypeFromObjectPattern(
   pattern: TSESTree.ObjectPattern,
 ): string | null {
   const members: string[] = [];
   for (const prop of pattern.properties) {
-    if (
-      prop.type !== "Property" ||
-      prop.computed ||
-      prop.key.type !== "Identifier"
+    if (prop.type !== "Property" || prop.computed) {
+      // A rest element or computed key means we can't enumerate the complete
+      // prop set.
+      return null;
+    }
+    // Prop name: an identifier key (`value`), or a string-literal key
+    // (`"data-id"`) used verbatim (quotes included) so it stays a valid member.
+    let key: string;
+    if (prop.key.type === "Identifier") {
+      key = prop.key.name;
+    } else if (
+      prop.key.type === "Literal" &&
+      typeof prop.key.value === "string"
     ) {
-      // A rest element or computed/non-identifier key means we can't enumerate
-      // the complete prop set.
+      key = prop.key.raw;
+    } else {
       return null;
     }
     // A default value (`AssignmentPattern`) makes the prop optional and lets us
     // recover its literal type.
     if (prop.value.type === "AssignmentPattern") {
       members.push(
-        `${prop.key.name}?: ${inferTypeFromDefaultExpression(prop.value.right)}`,
+        `${key}?: ${inferTypeFromDefaultExpression(prop.value.right)}`,
       );
     } else {
-      members.push(`${prop.key.name}: any`);
+      members.push(`${key}: any`);
     }
   }
   return `{ ${members.join("; ")} }`;
 }
 
-/** Map a literal default value to its primitive type, else `any`. */
+/**
+ * Map a default value expression to a type when it is reliably known, else `any`.
+ * Handles literals (`0` → number, `"x"` → string), template literals, unary
+ * expressions (`-1` → number, `!x` → boolean, whose operator fixes the type),
+ * and `$bindable(x)` by unwrapping its fallback argument.
+ */
 function inferTypeFromDefaultExpression(
   expression: TSESTree.Expression,
 ): string {
@@ -397,6 +428,36 @@ function inferTypeFromDefaultExpression(
   }
   if (expression.type === "TemplateLiteral") {
     return "string";
+  }
+  if (expression.type === "UnaryExpression") {
+    // The operator fixes the result type regardless of the operand.
+    switch (expression.operator) {
+      case "!":
+        return "boolean";
+      case "typeof":
+        return "string";
+      case "-":
+      case "+":
+      case "~":
+        // Numeric, except bigint negation stays bigint (`-1n`).
+        return expression.argument.type === "Literal" &&
+          typeof expression.argument.value === "bigint"
+          ? "bigint"
+          : "number";
+      default:
+        // `void`, `delete`.
+        return "any";
+    }
+  }
+  // `$bindable(fallback)` — type comes from the fallback argument.
+  if (
+    expression.type === "CallExpression" &&
+    expression.callee.type === "Identifier" &&
+    expression.callee.name === "$bindable" &&
+    expression.arguments.length === 1 &&
+    expression.arguments[0].type !== "SpreadElement"
+  ) {
+    return inferTypeFromDefaultExpression(expression.arguments[0]);
   }
   return "any";
 }
