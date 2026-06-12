@@ -152,6 +152,25 @@ export function analyzeTypeScriptInSvelte(
 
   ctx.appendOriginalToEnd();
 
+  // Emit a synthetic `export default` typed as a Svelte component so that other
+  // modules importing this `.svelte` file can resolve its prop types via
+  // `import('svelte').ComponentProps<typeof Component>`. The export is removed
+  // again during the restore pass, so the linted file's AST and scope are
+  // unaffected; it only matters for the virtual file consumed by the TS program
+  // (through the `ts.sys.readFile` hook) when this component is imported.
+  //
+  // It is emitted last, after every original statement (including top-level
+  // snippets) has been consumed, so it always lands as a standalone top-level
+  // statement at end of file.
+  //
+  // NOTE: This is an experimental, alpha-stage feature.
+  appendComponentDefaultExport(
+    result,
+    code.script + code.render + code.rootScope,
+    ctx,
+    context.svelteParseContext,
+  );
+
   return ctx;
 }
 /**
@@ -401,6 +420,109 @@ function analyzeDollarDollarVariables(
       return true;
     });
   }
+}
+
+/**
+ * Append a synthetic component `export default` to the virtual code.
+ *
+ * Files that import a `.svelte` component (e.g. `<Foo value={x} />`) type-check
+ * its props through `import('svelte').ComponentProps<typeof Foo>`. For that to
+ * resolve, the imported component's virtual code must expose a default export
+ * typed as a Svelte component. The original virtual code only exported the
+ * synthetic render function, so `typeof Foo` was `any` and every prop collapsed
+ * to `any`.
+ *
+ * Emitting `export default null as unknown as import('svelte').Component<Props>`
+ * fixes that. `Props` is the user's `$props()` type annotation when it can be
+ * recovered, otherwise a permissive fallback that matches the previous (`any`)
+ * behavior. The statement is removed again in the restore pass so the linted
+ * file itself is unaffected.
+ *
+ * NOTE: Experimental, alpha-stage. Currently only the runes `$props()` type
+ * annotation is recognized; legacy `export let`, `$$Props`, generics, events and
+ * slots are handled in follow-up work.
+ */
+function appendComponentDefaultExport(
+  result: TSESParseForESLintResult,
+  source: string,
+  ctx: VirtualTypeScriptContext,
+  svelteParseContext: SvelteParseContext,
+) {
+  // Don't clash with a user-authored `export default`.
+  if (hasDefaultExport(result.ast)) {
+    return;
+  }
+
+  const propsType =
+    getRunesPropsTypeText(result, source, svelteParseContext) ??
+    "Record<string, any>";
+
+  ctx.appendVirtualScript(
+    `export default null as unknown as import('svelte').Component<${propsType}>;`,
+  );
+  ctx.restoreContext.addRestoreStatementProcess((node, restoreResult) => {
+    if (node.type !== "ExportDefaultDeclaration") {
+      return false;
+    }
+    const program = restoreResult.ast;
+    program.body.splice(program.body.indexOf(node), 1);
+
+    const scopeManager =
+      restoreResult.scopeManager as eslint.Scope.ScopeManager;
+    removeAllScopeAndVariableAndReference(node, {
+      visitorKeys: restoreResult.visitorKeys,
+      scopeManager,
+    });
+
+    return true;
+  });
+}
+
+function hasDefaultExport(ast: TSESParseForESLintResult["ast"]): boolean {
+  return ast.body.some((node) => node.type === "ExportDefaultDeclaration");
+}
+
+/**
+ * Recover the props type text from a runes-mode `$props()` declaration with an
+ * explicit type annotation, e.g. `let { value }: { value: string } = $props()`
+ * returns `{ value: string }`. Returns `null` when there is no annotated
+ * `$props()` call (including legacy mode), so the caller can fall back.
+ */
+function getRunesPropsTypeText(
+  result: TSESParseForESLintResult,
+  source: string,
+  svelteParseContext: SvelteParseContext,
+): string | null {
+  // In non-runes mode `$props()` is not a rune, so skip.
+  if (svelteParseContext.runes === false) {
+    return null;
+  }
+  const propsReferences = result.scopeManager.globalScope!.through.filter(
+    (reference) => reference.identifier.name === "$props",
+  );
+  if (!propsReferences.length) {
+    return null;
+  }
+  setParent(result);
+  for (const reference of propsReferences) {
+    const id = reference.identifier as TSESTree.Identifier;
+    const call = id.parent;
+    if (
+      call?.type !== "CallExpression" ||
+      call.callee !== id ||
+      call.parent?.type !== "VariableDeclarator" ||
+      call.parent.init !== call
+    ) {
+      continue;
+    }
+    const typeAnnotation = call.parent.id.typeAnnotation;
+    if (!typeAnnotation) {
+      continue;
+    }
+    const typeNode = typeAnnotation.typeAnnotation;
+    return source.slice(typeNode.range[0], typeNode.range[1]);
+  }
+  return null;
 }
 
 /** Append dummy export */
