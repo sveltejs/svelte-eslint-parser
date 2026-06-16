@@ -152,6 +152,15 @@ export function analyzeTypeScriptInSvelte(
 
   ctx.appendOriginalToEnd();
 
+  // Emitted last so it lands as a standalone top-level statement (see the
+  // function for details).
+  appendComponentDefaultExport(
+    result,
+    code.script + code.render + code.rootScope,
+    ctx,
+    context.svelteParseContext,
+  );
+
   return ctx;
 }
 /**
@@ -198,6 +207,191 @@ function hasExportDeclaration(ast: TSESParseForESLintResult["ast"]): boolean {
     }
   }
   return false;
+}
+
+/**
+ * Append a synthetic Svelte 5 component `export default` so importers can resolve
+ * the component's props via `ComponentProps<typeof Foo>` and use it with APIs
+ * like `mount(Foo, …)`. Removed again in the restore pass, so the linted file is
+ * unaffected. Svelte 5 (runes) only — in Svelte 3/4 `runes` is always `false`,
+ * so nothing is emitted. Experimental, alpha-stage.
+ */
+function appendComponentDefaultExport(
+  result: TSESParseForESLintResult,
+  source: string,
+  ctx: VirtualTypeScriptContext,
+  svelteParseContext: SvelteParseContext,
+) {
+  if (hasDefaultExport(result.ast)) {
+    return;
+  }
+  const props = recoverRunesProps(result, source, svelteParseContext);
+  if (props == null) {
+    return;
+  }
+
+  const names: string[] = [];
+  // Lead with a newline so a trailing line comment can't swallow the statement.
+  let code = "\n";
+  let typeArg = props.type || "{}";
+  if (props.probe != null) {
+    // Let TS infer the default value types via `typeof` of a probe object.
+    const probeName = ctx.generateUniqueId("propsProbe");
+    names.push(probeName);
+    code += `const ${probeName} = ${props.probe};`;
+    typeArg = props.type
+      ? `Partial<typeof ${probeName}> & ${props.type}`
+      : `Partial<typeof ${probeName}>`;
+  }
+  code += `export default null as unknown as import('svelte').Component<${typeArg}>;`;
+  ctx.appendVirtualScript(code);
+
+  registerRemoval(ctx, (node) => node.type === "ExportDefaultDeclaration");
+  for (const name of names) {
+    registerRemoval(
+      ctx,
+      (node) =>
+        node.type === "VariableDeclaration" &&
+        node.declarations[0]?.id.type === "Identifier" &&
+        node.declarations[0].id.name === name,
+    );
+  }
+}
+
+/** Register a restore process that splices a matching statement and cleans scope. */
+function registerRemoval(
+  ctx: VirtualTypeScriptContext,
+  match: (node: TSESTree.Node) => boolean,
+) {
+  ctx.restoreContext.addRestoreStatementProcess((node, result) => {
+    if (!match(node as TSESTree.Node)) {
+      return false;
+    }
+    result.ast.body.splice(result.ast.body.indexOf(node as never), 1);
+    removeAllScopeAndVariableAndReference(node as TSESTree.Node, {
+      visitorKeys: result.visitorKeys,
+      scopeManager: result.scopeManager as eslint.Scope.ScopeManager,
+    });
+    return true;
+  });
+}
+
+function hasDefaultExport(ast: TSESParseForESLintResult["ast"]): boolean {
+  return ast.body.some((node) => node.type === "ExportDefaultDeclaration");
+}
+
+type RecoveredProps = {
+  /** Props type text, or `""` when every prop is optional (all defaulted). */
+  type: string;
+  /** Probe object literal of defaulted props (`{ count: 0 }`), or `null`. */
+  probe: string | null;
+};
+
+/**
+ * Recover props from a runes `$props()` declaration. Uses an explicit
+ * annotation / `as` / `satisfies` type as-is; otherwise infers from the
+ * destructuring (required props are `any`, defaulted props are optional and
+ * typed via a `typeof` probe). Returns `null` when there is no usable `$props()`
+ * (including non-runes mode).
+ */
+function recoverRunesProps(
+  result: TSESParseForESLintResult,
+  source: string,
+  svelteParseContext: SvelteParseContext,
+): RecoveredProps | null {
+  if (svelteParseContext.runes === false) {
+    return null;
+  }
+  const propsReferences = result.scopeManager.globalScope!.through.filter(
+    (reference) => reference.identifier.name === "$props",
+  );
+  if (!propsReferences.length) {
+    return null;
+  }
+  setParent(result);
+  for (const reference of propsReferences) {
+    const id = reference.identifier as TSESTree.Identifier;
+    const call = id.parent;
+    if (call?.type !== "CallExpression" || call.callee !== id) {
+      continue;
+    }
+    // A trailing `as`/`satisfies` cast carries the type, between call and declarator.
+    let valueNode: TSESTree.Expression = call;
+    let castType: TSESTree.TypeNode | null = null;
+    if (
+      call.parent?.type === "TSAsExpression" ||
+      call.parent?.type === "TSSatisfiesExpression"
+    ) {
+      castType = call.parent.typeAnnotation;
+      valueNode = call.parent;
+    }
+    if (
+      valueNode.parent?.type !== "VariableDeclarator" ||
+      valueNode.parent.init !== valueNode
+    ) {
+      continue;
+    }
+    if (castType) {
+      return {
+        type: source.slice(castType.range[0], castType.range[1]),
+        probe: null,
+      };
+    }
+    const declId = valueNode.parent.id;
+    const annotation = declId.typeAnnotation;
+    if (annotation) {
+      const node = annotation.typeAnnotation;
+      return { type: source.slice(node.range[0], node.range[1]), probe: null };
+    }
+    if (declId.type === "ObjectPattern") {
+      const inferred = inferPropsFromObjectPattern(declId, source);
+      if (inferred != null) {
+        return inferred;
+      }
+    }
+  }
+  return null;
+}
+
+/**
+ * Infer props from a `$props()` destructuring. Required props become `any`;
+ * defaulted props go into a probe object so TS can infer their type from the
+ * default expression via `typeof`. Returns `null` for a rest element or a
+ * computed/non-string key, where the prop set can't be fully enumerated.
+ */
+function inferPropsFromObjectPattern(
+  pattern: TSESTree.ObjectPattern,
+  source: string,
+): RecoveredProps | null {
+  const required: string[] = [];
+  const defaulted: string[] = [];
+  for (const prop of pattern.properties) {
+    if (prop.type !== "Property" || prop.computed) {
+      return null;
+    }
+    // Identifier key (`value`) or string-literal key (`"data-id"`, quotes kept).
+    let key: string;
+    if (prop.key.type === "Identifier") {
+      key = prop.key.name;
+    } else if (
+      prop.key.type === "Literal" &&
+      typeof prop.key.value === "string"
+    ) {
+      key = prop.key.raw;
+    } else {
+      return null;
+    }
+    if (prop.value.type === "AssignmentPattern") {
+      const def = prop.value.right;
+      defaulted.push(`${key}: ${source.slice(def.range[0], def.range[1])}`);
+    } else {
+      required.push(`${key}: any`);
+    }
+  }
+  return {
+    type: required.length ? `{ ${required.join("; ")} }` : "",
+    probe: defaulted.length ? `{ ${defaulted.join(", ")} }` : null,
+  };
 }
 
 /**
