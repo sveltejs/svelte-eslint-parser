@@ -246,17 +246,22 @@ function appendComponentDefaultExport(
   let propsType: string;
   const runesProps = recoverRunesProps(result, source, svelteParseContext);
   if (runesProps != null) {
+    const parts: string[] = [];
     if (runesProps.probe != null) {
       // Let TS infer the default value types via `typeof` of a probe object.
       const probeName = ctx.generateUniqueId("propsProbe");
       names.push(probeName);
       code += `const ${probeName} = ${runesProps.probe};`;
-      propsType = runesProps.type
-        ? `Partial<typeof ${probeName}> & ${runesProps.type}`
-        : `Partial<typeof ${probeName}>`;
-    } else {
-      propsType = runesProps.type || "{}";
+      parts.push(`Partial<typeof ${probeName}>`);
     }
+    if (runesProps.type != null) {
+      parts.push(runesProps.type);
+    }
+    if (runesProps.open) {
+      parts.push("Record<string, any>");
+    }
+    // An empty destructuring declares no props at all, so nothing is accepted.
+    propsType = parts.length ? parts.join(" & ") : "Record<string, never>";
   } else {
     // A component reading `$$props`/`$$restProps` accepts arbitrary attributes,
     // so the synthesized (closed) type is opened with an index signature to
@@ -564,10 +569,19 @@ function referencesOpenProps(
 }
 
 type RecoveredProps = {
-  /** Props type text, or `""` when every prop is optional (all defaulted). */
-  type: string;
+  /**
+   * Type text contributed directly: the whole props type for an explicit
+   * annotation/cast, or just the required members when inferred from a
+   * destructuring. `null` when there is nothing to contribute.
+   */
+  type: string | null;
   /** Probe object literal of defaulted props (`{ count: 0 }`), or `null`. */
   probe: string | null;
+  /**
+   * Whether the prop set could not be fully enumerated, so the type must stay
+   * open with an index signature.
+   */
+  open: boolean;
 };
 
 /**
@@ -616,38 +630,46 @@ function recoverRunesProps(
       return {
         type: source.slice(castType.range[0], castType.range[1]),
         probe: null,
+        open: false,
       };
     }
     const declId = valueNode.parent.id;
     const annotation = declId.typeAnnotation;
     if (annotation) {
       const node = annotation.typeAnnotation;
-      return { type: source.slice(node.range[0], node.range[1]), probe: null };
+      return {
+        type: source.slice(node.range[0], node.range[1]),
+        probe: null,
+        open: false,
+      };
     }
     if (declId.type === "ObjectPattern") {
-      const inferred = inferPropsFromObjectPattern(declId, source);
-      if (inferred != null) {
-        return inferred;
-      }
+      return inferPropsFromObjectPattern(declId, source);
     }
   }
   return null;
 }
 
 /**
- * Required props become `any`; defaulted props go into a probe object so TS can
- * infer their type from the default expression via `typeof`. Returns `null` for
- * a rest element or a computed key, where the prop set can't be enumerated.
+ * Defaulted props go into a probe object so TS can infer their type from the
+ * default expression via `typeof`. A prop with no default becomes a required
+ * `any`, matching svelte2tsx: the name is known but nothing types it, so being
+ * required is the only signal left to give importers.
+ *
+ * A rest element or a computed key can't be enumerated, so it only opens the
+ * type rather than discarding the props that could be read.
  */
 function inferPropsFromObjectPattern(
   pattern: TSESTree.ObjectPattern,
   source: string,
-): RecoveredProps | null {
+): RecoveredProps {
   const required: string[] = [];
   const defaulted: string[] = [];
+  let open = false;
   for (const prop of pattern.properties) {
     if (prop.type !== "Property" || prop.computed) {
-      return null;
+      open = true;
+      continue;
     }
     // String-literal keys are taken raw, so their quotes are preserved.
     let key: string;
@@ -659,7 +681,8 @@ function inferPropsFromObjectPattern(
     ) {
       key = prop.key.raw;
     } else {
-      return null;
+      open = true;
+      continue;
     }
     if (prop.value.type === "AssignmentPattern") {
       const def = prop.value.right;
@@ -669,8 +692,9 @@ function inferPropsFromObjectPattern(
     }
   }
   return {
-    type: required.length ? `{ ${required.join("; ")} }` : "",
+    type: required.length ? `{ ${required.join("; ")} }` : null,
     probe: defaulted.length ? `{ ${defaulted.join(", ")} }` : null,
+    open,
   };
 }
 

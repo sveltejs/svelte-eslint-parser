@@ -328,12 +328,35 @@ describeSvelte5("synthetic component default export (runes, Svelte 5)", () => {
     assertComponentExport(code, `{ v: string }`);
   });
 
-  it("falls back to a permissive props type for an un-annotated `$props()` with a rest element", () => {
+  // A rest element only means the prop set is open, so the props that *can* be
+  // read are still enumerated and the type is opened with an index signature.
+  // This mirrors svelte2tsx.
+  it("keeps enumerated props and opens the type for a rest element", () => {
     const code = translate(`<script lang="ts">
   let { value, ...rest } = $props();
 </script>
 <p>{value}</p>`);
-    assertComponentExport(code, `Record<string, any>`);
+    assertComponentExport(code, `{ value: any } & Record<string, any>`);
+  });
+
+  it("opens the type for a computed key without discarding the other props", () => {
+    const code = translate(`<script lang="ts">
+  const k = "a";
+  let { count = 0, [k]: v } = $props();
+</script>
+<p>{count}{v}</p>`);
+    assertComponentExport(
+      code,
+      `Partial<typeof $_propsProbe2> & Record<string, any>`,
+    );
+  });
+
+  it("accepts no props at all for an empty destructuring", () => {
+    const code = translate(`<script lang="ts">
+  let {} = $props();
+</script>
+<p>hi</p>`);
+    assertComponentExport(code, `Record<string, never>`);
   });
 
   it("falls back to a permissive props type when there is no recoverable `$props()`", () => {
@@ -844,6 +867,43 @@ describeSvelte5(
         );
       });
     }
+
+    // A rest element used to discard every prop and fall back to
+    // `Record<string, any>`, so importers lost the defaults too.
+    it("still resolves defaults alongside a rest element", () => {
+      const component = `<script lang="ts">\n  let { count = 0, ...rest } = $props();\n</script>`;
+      const t = `import("svelte").ComponentProps<typeof Foo>["count"]`;
+      const good = typeCheckConsumer(component, `const ok: ${t} = 5;`);
+      assert.deepStrictEqual(
+        good.map((d) => d.code),
+        [],
+        `expected 5 to be accepted, got: ${good
+          .map((d) => ts.flattenDiagnosticMessageText(d.messageText, " "))
+          .join("; ")}`,
+      );
+      const bad = typeCheckConsumer(component, `const ng: ${t} = "x";`);
+      assert.ok(
+        bad.some((d) => d.code === 2322),
+        `expected "x" to be rejected (TS2322), got: ${bad
+          .map((d) => d.code)
+          .join(", ")}`,
+      );
+    });
+
+    // The index signature from the rest element keeps unknown props allowed.
+    it("accepts arbitrary extra props when a rest element is present", () => {
+      const diagnostics = typeCheckConsumer(
+        `<script lang="ts">\n  let { count = 0, ...rest } = $props();\n</script>`,
+        `import { mount } from "svelte";\nmount(Foo, { target: null as any, props: { count: 1, anything: "ok" } });`,
+      );
+      assert.deepStrictEqual(
+        diagnostics.map((d) => d.code),
+        [],
+        `expected no diagnostics, got: ${diagnostics
+          .map((d) => ts.flattenDiagnosticMessageText(d.messageText, "\n"))
+          .join("; ")}`,
+      );
+    });
 
     it("works with Svelte 5 `mount(Foo, ...)` value usage and checks props", () => {
       const diagnostics = typeCheckConsumer(
