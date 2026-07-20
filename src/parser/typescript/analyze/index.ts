@@ -569,18 +569,11 @@ function referencesOpenProps(
 }
 
 type RecoveredProps = {
-  /**
-   * Type text contributed directly: the whole props type for an explicit
-   * annotation/cast, or just the required members when inferred from a
-   * destructuring. `null` when there is nothing to contribute.
-   */
+  /** The whole props type when annotated, else only the required members. */
   type: string | null;
   /** Probe object literal of defaulted props (`{ count: 0 }`), or `null`. */
   probe: string | null;
-  /**
-   * Whether the prop set could not be fully enumerated, so the type must stay
-   * open with an index signature.
-   */
+  /** The props could not be fully enumerated, so the type must stay open. */
   open: boolean;
 };
 
@@ -651,13 +644,9 @@ function recoverRunesProps(
 }
 
 /**
- * Defaulted props go into a probe object so TS can infer their type from the
- * default expression via `typeof`. A prop with no default becomes a required
- * `any`, matching svelte2tsx: the name is known but nothing types it, so being
- * required is the only signal left to give importers.
- *
- * A rest element or a computed key can't be enumerated, so it only opens the
- * type rather than discarding the props that could be read.
+ * Defaults go through a probe object because only TS can type the default
+ * expression; a prop with no default has no type source at all, so it stays a
+ * required `any`, as in svelte2tsx.
  */
 function inferPropsFromObjectPattern(
   pattern: TSESTree.ObjectPattern,

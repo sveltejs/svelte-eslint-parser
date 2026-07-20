@@ -328,9 +328,6 @@ describeSvelte5("synthetic component default export (runes, Svelte 5)", () => {
     assertComponentExport(code, `{ v: string }`);
   });
 
-  // A rest element only means the prop set is open, so the props that *can* be
-  // read are still enumerated and the type is opened with an index signature.
-  // This mirrors svelte2tsx.
   it("keeps enumerated props and opens the type for a rest element", () => {
     const code = translate(`<script lang="ts">
   let { value, ...rest } = $props();
@@ -868,8 +865,6 @@ describeSvelte5(
       });
     }
 
-    // A rest element used to discard every prop and fall back to
-    // `Record<string, any>`, so importers lost the defaults too.
     it("still resolves defaults alongside a rest element", () => {
       const component = `<script lang="ts">\n  let { count = 0, ...rest } = $props();\n</script>`;
       const t = `import("svelte").ComponentProps<typeof Foo>["count"]`;
@@ -890,7 +885,6 @@ describeSvelte5(
       );
     });
 
-    // The index signature from the rest element keeps unknown props allowed.
     it("accepts arbitrary extra props when a rest element is present", () => {
       const diagnostics = typeCheckConsumer(
         `<script lang="ts">\n  let { count = 0, ...rest } = $props();\n</script>`,
