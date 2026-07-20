@@ -4,6 +4,7 @@ import type { NormalizedParserOptions } from "./parser-options.js";
 import { parseTemplate } from "./template.js";
 import { analyzeTypeScriptInSvelte } from "./typescript/analyze/index.js";
 import { resolveSvelteParseContextForSvelte } from "./svelte-parse-context.js";
+import { getInstanceScriptRange } from "./compat.js";
 
 /**
  * Translate a Svelte component to the virtual TypeScript shim. Returns
@@ -45,7 +46,11 @@ export function svelteToVirtualTypeScript(
       scripts.getCurrentVirtualCodeInfo(),
       scripts.attrs,
       inner,
-      { slots: ctx.slots, svelteParseContext },
+      {
+        slots: ctx.slots,
+        svelteParseContext,
+        instanceScriptRange: getInstanceScriptRange(template.svelteAst),
+      },
     );
     return tsCtx.script;
   } catch {

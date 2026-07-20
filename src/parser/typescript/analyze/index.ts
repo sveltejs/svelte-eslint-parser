@@ -24,10 +24,13 @@ import { setParent } from "../set-parent.js";
 import { getGlobalsForSvelte, globalsForRunes } from "../../globals.js";
 import type { SvelteParseContext } from "../../svelte-parse-context.js";
 import { withoutProjectParserOptions } from "../../parser-options.js";
+import { svelteVersion } from "../../svelte-version.js";
 
 export type AnalyzeTypeScriptContext = {
   slots: Set<SvelteHTMLElement>;
   svelteParseContext: SvelteParseContext;
+  /** Source range of the instance `<script>` content; the virtual code concatenates both scripts. */
+  instanceScriptRange?: [number, number] | null;
 };
 
 type TransformInfo = {
@@ -152,6 +155,15 @@ export function analyzeTypeScriptInSvelte(
 
   ctx.appendOriginalToEnd();
 
+  // Emitted last so it lands as a standalone top-level statement.
+  appendComponentDefaultExport(
+    result,
+    code.script + code.render + code.rootScope,
+    ctx,
+    context.svelteParseContext,
+    context.instanceScriptRange ?? null,
+  );
+
   return ctx;
 }
 /**
@@ -198,6 +210,468 @@ function hasExportDeclaration(ast: TSESParseForESLintResult["ast"]): boolean {
     }
   }
   return false;
+}
+
+/**
+ * Append a synthetic component `export default` so importers can resolve the
+ * component's prop, event, and slot types.
+ *
+ * The export must carry both a value and a type meaning: `ComponentProps<typeof
+ * Foo>` uses the value, while `ComponentEvents<Foo>` and Svelte-4-style
+ * `ComponentProps<Foo>` use `Foo` as a type. A bare `export default <expr>` only
+ * provides the value, so emit a value/type pair re-exported as default.
+ */
+function appendComponentDefaultExport(
+  result: TSESParseForESLintResult,
+  source: string,
+  ctx: VirtualTypeScriptContext,
+  svelteParseContext: SvelteParseContext,
+  instanceScriptRange: [number, number] | null,
+) {
+  if (hasDefaultExport(result.ast)) {
+    return;
+  }
+
+  // Legacy recovery must only look at the instance script: a module-context
+  // `export let` is not a prop, and `$$Props`/`$$Events`/`$$Slots` are only
+  // meaningful in the instance script.
+  const instanceStatements = getInstanceStatements(result, instanceScriptRange);
+
+  const names: string[] = [];
+  // Lead with a newline so a trailing line comment can't swallow the statement.
+  let code = "\n";
+
+  // Runes `$props()` takes precedence over legacy recovery; the last fallback
+  // stays permissive so `typeof Foo` still resolves.
+  let propsType: string;
+  const runesProps = recoverRunesProps(result, source, svelteParseContext);
+  if (runesProps != null) {
+    if (runesProps.probe != null) {
+      // Let TS infer the default value types via `typeof` of a probe object.
+      const probeName = ctx.generateUniqueId("propsProbe");
+      names.push(probeName);
+      code += `const ${probeName} = ${runesProps.probe};`;
+      propsType = runesProps.type
+        ? `Partial<typeof ${probeName}> & ${runesProps.type}`
+        : `Partial<typeof ${probeName}>`;
+    } else {
+      propsType = runesProps.type || "{}";
+    }
+  } else {
+    // A component reading `$$props`/`$$restProps` accepts arbitrary attributes,
+    // so the synthesized (closed) type is opened with an index signature to
+    // avoid spurious excess-property errors. `$$Props` is exempt: there the user
+    // owns the open/closed decision.
+    const dollarPropsType = getDollarDollarPropsType(
+      instanceStatements,
+      svelteParseContext,
+    );
+    if (dollarPropsType != null) {
+      propsType = dollarPropsType;
+    } else {
+      const exportLetType = getLegacyExportLetPropsType(
+        instanceStatements,
+        source,
+        svelteParseContext,
+      );
+      if (
+        exportLetType != null &&
+        referencesOpenProps(result, instanceScriptRange)
+      ) {
+        propsType = `${exportLetType} & { [key: string]: any }`;
+      } else {
+        propsType = exportLetType ?? "Record<string, any>";
+      }
+    }
+  }
+
+  // Stay permissive without `$$Events`/`$$Slots` so `on:` and slots don't get
+  // spurious errors.
+  const eventsType = hasNamedTypeDeclaration(instanceStatements, "$$Events")
+    ? "$$Events"
+    : "Record<string, any>";
+  const slotsType = hasNamedTypeDeclaration(instanceStatements, "$$Slots")
+    ? "$$Slots"
+    : "Record<string, any>";
+
+  const name = ctx.generateUniqueId("svelteComponent");
+  names.push(name);
+  const { valueType, typeType } = componentTypeText(
+    propsType,
+    eventsType,
+    slotsType,
+  );
+  code += `declare const ${name}: ${valueType};type ${name} = ${typeType};export { ${name} as default };`;
+  ctx.appendVirtualScript(code);
+
+  // `export { <name> as default }`.
+  registerRemoval(
+    ctx,
+    (node) =>
+      node.type === "ExportNamedDeclaration" &&
+      node.declaration == null &&
+      node.specifiers.length === 1 &&
+      node.specifiers[0].local.type === "Identifier" &&
+      node.specifiers[0].local.name === name,
+  );
+  // `type <name> = ...`.
+  registerRemoval(
+    ctx,
+    (node) => node.type === "TSTypeAliasDeclaration" && node.id.name === name,
+  );
+  // The `declare const <name>` and any props probe const.
+  for (const nm of names) {
+    registerRemoval(
+      ctx,
+      (node) =>
+        node.type === "VariableDeclaration" &&
+        node.declarations[0]?.id.type === "Identifier" &&
+        node.declarations[0].id.name === nm,
+    );
+  }
+}
+
+/**
+ * Value-side and type-side text of the synthetic default export, chosen by the
+ * *installed* Svelte version rather than the component mode: Svelte 3/4 typings
+ * have no `Component`, and Svelte 3's `SvelteComponent` is not generic.
+ */
+function componentTypeText(
+  propsType: string,
+  eventsType: string,
+  slotsType: string,
+): { valueType: string; typeType: string } {
+  const typeArgs = `<${propsType}, ${eventsType}, ${slotsType}>`;
+  if (svelteVersion.gte(5)) {
+    // The value is Svelte 5's `Component` so `typeof Foo` matches modern usage;
+    // the same-named legacy `SvelteComponent` type keeps `ComponentEvents<Foo>`
+    // resolving.
+    return {
+      valueType: `import('svelte').Component<${propsType}>`,
+      typeType: `import('svelte').SvelteComponent${typeArgs}`,
+    };
+  }
+  const className = svelteVersion.gte(4)
+    ? "SvelteComponent"
+    : "SvelteComponentTyped";
+  const instanceType = `import('svelte').${className}${typeArgs}`;
+  // A constructor value so `new Foo(...)` works and `typeof Foo` resolves; the
+  // same-named type is the instance for `ComponentProps<Foo>` /
+  // `ComponentEvents<Foo>`. `ComponentConstructorOptions` (present in Svelte 3
+  // and 4) validates `new Foo({ props: … })` instead of accepting anything.
+  return {
+    valueType: `new (options: import('svelte').ComponentConstructorOptions<${propsType}>) => ${instanceType}`,
+    typeType: instanceType,
+  };
+}
+
+/** Register a restore process that splices a matching statement and cleans scope. */
+function registerRemoval(
+  ctx: VirtualTypeScriptContext,
+  match: (node: TSESTree.Node) => boolean,
+) {
+  ctx.restoreContext.addRestoreStatementProcess((node, result) => {
+    if (!match(node as TSESTree.Node)) {
+      return false;
+    }
+    result.ast.body.splice(result.ast.body.indexOf(node as never), 1);
+    removeAllScopeAndVariableAndReference(node as TSESTree.Node, {
+      visitorKeys: result.visitorKeys,
+      scopeManager: result.scopeManager as eslint.Scope.ScopeManager,
+    });
+    return true;
+  });
+}
+
+function hasDefaultExport(ast: TSESParseForESLintResult["ast"]): boolean {
+  return ast.body.some((node) => {
+    if (node.type === "ExportDefaultDeclaration") {
+      return true;
+    }
+    // `export { x as default }` counts as a user-authored default export too.
+    if (node.type === "ExportNamedDeclaration") {
+      return node.specifiers.some(
+        (specifier) =>
+          specifier.exported.type === "Identifier" &&
+          specifier.exported.name === "default",
+      );
+    }
+    return false;
+  });
+}
+
+/** Top-level statements of the instance `<script>`, filtered out of the concatenated body by source range. */
+function getInstanceStatements(
+  result: TSESParseForESLintResult,
+  instanceScriptRange: [number, number] | null,
+): TSESTree.ProgramStatement[] {
+  if (!instanceScriptRange) {
+    return [];
+  }
+  const [start, end] = instanceScriptRange;
+  return result.ast.body.filter(
+    (node) => start <= node.range[0] && node.range[1] <= end,
+  );
+}
+
+function hasNamedTypeDeclaration(
+  statements: TSESTree.ProgramStatement[],
+  name: string,
+): boolean {
+  return statements.some(
+    (node) =>
+      (node.type === "TSInterfaceDeclaration" ||
+        node.type === "TSTypeAliasDeclaration") &&
+      node.id.name === name,
+  );
+}
+
+/**
+ * Svelte treats `$$Props` as the authoritative prop typing, so it takes priority
+ * over `export let` inference. Referenced by name, since the declaration itself
+ * stays in the virtual code.
+ */
+function getDollarDollarPropsType(
+  instanceStatements: TSESTree.ProgramStatement[],
+  svelteParseContext: SvelteParseContext,
+): string | null {
+  if (svelteParseContext.runes === true) {
+    return null;
+  }
+  return hasNamedTypeDeclaration(instanceStatements, "$$Props")
+    ? "$$Props"
+    : null;
+}
+
+/**
+ * Synthesize a props object type from legacy prop declarations, mirroring
+ * svelte2tsx: a default value makes the prop optional, an explicit annotation is
+ * used as-is, otherwise the type is inferred via `typeof`. Renamed exports whose
+ * local is a top-level `let` (`export { className as class }`) are props too.
+ */
+function getLegacyExportLetPropsType(
+  instanceStatements: TSESTree.ProgramStatement[],
+  source: string,
+  svelteParseContext: SvelteParseContext,
+): string | null {
+  // `export let` is only a prop declaration in legacy (non-runes) mode.
+  if (svelteParseContext.runes === true) {
+    return null;
+  }
+  const members: string[] = [];
+
+  function pushMember(
+    exportedName: string,
+    declarator: TSESTree.LetOrConstOrVarDeclarator,
+  ): void {
+    const optional = declarator.init != null;
+    const typeAnnotation =
+      declarator.id.type === "Identifier"
+        ? declarator.id.typeAnnotation
+        : undefined;
+    const localName =
+      declarator.id.type === "Identifier" ? declarator.id.name : null;
+    const typeText = typeAnnotation
+      ? source.slice(
+          typeAnnotation.typeAnnotation.range[0],
+          typeAnnotation.typeAnnotation.range[1],
+        )
+      : localName != null
+        ? `typeof ${localName}`
+        : "any";
+    members.push(`${propKey(exportedName)}${optional ? "?" : ""}: ${typeText}`);
+  }
+
+  // Indexed by binding name so a renamed export can resolve its local `let`.
+  const letDeclarators = new Map<string, TSESTree.LetOrConstOrVarDeclarator>();
+  for (const node of instanceStatements) {
+    const decl =
+      node.type === "ExportNamedDeclaration" ? node.declaration : node;
+    if (decl?.type !== "VariableDeclaration" || decl.kind !== "let") {
+      continue;
+    }
+    for (const declarator of decl.declarations) {
+      if (declarator.id.type === "Identifier") {
+        letDeclarators.set(declarator.id.name, declarator);
+      }
+    }
+  }
+
+  for (const node of instanceStatements) {
+    if (node.type !== "ExportNamedDeclaration") {
+      continue;
+    }
+    if (
+      node.declaration?.type === "VariableDeclaration" &&
+      node.declaration.kind === "let"
+    ) {
+      for (const declarator of node.declaration.declarations) {
+        if (declarator.id.type !== "Identifier") {
+          continue;
+        }
+        pushMember(declarator.id.name, declarator);
+      }
+      continue;
+    }
+    // A renamed (or same-name) export of a top-level `let` binding is a prop.
+    // Skip re-exports (`export … from '…'`) and `default` (handled elsewhere).
+    if (node.declaration == null && node.source == null) {
+      for (const specifier of node.specifiers) {
+        if (
+          specifier.local.type !== "Identifier" ||
+          specifier.exported.type !== "Identifier" ||
+          specifier.exported.name === "default"
+        ) {
+          continue;
+        }
+        const declarator = letDeclarators.get(specifier.local.name);
+        if (!declarator) {
+          continue;
+        }
+        pushMember(specifier.exported.name, declarator);
+      }
+    }
+  }
+  if (!members.length) {
+    return null;
+  }
+  return `{ ${members.join("; ")} }`;
+}
+
+/** Quote non-identifier keys so reserved-word prop names like `class` are emitted safely. */
+function propKey(name: string): string {
+  return /^[$A-Z_a-z][\w$]*$/u.test(name) ? name : JSON.stringify(name);
+}
+
+/** Whether the instance script references `$$props` or `$$restProps`. */
+function referencesOpenProps(
+  result: TSESParseForESLintResult,
+  instanceScriptRange: [number, number] | null,
+): boolean {
+  if (!instanceScriptRange) {
+    return false;
+  }
+  const [start, end] = instanceScriptRange;
+  return result.scopeManager.globalScope!.through.some((reference) => {
+    const { name, range } = reference.identifier;
+    return (
+      (name === "$$props" || name === "$$restProps") &&
+      range != null &&
+      start <= range[0] &&
+      range[1] <= end
+    );
+  });
+}
+
+type RecoveredProps = {
+  /** Props type text, or `""` when every prop is optional (all defaulted). */
+  type: string;
+  /** Probe object literal of defaulted props (`{ count: 0 }`), or `null`. */
+  probe: string | null;
+};
+
+/**
+ * Recover props from a runes `$props()` declaration. An explicit annotation,
+ * `as`, or `satisfies` type is used as-is; otherwise the type is inferred from
+ * the destructuring.
+ */
+function recoverRunesProps(
+  result: TSESParseForESLintResult,
+  source: string,
+  svelteParseContext: SvelteParseContext,
+): RecoveredProps | null {
+  if (svelteParseContext.runes === false) {
+    return null;
+  }
+  const propsReferences = result.scopeManager.globalScope!.through.filter(
+    (reference) => reference.identifier.name === "$props",
+  );
+  if (!propsReferences.length) {
+    return null;
+  }
+  setParent(result);
+  for (const reference of propsReferences) {
+    const id = reference.identifier as TSESTree.Identifier;
+    const call = id.parent;
+    if (call?.type !== "CallExpression" || call.callee !== id) {
+      continue;
+    }
+    // A trailing `as`/`satisfies` cast carries the type, between call and declarator.
+    let valueNode: TSESTree.Expression = call;
+    let castType: TSESTree.TypeNode | null = null;
+    if (
+      call.parent?.type === "TSAsExpression" ||
+      call.parent?.type === "TSSatisfiesExpression"
+    ) {
+      castType = call.parent.typeAnnotation;
+      valueNode = call.parent;
+    }
+    if (
+      valueNode.parent?.type !== "VariableDeclarator" ||
+      valueNode.parent.init !== valueNode
+    ) {
+      continue;
+    }
+    if (castType) {
+      return {
+        type: source.slice(castType.range[0], castType.range[1]),
+        probe: null,
+      };
+    }
+    const declId = valueNode.parent.id;
+    const annotation = declId.typeAnnotation;
+    if (annotation) {
+      const node = annotation.typeAnnotation;
+      return { type: source.slice(node.range[0], node.range[1]), probe: null };
+    }
+    if (declId.type === "ObjectPattern") {
+      const inferred = inferPropsFromObjectPattern(declId, source);
+      if (inferred != null) {
+        return inferred;
+      }
+    }
+  }
+  return null;
+}
+
+/**
+ * Required props become `any`; defaulted props go into a probe object so TS can
+ * infer their type from the default expression via `typeof`. Returns `null` for
+ * a rest element or a computed key, where the prop set can't be enumerated.
+ */
+function inferPropsFromObjectPattern(
+  pattern: TSESTree.ObjectPattern,
+  source: string,
+): RecoveredProps | null {
+  const required: string[] = [];
+  const defaulted: string[] = [];
+  for (const prop of pattern.properties) {
+    if (prop.type !== "Property" || prop.computed) {
+      return null;
+    }
+    // String-literal keys are taken raw, so their quotes are preserved.
+    let key: string;
+    if (prop.key.type === "Identifier") {
+      key = prop.key.name;
+    } else if (
+      prop.key.type === "Literal" &&
+      typeof prop.key.value === "string"
+    ) {
+      key = prop.key.raw;
+    } else {
+      return null;
+    }
+    if (prop.value.type === "AssignmentPattern") {
+      const def = prop.value.right;
+      defaulted.push(`${key}: ${source.slice(def.range[0], def.range[1])}`);
+    } else {
+      required.push(`${key}: any`);
+    }
+  }
+  return {
+    type: required.length ? `{ ${required.join("; ")} }` : "",
+    probe: defaulted.length ? `{ ${defaulted.join(", ")} }` : null,
+  };
 }
 
 /**

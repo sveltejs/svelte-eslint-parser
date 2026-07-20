@@ -29,8 +29,15 @@ interface TranslationEntry {
 interface TsLike {
   sys?: {
     readFile?: (path: string, encoding?: string) => string | undefined;
+    fileExists?: (path: string) => boolean;
   };
 }
+
+// TypeScript does not recognise the `.svelte` extension, so module resolution
+// falls back to appending `.ts` and probes `X.svelte.ts`. Serving the
+// component's virtual TypeScript there makes the import resolve to the real
+// prop types instead of Svelte's permissive ambient `declare module '*.svelte'`.
+const SVELTE_COMPANION_SUFFIX = ".svelte.ts";
 
 const translations = new Map<string, TranslationEntry>();
 const patchedSysObjects = new WeakSet();
@@ -41,6 +48,9 @@ let parserOptionsInspected = false;
 let patchAppliedCount = 0;
 let primeStoredCount = 0;
 let svelteReadFileCount = 0;
+// The collision warning sits in a hot resolution path, so it fires at most once
+// per process rather than once per file.
+let companionConflictWarned = false;
 
 function warn(msg: string): void {
   process.stderr.write(`[svelte-eslint-parser:ts-sys-hook] WARNING: ${msg}\n`);
@@ -115,6 +125,47 @@ function statMtimeMs(filePath: string): number | null {
   }
 }
 
+function realFileExists(filePath: string): boolean {
+  try {
+    return fs.statSync(filePath).isFile();
+  } catch {
+    return false;
+  }
+}
+
+/** Virtual code of the `X.svelte` behind a probed `X.svelte.ts`, or `null` to fall through. */
+function translateCompanion(companionPath: string): string | null {
+  if (!companionPath.endsWith(SVELTE_COMPANION_SUFFIX)) return null;
+  const sveltePath = companionPath.slice(0, -".ts".length);
+  // A real runes module wins; never shadow it.
+  if (realFileExists(companionPath)) {
+    warnCompanionConflict(companionPath, sveltePath);
+    return null;
+  }
+  return translateOnDemand(sveltePath);
+}
+
+/**
+ * Only a real `X.svelte.ts` next to a real `X.svelte` costs the user anything:
+ * the guard above suppresses the virtual companion, so `./X.svelte` resolves to
+ * the runes module and the component's prop types stay unavailable.
+ */
+function warnCompanionConflict(
+  companionPath: string,
+  sveltePath: string,
+): void {
+  if (companionConflictWarned) return;
+  if (!realFileExists(sveltePath)) return;
+  companionConflictWarned = true;
+  warn(
+    `${sveltePath} and ${companionPath} both exist. TypeScript resolves ` +
+      `'./${path.basename(sveltePath)}' to the module, so component prop ` +
+      "types are not available for this component. The lint rule " +
+      "'svelte/no-conflicting-module-names' (eslint-plugin-svelte >= 3.22.0) " +
+      "reports this name collision.",
+  );
+}
+
 function readUtf8(filePath: string): string | null {
   try {
     return fs.readFileSync(filePath, "utf-8");
@@ -156,13 +207,39 @@ function patchTsSys(sys: TsLike["sys"]): void {
 
   const originalReadFile = sys.readFile.bind(sys);
   sys.readFile = (filePath: string, encoding?: string) => {
-    if (typeof filePath === "string" && filePath.endsWith(".svelte")) {
-      svelteReadFileCount++;
-      const virtual = translateOnDemand(filePath);
-      if (virtual !== null) return virtual;
+    if (typeof filePath === "string") {
+      // `X.svelte` is the component being linted; the `X.svelte.ts` companion is
+      // what module resolution probes for an imported component.
+      if (filePath.endsWith(".svelte")) {
+        svelteReadFileCount++;
+        const virtual = translateOnDemand(filePath);
+        if (virtual !== null) return virtual;
+      } else if (filePath.endsWith(SVELTE_COMPANION_SUFFIX)) {
+        const virtual = translateCompanion(filePath);
+        if (virtual !== null) {
+          svelteReadFileCount++;
+          return virtual;
+        }
+      }
     }
     return originalReadFile(filePath, encoding);
   };
+
+  // Claim the companion exists so module resolution reaches the `readFile`
+  // above; otherwise resolution fails and falls back to the ambient module.
+  if (typeof sys.fileExists === "function") {
+    const originalFileExists = sys.fileExists.bind(sys);
+    sys.fileExists = (filePath: string) => {
+      if (
+        typeof filePath === "string" &&
+        filePath.endsWith(SVELTE_COMPANION_SUFFIX) &&
+        translateCompanion(filePath) !== null
+      ) {
+        return true;
+      }
+      return originalFileExists(filePath);
+    };
+  }
 }
 
 /**
@@ -243,6 +320,8 @@ export function _resetTranslationCacheForTesting(): void {
   translations.clear();
   activeParserOptions = null;
   needsParseTimeRescan = false;
+  // Re-arm the once-per-process warning so tests don't depend on suite order.
+  companionConflictWarned = false;
 }
 
 /** Test seam: patch a caller-supplied `sys` instead of the require.cache ones. */
