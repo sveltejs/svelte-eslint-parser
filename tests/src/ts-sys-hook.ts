@@ -348,6 +348,23 @@ describeSvelte5("synthetic component default export (runes, Svelte 5)", () => {
     );
   });
 
+  it("widens an `as const` default so importers can pass other values", () => {
+    const code = translate(`<script lang="ts">
+  let { xs = [1, 2] as const, mode = "dark" as const } = $props();
+</script>`);
+    assert.match(
+      code,
+      /const \$_propsProbe\d+ = \{ xs: \(\[1, 2\]\), mode: \("dark"\) \};/,
+    );
+  });
+
+  it("degrades an `as const` empty array default like a bare one", () => {
+    const code = translate(`<script lang="ts">
+  let { xs = [] as const } = $props();
+</script>`);
+    assertComponentExport(code, `{ xs?: any[] }`);
+  });
+
   it("ignores a `<script module>` `$props()` in favor of the instance one", () => {
     const code = translate(`<script module lang="ts">
   const { moduleThing } = $props();
@@ -395,6 +412,44 @@ describeSvelte5("synthetic component default export (runes, Svelte 5)", () => {
     assertComponentExport(code, `Props`);
   });
 
+  it("recovers the outermost type from stacked `as` casts", () => {
+    const code = translate(`<script lang="ts">
+  interface Inner { v: string }
+  interface Outer { v: string }
+  let p = $props() as Inner as Outer;
+</script>
+<p>{p.v}</p>`);
+    assertComponentExport(code, `Outer`);
+  });
+
+  it("recovers the outermost type from a `satisfies` followed by an `as`", () => {
+    const code = translate(`<script lang="ts">
+  interface Inner { v: string }
+  interface Outer { v: string }
+  let p = $props() satisfies Inner as Outer;
+</script>
+<p>{p.v}</p>`);
+    assertComponentExport(code, `Outer`);
+  });
+
+  it("looks through a non-null assertion to the declared annotation", () => {
+    const code = translate(`<script lang="ts">
+  interface Props { v: string }
+  let p: Props = $props()!;
+</script>
+<p>{p.v}</p>`);
+    assertComponentExport(code, `Props`);
+  });
+
+  it("looks through a non-null assertion to a following `as` cast", () => {
+    const code = translate(`<script lang="ts">
+  interface Props { v: string }
+  let p = $props()! as Props;
+</script>
+<p>{p.v}</p>`);
+    assertComponentExport(code, `Props`);
+  });
+
   it("is not swallowed by a trailing line comment with no following newline", () => {
     const code = translate(
       `<script lang="ts">let { v }: { v: string } = $props() // trailing</script>`,
@@ -423,6 +478,38 @@ describeSvelte5("synthetic component default export (runes, Svelte 5)", () => {
       code,
       `Partial<typeof ${probe}> & Record<string, any>`,
     );
+  });
+
+  it("resolves a computed key that is a string literal", () => {
+    const code = translate(`<script lang="ts">
+  let { ["a"]: a, b } = $props();
+</script>
+<p>{a}{b}</p>`);
+    assertComponentExport(code, `{ "a": any; b: any }`);
+  });
+
+  it("resolves a computed key that is a numeric literal", () => {
+    const code = translate(`<script lang="ts">
+  let { [0]: zero } = $props();
+</script>
+<p>{zero}</p>`);
+    assertComponentExport(code, `{ 0: any }`);
+  });
+
+  it("keeps a numeric-literal key without opening the whole prop set", () => {
+    const code = translate(`<script lang="ts">
+  let { 0: zero, name } = $props();
+</script>
+<p>{zero}{name}</p>`);
+    assertComponentExport(code, `{ 0: any; name: any }`);
+  });
+
+  it("opens the type for a bigint key, which no type literal can name", () => {
+    const code = translate(`<script lang="ts">
+  let { 0n: big, name } = $props();
+</script>
+<p>{big}{name}</p>`);
+    assertComponentExport(code, `{ name: any } & Record<string, any>`);
   });
 
   it("accepts no props at all for an empty destructuring", () => {
@@ -991,6 +1078,29 @@ describeSvelte5(
         const diagnostics = typeCheckConsumer(
           `<script lang="ts">\n  let { ${c.decl} } = $props();\n</script>`,
           `const ok: import("svelte").ComponentProps<typeof Foo>["items"] = ${c.value};\nvoid ok;`,
+        );
+        assert.deepStrictEqual(
+          diagnostics.map((d) => d.code),
+          [],
+          `expected ${c.value} to be accepted, got: ${diagnostics
+            .map((d) => ts.flattenDiagnosticMessageText(d.messageText, " "))
+            .join("; ")}`,
+        );
+      });
+    }
+
+    // `as const` would freeze the default into a narrow literal type, so an
+    // importer passing any other value of the same shape would be rejected.
+    const AS_CONST_DEFAULTS: { name: string; decl: string; value: string }[] = [
+      { name: "tuple", decl: "xs = [1, 2] as const", value: "[3, 4]" },
+      { name: "string", decl: 'mode = "dark" as const', value: '"light"' },
+    ];
+    for (const c of AS_CONST_DEFAULTS) {
+      it(`lets importers pass another value for an \`as const\` default (${c.name})`, () => {
+        const prop = c.decl.slice(0, c.decl.indexOf(" "));
+        const diagnostics = typeCheckConsumer(
+          `<script lang="ts">\n  let { ${c.decl} } = $props();\n</script>`,
+          `const ok: import("svelte").ComponentProps<typeof Foo>["${prop}"] = ${c.value};\nvoid ok;`,
         );
         assert.deepStrictEqual(
           diagnostics.map((d) => d.code),
@@ -1741,3 +1851,35 @@ describeSvelte5(
     }
   },
 );
+
+// The probe const is virtual-only, and a default referencing a local makes it
+// read that local. Restore must drop both the probe's own variable and the read
+// it appended, neither of which shows up in the AST body.
+describeSvelte5("the props probe leaves no trace in the scope manager", () => {
+  const SOURCE = `<script lang="ts">\n  const base = { a: 1 };\n  let { conf = base } = $props();\n</script>`;
+
+  it("declares no `$_propsProbe` variable in any scope", () => {
+    const { scopeManager } = parseComponent(SOURCE);
+    const leaked = scopeManager.scopes
+      .flatMap((scope) => scope.variables)
+      .map((variable) => variable.name)
+      .filter((name) => /^\$_propsProbe\d+$/u.test(name));
+    assert.deepStrictEqual(leaked, []);
+  });
+
+  it("appends no dangling reference to the user variable the default reads", () => {
+    const { scopeManager } = parseComponent(SOURCE);
+    const base = scopeManager.scopes
+      .flatMap((scope) => scope.variables)
+      .find((variable) => variable.name === "base");
+    assert.ok(base, "expected a `base` variable");
+    for (const reference of base.references) {
+      const [start, end] = reference.identifier.range!;
+      assert.strictEqual(
+        SOURCE.slice(start, end),
+        "base",
+        `reference at ${start}-${end} does not span the real \`base\` identifier`,
+      );
+    }
+  });
+});

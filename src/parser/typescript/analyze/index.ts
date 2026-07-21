@@ -250,7 +250,9 @@ function appendComponentDefaultExport(
     svelteParseContext,
     instanceScriptRange,
   );
-  if (runesProps != null) {
+  if (runesProps?.kind === "explicit") {
+    propsType = runesProps.type;
+  } else if (runesProps != null) {
     const parts: string[] = [];
     if (runesProps.probe != null) {
       // Let TS infer the default value types via `typeof` of a probe object.
@@ -259,8 +261,8 @@ function appendComponentDefaultExport(
       code += `const ${probeName} = ${runesProps.probe};`;
       parts.push(`Partial<typeof ${probeName}>`);
     }
-    if (runesProps.type != null) {
-      parts.push(runesProps.type);
+    if (runesProps.members != null) {
+      parts.push(runesProps.members);
     }
     if (runesProps.open) {
       parts.push("Record<string, any>");
@@ -573,14 +575,22 @@ function referencesOpenProps(
   });
 }
 
-type RecoveredProps = {
-  /** The whole props type when annotated, else the members recovered from the pattern. */
-  type: string | null;
-  /** Probe object literal of defaulted props (`{ count: 0 }`), or `null`. */
-  probe: string | null;
-  /** The props could not be fully enumerated, so the type must stay open. */
-  open: boolean;
-};
+/**
+ * The two paths are kept apart because `explicit` carries a whole user-written
+ * type, which may be a union: intersecting it with anything else would mis-bind,
+ * since `&` binds tighter than `|`.
+ */
+type RecoveredProps =
+  | { kind: "explicit"; type: string }
+  | {
+      kind: "inferred";
+      /** Members recovered from the destructuring pattern, or `null`. */
+      members: string | null;
+      /** Probe object literal of defaulted props (`{ count: 0 }`), or `null`. */
+      probe: string | null;
+      /** The props could not be fully enumerated, so the type must stay open. */
+      open: boolean;
+    };
 
 /**
  * Recover props from a runes `$props()` declaration. An explicit annotation,
@@ -622,15 +632,24 @@ function recoverRunesProps(
     if (call?.type !== "CallExpression" || call.callee !== id) {
       continue;
     }
-    // A trailing `as`/`satisfies` cast carries the type, between call and declarator.
+    // Trailing `as`/`satisfies`/`!` operators sit between the call and the
+    // declarator and can be stacked. The outermost annotation is the effective
+    // type, so keep overwriting; `!` only unwraps.
     let valueNode: TSESTree.Expression = call;
     let castType: TSESTree.TypeNode | null = null;
-    if (
-      call.parent?.type === "TSAsExpression" ||
-      call.parent?.type === "TSSatisfiesExpression"
-    ) {
-      castType = call.parent.typeAnnotation;
-      valueNode = call.parent;
+    for (;;) {
+      const parent: TSESTree.Node | undefined = valueNode.parent;
+      if (
+        parent?.type === "TSAsExpression" ||
+        parent?.type === "TSSatisfiesExpression"
+      ) {
+        castType = parent.typeAnnotation;
+        valueNode = parent;
+      } else if (parent?.type === "TSNonNullExpression") {
+        valueNode = parent;
+      } else {
+        break;
+      }
     }
     if (
       valueNode.parent?.type !== "VariableDeclarator" ||
@@ -641,9 +660,8 @@ function recoverRunesProps(
     }
     if (castType) {
       return {
+        kind: "explicit",
         type: source.slice(castType.range[0], castType.range[1]),
-        probe: null,
-        open: false,
       };
     }
     const declId = valueNode.parent.id;
@@ -651,9 +669,8 @@ function recoverRunesProps(
     if (annotation) {
       const node = annotation.typeAnnotation;
       return {
+        kind: "explicit",
         type: source.slice(node.range[0], node.range[1]),
-        probe: null,
-        open: false,
       };
     }
     if (declId.type === "ObjectPattern") {
@@ -687,17 +704,19 @@ function inferPropsFromObjectPattern(
   const defaulted: string[] = [];
   let open = false;
   for (const prop of pattern.properties) {
-    if (prop.type !== "Property" || prop.computed) {
+    if (prop.type !== "Property") {
       open = true;
       continue;
     }
-    // String-literal keys are taken raw, so their quotes are preserved.
+    // Keys are taken raw so a string key keeps its quotes. A literal key is
+    // resolvable even when computed (`["a"]`), unlike an identifier one (`[k]`).
+    // Bigint keys are excluded: `0n` is not a valid type-literal key.
     let key: string;
-    if (prop.key.type === "Identifier") {
+    if (!prop.computed && prop.key.type === "Identifier") {
       key = prop.key.name;
     } else if (
       prop.key.type === "Literal" &&
-      typeof prop.key.value === "string"
+      (typeof prop.key.value === "string" || typeof prop.key.value === "number")
     ) {
       key = prop.key.raw;
     } else {
@@ -705,7 +724,7 @@ function inferPropsFromObjectPattern(
       continue;
     }
     if (prop.value.type === "AssignmentPattern") {
-      const def = prop.value.right;
+      const def = stripAsConst(prop.value.right);
       const degraded = degenerateDefaultType(def);
       if (degraded != null) {
         members.push(`${key}?: ${degraded}`);
@@ -719,10 +738,29 @@ function inferPropsFromObjectPattern(
     }
   }
   return {
-    type: members.length ? `{ ${members.join("; ")} }` : null,
+    kind: "inferred",
+    members: members.length ? `{ ${members.join("; ")} }` : null,
     probe: defaulted.length ? `{ ${defaulted.join(", ")} }` : null,
     open,
   };
+}
+
+/**
+ * Unwrap `X as const`, whose `const` parses as a type reference rather than a
+ * keyword. The frozen literal type it produces would reject every other value an
+ * importer passes; an author who wants that narrowing writes an explicit
+ * annotation, which takes precedence anyway.
+ */
+function stripAsConst(node: TSESTree.Expression): TSESTree.Expression {
+  if (
+    node.type === "TSAsExpression" &&
+    node.typeAnnotation.type === "TSTypeReference" &&
+    node.typeAnnotation.typeName.type === "Identifier" &&
+    node.typeAnnotation.typeName.name === "const"
+  ) {
+    return node.expression;
+  }
+  return node;
 }
 
 /**
