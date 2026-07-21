@@ -244,7 +244,12 @@ function appendComponentDefaultExport(
   // Runes `$props()` takes precedence over legacy recovery; the last fallback
   // stays permissive so `typeof Foo` still resolves.
   let propsType: string;
-  const runesProps = recoverRunesProps(result, source, svelteParseContext);
+  const runesProps = recoverRunesProps(
+    result,
+    source,
+    svelteParseContext,
+    instanceScriptRange,
+  );
   if (runesProps != null) {
     const parts: string[] = [];
     if (runesProps.probe != null) {
@@ -569,7 +574,7 @@ function referencesOpenProps(
 }
 
 type RecoveredProps = {
-  /** The whole props type when annotated, else only the required members. */
+  /** The whole props type when annotated, else the members recovered from the pattern. */
   type: string | null;
   /** Probe object literal of defaulted props (`{ count: 0 }`), or `null`. */
   probe: string | null;
@@ -581,17 +586,31 @@ type RecoveredProps = {
  * Recover props from a runes `$props()` declaration. An explicit annotation,
  * `as`, or `satisfies` type is used as-is; otherwise the type is inferred from
  * the destructuring.
+ *
+ * Only a top-level instance-script declaration counts, since that is the only
+ * place Svelte accepts `$props()`; a `<script module>` call must not hijack the
+ * real declaration.
  */
 function recoverRunesProps(
   result: TSESParseForESLintResult,
   source: string,
   svelteParseContext: SvelteParseContext,
+  instanceScriptRange: [number, number] | null,
 ): RecoveredProps | null {
-  if (svelteParseContext.runes === false) {
+  if (svelteParseContext.runes === false || !instanceScriptRange) {
     return null;
   }
+  const [instanceStart, instanceEnd] = instanceScriptRange;
   const propsReferences = result.scopeManager.globalScope!.through.filter(
-    (reference) => reference.identifier.name === "$props",
+    (reference) => {
+      const { name, range } = reference.identifier;
+      return (
+        name === "$props" &&
+        range != null &&
+        instanceStart <= range[0] &&
+        range[1] <= instanceEnd
+      );
+    },
   );
   if (!propsReferences.length) {
     return null;
@@ -615,7 +634,8 @@ function recoverRunesProps(
     }
     if (
       valueNode.parent?.type !== "VariableDeclarator" ||
-      valueNode.parent.init !== valueNode
+      valueNode.parent.init !== valueNode ||
+      !isTopLevelDeclarator(valueNode.parent)
     ) {
       continue;
     }
@@ -643,6 +663,17 @@ function recoverRunesProps(
   return null;
 }
 
+function isTopLevelDeclarator(
+  declarator: TSESTree.VariableDeclarator,
+): boolean {
+  const declaration = declarator.parent;
+  const statement =
+    declaration.parent?.type === "ExportNamedDeclaration"
+      ? declaration.parent
+      : declaration;
+  return statement.parent?.type === "Program";
+}
+
 /**
  * Defaults go through a probe object because only TS can type the default
  * expression; a prop with no default has no type source at all, so it stays a
@@ -652,7 +683,7 @@ function inferPropsFromObjectPattern(
   pattern: TSESTree.ObjectPattern,
   source: string,
 ): RecoveredProps {
-  const required: string[] = [];
+  const members: string[] = [];
   const defaulted: string[] = [];
   let open = false;
   for (const prop of pattern.properties) {
@@ -675,16 +706,46 @@ function inferPropsFromObjectPattern(
     }
     if (prop.value.type === "AssignmentPattern") {
       const def = prop.value.right;
-      defaulted.push(`${key}: ${source.slice(def.range[0], def.range[1])}`);
+      const degraded = degenerateDefaultType(def);
+      if (degraded != null) {
+        members.push(`${key}?: ${degraded}`);
+        continue;
+      }
+      // ESTree ranges exclude wrapping parens, so a sequence expression default
+      // would slice to `1, 2` and make the probe object literal invalid.
+      defaulted.push(`${key}: (${source.slice(def.range[0], def.range[1])})`);
     } else {
-      required.push(`${key}: any`);
+      members.push(`${key}: any`);
     }
   }
   return {
-    type: required.length ? `{ ${required.join("; ")} }` : null,
+    type: members.length ? `{ ${members.join("; ")} }` : null,
     probe: defaulted.length ? `{ ${defaulted.join(", ")} }` : null,
     open,
   };
+}
+
+/**
+ * Defaults that TS can only infer as an uninhabitable type (`never[]`, `null`,
+ * `undefined`), which would reject every value an importer can pass. svelte2tsx
+ * degrades them to `any` for the same reason.
+ */
+function degenerateDefaultType(node: TSESTree.Expression): string | null {
+  if (node.type === "ArrayExpression" && node.elements.length === 0) {
+    return "any[]";
+  }
+  // `raw` distinguishes the null literal from a regex literal, whose `value` is
+  // also null when the environment cannot build the `RegExp`.
+  if (node.type === "Literal" && node.raw === "null") {
+    return "any";
+  }
+  if (node.type === "Identifier" && node.name === "undefined") {
+    return "any";
+  }
+  if (node.type === "UnaryExpression" && node.operator === "void") {
+    return "any";
+  }
+  return null;
 }
 
 /**

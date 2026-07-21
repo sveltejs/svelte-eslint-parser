@@ -4,6 +4,7 @@ import os from "os";
 import path from "path";
 import { createRequire } from "module";
 import ts from "typescript";
+import { parseForESLint } from "../../src/index.js";
 import { normalizeParserOptions } from "../../src/parser/parser-options.js";
 import { svelteToVirtualTypeScript } from "../../src/parser/svelte-to-virtual-ts.js";
 import { svelteVersion } from "../../src/parser/svelte-version.js";
@@ -67,6 +68,27 @@ function translate(source: string): string {
   });
   assert.notStrictEqual(result, null, "expected non-null translation");
   return result!;
+}
+
+function parseComponent(source: string): ReturnType<typeof parseForESLint> {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "ts-sys-hook-"));
+  const filePath = path.join(dir, "Component.svelte");
+  fs.writeFileSync(filePath, source, "utf-8");
+  try {
+    return parseForESLint(source, makeParserOptions(filePath));
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+}
+
+function dumpComments(
+  result: ReturnType<typeof parseForESLint>,
+): (string | number)[][] {
+  return result.ast.comments.map((comment) => [
+    comment.type,
+    comment.value,
+    ...comment.range,
+  ]);
 }
 
 /**
@@ -286,11 +308,64 @@ describeSvelte5("synthetic component default export (runes, Svelte 5)", () => {
   let { value, count = 0 } = $props();
 </script>
 <p>{value}{count}</p>`);
-    assert.match(code, /const \$_propsProbe\d+ = \{ count: 0 \};/);
+    assert.match(code, /const \$_propsProbe\d+ = \{ count: \(0\) \};/);
     assert.match(
       code,
       /import\('svelte'\)\.Component<Partial<typeof \$_propsProbe\d+> & \{ value: any \}>;/,
     );
+  });
+
+  it("keeps a parenthesized default valid in the probe", () => {
+    const source = `<script lang="ts">
+  let { a = (1, 2) } = $props();
+</script>`;
+    assert.doesNotThrow(() => parseComponent(source));
+    const code = translate(source);
+    assert.match(code, /const \$_propsProbe\d+ = \{ a: \(1, 2\) \};/);
+    assert.match(
+      code,
+      /import\('svelte'\)\.Component<Partial<typeof \$_propsProbe\d+>>;/,
+    );
+  });
+
+  it("degrades defaults with no inhabitable inferred type to optional `any`", () => {
+    const code = translate(`<script lang="ts">
+  let { items = [], error = null, v = undefined, w = void 0 } = $props();
+</script>`);
+    assertComponentExport(
+      code,
+      `{ items?: any[]; error?: any; v?: any; w?: any }`,
+    );
+  });
+
+  it("still probes defaults that infer a usable type", () => {
+    const code = translate(`<script lang="ts">
+  let { list = [] as string[], one = [1], o = {} } = $props();
+</script>`);
+    assert.match(
+      code,
+      /const \$_propsProbe\d+ = \{ list: \(\[\] as string\[\]\), one: \(\[1\]\), o: \(\{\}\) \};/,
+    );
+  });
+
+  it("ignores a `<script module>` `$props()` in favor of the instance one", () => {
+    const code = translate(`<script module lang="ts">
+  const { moduleThing } = $props();
+</script>
+<script lang="ts">
+  let { realProp }: { realProp: string } = $props();
+</script>
+<p>{realProp}</p>`);
+    assertComponentExport(code, `{ realProp: string }`);
+  });
+
+  it("ignores a `$props()` nested inside a function", () => {
+    const code = translate(`<script lang="ts">
+  function f() { const { inner } = $props(); }
+  let { real } = $props();
+</script>
+<p>{real}</p>`);
+    assertComponentExport(code, `{ real: any }`);
   });
 
   it("references `generics` type parameters in the recovered props type", () => {
@@ -342,9 +417,11 @@ describeSvelte5("synthetic component default export (runes, Svelte 5)", () => {
   let { count = 0, [k]: v } = $props();
 </script>
 <p>{count}{v}</p>`);
+    const probe = /const (\$_propsProbe\d+) = /u.exec(code)?.[1];
+    assert.ok(probe, `expected a props probe in:\n${code}`);
     assertComponentExport(
       code,
-      `Partial<typeof $_propsProbe2> & Record<string, any>`,
+      `Partial<typeof ${probe}> & Record<string, any>`,
     );
   });
 
@@ -886,9 +963,49 @@ describeSvelte5(
     });
 
     it("accepts arbitrary extra props when a rest element is present", () => {
+      // Annotating the object is what exercises the open type: `mount()` infers
+      // its props from the argument, so it never rejects an extra property.
       const diagnostics = typeCheckConsumer(
         `<script lang="ts">\n  let { count = 0, ...rest } = $props();\n</script>`,
-        `import { mount } from "svelte";\nmount(Foo, { target: null as any, props: { count: 1, anything: "ok" } });`,
+        `const p: import("svelte").ComponentProps<typeof Foo> = { count: 1, anything: "ok" };\nvoid p;`,
+      );
+      assert.deepStrictEqual(
+        diagnostics.map((d) => d.code),
+        [],
+        `expected no diagnostics, got: ${diagnostics
+          .map((d) => ts.flattenDiagnosticMessageText(d.messageText, "\n"))
+          .join("; ")}`,
+      );
+    });
+
+    // A default whose inferred type is uninhabitable (`never[]`, `null`,
+    // `undefined`) would reject every value an importer can pass.
+    const DEGENERATE_DEFAULTS: { name: string; decl: string; value: string }[] =
+      [
+        { name: "empty array", decl: "items = []", value: '["a"]' },
+        { name: "null", decl: "items = null", value: "new Error()" },
+        { name: "undefined", decl: "items = undefined", value: "1" },
+      ];
+    for (const c of DEGENERATE_DEFAULTS) {
+      it(`lets importers pass any value for a degraded default (${c.name})`, () => {
+        const diagnostics = typeCheckConsumer(
+          `<script lang="ts">\n  let { ${c.decl} } = $props();\n</script>`,
+          `const ok: import("svelte").ComponentProps<typeof Foo>["items"] = ${c.value};\nvoid ok;`,
+        );
+        assert.deepStrictEqual(
+          diagnostics.map((d) => d.code),
+          [],
+          `expected ${c.value} to be accepted, got: ${diagnostics
+            .map((d) => ts.flattenDiagnosticMessageText(d.messageText, " "))
+            .join("; ")}`,
+        );
+      });
+    }
+
+    it("does not let a `<script module>` `$props()` hijack the instance props", () => {
+      const diagnostics = typeCheckConsumer(
+        `<script module lang="ts">\n  const { moduleThing } = $props();\n</script>\n<script lang="ts">\n  let { realProp }: { realProp: string } = $props();\n</script>`,
+        `import { mount } from "svelte";\nmount(Foo, { target: null as any, props: { realProp: "hi" } });`,
       );
       assert.deepStrictEqual(
         diagnostics.map((d) => d.code),
@@ -1587,3 +1704,40 @@ describe("imported component prop types via real `.svelte` resolution (legacy, e
     );
   });
 });
+
+// The synthetic default export copies user source into the virtual code (a
+// `$props()` default, and the props type text twice), so comments inside those
+// copies must not survive restore as phantom entries.
+describeSvelte5(
+  "linted comments are unaffected by the synthetic export",
+  () => {
+    // A module-context default export suppresses the synthetic one without moving
+    // anything in the instance script.
+    const SUPPRESS = `\n<script module lang="ts">\n  export default 0;\n</script>`;
+    const CASES: { name: string; source: string }[] = [
+      {
+        name: "a line comment in a default",
+        source: `<script lang="ts">\n  let { a = [\n    // note\n    1,\n  ] } = $props();\n</script>`,
+      },
+      {
+        name: "a block comment in a default",
+        source: `<script lang="ts">\n  let { a = [/* note */ 1] } = $props();\n</script>`,
+      },
+      {
+        name: "a comment in a `$props()` type annotation",
+        source: `<script lang="ts">\n  let { a }: { /* note */ a: string } = $props();\n</script>`,
+      },
+    ];
+    for (const c of CASES) {
+      it(`keeps \`ast.comments\` identical for ${c.name}`, () => {
+        const withExport = parseComponent(c.source);
+        const withoutExport = parseComponent(c.source + SUPPRESS);
+        assert.deepStrictEqual(
+          dumpComments(withExport),
+          dumpComments(withoutExport),
+        );
+        assert.strictEqual(withExport.ast.comments.length, 1);
+      });
+    }
+  },
+);
