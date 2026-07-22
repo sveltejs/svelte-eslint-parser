@@ -702,6 +702,9 @@ function inferPropsFromObjectPattern(
 ): RecoveredProps {
   const members: string[] = [];
   const defaulted: string[] = [];
+  // A prop can be destructured twice (`{ a, a: b }`, `{ 1e3: p, 1_000: q }`);
+  // emitting the key twice would be a TS2300 duplicate identifier.
+  const seen = new Set<string>();
   let open = false;
   for (const prop of pattern.properties) {
     if (prop.type !== "Property") {
@@ -711,18 +714,25 @@ function inferPropsFromObjectPattern(
     // Keys are taken raw so a string key keeps its quotes. A literal key is
     // resolvable even when computed (`["a"]`), unlike an identifier one (`[k]`).
     // Bigint keys are excluded: `0n` is not a valid type-literal key.
-    let key: string;
+    let key: string, normalized: string;
     if (!prop.computed && prop.key.type === "Identifier") {
       key = prop.key.name;
+      normalized = prop.key.name;
     } else if (
       prop.key.type === "Literal" &&
       (typeof prop.key.value === "string" || typeof prop.key.value === "number")
     ) {
       key = prop.key.raw;
+      // `String` matches `ToPropertyKey`, so `1e3`, `1_000` and `"1000"` agree.
+      normalized = String(prop.key.value);
     } else {
       open = true;
       continue;
     }
+    if (seen.has(normalized)) {
+      continue;
+    }
+    seen.add(normalized);
     if (prop.value.type === "AssignmentPattern") {
       const def = stripAsConst(prop.value.right);
       const degraded = degenerateDefaultType(def);

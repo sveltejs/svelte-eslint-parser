@@ -512,6 +512,50 @@ describeSvelte5("synthetic component default export (runes, Svelte 5)", () => {
     assertComponentExport(code, `{ name: any } & Record<string, any>`);
   });
 
+  // A prop destructured twice would emit the key twice, a TS2300 duplicate
+  // identifier on the producer side. The first occurrence wins.
+  it("emits a doubly-destructured prop only once", () => {
+    const code = translate(`<script lang="ts">
+  let { a, a: b } = $props();
+</script>
+<p>{a}{b}</p>`);
+    assertComponentExport(code, `{ a: any }`);
+  });
+
+  it("deduplicates a string-literal key against its identifier form", () => {
+    const code = translate(`<script lang="ts">
+  let { "a": x, a: y } = $props();
+</script>
+<p>{x}{y}</p>`);
+    assertComponentExport(code, `{ "a": any }`);
+  });
+
+  it("deduplicates numeric keys that name the same property", () => {
+    const code = translate(`<script lang="ts">
+  let { 1e3: p, 1_000: q } = $props();
+</script>
+<p>{p}{q}</p>`);
+    assertComponentExport(code, `{ 1e3: any }`);
+  });
+
+  it("deduplicates across the required and defaulted buckets", () => {
+    const code = translate(`<script lang="ts">
+  let { a = 0, a: b } = $props();
+</script>
+<p>{a}{b}</p>`);
+    const probe = /const (\$_propsProbe\d+) = /u.exec(code)?.[1];
+    assert.ok(probe, `expected a props probe in:\n${code}`);
+    assertComponentExport(code, `Partial<typeof ${probe}>`);
+  });
+
+  it("keeps distinct numeric and string keys apart", () => {
+    const code = translate(`<script lang="ts">
+  let { 0: x, "1": y } = $props();
+</script>
+<p>{x}{y}</p>`);
+    assertComponentExport(code, `{ 0: any; "1": any }`);
+  });
+
   it("accepts no props at all for an empty destructuring", () => {
     const code = translate(`<script lang="ts">
   let {} = $props();
