@@ -7,6 +7,45 @@ import { findVariable } from "../scope/index.js";
 import { getESLintScope } from "../parser/eslint-scope.js";
 
 export function parseConfig(code: string): SvelteConfig | null {
+  const { ast, scopeManager } = parseModule(code);
+  return parseAst(ast, scopeManager);
+}
+
+/**
+ * Statically extracts the svelte config from the object passed to
+ * the `sveltekit()` plugin call in a vite config.
+ */
+export function parseViteConfig(code: string): SvelteConfig | null {
+  let ast: ESTree.Program, scopeManager: Scope.ScopeManager;
+  try {
+    ({ ast, scopeManager } = parseModule(code));
+  } catch {
+    // vite configs may be TypeScript files containing syntax espree cannot parse
+    return null;
+  }
+  let config: SvelteConfig | null = null;
+  traverseNodes(ast, {
+    enterNode(node) {
+      if (config != null || node.type !== "CallExpression") return;
+      const callee = node.callee;
+      if (callee.type !== "Identifier") return;
+      if (!isKitPluginImport(callee, scopeManager)) return;
+      const arg = node.arguments[0];
+      // a bare `sveltekit()` means the config lives in svelte.config.js
+      if (!arg || arg.type === "SpreadElement") return;
+      config = parsePluginOptionsExpression(arg, scopeManager);
+    },
+    leaveNode() {
+      /* do nothing */
+    },
+  });
+  return config;
+}
+
+function parseModule(code: string): {
+  ast: ESTree.Program;
+  scopeManager: Scope.ScopeManager;
+} {
   const espree = getEspree();
   const ast = espree.parse(code, {
     range: true,
@@ -32,7 +71,43 @@ export function parseConfig(code: string): SvelteConfig | null {
     sourceType: "module",
     fallback: getFallbackKeys,
   });
-  return parseAst(ast, scopeManager);
+  return { ast, scopeManager };
+}
+
+/** Checks that the callee resolves to the `sveltekit` import from `@sveltejs/kit/vite`. */
+function isKitPluginImport(
+  node: ESTree.Identifier,
+  scopeManager: Scope.ScopeManager,
+): boolean {
+  const defs = findVariable(scopeManager, node)?.defs;
+  if (defs?.length !== 1) return false;
+  const def = defs[0];
+  return (
+    def.type === "ImportBinding" &&
+    def.node.type === "ImportSpecifier" &&
+    def.node.imported.type === "Identifier" &&
+    def.node.imported.name === "sveltekit" &&
+    def.parent.source.value === "@sveltejs/kit/vite"
+  );
+}
+
+/**
+ * The plugin options mirror svelte.config.js except that kit options
+ * sit at the top level instead of under a `kit` key.
+ */
+function parsePluginOptionsExpression(
+  node: ESTree.Expression,
+  scopeManager: Scope.ScopeManager,
+): SvelteConfig {
+  const result = parseSvelteConfigExpression(node, scopeManager);
+  const evaluated = evaluateExpression(node, scopeManager);
+  if (evaluated?.type === EvaluatedType.object) {
+    const files = evaluated.getProperty("files")?.getStatic();
+    if (files?.value != null) {
+      result.kit = { files: files.value as never };
+    }
+  }
+  return result;
 }
 
 function parseAst(

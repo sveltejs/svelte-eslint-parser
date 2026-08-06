@@ -217,7 +217,7 @@ export default [
 ];
 ```
 
-If `parserOptions.svelteConfig` is not set, the parser attempts to statically read some config from `svelte.config.js`.
+If `parserOptions.svelteConfig` is not set, the parser attempts to statically read some config from the options passed to the `sveltekit()` plugin in a vite config (where SvelteKit 3 projects configure Svelte), falling back to `svelte.config.js`.
 
 ### parserOptions.svelteFeatures
 

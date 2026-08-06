@@ -1,6 +1,6 @@
 import path from "path";
 import fs from "fs";
-import { parseConfig } from "./parser.js";
+import { parseConfig, parseViteConfig } from "./parser.js";
 import type * as Compiler from "svelte/compiler";
 
 export type SvelteConfig = {
@@ -96,9 +96,17 @@ export function resolveSvelteConfigFromOption(
   return resolveSvelteConfig(options?.filePath);
 }
 
+const VITE_CONFIG_FILE_NAMES = [
+  "vite.config.js",
+  "vite.config.mjs",
+  "vite.config.ts",
+  "vite.config.mts",
+];
+
 /**
- * Resolves `svelte.config.js`.
- * It searches the parent directories of the given file to find `svelte.config.js`,
+ * Resolves the svelte config.
+ * It searches the parent directories of the given file for a vite config that
+ * passes options to the `sveltekit()` plugin, or a `svelte.config.js`,
  * and returns the static analysis result for it.
  */
 function resolveSvelteConfig(
@@ -109,41 +117,48 @@ function resolveSvelteConfig(
     if (typeof process === "undefined") return null;
     cwd = process.cwd();
   }
-  const configFilePath = findConfigFilePath(cwd);
-  if (!configFilePath) return null;
-
-  if (caches.has(configFilePath)) {
-    return caches.get(configFilePath) || null;
-  }
-
-  const code = fs.readFileSync(configFilePath, "utf8");
-  const config = parseConfig(code);
-  caches.set(configFilePath, config);
-  return config;
-}
-
-/**
- * Searches from the current working directory up until finding the config filename.
- * @param {string} cwd The current working directory to search from.
- * @returns {string|undefined} The file if found or `undefined` if not.
- */
-function findConfigFilePath(cwd: string) {
   let directory = path.resolve(cwd);
   const { root } = path.parse(directory);
   const stopAt = path.resolve(directory, root);
   while (directory !== stopAt) {
+    // Options passed to `sveltekit()` win: SvelteKit ignores svelte.config.js when they are set.
+    for (const name of VITE_CONFIG_FILE_NAMES) {
+      const viteTarget = path.resolve(directory, name);
+      if (isFile(viteTarget)) {
+        const config = parseWithCache(viteTarget, parseViteConfig);
+        if (config) return config;
+        break;
+      }
+    }
     const target = path.resolve(directory, "svelte.config.js");
-    const stat = fs.existsSync(target)
-      ? fs.statSync(target, {
-          throwIfNoEntry: false,
-        })
-      : null;
-    if (stat?.isFile()) {
-      return target;
+    if (isFile(target)) {
+      return parseWithCache(target, parseConfig);
     }
     const next = path.dirname(directory);
     if (next === directory) break;
     directory = next;
   }
   return null;
+}
+
+function parseWithCache(
+  filePath: string,
+  parse: (code: string) => SvelteConfig | null,
+): SvelteConfig | null {
+  if (caches.has(filePath)) {
+    return caches.get(filePath) || null;
+  }
+  const code = fs.readFileSync(filePath, "utf8");
+  const config = parse(code);
+  caches.set(filePath, config);
+  return config;
+}
+
+function isFile(target: string): boolean {
+  const stat = fs.existsSync(target)
+    ? fs.statSync(target, {
+        throwIfNoEntry: false,
+      })
+    : null;
+  return stat?.isFile() ?? false;
 }
