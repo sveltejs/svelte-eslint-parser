@@ -153,11 +153,34 @@ describe("ts.sys.readFile hook wiring", () => {
     });
   });
 
-  it("does nothing before rememberParserOptions sets options", () => {
+  it("translates with fallback options before rememberParserOptions is called", () => {
     withTempSvelteFile(TS_SCRIPT, (filePath) => {
       const sys = { readFile: (p: string) => fs.readFileSync(p, "utf-8") };
       _patchTsSysForTesting(sys);
 
+      const result = sys.readFile(filePath);
+      assert.match(
+        result,
+        /let count: number/,
+        "expected the virtual TS shim even before options are known",
+      );
+    });
+  });
+
+  it("re-translates fallback results once real options are known", () => {
+    withTempSvelteFile(TS_SCRIPT, (filePath) => {
+      const sys = { readFile: (p: string) => fs.readFileSync(p, "utf-8") };
+      _patchTsSysForTesting(sys);
+
+      const before = sys.readFile(filePath);
+      assert.match(before, /let count: number/);
+
+      // These options have no TS parser, so re-translation fails and the
+      // read falls through to raw source — proving the fallback entry was
+      // dropped rather than served from cache.
+      rememberParserOptions(
+        normalizeParserOptions({ filePath, ecmaVersion: 2024 }),
+      );
       assert.strictEqual(sys.readFile(filePath), TS_SCRIPT);
     });
   });
