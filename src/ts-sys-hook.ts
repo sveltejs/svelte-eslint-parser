@@ -2,6 +2,7 @@ import fs from "fs";
 import path from "path";
 import { createRequire } from "module";
 import type { NormalizedParserOptions } from "./parser/parser-options.js";
+import { normalizeParserOptions } from "./parser/parser-options.js";
 import { svelteToVirtualTypeScript } from "./parser/svelte-to-virtual-ts.js";
 import { loadNewestModule } from "./utils/cjs-module.js";
 
@@ -24,6 +25,8 @@ interface TranslationEntry {
   // `null` means "no virtual translation at this mtime" — a negative cache
   // so JS-only `.svelte` files don't pay a full Svelte parse on every read.
   virtualCode: string | null;
+  // Translated with fallback options before the first `.svelte` parse.
+  provisional: boolean;
 }
 
 interface TsLike {
@@ -35,6 +38,8 @@ interface TsLike {
 const translations = new Map<string, TranslationEntry>();
 const patchedSysObjects = new WeakSet();
 let activeParserOptions: NormalizedParserOptions | null = null;
+let fallbackParserOptions: NormalizedParserOptions | null | undefined =
+  undefined;
 let installed = false;
 let needsParseTimeRescan = false;
 let parserOptionsInspected = false;
@@ -48,7 +53,15 @@ function warn(msg: string): void {
 
 /** Called from `parseForESLint` so translation has the user's parser config. */
 export function rememberParserOptions(options: NormalizedParserOptions): void {
+  const hadOptions = activeParserOptions !== null;
   activeParserOptions = options;
+
+  // Drop fallback translations so they are redone with the real options.
+  if (!hadOptions) {
+    for (const [filePath, entry] of translations) {
+      if (entry.provisional) translations.delete(filePath);
+    }
+  }
 
   if (installed && !parserOptionsInspected) {
     parserOptionsInspected = true;
@@ -100,10 +113,12 @@ export function primeTranslationCache(
   // Skip the stat + write if on-demand translation already cached a positive
   // entry — the prime is redundant when ts.sys read the file before ESLint did.
   const existing = translations.get(filePath);
-  if (existing && existing.virtualCode !== null) return;
+  if (existing && existing.virtualCode !== null && !existing.provisional) {
+    return;
+  }
   const mtimeMs = statMtimeMs(filePath);
   if (mtimeMs === null) return;
-  translations.set(filePath, { mtimeMs, virtualCode });
+  translations.set(filePath, { mtimeMs, virtualCode, provisional: false });
   primeStoredCount++;
 }
 
@@ -123,8 +138,23 @@ function readUtf8(filePath: string): string | null {
   }
 }
 
+/** Fallback options for translations requested before the first `.svelte` parse. */
+function getFallbackParserOptions(): NormalizedParserOptions | null {
+  if (fallbackParserOptions !== undefined) return fallbackParserOptions;
+  try {
+    fallbackParserOptions = normalizeParserOptions({
+      parser: loadNewestModule("@typescript-eslint/parser"),
+    });
+  } catch {
+    fallbackParserOptions = null;
+  }
+  return fallbackParserOptions;
+}
+
 function translateOnDemand(filePath: string): string | null {
-  if (!activeParserOptions) return null;
+  const parserOptions = activeParserOptions ?? getFallbackParserOptions();
+  if (!parserOptions) return null;
+  const provisional = activeParserOptions === null;
 
   const mtimeMs = statMtimeMs(filePath);
   if (mtimeMs === null) return null;
@@ -134,17 +164,17 @@ function translateOnDemand(filePath: string): string | null {
 
   const svelteSource = readUtf8(filePath);
   if (svelteSource === null) {
-    translations.set(filePath, { mtimeMs, virtualCode: null });
+    translations.set(filePath, { mtimeMs, virtualCode: null, provisional });
     return null;
   }
 
   const virtualCode = svelteToVirtualTypeScript(
     filePath,
     svelteSource,
-    activeParserOptions,
+    parserOptions,
   );
   // Store the outcome — including `null` — to negative-cache failed translations.
-  translations.set(filePath, { mtimeMs, virtualCode });
+  translations.set(filePath, { mtimeMs, virtualCode, provisional });
   return virtualCode;
 }
 
@@ -242,6 +272,7 @@ export function installTsSysHook(): void {
 export function _resetTranslationCacheForTesting(): void {
   translations.clear();
   activeParserOptions = null;
+  fallbackParserOptions = undefined;
   needsParseTimeRescan = false;
 }
 
