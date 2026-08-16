@@ -29,6 +29,30 @@ export function getModuleFromRoot(
 ): SvAST.Script | Compiler.Script | null | undefined {
   return svelteAst.module;
 }
+
+/**
+ * Source range of the instance `<script>` content, in original-source
+ * coordinates. Used to tell instance-script statements apart from module-script
+ * ones, which the virtual code concatenates.
+ */
+export function getInstanceScriptRange(
+  svelteAst: Compiler.Root | SvAST.AstLegacy,
+): [number, number] | null {
+  const instance = getInstanceFromRoot(svelteAst);
+  if (!instance) {
+    return null;
+  }
+  const content = (instance as { content?: { start?: number; end?: number } })
+    .content;
+  if (
+    content &&
+    typeof content.start === "number" &&
+    typeof content.end === "number"
+  ) {
+    return [content.start, content.end];
+  }
+  return [instance.start, instance.end];
+}
 export function getOptionsFromRoot(
   svelteAst: Compiler.Root | SvAST.AstLegacy,
 ): Compiler.SvelteOptionsRaw | null {
