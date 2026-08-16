@@ -76,3 +76,5 @@ for (const no of [1, 2, 3]) {
 }
 
 suite.run();
+
+# Fix for issue #922: safe input handling
