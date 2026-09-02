@@ -263,6 +263,18 @@ SVELTE_ESLINT_PARSER_EXPERIMENTAL_TS_SYS_HOOK=1 \
   eslint --no-cache --concurrency auto .
 ```
 
+When enabled, the hook also resolves `.svelte` import specifiers to the
+imported component's virtual module, so type-aware rules see a component's
+real prop, event, and slot types across files. `import Foo from "./Foo.svelte"`
+is resolved through a virtual `Foo.svelte.ts` companion that the hook serves
+from the same translation — no `tsconfig` changes are required. If a real
+`Foo.svelte.ts` (a Svelte runes module) exists on disk, it always takes
+precedence and the hook leaves it untouched. In that case component prop types
+are not available for that component, because plain TypeScript resolution picks
+the module instead of the component. To avoid this name collision, enable the
+`svelte/no-conflicting-module-names` rule from `eslint-plugin-svelte` (v3.22.0
+or later), which reports a `Foo.svelte` and `Foo.svelte.ts` pair.
+
 Caveat: rules that read raw TypeScript diagnostics
 (`program.getSemanticDiagnostics()` and friends) report positions inside
 the parser's virtual shim — a pre-existing property of type-aware Svelte
