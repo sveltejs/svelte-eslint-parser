@@ -48,7 +48,7 @@ import {
 import { getGlobalsForSvelte, getGlobalsForSvelteScript } from "./globals.js";
 import type { NormalizedParserOptions } from "./parser-options.js";
 import { isTypeScript, normalizeParserOptions } from "./parser-options.js";
-import { getFragmentFromRoot } from "./compat.js";
+import { getFragmentFromRoot, getInstanceScriptRange } from "./compat.js";
 import {
   hasRunesSymbol,
   resolveSvelteParseContextForSvelte,
@@ -162,7 +162,11 @@ function parseAsSvelte(
         scripts.getCurrentVirtualCodeInfo(),
         scripts.attrs,
         parserOptions,
-        { slots: ctx.slots, svelteParseContext },
+        {
+          slots: ctx.slots,
+          svelteParseContext,
+          instanceScriptRange: getInstanceScriptRange(resultTemplate.svelteAst),
+        },
       )
     : parseScriptInSvelte(
         scripts.getCurrentVirtualCode(),
