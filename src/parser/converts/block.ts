@@ -142,7 +142,7 @@ export function convertIfBlock(
   } as SvelteIfBlock;
 
   const test = getTestFromIfBlock(node);
-  ctx.scriptLet.nestIfBlock(test, ifBlock, (es) => {
+  const { beginElse } = ctx.scriptLet.nestIfBlock(test, ifBlock, (es) => {
     ifBlock.expression = es;
   });
   const consequent = getConsequentFromIfBlock(node);
@@ -159,7 +159,6 @@ export function convertIfBlock(
     ifBlock.children.push(child);
   }
 
-  ctx.scriptLet.closeScope();
   if (elseif) {
     const index = ctx.code.indexOf("if", nodeStart);
     ctx.addToken("MustacheKeyword", { start: index, end: index + 2 });
@@ -168,8 +167,10 @@ export function convertIfBlock(
 
   const elseFragment = getAlternateFromIfBlock(node);
   if (!elseFragment) {
+    ctx.scriptLet.closeScope();
     return ifBlock;
   }
+  beginElse();
 
   const elseStart = startBlockIndexForElse(elseFragment, consequent, test, ctx);
 
@@ -199,6 +200,7 @@ export function convertIfBlock(
         column: elseIfBlock.loc.end.column,
       };
       elseBlock.children = [elseIfBlock];
+      ctx.scriptLet.closeScope();
       return ifBlock;
     }
   }
@@ -229,7 +231,8 @@ export function convertIfBlock(
   )) {
     elseBlock.children.push(child);
   }
-  ctx.scriptLet.closeScope();
+  ctx.scriptLet.closeScope(); // else block
+  ctx.scriptLet.closeScope(); // if statement
   extractMustacheBlockTokens(elseBlock, ctx, { startOnly: true });
 
   return ifBlock;
