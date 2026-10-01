@@ -4,8 +4,13 @@ import os from "os";
 import path from "path";
 import * as tsParser from "@typescript-eslint/parser";
 import type { TSESTree } from "@typescript-eslint/types";
+import { Linter } from "eslint";
+import type { ESLint } from "eslint";
+import { plugin } from "typescript-eslint";
+import * as parser from "../../../../src/index.js";
 import { parseForESLint } from "../../../../src/index.js";
 import { traverseNodes } from "../../../../src/traverse.js";
+import { svelteVersion } from "../../../../src/parser/svelte-version.js";
 
 const script = `
 /** @typedef {import('./types.js').Item} Item */
@@ -13,7 +18,7 @@ const script = `
 const item = { count: 1 };
 /** @param {number} x */
 function increment(x) { return x + item.count; }
-const count = $state(increment(1));
+const count = ${svelteVersion.gte(5) ? "$state(increment(1))" : "increment(1)"};
 `;
 
 describe("JavaScript type information", () => {
@@ -28,7 +33,10 @@ describe("JavaScript type information", () => {
     );
     fs.writeFileSync(
       path.join(directory, "types.ts"),
-      "export interface Item { count: number }",
+      `export interface Item { count: number; name?: string }
+export type Result<T> = { ok: true; value: T } | { ok: false; error: string };
+export type Selected<T> = Readonly<Pick<T, Extract<keyof T, 'count'>>>;
+export type Unwrap<T> = T extends Promise<infer U> ? U : T;`,
     );
     for (const file of ["Component.svelte", "state.svelte.js"]) {
       fs.writeFileSync(path.join(directory, file), "");
@@ -40,6 +48,115 @@ describe("JavaScript type information", () => {
   });
 
   for (const projectMode of ["project", "projectService"] as const) {
+    /* eslint-disable no-process-env -- Exercise typescript-eslint's CI-specific parsing mode. */
+    for (const ci of [false, true]) {
+      it(`lints complex JSDoc types with ${projectMode}, CI=${ci}`, () => {
+        const previousCI = process.env.CI;
+        process.env.CI = String(ci);
+        try {
+          const code = `<script>
+/** @typedef {import('./types.js').Item} Item */
+/** @typedef {import('./types.js').Result<Item>} Result */
+/** @type {import('./types.js').Selected<Item>} */
+const selected = { count: 1 };
+/** @type {import('./types.js').Unwrap<Promise<Item>>} */
+const unwrapped = { count: 2 };
+/** @template T @param {T} value @returns {T} */
+function identity(value) { return value; }
+/** @param {Result} result @returns {number} */
+function read(result) {
+  return result.ok ? identity(result.value).count : result.error.length;
+}
+/** @param {number} value */
+function consume(value) { return value.toFixed(); }
+/** @param {Result} result @returns {Result} */
+function keep(result) { return result; }
+const result = keep({ ok: true, value: unwrapped });
+const items = [identity(selected)];
+const pending = Promise.resolve(items);
+/** @returns {Promise<Item>} */
+async function load() { return unwrapped; }
+void load();
+consume(read(result));
+</script>
+{#if result.ok}
+  {consume(result.value.count)}
+{:else if !result.ok}
+  {result.error.toUpperCase()}
+{/if}
+{#each items as item}
+  {consume(item.count)}
+{/each}
+{#await pending then values}
+  {consume(values[0].count)}
+{/await}`;
+          const linter = new Linter({ cwd: directory });
+          const config = {
+            files: ["**/*.svelte"],
+            plugins: { "@typescript-eslint": plugin as ESLint.Plugin },
+            languageOptions: {
+              parser,
+              parserOptions: {
+                parser: tsParser,
+                tsconfigRootDir: directory,
+                extraFileExtensions: [".svelte"],
+                [projectMode]:
+                  projectMode === "project" ? "./tsconfig.json" : true,
+              },
+            },
+            rules: {
+              "@typescript-eslint/no-unsafe-argument": "error",
+              "@typescript-eslint/no-unsafe-assignment": "error",
+              "@typescript-eslint/no-unsafe-call": "error",
+              "@typescript-eslint/no-unsafe-member-access": "error",
+              "@typescript-eslint/no-unsafe-return": "error",
+              "@typescript-eslint/no-floating-promises": "error",
+              "@typescript-eslint/await-thenable": "error",
+              "@typescript-eslint/restrict-plus-operands": [
+                "error",
+                { allowNumberAndString: false },
+              ],
+            },
+          } satisfies Linter.Config;
+          const filename = path.join(directory, "Component.svelte");
+          assert.deepStrictEqual(linter.verify(code, config, filename), []);
+
+          // Each invalid expression must produce a diagnostic at its own location.
+          const invalid = code
+            .replace("void load();", "load();\nawait selected;")
+            .replace("return unwrapped;", "return JSON.parse('{}');")
+            .replace("consume(read(result));", "consume(JSON.parse('{}'));")
+            .replace("consume(item.count)", 'item.count + "oops"')
+            .replace("consume(values[0].count)", 'values[0].count + "oops"');
+          const expected = [
+            ["no-unsafe-return", "async function load"],
+            ["no-floating-promises", "load();"],
+            ["await-thenable", "await selected;"],
+            ["no-unsafe-argument", "consume(JSON.parse('{}'));"],
+            ["restrict-plus-operands", '{item.count + "oops"}'],
+            ["restrict-plus-operands", '{values[0].count + "oops"}'],
+          ].map(([rule, source]) => ({
+            ruleId: `@typescript-eslint/${rule}`,
+            line:
+              invalid.split("\n").findIndex((line) => line.includes(source)) +
+              1,
+          }));
+          assert.deepStrictEqual(
+            linter
+              .verify(invalid, config, filename)
+              .map(({ ruleId, line }) => ({
+                ruleId,
+                line,
+              })),
+            expected,
+          );
+        } finally {
+          if (previousCI === undefined) delete process.env.CI;
+          else process.env.CI = previousCI;
+        }
+      });
+    }
+    /* eslint-enable no-process-env -- Restore environment access restrictions. */
     it(`updates JSDoc types after edits with ${projectMode}`, () => {
       const results = [];
       for (const type of ["number", "string"]) {

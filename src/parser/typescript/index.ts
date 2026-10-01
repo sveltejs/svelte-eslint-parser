@@ -28,7 +28,13 @@ export function parseTypeScriptInSvelte(
     primeTranslationCache(parserOptions.filePath, tsCtx.script);
   }
 
-  let result = parseScriptInSvelte(tsCtx.script, attrs, parserOptions);
+  // Virtual scripts can be parsed repeatedly for the same file. In single-run
+  // mode, typescript-eslint falls back to an isolated program on later calls,
+  // losing project imports and compiler options.
+  let result = parseScriptInSvelte(tsCtx.script, attrs, {
+    ...parserOptions,
+    disallowAutomaticSingleRunInference: true,
+  });
   const jsOptions = getJavaScriptParserOptions(result, attrs, parserOptions);
   if (jsOptions) {
     result = parseScriptInSvelte(tsCtx.script, attrs, jsOptions);
@@ -54,7 +60,10 @@ export function parseTypeScript(
     svelteParseContext,
   );
 
-  let result = parseScript(tsCtx.script, attrs, parserOptions);
+  let result = parseScript(tsCtx.script, attrs, {
+    ...parserOptions,
+    disallowAutomaticSingleRunInference: true,
+  });
   const jsOptions = getJavaScriptParserOptions(result, attrs, parserOptions);
   if (jsOptions) {
     result = parseScript(tsCtx.script, attrs, jsOptions);

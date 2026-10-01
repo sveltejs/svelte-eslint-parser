@@ -11,6 +11,7 @@ export type NormalizedParserOptions = {
   parser?: UserOptionParser;
   project?: string | string[] | null;
   programs?: Program[] | null;
+  disallowAutomaticSingleRunInference?: boolean;
   projectService?: unknown;
   EXPERIMENTAL_useProjectService?: unknown;
 
