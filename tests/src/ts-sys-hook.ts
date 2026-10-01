@@ -3,6 +3,7 @@ import fs from "fs";
 import os from "os";
 import path from "path";
 import { createRequire } from "module";
+import { spawnSync } from "child_process";
 import ts from "typescript";
 import { parseForESLint } from "../../src/index.js";
 import { normalizeParserOptions } from "../../src/parser/parser-options.js";
@@ -129,8 +130,8 @@ function withoutHookWarnings<T>(body: () => T): T {
 /** Mirrors `componentTypeText` in the parser. */
 function expectedComponentTypeText(
   props: string,
-  events = "Record<string, any>",
-  slots = "Record<string, any>",
+  events = "{ [key: string]: any }",
+  slots = "{ [key: string]: any }",
 ): { value: string; type: string } {
   const typeArgs = `<${props}, ${events}, ${slots}>`;
   if (svelteVersion.gte(5)) {
@@ -151,8 +152,8 @@ function expectedComponentTypeText(
 function assertComponentExport(
   code: string,
   props: string,
-  events = "Record<string, any>",
-  slots = "Record<string, any>",
+  events = "{ [key: string]: any }",
+  slots = "{ [key: string]: any }",
 ): void {
   const { value, type } = expectedComponentTypeText(props, events, slots);
   assert.ok(
@@ -334,7 +335,7 @@ describeSvelte5("synthetic component default export (runes, Svelte 5)", () => {
     assert.match(code, /const \$_propsProbe\d+ = \{ count: \(0\) \};/);
     assert.match(
       code,
-      /import\('svelte'\)\.Component<Partial<typeof \$_propsProbe\d+> & \{ value: any \}>;/,
+      /import\('svelte'\)\.Component<\{ \[K in keyof typeof \$_propsProbe\d+\]\?: \(typeof \$_propsProbe\d+\)\[K\] \} & \{ value: any \}>;/,
     );
   });
 
@@ -347,7 +348,7 @@ describeSvelte5("synthetic component default export (runes, Svelte 5)", () => {
     assert.match(code, /const \$_propsProbe\d+ = \{ a: \(1, 2\) \};/);
     assert.match(
       code,
-      /import\('svelte'\)\.Component<Partial<typeof \$_propsProbe\d+>>;/,
+      /import\('svelte'\)\.Component<\{ \[K in keyof typeof \$_propsProbe\d+\]\?: \(typeof \$_propsProbe\d+\)\[K\] \}>;/,
     );
   });
 
@@ -486,7 +487,7 @@ describeSvelte5("synthetic component default export (runes, Svelte 5)", () => {
   let { value, ...rest } = $props();
 </script>
 <p>{value}</p>`);
-    assertComponentExport(code, `{ value: any } & Record<string, any>`);
+    assertComponentExport(code, `{ value: any } & { [key: string]: any }`);
   });
 
   it("opens the type for a computed key without discarding the other props", () => {
@@ -499,7 +500,7 @@ describeSvelte5("synthetic component default export (runes, Svelte 5)", () => {
     assert.ok(probe, `expected a props probe in:\n${code}`);
     assertComponentExport(
       code,
-      `Partial<typeof ${probe}> & Record<string, any>`,
+      `{ [K in keyof typeof ${probe}]?: (typeof ${probe})[K] } & { [key: string]: any }`,
     );
   });
 
@@ -532,7 +533,7 @@ describeSvelte5("synthetic component default export (runes, Svelte 5)", () => {
   let { 0n: big, name } = $props();
 </script>
 <p>{big}{name}</p>`);
-    assertComponentExport(code, `{ name: any } & Record<string, any>`);
+    assertComponentExport(code, `{ name: any } & { [key: string]: any }`);
   });
 
   // A prop destructured twice would emit the key twice, a TS2300 duplicate
@@ -568,7 +569,10 @@ describeSvelte5("synthetic component default export (runes, Svelte 5)", () => {
 <p>{a}{b}</p>`);
     const probe = /const (\$_propsProbe\d+) = /u.exec(code)?.[1];
     assert.ok(probe, `expected a props probe in:\n${code}`);
-    assertComponentExport(code, `Partial<typeof ${probe}>`);
+    assertComponentExport(
+      code,
+      `{ [K in keyof typeof ${probe}]?: (typeof ${probe})[K] }`,
+    );
   });
 
   it("keeps distinct numeric and string keys apart", () => {
@@ -584,7 +588,7 @@ describeSvelte5("synthetic component default export (runes, Svelte 5)", () => {
   let {} = $props();
 </script>
 <p>hi</p>`);
-    assertComponentExport(code, `Record<string, never>`);
+    assertComponentExport(code, `{ [key: string]: never }`);
   });
 
   it("falls back to a permissive props type when there is no recoverable `$props()`", () => {
@@ -592,7 +596,7 @@ describeSvelte5("synthetic component default export (runes, Svelte 5)", () => {
   let count = $state(0);
 </script>
 <p>{count}</p>`);
-    assertComponentExport(code, `Record<string, any>`);
+    assertComponentExport(code, `{ [key: string]: any }`);
   });
 
   it("exposes the default export as both a value and a type", () => {
@@ -654,7 +658,11 @@ describe("synthetic component default export (legacy, all versions)", () => {
   export let count = 0;
 </script>
 <p>{value}{count}</p>`);
-    assertComponentExport(code, `{ value: string; count?: typeof count }`);
+    const probe = /const (\$_legacyPropsProbe\d+) = /u.exec(code)?.[1];
+    assertComponentExport(
+      code,
+      `{ value: string; count?: (typeof ${probe} extends () => infer P ? P : never)["count"] }`,
+    );
   });
 
   it("marks `export let` props with a default value as optional", () => {
@@ -700,7 +708,7 @@ describe("synthetic component default export (legacy, all versions)", () => {
   let value = 1;
 </script>
 <p>{value}</p>`);
-    assertComponentExport(code, `Record<string, any>`);
+    assertComponentExport(code, `{ [key: string]: any }`);
   });
 
   // Renamed exports of a top-level `let` are props too.
@@ -729,7 +737,11 @@ describe("synthetic component default export (legacy, all versions)", () => {
   export { foo as bar };
 </script>
 <p>{foo}</p>`);
-    assertComponentExport(code, `{ bar?: typeof foo }`);
+    const probe = /const (\$_legacyPropsProbe\d+) = /u.exec(code)?.[1];
+    assertComponentExport(
+      code,
+      `{ bar?: (typeof ${probe} extends () => infer P ? P : never)["foo"] }`,
+    );
   });
 
   it("ignores a renamed export whose local is not a top-level `let`", () => {
@@ -1509,6 +1521,32 @@ function realResolutionDiagnostics(
       ...program.getSemanticDiagnostics(),
       ...program.getSyntacticDiagnostics(),
     ];
+    const syntheticErrors = all.filter((d) => {
+      if (!d.file?.fileName.endsWith("Foo.svelte.ts") || d.start == null)
+        return false;
+      return d.file.statements.some((statement) => {
+        if (d.start! < statement.pos || statement.end <= d.start!) return false;
+        const name = ts.isVariableStatement(statement)
+          ? statement.declarationList.declarations[0]?.name
+          : ts.isTypeAliasDeclaration(statement)
+            ? statement.name
+            : undefined;
+        return (
+          name &&
+          ts.isIdentifier(name) &&
+          /^\$_(?:svelteComponent|propsProbe|legacyPropsProbe)\d+$/u.test(
+            name.text,
+          )
+        );
+      });
+    });
+    assert.deepStrictEqual(
+      syntheticErrors.map(
+        (d) =>
+          `${d.code}: ${ts.flattenDiagnosticMessageText(d.messageText, " ")}`,
+      ),
+      [],
+    );
     return all.filter((d) => d.file?.fileName === barPath);
   } finally {
     fs.rmSync(dir, { recursive: true, force: true });
@@ -1948,5 +1986,284 @@ describeSvelte5("the props probe leaves no trace in the scope manager", () => {
         `reference at ${start}-${end} does not span the real \`base\` identifier`,
       );
     }
+  });
+});
+
+// Positive assignments and @ts-expect-error together reject both accidentally
+// permissive (`any`) and accidentally uninhabitable recovered prop types.
+describe("component export adversarial regressions", () => {
+  function check(source: string, body: string): void {
+    const diagnostics = realResolutionDiagnostics(source, body);
+    assert.deepStrictEqual(
+      diagnostics.map(
+        (d) =>
+          `${d.code}: ${ts.flattenDiagnosticMessageText(d.messageText, " ")}`,
+      ),
+      [],
+    );
+  }
+
+  it("keeps template-only $$restProps references open", () => {
+    check(
+      `<script lang="ts">export let value: string;</script><div {...$$restProps}>{value}</div>`,
+      `
+      type P = import("svelte").ComponentProps<Foo>;
+      const good: P = { value: "ok", title: "extra" };
+      // @ts-expect-error declared props remain checked
+      const bad: P = { value: 123 };
+      void good; void bad;
+    `,
+    );
+  });
+
+  it("handles string-literal renamed props", () => {
+    check(
+      `<script lang="ts">let value: string; export { value as "data-value" };</script>`,
+      `
+      type P = import("svelte").ComponentProps<Foo>;
+      const good: P = { "data-value": "ok" };
+      // @ts-expect-error renamed prop has a string type
+      const bad: P = { "data-value": 123 };
+      void good; void bad;
+    `,
+    );
+  });
+
+  it("does not duplicate a string-literal default re-export", () => {
+    const code = translate(
+      `<script lang="ts" context="module">const value = 42; export { value as "default" };</script>`,
+    );
+    assert.ok(!code.includes("$_svelteComponent"));
+  });
+
+  for (const declaration of [
+    "export type { hidden }",
+    "export { type hidden }",
+  ]) {
+    it(`ignores type-only exports of local let bindings: ${declaration}`, () => {
+      check(
+        `<script lang="ts">let hidden = 1; ${declaration}; export let value: string;</script>`,
+        `
+      type P = import("svelte").ComponentProps<Foo>;
+      const good: P = { value: "ok" };
+      // @ts-expect-error type exports are not props
+      const bad: P = { value: "ok", hidden: 1 };
+      void good; void bad;
+    `,
+      );
+    });
+  }
+
+  it("does not resolve fallback helpers to user types", () => {
+    check(
+      `<script lang="ts">type Record = never; export let value: string;</script>`,
+      `
+      type E = import("svelte").ComponentEvents<Foo>;
+      const good: E = { arbitrary: new Event("arbitrary") };
+      void good;
+    `,
+    );
+  });
+
+  it("does not narrow inferred legacy boolean props to their current value", () => {
+    check(
+      `<script lang="ts">export let enabled = true;</script>`,
+      `
+      type P = import("svelte").ComponentProps<Foo>;
+      const good: P = { enabled: false };
+      // @ts-expect-error a boolean prop excludes strings
+      const bad: P = { enabled: "wrong" };
+      void good; void bad;
+    `,
+    );
+  });
+
+  it("reads exported legacy props, events and slots type declarations", () => {
+    check(
+      `<script lang="ts">
+      export interface $$Props { value: string; extra?: number }
+      export interface $$Events { update: CustomEvent<number> }
+      export type $$Slots = { default: { item: number } };
+      export let value: string;
+    </script>`,
+      `
+      type E = import("svelte").ComponentEvents<Foo>;
+      type S = Foo["$$slot_def"]["default"];
+      const props: import("svelte").ComponentProps<Foo> = { value: "ok", extra: 1 };
+      void props;
+      const good: E["update"] = new CustomEvent<number>("update");
+      const slot: S = { item: 1 };
+      // @ts-expect-error event detail must be a number
+      const bad: E["update"] = new CustomEvent<string>("update");
+      // @ts-expect-error slot prop must be a number
+      const badSlot: S = { item: "wrong" };
+      void good; void slot; void bad; void badSlot;
+    `,
+    );
+  });
+
+  describeSvelte5("runes", () => {
+    it("uses the declared prop annotation before initializer casts", () => {
+      check(
+        `<script lang="ts">let { value }: { value: string | number } = $props() as { value: string };</script>`,
+        `
+        type P = import("svelte").ComponentProps<typeof Foo>;
+        const good: P = { value: 1 };
+        // @ts-expect-error annotation excludes boolean
+        const bad: P = { value: true };
+        void good; void bad;
+      `,
+      );
+    });
+
+    it("does not resolve Partial to a user type", () => {
+      check(
+        `<script lang="ts">type Partial<T> = never; let { count = 0 } = $props();</script>`,
+        `
+        type P = import("svelte").ComponentProps<typeof Foo>;
+        const good: P = { count: 1 };
+        const omitted: P = {};
+        // @ts-expect-error inferred number excludes string
+        const bad: P = { count: "wrong" };
+        void good; void omitted; void bad;
+      `,
+      );
+    });
+
+    it("preserves explicit bindable type arguments", () => {
+      check(
+        `<script lang="ts">let { value = $bindable<string>() } = $props();</script>`,
+        `
+        type P = import("svelte").ComponentProps<typeof Foo>;
+        const good: P = { value: "ok" };
+        const omitted: P = {};
+        // @ts-expect-error explicit string type excludes numbers
+        const bad: P = { value: 123 };
+        void good; void omitted; void bad;
+      `,
+      );
+    });
+
+    for (const fallback of ["", "null", "[]", "undefined"]) {
+      it(`widens a bindable ${fallback || "absent"} fallback`, () => {
+        check(
+          `<script lang="ts">let { value = $bindable(${fallback}) } = $props();</script>`,
+          `
+          type P = import("svelte").ComponentProps<typeof Foo>;
+          const good: P = { value: [1] };
+          const omitted: P = {};
+          void good; void omitted;
+        `,
+        );
+      });
+    }
+  });
+});
+
+describe("public parser API with the experimental hook", () => {
+  it("resolves imported types before and after the first Svelte parse", () => {
+    // Isolate the permanent ts.sys patch and TypeScript program caches from the
+    // unit suites. This exercises the real typescript-eslint host, not a mock.
+    const child = spawnSync(
+      process.execPath,
+      [
+        "--import",
+        "tsx/esm",
+        "--input-type=module",
+        "-e",
+        `
+      import assert from "node:assert/strict";
+      import fs from "node:fs";
+      import os from "node:os";
+      import path from "node:path";
+      import * as tsParser from "@typescript-eslint/parser";
+      import * as parser from ${JSON.stringify(new URL("../../src/index.ts", import.meta.url).href)};
+      const dir = fs.mkdtempSync(path.join(os.tmpdir(), "component-public-api-"));
+      try {
+        const component = '<script context="module" lang="ts">export type Named = { text: string };</script><script lang="ts">export let count: number;</script>';
+        const consumer = 'import Foo, { type Named } from "./Foo.svelte"; import type { ComponentProps } from "svelte"; let count: ComponentProps<Foo>["count"]; let text: Named["text"];';
+        fs.writeFileSync(path.join(dir, "Foo.svelte"), component);
+        fs.writeFileSync(path.join(dir, "consumer.ts"), consumer);
+        fs.writeFileSync(path.join(dir, "tsconfig.json"), JSON.stringify({ compilerOptions: {
+          strict: true, module: "ESNext", moduleResolution: "Bundler", types: [],
+          paths: { svelte: [${JSON.stringify(svelteTypesPath)}] },
+        }, include: ["./**/*"] }));
+        const options = { filePath: path.join(dir, "consumer.ts"), project: path.join(dir, "tsconfig.json"), extraFileExtensions: [".svelte"], loc: true, range: true };
+        function check() {
+          const result = tsParser.parseForESLint(consumer, options);
+          const checker = result.services.program.getTypeChecker();
+          const types = result.ast.body.filter(node => node.type === "VariableDeclaration").map(node => {
+            const tsNode = result.services.esTreeNodeToTSNodeMap.get(node.declarations[0].id);
+            return checker.typeToString(checker.getTypeAtLocation(tsNode));
+          });
+          assert.deepEqual(types, ["number", "string"]);
+        }
+        check();
+        parser.parseForESLint(component, { ...options, filePath: path.join(dir, "Foo.svelte"), parser: tsParser });
+        check();
+      } finally {
+        fs.rmSync(dir, { recursive: true, force: true });
+      }
+    `,
+      ],
+      {
+        encoding: "utf8",
+        timeout: 30000,
+        env: {
+          // eslint-disable-next-line no-process-env -- isolate the opt-in hook in a subprocess
+          ...process.env,
+          SVELTE_ESLINT_PARSER_EXPERIMENTAL_TS_SYS_HOOK: "1",
+        },
+      },
+    );
+    assert.strictEqual(child.status, 0, child.stdout + child.stderr);
+    assert.ifError(child.error);
+  });
+});
+
+describe("virtual companion lifecycle", () => {
+  it("recovers after edits, parse failures, real-module collisions and deletion", () => {
+    withTempSvelteFile(
+      '<script lang="ts">export let value: string;</script>',
+      (filePath) => {
+        _resetTranslationCacheForTesting();
+        rememberParserOptions(makeParserOptions(filePath));
+        const companion = `${filePath}.ts`;
+        const sys = {
+          fileExists: (name: string) => fs.existsSync(name),
+          readFile: (name: string) =>
+            fs.existsSync(name) ? fs.readFileSync(name, "utf8") : undefined,
+        };
+        _patchTsSysForTesting(sys);
+        let timestamp = fs.statSync(filePath).mtimeMs;
+
+        function replace(source: string): void {
+          fs.writeFileSync(filePath, source);
+          timestamp += 2000;
+          fs.utimesSync(filePath, timestamp / 1000, timestamp / 1000);
+        }
+
+        assert.strictEqual(sys.fileExists(companion), true);
+        assert.match(sys.readFile(companion)!, /value: string/u);
+        replace('<script lang="ts">export let value: number;</script>');
+        assert.match(sys.readFile(companion)!, /value: number/u);
+        replace('<script lang="ts">export let = </script>');
+        assert.strictEqual(sys.fileExists(companion), false);
+        assert.strictEqual(sys.readFile(companion), undefined);
+        replace('<script lang="ts">export let value: boolean;</script>');
+        assert.strictEqual(sys.fileExists(companion), true);
+        assert.match(sys.readFile(companion)!, /value: boolean/u);
+        fs.writeFileSync(companion, "export default 42;");
+        withoutHookWarnings(() => {
+          assert.strictEqual(sys.fileExists(companion), true);
+          assert.strictEqual(sys.readFile(companion), "export default 42;");
+        });
+        fs.unlinkSync(companion);
+        assert.match(sys.readFile(companion)!, /value: boolean/u);
+        fs.unlinkSync(filePath);
+        assert.strictEqual(sys.fileExists(companion), false);
+        assert.strictEqual(sys.readFile(companion), undefined);
+      },
+    );
   });
 });
