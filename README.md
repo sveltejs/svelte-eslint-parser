@@ -168,6 +168,28 @@ export default [
 ];
 ```
 
+#### Using JSDoc types in JavaScript
+
+The configuration above also supports JSDoc type annotations in JavaScript
+`<script>` blocks (with no `lang`, `lang="js"`, or `lang="javascript"`) and
+`.svelte.js` files. Configure `parserOptions.project` or
+`parserOptions.projectService` to enable type-aware lint rules.
+
+```svelte
+<script>
+  /** @param {number} value */
+  function increment(value) {
+    return value + 1;
+  }
+</script>
+
+{increment(1)}
+```
+
+When using multiple parsers, assign `@typescript-eslint/parser` to the `js`
+entry as well as `ts` to enable JSDoc type information in ordinary `<script>`
+blocks. JavaScript configured to use Espree continues to use Espree.
+
 #### Multiple parsers
 
 To switch parsers for each language, provide an object:
