@@ -1456,6 +1456,8 @@ describeLegacyClass(
  *   ambient module instead: the negative control for the ambient-shadow test.
  * - `realCompanion` writes a real `Foo.svelte.ts` to disk to exercise the
  *   conflict guard.
+ * - `template` translates the consumer as a Svelte component, exercising the
+ *   actual template attribute typing rather than a handwritten props type.
  */
 function realResolutionDiagnostics(
   componentSource: string,
@@ -1463,7 +1465,8 @@ function realResolutionDiagnostics(
   {
     patch = true,
     realCompanion,
-  }: { patch?: boolean; realCompanion?: string } = {},
+    template,
+  }: { patch?: boolean; realCompanion?: string; template?: string } = {},
 ): ts.Diagnostic[] {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), "real-resolve-"));
   try {
@@ -1473,11 +1476,17 @@ function realResolutionDiagnostics(
       fs.writeFileSync(path.join(dir, "Foo.svelte.ts"), realCompanion, "utf-8");
     }
     const barPath = path.join(dir, "Bar.ts");
-    fs.writeFileSync(
-      barPath,
-      `import Foo from "./Foo.svelte";\n${consumerBody}\n`,
-      "utf-8",
-    );
+    let consumerCode = `import Foo from "./Foo.svelte";\n${consumerBody}\n`;
+    if (template !== undefined) {
+      const translated = svelteToVirtualTypeScript(
+        path.join(dir, "Bar.svelte"),
+        `<script lang="ts">${consumerCode}</script>${template}`,
+        makeParserOptions(path.join(dir, "Bar.svelte")),
+      );
+      assert.notStrictEqual(translated, null);
+      consumerCode = translated!;
+    }
+    fs.writeFileSync(barPath, consumerCode, "utf-8");
 
     // Base behavior is plain disk access; the hook adds interception on top.
     const sys = {
@@ -2266,4 +2275,41 @@ describe("virtual companion lifecycle", () => {
       },
     );
   });
+});
+
+describe("imported component props in templates", () => {
+  const component = `<script lang="ts">export let value: (input: number) => string;</script>`;
+  for (const { name, template, errors } of [
+    {
+      name: "contextually types callback parameters",
+      template: `<Foo value={input => input.toFixed(2)} />
+        <Components.Foo value={input => input.toFixed(2)} />`,
+      errors: [],
+    },
+    {
+      name: "rejects wrong callback parameter operations",
+      template: "<Foo value={input => input.toUpperCase()} />",
+      errors: [2339],
+    },
+    {
+      name: "rejects wrong callback return types",
+      template: "<Foo value={input => 123} />",
+      errors: [2352],
+    },
+  ]) {
+    it(name, () => {
+      const diagnostics = realResolutionDiagnostics(
+        component,
+        "const Components = { Foo }; type InstanceType<T> = never;",
+        { template },
+      );
+      assert.deepStrictEqual(
+        diagnostics.map((d) => d.code),
+        errors,
+        diagnostics
+          .map((d) => ts.flattenDiagnosticMessageText(d.messageText, " "))
+          .join("\n"),
+      );
+    });
+  }
 });

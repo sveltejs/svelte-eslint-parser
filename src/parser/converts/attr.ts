@@ -301,7 +301,12 @@ function buildAttributeType(
     return null;
   }
   const elementName = ctx.elements.get(element)!.name;
-  const componentPropsType = `import('svelte').ComponentProps<typeof ${elementName}>`;
+  // Svelte 3/4 ComponentProps takes an instance, while Svelte 5 also accepts
+  // the component function. Extract the legacy constructor instance without
+  // relying on a locally shadowable utility type such as InstanceType.
+  const componentPropsType = svelteVersion.gte(5)
+    ? `import('svelte').ComponentProps<typeof ${elementName}>`
+    : `(typeof ${elementName} extends new (...args: any[]) => (infer C extends import('svelte').SvelteComponent) ? import('svelte').ComponentProps<C> : never)`;
   return conditional({
     check: `'${attrName}'`,
     extends: `infer PROP`,
