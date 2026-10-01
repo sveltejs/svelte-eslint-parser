@@ -1,5 +1,11 @@
 # svelte-eslint-parser
 
+## 1.8.1
+
+### Patch Changes
+
+- [#934](https://github.com/sveltejs/svelte-eslint-parser/pull/934) [`1e7352e`](https://github.com/sveltejs/svelte-eslint-parser/commit/1e7352e53cabbec57559a924ec37d85306715d22) Thanks [@baseballyama](https://github.com/baseballyama)! - fix: make the experimental `ts.sys` hook work when the TS program is created before the first `.svelte` parse
+
 ## 1.8.0
 
 ### Minor Changes
