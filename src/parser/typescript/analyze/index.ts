@@ -24,10 +24,13 @@ import { setParent } from "../set-parent.js";
 import { getGlobalsForSvelte, globalsForRunes } from "../../globals.js";
 import type { SvelteParseContext } from "../../svelte-parse-context.js";
 import { withoutProjectParserOptions } from "../../parser-options.js";
+import { appendComponentDefaultExport } from "./component.js";
 
 export type AnalyzeTypeScriptContext = {
   slots: Set<SvelteHTMLElement>;
   svelteParseContext: SvelteParseContext;
+  /** Source range of the instance `<script>` content; the virtual code concatenates both scripts. */
+  instanceScriptRange?: [number, number] | null;
 };
 
 type TransformInfo = {
@@ -151,6 +154,15 @@ export function analyzeTypeScriptInSvelte(
   applyTransforms(rootScopeTransformers, ctx);
 
   ctx.appendOriginalToEnd();
+
+  // Emitted last so it lands as a standalone top-level statement.
+  appendComponentDefaultExport(
+    result,
+    code.script + code.render + code.rootScope,
+    ctx,
+    context.svelteParseContext,
+    context.instanceScriptRange ?? null,
+  );
 
   return ctx;
 }

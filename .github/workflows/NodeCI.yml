@@ -103,6 +103,9 @@ jobs:
         run: pnpm run test
   test-with-ts-sys-hook:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        svelte-version: [3, 4, 5]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
@@ -112,6 +115,9 @@ jobs:
           node-version: latest
       - name: Install Packages
         run: pnpm install --frozen-lockfile
+      - name: Install legacy Svelte
+        if: matrix.svelte-version != 5
+        run: pnpm install -D svelte@${{ matrix.svelte-version }}
       - name: Test with ts.sys hook enabled
         env:
           SVELTE_ESLINT_PARSER_EXPERIMENTAL_TS_SYS_HOOK: "1"

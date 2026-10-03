@@ -263,6 +263,31 @@ SVELTE_ESLINT_PARSER_EXPERIMENTAL_TS_SYS_HOOK=1 \
   eslint --no-cache --concurrency auto .
 ```
 
+When enabled, the hook also resolves `.svelte` import specifiers to the
+imported component's virtual module, so type-aware rules see a component's
+real prop, event, and slot types across files. `import Foo from "./Foo.svelte"`
+is resolved through a virtual `Foo.svelte.ts` companion that the hook serves
+from the same translation — no `tsconfig` changes are required. If a real
+`Foo.svelte.ts` (a Svelte runes module) exists on disk, it always takes
+precedence and the hook leaves it untouched. In that case component prop types
+are not available for that component, because plain TypeScript resolution picks
+the module instead of the component. To avoid this name collision, enable the
+`svelte/no-conflicting-module-names` rule from `eslint-plugin-svelte` (v3.22.0
+or later), which reports a `Foo.svelte` and `Foo.svelte.ts` pair.
+
+Component typing currently requires a TypeScript `<script>` and supports
+Svelte 3, 4, and 5. Props come from `$props()` annotations or destructuring
+in runes mode, and from `$$Props` or exported `let` bindings in legacy mode.
+Defaulted props are optional. Explicit `$$Events` and `$$Slots` declarations
+supply event and slot types; otherwise those types remain permissive.
+
+This is not a full replacement for Svelte's generated component declarations.
+Unannotated props without defaults use `any`, rest props keep the prop type
+open, and generic parameters are represented by their constraints rather than
+preserving a generic component signature. Instance exports and slot types
+inferred from template markup are not synthesized. JavaScript-only components
+do not receive this TypeScript translation.
+
 Caveat: rules that read raw TypeScript diagnostics
 (`program.getSemanticDiagnostics()` and friends) report positions inside
 the parser's virtual shim — a pre-existing property of type-aware Svelte
