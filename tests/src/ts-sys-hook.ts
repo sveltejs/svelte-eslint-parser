@@ -63,14 +63,14 @@ describe("svelteToVirtualTypeScript", () => {
     });
   });
 
-  it("returns null when the script block isn't TypeScript", () => {
+  it("translates JavaScript when using the TypeScript parser", () => {
     withTempSvelteFile(JS_SCRIPT, (filePath) => {
       const code = svelteToVirtualTypeScript(
         filePath,
         JS_SCRIPT,
         makeParserOptions(filePath),
       );
-      assert.strictEqual(code, null);
+      assert.match(code!, /let count = 0/u);
     });
   });
 
@@ -143,11 +143,11 @@ describe("ts.sys.readFile hook wiring", () => {
     });
   });
 
-  it("falls through for a JS-only .svelte file (nothing to translate)", () => {
+  it("falls through for JavaScript configured to use espree", () => {
     withTempSvelteFile(JS_SCRIPT, (filePath) => {
       const sys = { readFile: (p: string) => fs.readFileSync(p, "utf-8") };
       _patchTsSysForTesting(sys);
-      rememberParserOptions(makeParserOptions(filePath));
+      rememberParserOptions(normalizeParserOptions({ filePath }));
 
       assert.strictEqual(sys.readFile(filePath), JS_SCRIPT);
     });

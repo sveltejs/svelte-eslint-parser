@@ -10,6 +10,7 @@ import {
 import { setParent } from "./set-parent.js";
 import type { TSESParseForESLintResult } from "./types.js";
 import { primeTranslationCache } from "../../ts-sys-hook.js";
+import { getJavaScriptParserOptions } from "./javascript.js";
 
 /**
  * Parse for TypeScript in <script>
@@ -27,7 +28,17 @@ export function parseTypeScriptInSvelte(
     primeTranslationCache(parserOptions.filePath, tsCtx.script);
   }
 
-  const result = parseScriptInSvelte(tsCtx.script, attrs, parserOptions);
+  // Virtual scripts can be parsed repeatedly for the same file. In single-run
+  // mode, typescript-eslint falls back to an isolated program on later calls,
+  // losing project imports and compiler options.
+  let result = parseScriptInSvelte(tsCtx.script, attrs, {
+    ...parserOptions,
+    disallowAutomaticSingleRunInference: true,
+  });
+  const jsOptions = getJavaScriptParserOptions(result, attrs, parserOptions);
+  if (jsOptions) {
+    result = parseScriptInSvelte(tsCtx.script, attrs, jsOptions);
+  }
 
   tsCtx.restoreContext.restore(result as unknown as TSESParseForESLintResult);
 
@@ -49,7 +60,14 @@ export function parseTypeScript(
     svelteParseContext,
   );
 
-  const result = parseScript(tsCtx.script, attrs, parserOptions);
+  let result = parseScript(tsCtx.script, attrs, {
+    ...parserOptions,
+    disallowAutomaticSingleRunInference: true,
+  });
+  const jsOptions = getJavaScriptParserOptions(result, attrs, parserOptions);
+  if (jsOptions) {
+    result = parseScript(tsCtx.script, attrs, jsOptions);
+  }
   setParent(result);
 
   tsCtx.restoreContext.restore(result as unknown as TSESParseForESLintResult);

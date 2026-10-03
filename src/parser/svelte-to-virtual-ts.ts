@@ -7,7 +7,7 @@ import { resolveSvelteParseContextForSvelte } from "./svelte-parse-context.js";
 
 /**
  * Translate a Svelte component to the virtual TypeScript shim. Returns
- * `null` if the file has no `<script lang="ts">` or parsing fails.
+ * `null` if the configured script parser is not TypeScript or parsing fails.
  */
 export function svelteToVirtualTypeScript(
   filePath: string,

@@ -1,5 +1,6 @@
 import fs from "fs";
 import path from "path";
+import type { Program } from "typescript";
 import {
   isTSESLintParserObject,
   maybeTSESLintParserObject,
@@ -9,6 +10,8 @@ import { getParserForLang, type UserOptionParser } from "./resolve-parser.js";
 export type NormalizedParserOptions = {
   parser?: UserOptionParser;
   project?: string | string[] | null;
+  programs?: Program[] | null;
+  disallowAutomaticSingleRunInference?: boolean;
   projectService?: unknown;
   EXPERIMENTAL_useProjectService?: unknown;
 
@@ -69,9 +72,6 @@ export function isTypeScript(
   parserOptions: NormalizedParserOptions,
   lang: string | undefined,
 ): boolean {
-  if (!lang) {
-    return false;
-  }
   const parserValue = getParserForLang(lang, parserOptions?.parser);
   if (typeof parserValue !== "string") {
     return (
@@ -120,6 +120,7 @@ export function withoutProjectParserOptions(
 ): NormalizedParserOptions {
   const {
     project: _strippedProject,
+    programs: _strippedPrograms,
     projectService: _strippedProjectService,
     EXPERIMENTAL_useProjectService: _strippedExperimentalUseProjectService,
     ...result
