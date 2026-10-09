@@ -20,6 +20,7 @@ import type {
 import type { Context } from "../../context/index.js";
 import { convertChildren } from "./element.js";
 import { getWithLoc, indexOf, lastIndexOf } from "./common.js";
+import { svelteVersion } from "../svelte-version.js";
 import type * as ESTree from "estree";
 import {
   getAlternateFromIfBlock,
@@ -684,6 +685,7 @@ export function convertSnippetBlock(
     closeParenIndex,
     snippetBlock,
     scopeKind,
+    buildSnippetParamTypes(node, parent, ctx),
     (id, params) => {
       snippetBlock.id = id;
       snippetBlock.params = params;
@@ -707,6 +709,47 @@ export function convertSnippetBlock(
 
   ctx.snippets.push(snippetBlock);
   return snippetBlock;
+}
+
+/**
+ * A snippet written as a child of a component is passed to it as the prop of
+ * the same name, so its unannotated parameters take their types from that prop.
+ */
+function buildSnippetParamTypes(
+  node: Compiler.SnippetBlock,
+  parent: SvelteSnippetBlock["parent"],
+  ctx: Context,
+): { param: ESTree.Pattern; type: string }[] | null {
+  if (
+    !ctx.isTypeScript() ||
+    !svelteVersion.gte(5) ||
+    parent.type !== "SvelteElement" ||
+    parent.kind !== "component"
+  ) {
+    return null;
+  }
+  const elementName = ctx.elements.get(parent)!.name;
+  const componentPropsType = `import('svelte').ComponentProps<typeof ${elementName}>`;
+  const snippetName = node.expression.name;
+  // Fall back to `any` for a prop the component does not declare, rather than
+  // letting `never` poison every use of the parameter.
+  const snippetType = `('${snippetName}' extends infer KEY?KEY extends keyof ${componentPropsType}?NonNullable<${componentPropsType}[KEY]>:any:any)`;
+  const types: { param: ESTree.Pattern; type: string }[] = [];
+  node.parameters.forEach((param, index) => {
+    // A default value or rest element cannot take a positional annotation.
+    if (
+      (param as { typeAnnotation?: unknown }).typeAnnotation ||
+      param.type === "AssignmentPattern" ||
+      param.type === "RestElement"
+    ) {
+      return;
+    }
+    types.push({
+      param,
+      type: `${snippetType} extends (...args: infer A) => any ? A[${index}] : any`,
+    });
+  });
+  return types.length ? types : null;
 }
 
 /** Extract mustache block tokens */
