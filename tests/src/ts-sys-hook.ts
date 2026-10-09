@@ -135,8 +135,9 @@ function expectedComponentTypeText(
   exports: string | null = null,
 ): { value: string; type: string } {
   const typeArgs = `<${props}, ${events}, ${slots}>`;
-  const withExports = (type: string) =>
-    exports == null ? type : `${type} & ${exports}`;
+  function withExports(type: string) {
+    return exports == null ? type : `${type} & ${exports}`;
+  }
   if (svelteVersion.gte(5)) {
     return {
       value:
@@ -2373,7 +2374,7 @@ const closed: number = instance.close();
 void opened; void closed;`,
       );
       assert.deepStrictEqual(
-        diagnostics.map((d) => d.code).sort(),
+        diagnostics.map((d) => d.code).sort((a, b) => a - b),
         [2322, 2322, 2345],
         codesOf(diagnostics),
       );
@@ -2461,4 +2462,3 @@ void result;`,
     );
   });
 });
-
