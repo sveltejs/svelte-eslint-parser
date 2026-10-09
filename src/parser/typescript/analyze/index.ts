@@ -108,6 +108,12 @@ export function analyzeTypeScriptInSvelte(
 
   analyzeRuneVariables(result, ctx, context.svelteParseContext);
 
+  if (!attrs.lang || attrs.lang === "js" || attrs.lang === "javascript") {
+    // Keep leading JSDoc attached to the user's declaration, not to the last
+    // synthetic declaration inserted above it.
+    ctx.appendVirtualScript("\n");
+  }
+
   const scriptTransformers: TransformInfo[] = [
     ...analyzeReactiveScopes(result),
   ];
@@ -189,6 +195,10 @@ export function analyzeTypeScript(
   ctx._beforeResult = result;
 
   analyzeRuneVariables(result, ctx, svelteParseContext);
+
+  if (!attrs.lang || attrs.lang === "js" || attrs.lang === "javascript") {
+    ctx.appendVirtualScript("\n");
+  }
 
   applyTransforms(
     [...analyzeDollarDerivedScopes(result, svelteParseContext)],

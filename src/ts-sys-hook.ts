@@ -23,7 +23,7 @@ const ENV_FLAG = "SVELTE_ESLINT_PARSER_EXPERIMENTAL_TS_SYS_HOOK";
 interface TranslationEntry {
   mtimeMs: number;
   // `null` means "no virtual translation at this mtime" — a negative cache
-  // so JS-only `.svelte` files don't pay a full Svelte parse on every read.
+  // so unsupported `.svelte` files don't pay a full Svelte parse on every read.
   virtualCode: string | null;
   // Translated with fallback options before the first `.svelte` parse.
   provisional: boolean;
