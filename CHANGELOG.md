@@ -1,5 +1,17 @@
 # svelte-eslint-parser
 
+## 1.9.0
+
+### Minor Changes
+
+- [#913](https://github.com/sveltejs/svelte-eslint-parser/pull/913) [`61b44d6`](https://github.com/sveltejs/svelte-eslint-parser/commit/61b44d6aee97a3fe5057cefa99a97881218361f5) Thanks [@baseballyama](https://github.com/baseballyama)! - Emit a synthetic component `export default` in the virtual TypeScript so importers of a `.svelte` component can resolve its prop, event, and slot types. The experimental `ts.sys` hook (`SVELTE_ESLINT_PARSER_EXPERIMENTAL_TS_SYS_HOOK=1`) now also resolves `.svelte` import specifiers to that virtual code, so `ComponentProps<typeof Foo>` and `mount(Foo, …)` work across files. The synthetic statements are removed again on restore, so the linted file is unaffected. This feature remains experimental and opt-in. See the Experimental section in the README for details and limitations.
+
+- [#607](https://github.com/sveltejs/svelte-eslint-parser/pull/607) [`e9b1f75`](https://github.com/sveltejs/svelte-eslint-parser/commit/e9b1f752b64659a10fac86fdb32de61448e88c8b) Thanks [@baseballyama](https://github.com/baseballyama)! - Preserve JavaScript JSDoc type information when using the TypeScript parser, including Svelte template expressions, stores, and runes.
+
+### Patch Changes
+
+- [#949](https://github.com/sveltejs/svelte-eslint-parser/pull/949) [`9278e1d`](https://github.com/sveltejs/svelte-eslint-parser/commit/9278e1d2f1d5b878880be62caa28e7e278492754) Thanks [@baseballyama](https://github.com/baseballyama)! - Preserve type narrowing from preceding conditions in template `{:else if}` and `{:else}` branches.
+
 ## 1.8.1
 
 ### Patch Changes
