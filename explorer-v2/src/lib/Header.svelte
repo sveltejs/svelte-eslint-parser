@@ -1,6 +1,6 @@
 <script>
 	import SnsBar from './SnsBar.svelte';
-	import { page } from '$app/stores';
+	import { page } from '$app/state';
 	import { resolve } from '$app/paths';
 
 	function isActive(pathname, path) {
@@ -14,22 +14,22 @@
 
 <header class="header">
 	<span class="title">svelte-eslint-parser</span>
-	<a class="menu" class:active={isActive($page.url.pathname, `/`)} href={resolve('/')}>AST</a>
+	<a class="menu" class:active={isActive(page.url.pathname, `/`)} href={resolve('/')}>AST</a>
 	<a
 		class="menu"
-		class:active={isActive($page.url.pathname, `/playground`)}
+		class:active={isActive(page.url.pathname, `/playground`)}
 		href={resolve('/playground')}>Playgroud</a
 	>
-	<a class="menu" class:active={isActive($page.url.pathname, `/scope`)} href={resolve('/scope')}
+	<a class="menu" class:active={isActive(page.url.pathname, `/scope`)} href={resolve('/scope')}
 		>Scope</a
 	>
 	<a
 		class="menu"
-		class:active={isActive($page.url.pathname, `/virtual-script-code`)}
+		class:active={isActive(page.url.pathname, `/virtual-script-code`)}
 		href={resolve('/virtual-script-code')}>Virtual Script Code</a
 	>
 	<div class="debug">
-		$page.url.pathname: {$page.url.pathname}
+		page.url.pathname: {page.url.pathname}
 	</div>
 	<SnsBar />
 	<a href="https://github.com/sveltejs/svelte-eslint-parser" class="github-link">View on GitHub</a>

@@ -1,5 +1,5 @@
 <script>
-	import VirtualScriptCode from '$lib/VirtualScriptCode.svelte';
+	import VirtualScriptCode from '#lib/VirtualScriptCode.svelte';
 </script>
 
 <svelte:head>

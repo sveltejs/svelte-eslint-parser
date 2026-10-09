@@ -1,5 +1,5 @@
 <script>
-	import AstExplorer from '$lib/AstExplorer.svelte';
+	import AstExplorer from '#lib/AstExplorer.svelte';
 </script>
 
 <svelte:head>
