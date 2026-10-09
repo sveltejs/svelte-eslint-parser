@@ -1,5 +1,5 @@
 <script>
-	import ESLintPlayground from '$lib/ESLintPlayground.svelte';
+	import ESLintPlayground from '#lib/ESLintPlayground.svelte';
 </script>
 
 <svelte:head>

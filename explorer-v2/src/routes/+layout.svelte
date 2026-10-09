@@ -1,5 +1,5 @@
 <script>
-	import Header from '$lib/Header.svelte';
+	import Header from '#lib/Header.svelte';
 	import '../app.css';
 	if (typeof window !== 'undefined') {
 		window.process = {

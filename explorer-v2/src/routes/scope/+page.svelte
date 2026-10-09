@@ -1,5 +1,5 @@
 <script>
-	import ScopeExplorer from '$lib/ScopeExplorer.svelte';
+	import ScopeExplorer from '#lib/ScopeExplorer.svelte';
 </script>
 
 <svelte:head>
