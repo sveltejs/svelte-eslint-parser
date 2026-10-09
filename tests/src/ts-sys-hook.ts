@@ -2593,3 +2593,86 @@ describeSvelte5("function bindings on a component", () => {
     });
   }
 });
+
+describeSvelte5("narrowing inside `{#each}` blocks", () => {
+  const component = `<script lang="ts">
+  let { value }: { value?: string } = $props();
+</script>
+<p>{value}</p>`;
+  const consumer = `type A = { kind: "a"; list: string[] };
+type B = { kind: "b"; count: number };
+let { holder }: { holder: { node: A | B } } = $props();
+const rows = [{ id: "a", name: "b" }];
+void holder;
+void rows;`;
+  for (const { name, template, errors } of [
+    {
+      name: "keeps the narrowing of a property path",
+      template: `{#if holder.node.kind === "a"}
+  {#each holder.node.list as entry, i (i)}{holder.node.list[i].toUpperCase()}{entry.toUpperCase()}{/each}
+{/if}`,
+      errors: [],
+    },
+    {
+      name: "types the context and index",
+      template: `{#each rows as row, i (row.id)}{row.name.toUpperCase()}{i.toFixed()}{/each}`,
+      errors: [],
+    },
+    {
+      name: "rejects misuse of the context",
+      template: `{#each rows as row}{row.missing}{/each}`,
+      errors: [2339],
+    },
+    {
+      name: "types the index as a number rather than a literal",
+      template: `{#each rows as row, i}{((one: 1) => one)(i)}{row.id}{/each}`,
+      errors: [2345],
+    },
+    {
+      name: "types a destructured context",
+      template: `{#each rows as { id, name } (id)}{name.toUpperCase()}{/each}`,
+      errors: [],
+    },
+    {
+      name: "types the index without a context",
+      template: `{#each { length: 3 }, i}{i.toFixed()}{/each}`,
+      errors: [],
+    },
+  ]) {
+    it(name, () => {
+      const diagnostics = realResolutionDiagnostics(component, consumer, {
+        template,
+      });
+      assert.deepStrictEqual(
+        diagnostics.map((d) => d.code),
+        errors,
+        diagnostics
+          .map((d) => ts.flattenDiagnosticMessageText(d.messageText, " "))
+          .join("\n"),
+      );
+    });
+  }
+
+  it("leaves no trace of the typing arguments in the AST or scopes", () => {
+    const source = `<script lang="ts">
+  const rows = [{ id: "a" }];
+</script>
+{#each rows as row, i (row.id)}{row.id}{i}{/each}`;
+    const result = parseComponent(source);
+    const variables = result.scopeManager.scopes.flatMap(
+      (scope) => scope.variables,
+    );
+    const rows = variables.find((v) => v.name === "rows");
+    // The initialization and the `{#each}` expression.
+    assert.strictEqual(rows?.references.length, 2);
+    assert.strictEqual(
+      result.scopeManager.globalScope!.through.some(
+        (r) => r.identifier.name === "Array",
+      ),
+      false,
+    );
+    assert.ok(
+      result.ast.tokens.every((t) => source.slice(...t.range) === t.value),
+    );
+  });
+});
