@@ -2593,3 +2593,96 @@ describeSvelte5("function bindings on a component", () => {
     });
   }
 });
+
+describeSvelte5("bindings as writes and `bind:this` function bindings", () => {
+  const component = `<script lang="ts">
+  let { value = $bindable("") }: { value?: string } = $props();
+  export function open(): void {}
+</script>
+<p>{value}</p>`;
+  for (const { name, script, template, errors } of [
+    {
+      name: "keeps a bound element variable unnarrowed in closures",
+      script: `let el: HTMLDivElement | null = $state(null);
+const focus = () => el?.focus();
+void focus;`,
+      template: `<div bind:this={el}></div>`,
+      errors: [],
+    },
+    {
+      name: "keeps a bound component instance unnarrowed in closures",
+      script: `let foo: ReturnType<typeof Foo> | null = $state(null);
+const open = () => foo?.open();
+void open;`,
+      template: `<Foo bind:this={foo} />`,
+      errors: [],
+    },
+    {
+      name: "keeps a bound prop variable unnarrowed in closures",
+      script: `let text: string | undefined = $state(undefined);
+const shout = () => text?.toUpperCase();
+void shout;`,
+      template: `<Foo bind:value={text} />`,
+      errors: [],
+    },
+    {
+      name: "types the `bind:this` setter of an HTML element",
+      script: `let el: HTMLInputElement | null = $state(null);`,
+      template: `<input bind:this={() => el, (next) => (el = next)} />`,
+      errors: [],
+    },
+    {
+      name: "types the `bind:this` setter of an SVG element",
+      script: `let el: SVGSVGElement | null = $state(null);`,
+      template: `<svg bind:this={() => el, (next) => (el = next)}></svg>`,
+      errors: [],
+    },
+    {
+      name: "types the `bind:this` setter of a component",
+      script: `let foo: ReturnType<typeof Foo> | null = $state(null);`,
+      template: `<Foo bind:this={() => foo, (next) => (foo = next)} />`,
+      errors: [],
+    },
+    {
+      name: "rejects misuse of a `bind:this` setter parameter",
+      script: `let foo: ReturnType<typeof Foo> | null = $state(null);`,
+      template: `<Foo bind:this={() => foo, (next) => next?.missing()} />`,
+      errors: [2339],
+    },
+  ]) {
+    it(name, () => {
+      const diagnostics = realResolutionDiagnostics(component, script, {
+        template,
+      }).filter((d) => d.code !== 2695);
+      assert.deepStrictEqual(
+        diagnostics.map((d) => d.code),
+        errors,
+        diagnostics
+          .map((d) => ts.flattenDiagnosticMessageText(d.messageText, " "))
+          .join("\n"),
+      );
+    });
+  }
+
+  it("leaves no trace of the binding write in the AST or scopes", () => {
+    const source = `<script lang="ts">
+  let el: HTMLDivElement | null = $state(null);
+</script>
+<div bind:this={el}></div>`;
+    const result = parseComponent(source);
+    const el = result.scopeManager.scopes
+      .flatMap((scope) => scope.variables)
+      .find((v) => v.name === "el");
+    // Only the declaration's initialization and the directive itself.
+    assert.deepStrictEqual(
+      el?.references.map((r) => [r.init ?? false, r.isWrite()]),
+      [
+        [true, true],
+        [false, true],
+      ],
+    );
+    assert.ok(
+      result.ast.tokens.every((t) => source.slice(...t.range) === t.value),
+    );
+  });
+});
