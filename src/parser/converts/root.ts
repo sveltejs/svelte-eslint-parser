@@ -385,6 +385,16 @@ function convertGenericsAttribute(script: SvelteScriptElement, ctx: Context) {
   ctx.instanceGenerics = {
     text: genericValueCode,
     names: params.map((param) => param.name.name),
+    // Defaults keep a bare `Foo` valid where the component is used as a type.
+    defaultedText: params
+      .map((param) => {
+        const text = ctx.code.slice(...param.range);
+        if (param.default) {
+          return text;
+        }
+        return `${text} = ${param.constraint ? ctx.code.slice(...param.constraint.range) : "unknown"}`;
+      })
+      .join(", "),
   };
 
   // Replace tokens

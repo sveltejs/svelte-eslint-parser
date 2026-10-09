@@ -2735,3 +2735,55 @@ void picked;`;
     });
   },
 );
+
+describeSvelte5("generic component used as a type", () => {
+  const component = `<script lang="ts" generics="T extends { id: string }">
+  interface Props {
+    items: T[];
+  }
+  let { items }: Props = $props();
+  export function clear(): void {}
+</script>
+<p>{items.length}</p>`;
+  for (const { name, consumer, errors } of [
+    {
+      name: "accepts type arguments",
+      consumer: `type Row = { id: string; name: string };
+let generator: Foo<Row> | undefined;
+generator?.clear();
+const props: import("svelte").ComponentProps<Foo<Row>> = { items: [{ id: "a", name: "b" }] };
+void props;`,
+      errors: [],
+    },
+    {
+      name: "types the props with the type arguments",
+      consumer: `type Row = { id: string; name: string };
+const props: import("svelte").ComponentProps<Foo<Row>> = { items: [{ id: "a" }] };
+void props;`,
+      errors: [2741],
+    },
+    {
+      name: "keeps the bare name valid through defaults",
+      consumer: `let generator: Foo | undefined;
+generator?.clear();`,
+      errors: [],
+    },
+    {
+      name: "rejects a type argument violating the constraint",
+      consumer: `let generator: Foo<number> | undefined;
+void generator;`,
+      errors: [2344],
+    },
+  ]) {
+    it(name, () => {
+      const diagnostics = realResolutionDiagnostics(component, consumer);
+      assert.deepStrictEqual(
+        diagnostics.map((d) => d.code),
+        errors,
+        diagnostics
+          .map((d) => ts.flattenDiagnosticMessageText(d.messageText, " "))
+          .join("\n"),
+      );
+    });
+  }
+});

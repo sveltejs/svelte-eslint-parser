@@ -15,7 +15,12 @@ import { svelteVersion } from "../../svelte-version.js";
 export const GENERIC_PROPS_INFERENCE_KEY = "$$genericProps";
 
 /** The instance script's `generics` attribute and its type parameter names. */
-export type InstanceGenerics = { text: string; names: string[] };
+export type InstanceGenerics = {
+  text: string;
+  names: string[];
+  /** The parameters with a default each, for a type alias. */
+  defaultedText: string;
+};
 
 /**
  * Append a synthetic component `export default` so importers can resolve the
@@ -124,6 +129,7 @@ export function appendComponentDefaultExport(
     : "{ [key: string]: any }";
 
   let genericPropsMethod: string | null = null;
+  let genericInstance: { params: string; propsType: string } | null = null;
   if (generics != null && svelteVersion.gte(5)) {
     // At the top level the generics are placeholder aliases, so local types
     // such as `interface Props { rows: T[] }` are copied into a generic
@@ -150,6 +156,11 @@ export function appendComponentDefaultExport(
     );
     const instantiated = `ReturnType<typeof ${scopeName}<${generics.names.join(", ")}>>`;
     genericPropsMethod = `{ ${GENERIC_PROPS_INFERENCE_KEY}<${generics.text}>(props: Partial<${instantiated}>): ${instantiated} }`;
+    // The type side is generic too, so `Foo<Row>` names a specific instance.
+    genericInstance = {
+      params: `<${generics.defaultedText}>`,
+      propsType: instantiated,
+    };
   }
 
   const name = ctx.generateUniqueId("svelteComponent");
@@ -160,8 +171,9 @@ export function appendComponentDefaultExport(
     slotsType,
     getInstanceExportsType(instanceStatements, svelteParseContext),
     genericPropsMethod,
+    genericInstance?.propsType ?? propsType,
   );
-  code += `declare const ${name}: ${valueType};type ${name} = ${typeType};export { ${name} as default };`;
+  code += `declare const ${name}: ${valueType};type ${name}${genericInstance?.params ?? ""} = ${typeType};export { ${name} as default };`;
   ctx.appendVirtualScript(code);
 
   // `export { <name> as default }`.
@@ -202,6 +214,7 @@ function componentTypeText(
   slotsType: string,
   exportsType: string | null,
   genericPropsMethod: string | null,
+  instancePropsType: string,
 ): { valueType: string; typeType: string } {
   const typeArgs = `<${propsType}, ${eventsType}, ${slotsType}>`;
 
@@ -224,7 +237,9 @@ function componentTypeText(
         genericPropsMethod == null
           ? componentType
           : `${componentType} & ${genericPropsMethod}`,
-      typeType: withExports(`import('svelte').SvelteComponent${typeArgs}`),
+      typeType: withExports(
+        `import('svelte').SvelteComponent<${instancePropsType}, ${eventsType}, ${slotsType}>`,
+      ),
     };
   }
   const className = svelteVersion.gte(4)
