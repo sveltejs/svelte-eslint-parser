@@ -746,6 +746,7 @@ export class ScriptLetContext {
       }
       return shift;
     }
+
     for (const param of params) {
       const typeAnnotation = (param as { typeAnnotation?: ESTree.Node })
         .typeAnnotation;
@@ -770,7 +771,9 @@ export class ScriptLetContext {
         this.ctx,
       );
     }
+
     const ctx = this.ctx;
+
     function relocate(target: Token | Comment) {
       const shift = shiftAt(target.range[0]);
       const locs = ctx.getConvertLocation({
@@ -780,6 +783,7 @@ export class ScriptLetContext {
       target.range = locs.range;
       target.loc = locs.loc;
     }
+
     for (let index = tokens.length - 1; index >= 0; index--) {
       const token = tokens[index];
       if (
