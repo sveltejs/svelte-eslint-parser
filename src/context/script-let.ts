@@ -737,7 +737,7 @@ export class ScriptLetContext {
     comments: Comment[],
     result: ScriptLetRestoreCallbackOption,
   ) {
-    const shiftAt = (position: number) => {
+    function shiftAt(position: number) {
       let shift = 0;
       for (const insertion of insertions) {
         if (insertion.end <= position) {
@@ -745,7 +745,7 @@ export class ScriptLetContext {
         }
       }
       return shift;
-    };
+    }
     for (const param of params) {
       const typeAnnotation = (param as { typeAnnotation?: ESTree.Node })
         .typeAnnotation;
@@ -770,15 +770,16 @@ export class ScriptLetContext {
         this.ctx,
       );
     }
-    const relocate = (target: Token | Comment) => {
+    const ctx = this.ctx;
+    function relocate(target: Token | Comment) {
       const shift = shiftAt(target.range[0]);
-      const locs = this.ctx.getConvertLocation({
+      const locs = ctx.getConvertLocation({
         start: target.range[0] - shift,
         end: target.range[1] - shift,
       });
       target.range = locs.range;
       target.loc = locs.loc;
-    };
+    }
     for (let index = tokens.length - 1; index >= 0; index--) {
       const token = tokens[index];
       if (

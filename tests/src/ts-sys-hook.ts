@@ -2515,7 +2515,7 @@ describeSvelte5("snippet parameters passed to a component", () => {
         template,
       });
       assert.deepStrictEqual(
-        diagnostics.map((d) => d.code).sort(),
+        diagnostics.map((d) => d.code).sort((a, b) => a - b),
         errors,
         diagnostics
           .map((d) => ts.flattenDiagnosticMessageText(d.messageText, " "))
@@ -2542,16 +2542,14 @@ describeSvelte5("snippet parameters passed to a component", () => {
         param.type === "ObjectPattern" ? "{ close }" : "second",
       );
     }
-    const tokens = result.ast.tokens!.filter(
+    const tokens = result.ast.tokens.filter(
       (t) => t.range[0] >= source.indexOf("{#snippet"),
     );
     for (const token of tokens) {
       assert.strictEqual(source.slice(...token.range), token.value);
     }
     assert.ok(
-      result.ast.comments!.some(
-        (c) => source.slice(...c.range) === "/* c */",
-      ),
+      result.ast.comments.some((c) => source.slice(...c.range) === "/* c */"),
     );
   });
 });
