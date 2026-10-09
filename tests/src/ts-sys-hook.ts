@@ -1530,6 +1530,8 @@ function realResolutionDiagnostics(
       strict: true,
       noEmit: true,
       skipLibCheck: true,
+      // Snippets translate to block-scoped function declarations, which ES5 rejects.
+      target: ts.ScriptTarget.ESNext,
       module: ts.ModuleKind.ESNext,
       moduleResolution: ts.ModuleResolutionKind.Bundler,
       types: [],
@@ -2461,6 +2463,93 @@ void result;`,
     assert.ok(
       code.includes(" & { reset: typeof reset }"),
       `expected only \`reset\` in the exports type:\n${code}`,
+    );
+  });
+});
+
+describeSvelte5("snippet parameters passed to a component", () => {
+  const component = `<script lang="ts">
+  import type { Snippet } from "svelte";
+  let { content, footer }: {
+    content: Snippet<[{ close: () => void; count: number }]>;
+    footer?: Snippet<[string, number]>;
+  } = $props();
+</script>`;
+  for (const { name, template, errors } of [
+    {
+      name: "types parameters from the snippet prop",
+      template: `<Foo>
+  {#snippet content({ close, count })}
+    {close()}{count.toFixed(0)}
+  {/snippet}
+  {#snippet footer(label, size)}{label.toUpperCase()}{size.toFixed(0)}{/snippet}
+</Foo>`,
+      errors: [],
+    },
+    {
+      name: "rejects misuse of a typed parameter",
+      template: `<Foo>
+  {#snippet content({ close })}{close(1)}{/snippet}
+  {#snippet footer(label)}{label.toFixed(0)}{/snippet}
+</Foo>`,
+      // TS2551 is "property does not exist, did you mean …?".
+      errors: [2551, 2554],
+    },
+    {
+      name: "keeps an explicit annotation",
+      template: `<Foo>
+  {#snippet content(props: { close: () => void; count: number })}{props.count}{/snippet}
+</Foo>`,
+      errors: [],
+    },
+    {
+      name: "leaves a snippet the component does not declare as `any`",
+      template: `<Foo content={undefined!}>
+  {#snippet extra(value)}{value.anything()}{/snippet}
+</Foo>`,
+      errors: [],
+    },
+  ]) {
+    it(name, () => {
+      const diagnostics = realResolutionDiagnostics(component, "", {
+        template,
+      });
+      assert.deepStrictEqual(
+        diagnostics.map((d) => d.code).sort((a, b) => a - b),
+        errors,
+        diagnostics
+          .map((d) => ts.flattenDiagnosticMessageText(d.messageText, " "))
+          .join("\n"),
+      );
+    });
+  }
+
+  it("keeps the parameter locations and tokens of the source", () => {
+    const source = `<script lang="ts">
+  import Foo from "./Foo.svelte";
+</script>
+<Foo>
+  {#snippet content({ close }, /* c */ second)}{close}{second}{/snippet}
+</Foo>`;
+    const result = parseComponent(source);
+    const snippet = (result.ast.body as any[])
+      .find((n) => n.type === "SvelteElement")
+      .children.find((n: any) => n.type === "SvelteSnippetBlock");
+    for (const param of snippet.params) {
+      assert.strictEqual(param.typeAnnotation, undefined);
+      assert.strictEqual(
+        source.slice(...param.range),
+        param.type === "ObjectPattern" ? "{ close }" : "second",
+      );
+    }
+    const tokens = result.ast.tokens.filter(
+      (t) => t.range[0] >= source.indexOf("{#snippet"),
+    );
+    for (const token of tokens) {
+      assert.strictEqual(source.slice(...token.range), token.value);
+    }
+    assert.ok(
+      result.ast.comments.some((c) => source.slice(...c.range) === "/* c */"),
     );
   });
 });

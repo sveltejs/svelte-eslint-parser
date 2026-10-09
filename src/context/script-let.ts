@@ -663,21 +663,46 @@ export class ScriptLetContext {
     snippetBlock: SvelteSnippetBlock,
     // If set to null, `currentScriptScopeKind` will be used.
     kind: "snippet" | null,
+    paramTypes: { param: ESTree.Pattern; type: string }[] | null,
     callback: (id: ESTree.Identifier, params: ESTree.Pattern[]) => void,
   ): void {
     const scopeKind = kind || this.currentScriptScopeKind;
     const idRange = getNodeRange(id, this.ctx.code);
-    const part = this.ctx.code.slice(idRange[0], closeParentIndex + 1);
+    // Type annotations are spliced in after the parameters they type. Each one
+    // shifts what follows it, so record where it lands in the virtual code.
+    const insertions: { start: number; end: number }[] = [];
+    let part = "";
+    let cursor = idRange[0];
+    for (const { param, type } of paramTypes ?? []) {
+      const paramEnd = getWithLoc(param).end;
+      part += this.ctx.code.slice(cursor, paramEnd);
+      const annotation = `: (${type})`;
+      const start = paramEnd + (part.length - (paramEnd - idRange[0]));
+      insertions.push({ start, end: start + annotation.length });
+      part += annotation;
+      cursor = paramEnd;
+    }
+    part += this.ctx.code.slice(cursor, closeParentIndex + 1);
     const restore = this.appendScript(
       `function ${part}{`,
       idRange[0] - 9,
       scopeKind,
       "FunctionDeclaration",
-      (st, tokens, _comments, result) => {
+      (st, tokens, comments, result) => {
         const fnDecl = st as ESTree.FunctionDeclaration;
         const idNode = fnDecl.id;
         const params = [...fnDecl.params];
         const scope = result.getScope(fnDecl);
+
+        if (insertions.length) {
+          this.removeSnippetParamTypes(
+            params,
+            insertions,
+            tokens,
+            comments,
+            result,
+          );
+        }
 
         // Process for nodes
         callback(idNode, params);
@@ -699,6 +724,79 @@ export class ScriptLetContext {
       },
     );
     this.pushScope(restore, "}", scopeKind);
+  }
+
+  /**
+   * Strip the annotations spliced in by `nestSnippetBlock` and shift everything
+   * after each one back to its original source location.
+   */
+  private removeSnippetParamTypes(
+    params: ESTree.Pattern[],
+    insertions: { start: number; end: number }[],
+    tokens: Token[],
+    comments: Comment[],
+    result: ScriptLetRestoreCallbackOption,
+  ) {
+    function shiftAt(position: number) {
+      let shift = 0;
+      for (const insertion of insertions) {
+        if (insertion.end <= position) {
+          shift += insertion.end - insertion.start;
+        }
+      }
+      return shift;
+    }
+
+    for (const param of params) {
+      const typeAnnotation = (param as { typeAnnotation?: ESTree.Node })
+        .typeAnnotation;
+      if (
+        typeAnnotation &&
+        insertions.some(({ start }) => start === typeAnnotation.range![0])
+      ) {
+        delete (param as { typeAnnotation?: ESTree.Node }).typeAnnotation;
+        param.range![1] = typeAnnotation.range![0];
+        param.loc = this.ctx.getConvertLocation({
+          start: param.range![0],
+          end: param.range![1],
+        }).loc;
+        removeAllScopeAndVariableAndReference(typeAnnotation, result);
+      }
+      fixLocations(
+        param,
+        [],
+        [],
+        -shiftAt(param.range![0]),
+        result.visitorKeys,
+        this.ctx,
+      );
+    }
+
+    const ctx = this.ctx;
+
+    function relocate(target: Token | Comment) {
+      const shift = shiftAt(target.range[0]);
+      const locs = ctx.getConvertLocation({
+        start: target.range[0] - shift,
+        end: target.range[1] - shift,
+      });
+      target.range = locs.range;
+      target.loc = locs.loc;
+    }
+
+    for (let index = tokens.length - 1; index >= 0; index--) {
+      const token = tokens[index];
+      if (
+        insertions.some(
+          ({ start, end }) => start <= token.range[0] && token.range[1] <= end,
+        )
+      ) {
+        tokens.splice(index, 1);
+      } else {
+        relocate(token);
+      }
+    }
+    comments.forEach(relocate);
   }
 
   public nestBlock(
