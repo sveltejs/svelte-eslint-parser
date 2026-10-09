@@ -28,6 +28,7 @@ import type { Context } from "../../context/index.js";
 import type * as SvAST from "../svelte-ast-types.js";
 import type * as Compiler from "../svelte-ast-types-for-v5.js";
 import { getWithLoc, indexOf } from "./common.js";
+import { getComponentPropsType } from "./component-props.js";
 import { convertMustacheTag } from "./mustache.js";
 import { convertTextToLiteral } from "./text.js";
 import { ParseError } from "../../errors.js";
@@ -300,13 +301,7 @@ function buildAttributeType(
   if (element.type !== "SvelteElement" || element.kind !== "component") {
     return null;
   }
-  const elementName = ctx.elements.get(element)!.name;
-  // Svelte 3/4 ComponentProps takes an instance, while Svelte 5 also accepts
-  // the component function. Extract the legacy constructor instance without
-  // relying on a locally shadowable utility type such as InstanceType.
-  const componentPropsType = svelteVersion.gte(5)
-    ? `import('svelte').ComponentProps<typeof ${elementName}>`
-    : `(typeof ${elementName} extends new (...args: any[]) => (infer C extends import('svelte').SvelteComponent) ? import('svelte').ComponentProps<C> : never)`;
+  const componentPropsType = getComponentPropsType(element, ctx);
   return conditional({
     check: `'${attrName}'`,
     extends: `infer PROP`,
