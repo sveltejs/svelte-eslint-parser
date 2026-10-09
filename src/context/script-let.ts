@@ -488,7 +488,7 @@ export class ScriptLetContext {
     expression: ESTree.Expression,
     ifBlock: SvelteIfBlock,
     callback: ScriptLetCallback<ESTree.Expression>,
-  ): void {
+  ): { beginElse: () => void } {
     const range = getNodeRange(expression, this.ctx.code);
     const part = this.ctx.code.slice(...range);
     const restore = this.appendScript(
@@ -510,16 +510,28 @@ export class ScriptLetContext {
 
         tokens.shift(); // if
         tokens.shift(); // (
-        tokens.pop(); // )
-        tokens.pop(); // {
+        if (ifSt.alternate) {
+          tokens.pop(); // else
+        }
         tokens.pop(); // }
+        tokens.pop(); // {
+        tokens.pop(); // )
 
         // Disconnect the tree structure.
         ifSt.test = null as never;
         ifSt.consequent = null as never;
+        ifSt.alternate = null;
       },
     );
     this.pushScope(restore, "}", this.currentScriptScopeKind);
+    return {
+      beginElse: () => {
+        this.closeScope();
+        this.script.addLet("else ", this.currentScriptScopeKind);
+        // Keep the IfStatement's restore range open until its alternate ends.
+        this.pushScope(restore, "", this.currentScriptScopeKind);
+      },
+    };
   }
 
   public nestEachBlock(
