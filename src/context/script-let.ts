@@ -193,6 +193,23 @@ export class ScriptLetContext {
     this.ctx = ctx;
   }
 
+  /**
+   * Emit a statement that only feeds type checking, such as the write a binding
+   * performs. It leaves no tokens, nodes, or references behind.
+   */
+  public addTypeOnlyStatement(code: string): void {
+    this.appendScriptWithoutOffset(
+      code,
+      this.currentScriptScopeKind,
+      "ExpressionStatement",
+      (node, tokens, comments, result) => {
+        tokens.length = 0;
+        comments.length = 0;
+        removeAllScopeAndVariableAndReference(node, result);
+      },
+    );
+  }
+
   public addExpression<E extends ESTree.Expression>(
     expression: E | SvelteName,
     parent: SvelteNode,
