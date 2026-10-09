@@ -545,6 +545,16 @@ export class ScriptLetContext {
       index: ESTree.Identifier | null,
     ) => void,
   ): void {
+    if (this.ctx.isTypeScript()) {
+      this.nestEachBlockAsInvokedFunction(
+        expression,
+        context,
+        indexRange,
+        eachBlock,
+        callback,
+      );
+      return;
+    }
     const exprRange = getNodeRange(expression, this.ctx.code);
     const ctxRange = context && getNodeRange(context, this.ctx.code);
     let source = "Array.from(";
@@ -655,6 +665,169 @@ export class ScriptLetContext {
       },
     );
     this.pushScope(restore, "});", this.currentScriptScopeKind);
+  }
+
+  /**
+   * TypeScript drops the narrowing of a property path such as `item.list`
+   * inside a callback, but keeps it inside an immediately invoked function. So
+   * the iterable is read on its own, and the body runs in a function invoked
+   * with an element, which also types the context and index.
+   */
+  private nestEachBlockAsInvokedFunction(
+    expression: ESTree.Expression,
+    context: ESTree.Pattern | null,
+    indexRange: { start: number; end: number } | null,
+    eachBlock: SvelteEachBlock,
+    callback: (
+      expr: ESTree.Expression,
+      ctx: ESTree.Pattern | null,
+      index: ESTree.Identifier | null,
+    ) => void,
+  ): void {
+    const exprRange = getNodeRange(expression, this.ctx.code);
+    const exprText = this.ctx.code.slice(...exprRange);
+    const ctxRange = context && getNodeRange(context, this.ctx.code);
+    let iterable: ESTree.Expression | null = null;
+
+    const arrayFromPrefix = "Array.from(";
+    this.appendScript(
+      `${arrayFromPrefix}${exprText});`,
+      exprRange[0] - arrayFromPrefix.length,
+      this.currentScriptScopeKind,
+      "ExpressionStatement",
+      (st, tokens, _comments, result) => {
+        const expSt = st as ESTree.ExpressionStatement;
+        const call = expSt.expression as ESTree.CallExpression;
+        iterable = call.arguments[0] as ESTree.Expression;
+        // remove Array reference
+        const arrayId = (call.callee as ESTree.MemberExpression).object;
+        const scope = result.getScope(arrayId);
+        const ref = scope.references.find((r) => r.identifier === arrayId);
+        if (ref) {
+          removeReference(ref, scope);
+        }
+        (iterable as any).parent = eachBlock;
+
+        tokens.shift(); // Array
+        tokens.shift(); // .
+        tokens.shift(); // from
+        tokens.shift(); // (
+        tokens.pop(); // ;
+        tokens.pop(); // )
+
+        // Disconnect the tree structure.
+        expSt.expression = null as never;
+      },
+    );
+
+    let source = "((";
+    const ctxOffset = source.length;
+    source += ctxRange ? this.ctx.code.slice(...ctxRange) : "__$ctx__";
+    let idxOffset: number | null = null;
+    if (indexRange) {
+      source += ",";
+      idxOffset = source.length;
+      source += this.ctx.code.slice(indexRange.start, indexRange.end);
+    }
+    source += ")=>{";
+    // The context lands at its source location; the index is moved below.
+    const offset = (ctxRange ? ctxRange[0] : exprRange[1]) - ctxOffset;
+    const restore = this.appendScript(
+      source,
+      offset,
+      this.currentScriptScopeKind,
+      "ExpressionStatement",
+      (st, tokens, comments, result) => {
+        const expSt = st as ESTree.ExpressionStatement;
+        const call = expSt.expression as ESTree.CallExpression;
+        const fn = call.callee as ESTree.ArrowFunctionExpression;
+        const ctx = fn.params[0];
+        const idx = (fn.params[1] ?? null) as ESTree.Identifier | null;
+        const scope = result.getScope(fn.body);
+
+        // The arguments only type the parameters.
+        for (const arg of call.arguments) {
+          removeAllScopeAndVariableAndReference(arg, result);
+        }
+
+        // Keep only the tokens and comments of the context and index.
+        const ctxStart = offset + ctxOffset;
+        const ctxEnd = ctxRange
+          ? ctxStart + ctxRange[1] - ctxRange[0]
+          : ctxStart;
+        const idxStart = idxOffset == null ? null : offset + idxOffset;
+        const idxEnd =
+          idxStart == null
+            ? null
+            : idxStart + indexRange!.end - indexRange!.start;
+
+        function isOwn(target: Token | Comment) {
+          return (
+            (ctxStart <= target.range[0] && target.range[1] <= ctxEnd) ||
+            (idxStart != null &&
+              idxStart <= target.range[0] &&
+              target.range[1] <= idxEnd!)
+          );
+        }
+
+        for (const list of [tokens, comments] as const) {
+          for (let index = list.length - 1; index >= 0; index--) {
+            if (!isOwn(list[index])) {
+              list.splice(index, 1);
+            }
+          }
+        }
+        if (idx) {
+          const idxTokens = tokens.filter(
+            (token) => idxStart! <= token.range[0],
+          );
+          const idxComments = comments.filter(
+            (comment) => idxStart! <= comment.range[0],
+          );
+          fixLocations(
+            idx,
+            idxTokens,
+            idxComments,
+            indexRange!.start - idxStart!,
+            result.visitorKeys,
+            this.ctx,
+          );
+        }
+
+        // Process for nodes
+        callback(iterable!, context ? ctx : null, idx);
+
+        // Process for scope
+        result.registerNodeToScope(eachBlock, scope);
+        for (const v of scope.variables) {
+          for (const def of v.defs) {
+            if (def.node === fn) {
+              def.node = eachBlock;
+            }
+          }
+        }
+        if (!context) {
+          // remove `__$ctx__` variable
+          removeIdentifierVariable(ctx, scope);
+        }
+
+        (ctx as any).parent = eachBlock;
+        if (idx) {
+          (idx as any).parent = eachBlock;
+        }
+
+        // Disconnect the tree structure.
+        expSt.expression = null as never;
+      },
+    );
+    // The element comes from what `Array.from` returns, as with `forEach`;
+    // indexing would add `undefined` under `noUncheckedIndexedAccess`. The
+    // cast keeps the index from being typed as the literal `0`.
+    this.pushScope(
+      restore,
+      `})((<A extends readonly unknown[]>(array: A): A[number] => null!)(Array.from(${exprText}))${indexRange ? ",0 as number" : ""});`,
+      this.currentScriptScopeKind,
+    );
   }
 
   public nestSnippetBlock(
