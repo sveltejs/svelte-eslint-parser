@@ -2553,3 +2553,43 @@ describeSvelte5("snippet parameters passed to a component", () => {
     );
   });
 });
+
+describeSvelte5("function bindings on a component", () => {
+  // The getter on the left of a function binding is only evaluated by Svelte.
+  const UNUSED_COMMA_LEFT_SIDE = 2695;
+  const component = `<script lang="ts">
+  let { value = $bindable() }: { value: string } = $props();
+</script>`;
+  for (const { name, template, errors } of [
+    {
+      name: "types the setter parameter from the bound prop",
+      template: `<Foo bind:value={() => current, (next) => (current = next.trim())} />`,
+      errors: [],
+    },
+    {
+      name: "rejects misuse of the setter parameter",
+      template: `<Foo bind:value={() => current, (next) => (count = next)} />`,
+      errors: [2322],
+    },
+    {
+      name: "leaves a prop the component does not declare untyped",
+      template: `<Foo value="" bind:other={() => current, (next) => next.anything()} />`,
+      errors: [],
+    },
+  ]) {
+    it(name, () => {
+      const diagnostics = realResolutionDiagnostics(
+        component,
+        "let current = ''; let count = 0; void count;",
+        { template },
+      ).filter((d) => d.code !== UNUSED_COMMA_LEFT_SIDE);
+      assert.deepStrictEqual(
+        diagnostics.map((d) => d.code),
+        errors,
+        diagnostics
+          .map((d) => ts.flattenDiagnosticMessageText(d.messageText, " "))
+          .join("\n"),
+      );
+    });
+  }
+});

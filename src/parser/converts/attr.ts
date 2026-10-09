@@ -402,7 +402,7 @@ function convertBindingDirective(
       return ctx.scriptLet.addExpression(
         expression,
         directive,
-        null,
+        buildFunctionBindingsType(node, parent.parent, expression, ctx),
         (es, { getScope }) => {
           directive.expression = es;
           if (isFunctionBindings(ctx, es)) {
@@ -428,6 +428,36 @@ function convertBindingDirective(
     },
   });
   return directive;
+}
+
+/**
+ * Function bindings on a component are typed as a setter of the bound prop. The
+ * assertion applies to the whole `getter, setter` sequence, so it contextually
+ * types only the setter, whose parameter receives the prop value.
+ */
+function buildFunctionBindingsType(
+  node: SvAST.DirectiveForExpression | Compiler.BindDirective,
+  element: SvelteStartTag["parent"],
+  expression: ESTree.Expression,
+  ctx: Context,
+): string | null {
+  if (
+    element.type !== "SvelteElement" ||
+    element.kind !== "component" ||
+    expression.type !== "SequenceExpression" ||
+    !isFunctionBindings(ctx, {
+      ...expression,
+      range: [getWithLoc(expression).start, getWithLoc(expression).end],
+    })
+  ) {
+    return null;
+  }
+  const propType = buildAttributeType(element, node.name, ctx);
+  // An undeclared prop resolves to `never`, which would poison the parameter.
+  return (
+    propType &&
+    `(value: [${propType}] extends [never] ? any : (${propType})) => void`
+  );
 }
 
 /**
