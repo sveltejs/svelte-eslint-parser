@@ -2735,3 +2735,55 @@ void picked;`;
     });
   },
 );
+
+describeSvelte5(
+  "discriminated union props selected by static attributes",
+  () => {
+    const component = `<script lang="ts">
+  type Props =
+    | { mode: "single"; upload: (file: File) => void }
+    | { mode: "multiple"; upload: (files: File[]) => void };
+  let { mode, upload }: Props = $props();
+</script>
+<p>{mode}{typeof upload}</p>`;
+    for (const { name, consumer, template, errors } of [
+      {
+        name: "types a callback from the selected member",
+        consumer: ``,
+        template: `<Foo mode="single" upload={(file) => file.name.toUpperCase()} />`,
+        errors: [],
+      },
+      {
+        name: "rejects misuse of a parameter typed by the selected member",
+        consumer: ``,
+        template: `<Foo mode="multiple" upload={(files) => files.name} />`,
+        errors: [2339],
+      },
+      {
+        name: "keeps the union when the discriminant is an expression",
+        consumer: `const mode = "single" as "single" | "multiple";`,
+        template: `<Foo {mode} upload={(file) => file} />`,
+        errors: [7006],
+      },
+      {
+        name: "keeps the declared props when no member matches",
+        consumer: ``,
+        template: `<Foo mode="zip" upload={(file) => file} />`,
+        errors: [7006],
+      },
+    ]) {
+      it(name, () => {
+        const diagnostics = realResolutionDiagnostics(component, consumer, {
+          template,
+        });
+        assert.deepStrictEqual(
+          diagnostics.map((d) => d.code),
+          errors,
+          diagnostics
+            .map((d) => ts.flattenDiagnosticMessageText(d.messageText, " "))
+            .join("\n"),
+        );
+      });
+    }
+  },
+);

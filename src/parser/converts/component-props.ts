@@ -12,10 +12,46 @@ export function getComponentPropsType(
   element: SvelteElement,
   ctx: Context,
 ): string {
-  const cached = ctx.componentPropsTypes.get(element);
-  if (cached != null) {
-    return cached;
+  const propsType =
+    ctx.componentPropsTypes.get(element) ?? getDeclaredPropsType(element, ctx);
+  const staticType = getStaticAttributesType(
+    ctx.elements.get(element) as SvAST.InlineComponent | Compiler.Component,
+  );
+  if (staticType == null) {
+    return propsType;
   }
+  // Static values such as `mode="single"` select the matching members of a
+  // discriminated union, as passing the whole props object does. Values that
+  // fit no member keep the declared props.
+  const narrowed = `${propsType} & ${staticType}`;
+  return `([${narrowed}] extends [never] ? ${propsType} : ${narrowed})`;
+}
+
+/** Literal type of the attributes whose values are fixed in the markup. */
+function getStaticAttributesType(
+  node: SvAST.InlineComponent | Compiler.Component,
+): string | null {
+  const members: string[] = [];
+  for (const attr of node.attributes as Compiler.Component["attributes"]) {
+    if (attr.type !== "Attribute") {
+      continue;
+    }
+    const key = JSON.stringify(attr.name);
+    if (attr.value === true) {
+      members.push(`${key}: true`);
+    } else if (
+      Array.isArray(attr.value) &&
+      attr.value.every((value) => value.type === "Text")
+    ) {
+      const text = attr.value.map((value) => value.data).join("");
+      members.push(`${key}: ${JSON.stringify(text)}`);
+    }
+  }
+  return members.length ? `{ ${members.join("; ")} }` : null;
+}
+
+/** Props type the component declares, before anything passed to it. */
+function getDeclaredPropsType(element: SvelteElement, ctx: Context): string {
   const elementName = ctx.elements.get(element)!.name;
   // Svelte 3/4 ComponentProps takes an instance, while Svelte 5 also accepts
   // the component function. Extract the legacy constructor instance without
@@ -69,7 +105,7 @@ export function prepareGenericComponentProps(
   // `any` means the component is not generic or inference failed.
   ctx.componentPropsTypes.set(
     element,
-    `(0 extends 1 & typeof ${id} ? ${getComponentPropsType(element, ctx)} : typeof ${id})`,
+    `(0 extends 1 & typeof ${id} ? ${getDeclaredPropsType(element, ctx)} : typeof ${id})`,
   );
 
   function pushEntry(key: string | null, expression: ESTree.Node) {
