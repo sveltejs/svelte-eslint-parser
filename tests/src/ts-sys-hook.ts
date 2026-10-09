@@ -429,8 +429,17 @@ describeSvelte5("synthetic component default export (runes, Svelte 5)", () => {
   let { items, selected }: { items: T[]; selected: T } = $props();
 </script>
 <p>{selected}</p>`);
+    const props = `{ items: T[]; selected: T }`;
     assert.match(code, /type T = unknown;/);
-    assertComponentExport(code, `{ items: T[]; selected: T }`);
+    assert.ok(
+      /function \$_genericPropsScope\d+<T>\(\) \{return null as any as \{ items: T\[\]; selected: T \};\}/.test(
+        code,
+      ) &&
+        code.includes(
+          `: import('svelte').Component<${props}> & { $$genericProps<T>(props: Partial<ReturnType<typeof $_genericPropsScope`,
+        ),
+      code,
+    );
   });
 
   it("recovers the props type from a `$props() as Props` cast", () => {
@@ -2593,3 +2602,136 @@ describeSvelte5("function bindings on a component", () => {
     });
   }
 });
+
+describeSvelte5(
+  "generic component type arguments inferred from attributes",
+  () => {
+    const inlineComponent = `<script lang="ts" generics="T extends Record<string, unknown>">
+  import type { Snippet } from "svelte";
+  let { rows, row, onselect, selected = $bindable() }: {
+    rows: T[];
+    row?: Snippet<[T]>;
+    onselect?: (item: T) => void;
+    selected?: T;
+  } = $props();
+</script>`;
+    // Local types naming the generics must see the inferred type arguments too.
+    const interfaceComponent = `<script lang="ts" generics="T extends Record<string, unknown>">
+  import type { Snippet } from "svelte";
+  type Row = T
+  export interface Props {
+    rows: Row[];
+    row?: Snippet<[T]>;
+    onselect?: (item: T) => void;
+    selected?: T;
+  }
+  let { rows, row, onselect, selected = $bindable() }: Props = $props();
+</script>`;
+    const consumer = `const users = [{ name: "a", age: 1 }];
+let picked: { name: string; age: number } | undefined;
+void picked;`;
+    for (const { name, template, errors } of [
+      {
+        name: "types snippet parameters with the inferred type argument",
+        template: `<Foo rows={users}>
+  {#snippet row(user)}{user.name.toUpperCase()}{user.age.toFixed(0)}{/snippet}
+</Foo>`,
+        errors: [],
+      },
+      {
+        name: "rejects misuse of a parameter typed by inference",
+        template: `<Foo rows={users}>
+  {#snippet row(user)}{user.missing}{/snippet}
+</Foo>`,
+        errors: [2339],
+      },
+      {
+        name: "types callback attributes with the inferred type argument",
+        template: `<Foo rows={users} onselect={(item) => item.name.toUpperCase()} />`,
+        errors: [],
+      },
+      {
+        name: "types function binding setters with the inferred type argument",
+        template: `<Foo rows={users} bind:selected={() => picked, (next) => (picked = next)} />`,
+        errors: [],
+      },
+      {
+        name: "infers from a spread attribute",
+        template: `<Foo {...{ rows: users }}>
+  {#snippet row(user)}{user.missing}{/snippet}
+</Foo>`,
+        errors: [2339],
+      },
+      {
+        name: "falls back to the constraint without inferable attributes",
+        template: `<Foo rows={undefined!} onselect={() => {}}>
+  {#snippet row(user)}{String(user.anything)}{/snippet}
+</Foo>`,
+        errors: [],
+      },
+    ]) {
+      for (const [style, component] of [
+        ["inline props type", inlineComponent],
+        ["local props interface", interfaceComponent],
+      ]) {
+        it(`${name} (${style})`, () => {
+          const diagnostics = realResolutionDiagnostics(component, consumer, {
+            template,
+          }).filter((d) => d.code !== 2695);
+          assert.deepStrictEqual(
+            diagnostics.map((d) => d.code),
+            errors,
+            diagnostics
+              .map((d) => ts.flattenDiagnosticMessageText(d.messageText, " "))
+              .join("\n"),
+          );
+        });
+      }
+    }
+
+    it("leaves no trace of the props scope in the generic component's scopes", () => {
+      const result = parseComponent(interfaceComponent);
+      const scopeManager = result.scopeManager;
+      assert.ok(
+        scopeManager.scopes.every(
+          (scope) =>
+            scope.block.type !== "FunctionDeclaration" ||
+            !scope.block.id?.name.startsWith("$_genericPropsScope"),
+        ),
+      );
+      const variables = scopeManager.scopes.flatMap((scope) => scope.variables);
+      for (const name of ["Row", "Props"]) {
+        const declared = variables.filter((v) => v.name === name);
+        assert.strictEqual(declared.length, 1, name);
+        // `Row` is read once by `Props`; `Props` once by the `$props()` binding.
+        assert.strictEqual(declared[0].references.length, 1, name);
+      }
+    });
+
+    it("leaves no trace of the inference statement in the AST or scopes", () => {
+      const source = `<script lang="ts">
+  import Foo from "./Foo.svelte";
+  const users = [{ name: "a" }];
+</script>
+<Foo rows={users} />`;
+      const result = parseComponent(source);
+      const names = result.scopeManager.scopes.flatMap((scope) => [
+        ...scope.variables.map((v) => v.name),
+        ...scope.references.map((r) => r.identifier.name),
+      ]);
+      assert.ok(
+        names.every((n) => !n.startsWith("$_genericProps")),
+        names.join(", "),
+      );
+      const users = result.scopeManager
+        .globalScope!.childScopes.flatMap((s) => s.variables)
+        .concat(result.scopeManager.globalScope!.variables)
+        .find((v) => v.name === "users");
+      // Only the attribute reads `users`; the inference statement adds nothing.
+      assert.strictEqual(users?.references.filter((r) => !r.init).length, 1);
+      assert.ok(
+        result.ast.tokens.every((t) => source.slice(...t.range) === t.value),
+      );
+    });
+  },
+);

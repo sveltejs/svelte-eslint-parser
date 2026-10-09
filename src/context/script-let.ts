@@ -799,6 +799,33 @@ export class ScriptLetContext {
     comments.forEach(relocate);
   }
 
+  /**
+   * Emit a type-only statement that infers a generic component's props from the
+   * given attribute entries, and return the name it binds. The statement only
+   * feeds types, so it leaves no tokens, nodes, or references behind.
+   */
+  public addGenericPropsInference(
+    componentName: string,
+    method: string,
+    entries: string[],
+  ): string {
+    const id = this.generateUniqueId("genericProps");
+    // Reading the method through `infer` keeps it generic, and a component
+    // without it gets a stand-in returning `any` instead of a type error.
+    const callee = `(${componentName} as any as { m: typeof ${componentName} extends { ${method}: infer M } ? M : (props: unknown) => any }).m`;
+    this.appendScriptWithoutOffset(
+      `const ${id} = ${callee}({${entries.join(",")}});`,
+      this.currentScriptScopeKind,
+      "VariableDeclaration",
+      (node, tokens, comments, result) => {
+        tokens.length = 0;
+        comments.length = 0;
+        removeAllScopeAndVariableAndReference(node, result);
+      },
+    );
+    return id;
+  }
+
   public nestBlock(
     block: SvelteNode,
     params?:

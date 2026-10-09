@@ -56,6 +56,7 @@ import { ParseError } from "../../index.js";
 import { convertRenderTag } from "./render.js";
 import type { Child } from "../compat.js";
 import { getChildren, getFragment } from "../compat.js";
+import { prepareGenericComponentProps } from "./component-props.js";
 
 /** Convert for Fragment or Element or ... */
 export function* convertChildren(
@@ -750,6 +751,7 @@ function convertComponentElement(
     ...locs,
   };
   ctx.elements.set(element, node);
+  prepareGenericComponentProps(element, node, ctx);
   element.startTag.parent = element;
   const elementName = node.name;
 
