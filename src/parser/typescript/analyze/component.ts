@@ -118,6 +118,7 @@ export function appendComponentDefaultExport(
     propsType,
     eventsType,
     slotsType,
+    getInstanceExportsType(instanceStatements, svelteParseContext),
   );
   code += `declare const ${name}: ${valueType};type ${name} = ${typeType};export { ${name} as default };`;
   ctx.appendVirtualScript(code);
@@ -158,21 +159,29 @@ function componentTypeText(
   propsType: string,
   eventsType: string,
   slotsType: string,
+  exportsType: string | null,
 ): { valueType: string; typeType: string } {
   const typeArgs = `<${propsType}, ${eventsType}, ${slotsType}>`;
+  // Instance exports are what `bind:this` hands back, so the instance type
+  // carries them alongside the component class.
+  const withExports = (type: string) =>
+    exportsType == null ? type : `${type} & ${exportsType}`;
   if (svelteVersion.gte(5)) {
     // The value is Svelte 5's `Component` so `typeof Foo` matches modern usage;
     // the same-named legacy `SvelteComponent` type keeps `ComponentEvents<Foo>`
     // resolving.
     return {
-      valueType: `import('svelte').Component<${propsType}>`,
-      typeType: `import('svelte').SvelteComponent${typeArgs}`,
+      valueType:
+        exportsType == null
+          ? `import('svelte').Component<${propsType}>`
+          : `import('svelte').Component<${propsType}, ${exportsType}>`,
+      typeType: withExports(`import('svelte').SvelteComponent${typeArgs}`),
     };
   }
   const className = svelteVersion.gte(4)
     ? "SvelteComponent"
     : "SvelteComponentTyped";
-  const instanceType = `import('svelte').${className}${typeArgs}`;
+  const instanceType = withExports(`import('svelte').${className}${typeArgs}`);
   // A constructor value so `new Foo(...)` works and `typeof Foo` resolves; the
   // same-named type is the instance for `ComponentProps<Foo>` /
   // `ComponentEvents<Foo>`. `ComponentConstructorOptions` (present in Svelte 3
@@ -378,6 +387,78 @@ function getLegacyExportLetPropsType(
     return null;
   }
   return `{ ${members.join("; ")} }`;
+}
+
+/**
+ * Collect the instance script's component exports (`export const`, `export
+ * function`, `export class`, and `export { x }`) as a type literal, mirroring
+ * svelte2tsx. In legacy mode an exported `let` is a prop rather than an export.
+ */
+function getInstanceExportsType(
+  instanceStatements: TSESTree.ProgramStatement[],
+  svelteParseContext: SvelteParseContext,
+): string | null {
+  const legacy = svelteParseContext.runes !== true;
+  const letBindings = new Set<string>();
+  for (const node of instanceStatements) {
+    const decl =
+      node.type === "ExportNamedDeclaration" ? node.declaration : node;
+    if (decl?.type !== "VariableDeclaration" || decl.kind !== "let") {
+      continue;
+    }
+    for (const declarator of decl.declarations) {
+      if (declarator.id.type === "Identifier") {
+        letBindings.add(declarator.id.name);
+      }
+    }
+  }
+
+  const members = new Map<string, string>();
+  for (const node of instanceStatements) {
+    if (node.type !== "ExportNamedDeclaration" || node.exportKind === "type") {
+      continue;
+    }
+    const decl = node.declaration;
+    if (decl?.type === "VariableDeclaration") {
+      if (legacy && decl.kind === "let") {
+        continue;
+      }
+      for (const declarator of decl.declarations) {
+        if (declarator.id.type === "Identifier") {
+          members.set(declarator.id.name, declarator.id.name);
+        }
+      }
+    } else if (
+      (decl?.type === "FunctionDeclaration" ||
+        decl?.type === "ClassDeclaration") &&
+      decl.id != null
+    ) {
+      members.set(decl.id.name, decl.id.name);
+    } else if (decl == null && node.source == null) {
+      for (const specifier of node.specifiers) {
+        if (
+          specifier.local.type !== "Identifier" ||
+          specifier.exportKind === "type"
+        ) {
+          continue;
+        }
+        const exported = exportName(specifier.exported);
+        if (
+          exported === "default" ||
+          (legacy && letBindings.has(specifier.local.name))
+        ) {
+          continue;
+        }
+        members.set(exported, specifier.local.name);
+      }
+    }
+  }
+  if (!members.size) {
+    return null;
+  }
+  return `{ ${[...members]
+    .map(([exported, local]) => `${propKey(exported)}: typeof ${local}`)
+    .join("; ")} }`;
 }
 
 /** Quote non-identifier keys so reserved-word prop names like `class` are emitted safely. */
