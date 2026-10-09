@@ -162,11 +162,13 @@ function componentTypeText(
   exportsType: string | null,
 ): { valueType: string; typeType: string } {
   const typeArgs = `<${propsType}, ${eventsType}, ${slotsType}>`;
+
   // Instance exports are what `bind:this` hands back, so the instance type
   // carries them alongside the component class.
   function withExports(type: string) {
     return exportsType == null ? type : `${type} & ${exportsType}`;
   }
+
   if (svelteVersion.gte(5)) {
     // The value is Svelte 5's `Component` so `typeof Foo` matches modern usage;
     // the same-named legacy `SvelteComponent` type keeps `ComponentEvents<Foo>`

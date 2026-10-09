@@ -135,9 +135,11 @@ function expectedComponentTypeText(
   exports: string | null = null,
 ): { value: string; type: string } {
   const typeArgs = `<${props}, ${events}, ${slots}>`;
+
   function withExports(type: string) {
     return exports == null ? type : `${type} & ${exports}`;
   }
+
   if (svelteVersion.gte(5)) {
     return {
       value:
