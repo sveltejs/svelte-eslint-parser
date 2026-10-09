@@ -197,9 +197,17 @@ function remapLocations(
     tokens.push(token);
   }
   result.ast.tokens = tokens;
-  for (const token of result.ast.comments || []) {
-    remapLocation(token);
+  // Virtual code can embed copies of user source (a `$props()` default, the
+  // props type text), so comments inside those copies must be dropped too.
+  const comments: TSESTree.Comment[] = [];
+  for (const comment of result.ast.comments || []) {
+    if (removeToken(comment)) {
+      continue;
+    }
+    remapLocation(comment);
+    comments.push(comment);
   }
+  result.ast.comments = comments;
 }
 
 /** Restore statement nodes */
