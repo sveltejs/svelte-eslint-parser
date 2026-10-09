@@ -132,16 +132,25 @@ function expectedComponentTypeText(
   props: string,
   events = "{ [key: string]: any }",
   slots = "{ [key: string]: any }",
+  exports: string | null = null,
 ): { value: string; type: string } {
   const typeArgs = `<${props}, ${events}, ${slots}>`;
+
+  function withExports(type: string) {
+    return exports == null ? type : `${type} & ${exports}`;
+  }
+
   if (svelteVersion.gte(5)) {
     return {
-      value: `import('svelte').Component<${props}>`,
-      type: `import('svelte').SvelteComponent${typeArgs}`,
+      value:
+        exports == null
+          ? `import('svelte').Component<${props}>`
+          : `import('svelte').Component<${props}, ${exports}>`,
+      type: withExports(`import('svelte').SvelteComponent${typeArgs}`),
     };
   }
   const cls = svelteVersion.gte(4) ? "SvelteComponent" : "SvelteComponentTyped";
-  const inst = `import('svelte').${cls}${typeArgs}`;
+  const inst = withExports(`import('svelte').${cls}${typeArgs}`);
   return {
     value: `new (options: import('svelte').ComponentConstructorOptions<${props}>) => ${inst}`,
     type: inst,
@@ -154,8 +163,14 @@ function assertComponentExport(
   props: string,
   events = "{ [key: string]: any }",
   slots = "{ [key: string]: any }",
+  exports: string | null = null,
 ): void {
-  const { value, type } = expectedComponentTypeText(props, events, slots);
+  const { value, type } = expectedComponentTypeText(
+    props,
+    events,
+    slots,
+    exports,
+  );
   assert.ok(
     code.includes(`: ${value};`),
     `expected value-side type \`${value}\` in:\n${code}`,
@@ -744,14 +759,20 @@ describe("synthetic component default export (legacy, all versions)", () => {
     );
   });
 
-  it("ignores a renamed export whose local is not a top-level `let`", () => {
+  it("treats a renamed export whose local is not a top-level `let` as an instance export", () => {
     const code = translate(`<script lang="ts">
   function helper() {}
   export { helper as onClick };
   export let value: string;
 </script>
 <p>{value}</p>`);
-    assertComponentExport(code, `{ value: string }`);
+    assertComponentExport(
+      code,
+      `{ value: string }`,
+      undefined,
+      undefined,
+      `{ onClick: typeof helper }`,
+    );
   });
 
   // Instance/module boundary: `result.ast.body` concatenates both scripts, so a
@@ -2312,4 +2333,134 @@ describe("imported component props in templates", () => {
       );
     });
   }
+});
+
+describe("component instance exports", () => {
+  function codesOf(diagnostics: ts.Diagnostic[]): string {
+    return diagnostics
+      .map(
+        (d) =>
+          `TS${d.code} ${ts.flattenDiagnosticMessageText(d.messageText, " ")}`,
+      )
+      .join("; ");
+  }
+
+  describeSvelte5("runes", () => {
+    const COMPONENT = `<script lang="ts">
+  let { value }: { value: string } = $props();
+  export const open = (id: number): string => String(id);
+  export function close(): void {}
+  class Handle {}
+  export { Handle as Ref };
+</script>
+<p>{value}</p>`;
+
+    it("types the instance with the exported members", () => {
+      const diagnostics = typeCheckConsumer(
+        COMPONENT,
+        `declare const instance: Foo;
+const opened: string = instance.open(1);
+instance.close();
+const ref: typeof instance.Ref = class {};
+void opened; void ref;`,
+      );
+      assert.deepStrictEqual(diagnostics, [], codesOf(diagnostics));
+    });
+
+    it("rejects misuse of an exported member", () => {
+      const diagnostics = typeCheckConsumer(
+        COMPONENT,
+        `declare const instance: Foo;
+const opened: number = instance.open("x");
+const closed: number = instance.close();
+void opened; void closed;`,
+      );
+      assert.deepStrictEqual(
+        diagnostics.map((d) => d.code).sort((a, b) => a - b),
+        [2322, 2322, 2345],
+        codesOf(diagnostics),
+      );
+    });
+
+    it("returns the exports from `ReturnType<typeof Foo>`", () => {
+      const diagnostics = typeCheckConsumer(
+        COMPONENT,
+        `declare const instance: ReturnType<typeof Foo>;
+const opened: string = instance.open(1);
+instance.missing();
+void opened;`,
+      );
+      // Unlike the legacy class type, the call result has no index signature.
+      assert.deepStrictEqual(
+        diagnostics.map((d) => d.code),
+        [2339],
+        codesOf(diagnostics),
+      );
+    });
+
+    it("keeps `ComponentProps` and `ComponentEvents` resolving", () => {
+      const diagnostics = typeCheckConsumer(
+        COMPONENT,
+        `const a: import("svelte").ComponentProps<typeof Foo>["value"] = 1;
+type E = import("svelte").ComponentEvents<Foo>;
+const e: E = {};
+void a; void e;`,
+      );
+      assert.deepStrictEqual(
+        diagnostics.map((d) => d.code),
+        [2322],
+        codesOf(diagnostics),
+      );
+    });
+
+    it("leaves the component type unchanged without exports", () => {
+      const code = translate(`<script lang="ts">
+  let { value }: { value: string } = $props();
+</script>
+<p>{value}</p>`);
+      assertComponentExport(code, `{ value: string }`);
+    });
+
+    it("ignores module-script and type-only exports", () => {
+      const code = translate(`<script lang="ts" module>
+  export const shared = 1;
+</script>
+<script lang="ts">
+  let { value }: { value: string } = $props();
+  export type Kind = "a";
+</script>
+<p>{value}</p>`);
+      assertComponentExport(code, `{ value: string }`);
+    });
+  });
+
+  const LEGACY_COMPONENT = `<script lang="ts">
+  export let value: string;
+  let count = 0;
+  export { count };
+  export function reset(): void {}
+</script>
+<p>{value}{count}</p>`;
+
+  it("types legacy instance exports", () => {
+    const diagnostics = typeCheckConsumer(
+      LEGACY_COMPONENT,
+      `declare const instance: Foo;
+const result: number = instance.reset();
+void result;`,
+    );
+    assert.deepStrictEqual(
+      diagnostics.map((d) => d.code),
+      [2322],
+      codesOf(diagnostics),
+    );
+  });
+
+  it("does not treat a legacy `export let` prop as an export", () => {
+    const code = translate(LEGACY_COMPONENT);
+    assert.ok(
+      code.includes(" & { reset: typeof reset }"),
+      `expected only \`reset\` in the exports type:\n${code}`,
+    );
+  });
 });
