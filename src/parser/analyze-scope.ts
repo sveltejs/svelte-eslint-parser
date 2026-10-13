@@ -400,6 +400,8 @@ function addVirtualReference(
     null as any,
   );
   (reference as any).svelteVirtualReference = true;
+  (reference as any).isValueReference = true;
+  (reference as any).isTypeReference = false;
   reference.from = scope;
   reference.identifier = node;
   reference.isWrite = () => Boolean(readWrite.write);
