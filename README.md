@@ -117,7 +117,7 @@ export default [
 Use the `parserOptions.parser` property to define a custom parser for `<script>` tags. Any additional parser options (besides the parser itself) are passed along to the specified parser.
 
 ```js
-import tsParser from "@typescript-eslint/parser";
+import ts from "typescript-eslint";
 
 export default [
   {
@@ -127,7 +127,7 @@ export default [
     languageOptions: {
       parser: svelteParser,
       parserOptions: {
-        parser: tsParser,
+        parser: ts.parser,
       },
     },
   },
@@ -136,16 +136,16 @@ export default [
 
 #### Using TypeScript in `<script>`
 
-If you use `@typescript-eslint/parser` for TypeScript within `<script>` of `.svelte` files, additional configuration is needed. For example:
+If you use the parser from [typescript-eslint](https://typescript-eslint.io/) (`ts.parser`, a re-export of `@typescript-eslint/parser`) for TypeScript within `<script>` of `.svelte` files, additional configuration is needed. For example:
 
 ```js
-import tsParser from "@typescript-eslint/parser";
+import ts from "typescript-eslint";
 
 export default [
   // Other config for non-Svelte files
   {
     languageOptions: {
-      parser: tsParser,
+      parser: ts.parser,
       parserOptions: {
         project: "path/to/your/tsconfig.json",
         extraFileExtensions: [".svelte"],
@@ -161,7 +161,7 @@ export default [
       parser: svelteParser,
       // Parse the `<script>` in `.svelte` as TypeScript by adding the following configuration.
       parserOptions: {
-        parser: tsParser,
+        parser: ts.parser,
       },
     },
   },
@@ -186,7 +186,7 @@ The configuration above also supports JSDoc type annotations in JavaScript
 {increment(1)}
 ```
 
-When using multiple parsers, assign `@typescript-eslint/parser` to the `js`
+When using multiple parsers, assign `ts.parser` to the `js`
 entry as well as `ts` to enable JSDoc type information in ordinary `<script>`
 blocks. JavaScript configured to use Espree continues to use Espree.
 
@@ -195,7 +195,7 @@ blocks. JavaScript configured to use Espree continues to use Espree.
 To switch parsers for each language, provide an object:
 
 ```js
-import tsParser from "@typescript-eslint/parser";
+import ts from "typescript-eslint";
 import espree from "espree";
 
 export default [
@@ -207,9 +207,9 @@ export default [
       parser: svelteParser,
       parserOptions: {
         parser: {
-          ts: tsParser,
+          ts: ts.parser,
           js: espree,
-          typescript: tsParser,
+          typescript: ts.parser,
         },
       },
     },
