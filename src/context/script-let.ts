@@ -683,6 +683,11 @@ export class ScriptLetContext {
       cursor = paramEnd;
     }
     part += this.ctx.code.slice(cursor, closeParentIndex + 1);
+    // Type snippet calls as svelte2tsx does, not as `void`.
+    const isTypeScript = this.ctx.isTypeScript();
+    const closeToken = isTypeScript
+      ? "return null as unknown as ReturnType<import('svelte').Snippet>;}"
+      : "}";
     const restore = this.appendScript(
       `function ${part}{`,
       idRange[0] - 9,
@@ -693,6 +698,19 @@ export class ScriptLetContext {
         const idNode = fnDecl.id;
         const params = [...fnDecl.params];
         const scope = result.getScope(fnDecl);
+
+        // This must run before `removeSnippetParamTypes` shifts the tokens.
+        if (isTypeScript) {
+          const returnStatement = fnDecl.body.body.pop()!;
+          removeAllScopeAndVariableAndReference(returnStatement, result);
+          const start = tokens.findIndex(
+            (t) => returnStatement.range![0] <= t.range[0],
+          );
+          const end = tokens.findIndex(
+            (t) => returnStatement.range![1] <= t.range[0],
+          );
+          tokens.splice(start, end - start);
+        }
 
         if (insertions.length) {
           this.removeSnippetParamTypes(
@@ -723,7 +741,7 @@ export class ScriptLetContext {
         fnDecl.params = [];
       },
     );
-    this.pushScope(restore, "}", scopeKind);
+    this.pushScope(restore, closeToken, scopeKind);
   }
 
   /**
