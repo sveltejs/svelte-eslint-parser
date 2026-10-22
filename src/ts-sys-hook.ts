@@ -34,6 +34,20 @@ interface TsLike {
     readFile?: (path: string, encoding?: string) => string | undefined;
     fileExists?: (path: string) => boolean;
   };
+  server?: {
+    ProjectService?: { prototype: ProjectServiceLike };
+  };
+}
+
+// The parts of tsserver's `ProjectService` and `ScriptInfo` the hook uses.
+interface ProjectServiceLike {
+  openClientFile: (...args: unknown[]) => unknown;
+  getScriptInfo: (fileName: string) => ScriptInfoLike | undefined;
+}
+
+interface ScriptInfoLike {
+  isScriptOpen?: () => boolean;
+  reloadFromFile?: () => boolean;
 }
 
 // TypeScript does not recognise the `.svelte` extension, so module resolution
@@ -48,6 +62,9 @@ const translations = new Map<string, TranslationEntry>();
 // Keys come from `companionKey`.
 const servedCompanions = new Set<string>();
 const patchedSysObjects = new WeakSet();
+const patchedProjectServicePrototypes = new WeakSet();
+// Project services typescript-eslint has used, seen through `openClientFile`.
+const projectServices = new Set<ProjectServiceLike>();
 let activeParserOptions: NormalizedParserOptions | null = null;
 let fallbackParserOptions: NormalizedParserOptions | null | undefined =
   undefined;
@@ -196,6 +213,22 @@ export function getCompanionToRefresh(
 }
 
 /**
+ * Re-read the companion in every project service that holds it.
+ *
+ * typescript-eslint's project service does not watch the disk, and only the
+ * linted file is opened with new content. The companion is never opened, so
+ * it is reloaded through the hooked `ts.sys.readFile` instead. Opening it as
+ * a client file would move it out of the configured project.
+ */
+export function reloadCompanionInProjectServices(companionPath: string): void {
+  for (const service of projectServices) {
+    const info = service.getScriptInfo(companionPath);
+    if (!info || info.isScriptOpen?.()) continue;
+    info.reloadFromFile?.();
+  }
+}
+
+/**
  * Only a real `X.svelte.ts` next to a real `X.svelte` costs the user anything:
  * the guard above suppresses the virtual companion, so `./X.svelte` resolves to
  * the runes module and the component's prop types stay unavailable.
@@ -308,6 +341,21 @@ function patchTsSys(sys: TsLike["sys"]): void {
   }
 }
 
+function patchProjectService(proto: ProjectServiceLike | undefined): void {
+  if (!proto || typeof proto.openClientFile !== "function") return;
+  if (patchedProjectServicePrototypes.has(proto)) return;
+  patchedProjectServicePrototypes.add(proto);
+
+  const originalOpenClientFile = proto.openClientFile;
+  proto.openClientFile = function (
+    this: ProjectServiceLike,
+    ...args: unknown[]
+  ) {
+    projectServices.add(this);
+    return originalOpenClientFile.apply(this, args);
+  };
+}
+
 /**
  * Force-load the project's TypeScript so it lands in `require.cache`. The
  * patch then happens through `patchAllLoadedTypeScripts`; no need to capture
@@ -325,7 +373,7 @@ function ensureTypeScriptLoaded(): void {
   }
 }
 
-/** Patch every `typescript.js` already in `require.cache`. */
+/** Patch every `typescript.js` and `tsserverlibrary.js` already in `require.cache`. */
 function patchAllLoadedTypeScripts(): void {
   const cache = createRequire(import.meta.url).cache as
     | Record<string, { exports?: TsLike } | undefined>
@@ -334,9 +382,11 @@ function patchAllLoadedTypeScripts(): void {
   for (const [resolvedPath, mod] of Object.entries(cache)) {
     if (
       resolvedPath.includes(`${path.sep}typescript${path.sep}`) &&
-      resolvedPath.endsWith(`${path.sep}typescript.js`)
+      (resolvedPath.endsWith(`${path.sep}typescript.js`) ||
+        resolvedPath.endsWith(`${path.sep}tsserverlibrary.js`))
     ) {
       patchTsSys(mod?.exports?.sys);
+      patchProjectService(mod?.exports?.server?.ProjectService?.prototype);
     }
   }
 }
@@ -385,6 +435,7 @@ export function installTsSysHook(): void {
 export function _resetTranslationCacheForTesting(): void {
   translations.clear();
   servedCompanions.clear();
+  projectServices.clear();
   activeParserOptions = null;
   fallbackParserOptions = undefined;
   needsParseTimeRescan = false;

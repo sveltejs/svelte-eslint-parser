@@ -16,6 +16,7 @@ import type { TSESParseForESLintResult } from "./types.js";
 import {
   getCompanionToRefresh,
   primeTranslationCache,
+  reloadCompanionInProjectServices,
 } from "../../ts-sys-hook.js";
 import { getJavaScriptParserOptions } from "./javascript.js";
 
@@ -65,14 +66,18 @@ function refreshCompanion(
   parserOptions: NormalizedParserOptions,
 ): void {
   if (
-    parserOptions.project == null &&
-    parserOptions.projectService == null &&
-    parserOptions.EXPERIMENTAL_useProjectService == null
+    parserOptions.projectService != null ||
+    parserOptions.EXPERIMENTAL_useProjectService != null
   ) {
+    const companion = getCompanionToRefresh(filePath);
+    if (companion) reloadCompanionInProjectServices(companion.filePath);
     return;
   }
+  if (parserOptions.project == null) return;
   const companion = getCompanionToRefresh(filePath);
   if (!companion) return;
+  // Parsing the companion path makes typescript-eslint fire the companion's
+  // file watcher, as it does for a linted file.
   try {
     parseScriptWithoutAnalyzeScope(
       companion.code,

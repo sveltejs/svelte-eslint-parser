@@ -2278,7 +2278,9 @@ describe("public parser API with the experimental hook", () => {
           strict: true, module: "ESNext", moduleResolution: "Bundler", types: [],
           paths: { svelte: [${JSON.stringify(svelteTypesPath)}] },
         }, include: ["./**/*"] }));
-        const options = { filePath: path.join(dir, "consumer.ts"), extraFileExtensions: [".svelte"], loc: true, range: true, tsconfigRootDir: dir };
+        // An editor keeps one long-lived process. Keep CI=true from switching
+        // typescript-eslint to single-run mode, which assumes files never change.
+        const options = { filePath: path.join(dir, "consumer.ts"), extraFileExtensions: [".svelte"], loc: true, range: true, tsconfigRootDir: dir, disallowAutomaticSingleRunInference: true };
         if (${JSON.stringify(mode)} === "project") options.project = path.join(dir, "tsconfig.json");
         else options.projectService = true;
         function countType() {
