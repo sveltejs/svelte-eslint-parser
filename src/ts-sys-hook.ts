@@ -43,6 +43,10 @@ interface TsLike {
 const SVELTE_COMPANION_SUFFIX = ".svelte.ts";
 
 const translations = new Map<string, TranslationEntry>();
+// `.svelte` paths whose companion TypeScript has read. Only those companions
+// can be stale in a program, so only those need a refresh after a parse.
+// Keys come from `companionKey`.
+const servedCompanions = new Set<string>();
 const patchedSysObjects = new WeakSet();
 let activeParserOptions: NormalizedParserOptions | null = null;
 let fallbackParserOptions: NormalizedParserOptions | null | undefined =
@@ -161,6 +165,37 @@ function translateCompanion(companionPath: string): string | null {
 }
 
 /**
+ * typescript-eslint lower-cases paths on case-insensitive file systems before
+ * they reach `ts.sys.readFile`, so compare paths case-insensitively. A false
+ * match only costs one extra refresh.
+ */
+function companionKey(sveltePath: string): string {
+  return path.resolve(sveltePath).toLowerCase();
+}
+
+/**
+ * The companion TypeScript has read for `sveltePath`, with its current virtual
+ * code, or `null` when nothing needs a refresh.
+ *
+ * typescript-eslint only tells TypeScript about changes to the file being
+ * linted. Linting `X.svelte` updates `X.svelte` in the program, but importers
+ * resolve `./X.svelte` to the separate `X.svelte.ts` companion, which keeps
+ * its old content. Parsing the companion path with this code makes
+ * typescript-eslint update it the same way as a linted file.
+ */
+export function getCompanionToRefresh(
+  sveltePath: string,
+): { filePath: string; code: string } | null {
+  if (!installed || !servedCompanions.has(companionKey(sveltePath))) {
+    return null;
+  }
+  const companionPath = `${sveltePath}.ts`;
+  if (realFileExists(companionPath)) return null;
+  const code = translateOnDemand(sveltePath);
+  return code === null ? null : { filePath: companionPath, code };
+}
+
+/**
  * Only a real `X.svelte.ts` next to a real `X.svelte` costs the user anything:
  * the guard above suppresses the virtual companion, so `./X.svelte` resolves to
  * the runes module and the component's prop types stay unavailable.
@@ -248,6 +283,7 @@ function patchTsSys(sys: TsLike["sys"]): void {
         const virtual = translateCompanion(filePath);
         if (virtual !== null) {
           svelteReadFileCount++;
+          servedCompanions.add(companionKey(filePath.slice(0, -".ts".length)));
           return virtual;
         }
       }
@@ -348,6 +384,7 @@ export function installTsSysHook(): void {
 /** Test seam. The `ts.sys` patches themselves are intentionally permanent. */
 export function _resetTranslationCacheForTesting(): void {
   translations.clear();
+  servedCompanions.clear();
   activeParserOptions = null;
   fallbackParserOptions = undefined;
   needsParseTimeRescan = false;
