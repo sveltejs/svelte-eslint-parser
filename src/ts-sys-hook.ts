@@ -141,12 +141,9 @@ export function primeTranslationCache(
   virtualCode: string,
 ): void {
   if (!installed) return;
-  // Skip the stat + write if on-demand translation already cached a positive
-  // entry — the prime is redundant when ts.sys read the file before ESLint did.
-  const existing = translations.get(filePath);
-  if (existing && existing.virtualCode !== null && !existing.provisional) {
-    return;
-  }
+  // Always keep the latest parse, even an unsaved buffer: refreshed companions
+  // and later `ts.sys` reads then see what was linted last, as typescript-eslint
+  // does for a linted `.ts` file.
   const mtimeMs = statMtimeMs(filePath);
   if (mtimeMs === null) return;
   translations.set(filePath, { mtimeMs, virtualCode, provisional: false });
