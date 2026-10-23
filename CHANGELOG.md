@@ -1,5 +1,21 @@
 # svelte-eslint-parser
 
+## 1.10.0
+
+### Minor Changes
+
+- [#966](https://github.com/sveltejs/svelte-eslint-parser/pull/966) [`cb7ae1a`](https://github.com/sveltejs/svelte-eslint-parser/commit/cb7ae1a8528d8cf5c15e50219baec2517d790293) Thanks [@baseballyama](https://github.com/baseballyama)! - Include instance exports (`export const`, `export function`, `export class`, and `export { … }` in the instance script) in the synthetic component type, so a component instance obtained through `bind:this` exposes them with their real types instead of `any`.
+
+- [#969](https://github.com/sveltejs/svelte-eslint-parser/pull/969) [`2b2181a`](https://github.com/sveltejs/svelte-eslint-parser/commit/2b2181a0d64fae4afaab5c35fa59b52311c1af14) Thanks [@baseballyama](https://github.com/baseballyama)! - Type the setter of a function binding on a component (`bind:value={() => value, (next) => …}`) from the bound prop, so `next` gets the prop's type instead of implicit `any`.
+
+- [#967](https://github.com/sveltejs/svelte-eslint-parser/pull/967) [`3bd0624`](https://github.com/sveltejs/svelte-eslint-parser/commit/3bd06246cefbc94d753b222da3d20febec6ab2d7) Thanks [@baseballyama](https://github.com/baseballyama)! - Type the unannotated parameters of a snippet written as a child of a component from the component's snippet prop of the same name, so `{#snippet content({ close })}` inside `<Popover>` gets the types the component declares instead of implicit `any`.
+
+### Patch Changes
+
+- [#981](https://github.com/sveltejs/svelte-eslint-parser/pull/981) [`db2cbd8`](https://github.com/sveltejs/svelte-eslint-parser/commit/db2cbd8fd21457d10a6ada617434e6a68d028321) Thanks [@baseballyama](https://github.com/baseballyama)! - fix: refresh importers of an edited component when the experimental ts.sys hook is on
+
+- [#978](https://github.com/sveltejs/svelte-eslint-parser/pull/978) [`0dd4674`](https://github.com/sveltejs/svelte-eslint-parser/commit/0dd4674162a4f5751c7f82eddb2e4a47d078d65b) Thanks [@ecelustka](https://github.com/ecelustka)! - Type a `{#snippet}` call as a `Snippet` call instead of `void`, so `@typescript-eslint/no-confusing-void-expression` no longer reports `{@render name()}`.
+
 ## 1.9.0
 
 ### Minor Changes
