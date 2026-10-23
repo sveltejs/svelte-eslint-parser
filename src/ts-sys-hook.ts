@@ -34,6 +34,20 @@ interface TsLike {
     readFile?: (path: string, encoding?: string) => string | undefined;
     fileExists?: (path: string) => boolean;
   };
+  server?: {
+    ProjectService?: { prototype: ProjectServiceLike };
+  };
+}
+
+// The parts of tsserver's `ProjectService` and `ScriptInfo` the hook uses.
+interface ProjectServiceLike {
+  openClientFile: (...args: unknown[]) => unknown;
+  getScriptInfo: (fileName: string) => ScriptInfoLike | undefined;
+}
+
+interface ScriptInfoLike {
+  isScriptOpen?: () => boolean;
+  reloadFromFile?: () => boolean;
 }
 
 // TypeScript does not recognise the `.svelte` extension, so module resolution
@@ -43,7 +57,14 @@ interface TsLike {
 const SVELTE_COMPANION_SUFFIX = ".svelte.ts";
 
 const translations = new Map<string, TranslationEntry>();
+// `.svelte` paths whose companion TypeScript has read. Only those companions
+// can be stale in a program, so only those need a refresh after a parse.
+// Keys come from `companionKey`.
+const servedCompanions = new Set<string>();
 const patchedSysObjects = new WeakSet();
+const patchedProjectServicePrototypes = new WeakSet();
+// Project services typescript-eslint has used, seen through `openClientFile`.
+const projectServices = new Set<ProjectServiceLike>();
 let activeParserOptions: NormalizedParserOptions | null = null;
 let fallbackParserOptions: NormalizedParserOptions | null | undefined =
   undefined;
@@ -120,12 +141,9 @@ export function primeTranslationCache(
   virtualCode: string,
 ): void {
   if (!installed) return;
-  // Skip the stat + write if on-demand translation already cached a positive
-  // entry — the prime is redundant when ts.sys read the file before ESLint did.
-  const existing = translations.get(filePath);
-  if (existing && existing.virtualCode !== null && !existing.provisional) {
-    return;
-  }
+  // Always keep the latest parse, even an unsaved buffer: refreshed companions
+  // and later `ts.sys` reads then see what was linted last, as typescript-eslint
+  // does for a linted `.ts` file.
   const mtimeMs = statMtimeMs(filePath);
   if (mtimeMs === null) return;
   translations.set(filePath, { mtimeMs, virtualCode, provisional: false });
@@ -158,6 +176,53 @@ function translateCompanion(companionPath: string): string | null {
     return null;
   }
   return translateOnDemand(sveltePath);
+}
+
+/**
+ * typescript-eslint lower-cases paths on case-insensitive file systems before
+ * they reach `ts.sys.readFile`, so compare paths case-insensitively. A false
+ * match only costs one extra refresh.
+ */
+function companionKey(sveltePath: string): string {
+  return path.resolve(sveltePath).toLowerCase();
+}
+
+/**
+ * The companion TypeScript has read for `sveltePath`, with its current virtual
+ * code, or `null` when nothing needs a refresh.
+ *
+ * typescript-eslint only tells TypeScript about changes to the file being
+ * linted. Linting `X.svelte` updates `X.svelte` in the program, but importers
+ * resolve `./X.svelte` to the separate `X.svelte.ts` companion, which keeps
+ * its old content. Parsing the companion path with this code makes
+ * typescript-eslint update it the same way as a linted file.
+ */
+export function getCompanionToRefresh(
+  sveltePath: string,
+): { filePath: string; code: string } | null {
+  if (!installed || !servedCompanions.has(companionKey(sveltePath))) {
+    return null;
+  }
+  const companionPath = `${sveltePath}.ts`;
+  if (realFileExists(companionPath)) return null;
+  const code = translateOnDemand(sveltePath);
+  return code === null ? null : { filePath: companionPath, code };
+}
+
+/**
+ * Re-read the companion in every project service that holds it.
+ *
+ * typescript-eslint's project service does not watch the disk, and only the
+ * linted file is opened with new content. The companion is never opened, so
+ * it is reloaded through the hooked `ts.sys.readFile` instead. Opening it as
+ * a client file would move it out of the configured project.
+ */
+export function reloadCompanionInProjectServices(companionPath: string): void {
+  for (const service of projectServices) {
+    const info = service.getScriptInfo(companionPath);
+    if (!info || info.isScriptOpen?.()) continue;
+    info.reloadFromFile?.();
+  }
 }
 
 /**
@@ -248,6 +313,7 @@ function patchTsSys(sys: TsLike["sys"]): void {
         const virtual = translateCompanion(filePath);
         if (virtual !== null) {
           svelteReadFileCount++;
+          servedCompanions.add(companionKey(filePath.slice(0, -".ts".length)));
           return virtual;
         }
       }
@@ -272,6 +338,21 @@ function patchTsSys(sys: TsLike["sys"]): void {
   }
 }
 
+function patchProjectService(proto: ProjectServiceLike | undefined): void {
+  if (!proto || typeof proto.openClientFile !== "function") return;
+  if (patchedProjectServicePrototypes.has(proto)) return;
+  patchedProjectServicePrototypes.add(proto);
+
+  const originalOpenClientFile = proto.openClientFile;
+  proto.openClientFile = function (
+    this: ProjectServiceLike,
+    ...args: unknown[]
+  ) {
+    projectServices.add(this);
+    return originalOpenClientFile.apply(this, args);
+  };
+}
+
 /**
  * Force-load the project's TypeScript so it lands in `require.cache`. The
  * patch then happens through `patchAllLoadedTypeScripts`; no need to capture
@@ -289,7 +370,7 @@ function ensureTypeScriptLoaded(): void {
   }
 }
 
-/** Patch every `typescript.js` already in `require.cache`. */
+/** Patch every `typescript.js` and `tsserverlibrary.js` already in `require.cache`. */
 function patchAllLoadedTypeScripts(): void {
   const cache = createRequire(import.meta.url).cache as
     | Record<string, { exports?: TsLike } | undefined>
@@ -298,9 +379,11 @@ function patchAllLoadedTypeScripts(): void {
   for (const [resolvedPath, mod] of Object.entries(cache)) {
     if (
       resolvedPath.includes(`${path.sep}typescript${path.sep}`) &&
-      resolvedPath.endsWith(`${path.sep}typescript.js`)
+      (resolvedPath.endsWith(`${path.sep}typescript.js`) ||
+        resolvedPath.endsWith(`${path.sep}tsserverlibrary.js`))
     ) {
       patchTsSys(mod?.exports?.sys);
+      patchProjectService(mod?.exports?.server?.ProjectService?.prototype);
     }
   }
 }
@@ -348,6 +431,8 @@ export function installTsSysHook(): void {
 /** Test seam. The `ts.sys` patches themselves are intentionally permanent. */
 export function _resetTranslationCacheForTesting(): void {
   translations.clear();
+  servedCompanions.clear();
+  projectServices.clear();
   activeParserOptions = null;
   fallbackParserOptions = undefined;
   needsParseTimeRescan = false;

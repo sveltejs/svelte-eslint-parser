@@ -2251,6 +2251,82 @@ describe("public parser API with the experimental hook", () => {
     assert.strictEqual(child.status, 0, child.stdout + child.stderr);
     assert.ifError(child.error);
   });
+
+  for (const mode of ["project", "projectService"]) {
+    it(`refreshes the component and its importers after an edit, saved or not (${mode})`, () => {
+      const child = spawnSync(
+        process.execPath,
+        [
+          "--import",
+          "tsx/esm",
+          "--input-type=module",
+          "-e",
+          `
+      import assert from "node:assert/strict";
+      import fs from "node:fs";
+      import os from "node:os";
+      import path from "node:path";
+      import * as tsParser from "@typescript-eslint/parser";
+      import * as parser from ${JSON.stringify(new URL("../../src/index.ts", import.meta.url).href)};
+      const dir = fs.mkdtempSync(path.join(os.tmpdir(), "component-refresh-"));
+      try {
+        const componentPath = path.join(dir, "Foo.svelte");
+        const consumer = 'import Foo from "./Foo.svelte"; import type { ComponentProps } from "svelte"; let count: ComponentProps<Foo>["count"];';
+        // The component imports itself, so its own rules read the companion too.
+        const component = (type) => '<script lang="ts">import type Foo from "./Foo.svelte"; import type { ComponentProps } from "svelte"; let self: ComponentProps<Foo>["count"]; export let count: ' + type + ';</script>';
+        fs.writeFileSync(componentPath, component("number"));
+        fs.writeFileSync(path.join(dir, "consumer.ts"), consumer);
+        fs.writeFileSync(path.join(dir, "tsconfig.json"), JSON.stringify({ compilerOptions: {
+          strict: true, module: "ESNext", moduleResolution: "Bundler", types: [],
+          paths: { svelte: [${JSON.stringify(svelteTypesPath)}] },
+        }, include: ["./**/*"] }));
+        // An editor keeps one long-lived process. Keep CI=true from switching
+        // typescript-eslint to single-run mode, which assumes files never change.
+        const options = { filePath: path.join(dir, "consumer.ts"), extraFileExtensions: [".svelte"], loc: true, range: true, tsconfigRootDir: dir, disallowAutomaticSingleRunInference: true };
+        if (${JSON.stringify(mode)} === "project") options.project = path.join(dir, "tsconfig.json");
+        else options.projectService = true;
+        function countType() {
+          const result = tsParser.parseForESLint(consumer, options);
+          const checker = result.services.program.getTypeChecker();
+          const tsNode = result.services.esTreeNodeToTSNodeMap.get(result.ast.body[2].declarations[0].id);
+          return checker.typeToString(checker.getTypeAtLocation(tsNode));
+        }
+        function selfType(source) {
+          const result = parser.parseForESLint(source, { ...options, filePath: componentPath, parser: tsParser });
+          const checker = result.services.program.getTypeChecker();
+          const script = result.ast.body.find(node => node.type === "SvelteScriptElement");
+          const id = script.body.find(node => node.type === "VariableDeclaration").declarations[0].id;
+          return checker.typeToString(checker.getTypeAtLocation(result.services.esTreeNodeToTSNodeMap.get(id)));
+        }
+        assert.equal(countType(), "number");
+        const edited = component("string");
+        fs.writeFileSync(componentPath, edited);
+        const future = Date.now() / 1000 + 10;
+        fs.utimesSync(componentPath, future, future);
+        assert.equal(selfType(edited), "string");
+        assert.equal(countType(), "string");
+        // Like a linted .ts file, an unsaved buffer reaches importers too.
+        assert.equal(selfType(component("boolean")), "boolean");
+        assert.equal(countType(), "boolean");
+      } finally {
+        fs.rmSync(dir, { recursive: true, force: true });
+      }
+    `,
+        ],
+        {
+          encoding: "utf8",
+          timeout: 30000,
+          env: {
+            // eslint-disable-next-line no-process-env -- isolate the opt-in hook in a subprocess
+            ...process.env,
+            SVELTE_ESLINT_PARSER_EXPERIMENTAL_TS_SYS_HOOK: "1",
+          },
+        },
+      );
+      assert.strictEqual(child.status, 0, child.stdout + child.stderr);
+      assert.ifError(child.error);
+    });
+  }
 });
 
 describe("virtual companion lifecycle", () => {
