@@ -683,10 +683,11 @@ export class ScriptLetContext {
       cursor = paramEnd;
     }
     part += this.ctx.code.slice(cursor, closeParentIndex + 1);
-    // Type snippet calls as svelte2tsx does, not as `void`.
+    // Type snippet calls as svelte2tsx does, not as `void`. Call a `Snippet`
+    // instead of using `ReturnType`, which a user type can shadow.
     const isTypeScript = this.ctx.isTypeScript();
     const closeToken = isTypeScript
-      ? "return null as unknown as ReturnType<import('svelte').Snippet>;}"
+      ? "return (null as unknown as import('svelte').Snippet)();}"
       : "}";
     const restore = this.appendScript(
       `function ${part}{`,
