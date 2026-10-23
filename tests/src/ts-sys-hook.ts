@@ -2253,7 +2253,7 @@ describe("public parser API with the experimental hook", () => {
   });
 
   for (const mode of ["project", "projectService"]) {
-    it(`refreshes importers after the imported component is edited and parsed (${mode})`, () => {
+    it(`refreshes the component and its importers after an edit, saved or not (${mode})`, () => {
       const child = spawnSync(
         process.execPath,
         [
@@ -2272,7 +2272,9 @@ describe("public parser API with the experimental hook", () => {
       try {
         const componentPath = path.join(dir, "Foo.svelte");
         const consumer = 'import Foo from "./Foo.svelte"; import type { ComponentProps } from "svelte"; let count: ComponentProps<Foo>["count"];';
-        fs.writeFileSync(componentPath, '<script lang="ts">export let count: number;</script>');
+        // The component imports itself, so its own rules read the companion too.
+        const component = (type) => '<script lang="ts">import type Foo from "./Foo.svelte"; import type { ComponentProps } from "svelte"; let self: ComponentProps<Foo>["count"]; export let count: ' + type + ';</script>';
+        fs.writeFileSync(componentPath, component("number"));
         fs.writeFileSync(path.join(dir, "consumer.ts"), consumer);
         fs.writeFileSync(path.join(dir, "tsconfig.json"), JSON.stringify({ compilerOptions: {
           strict: true, module: "ESNext", moduleResolution: "Bundler", types: [],
@@ -2289,13 +2291,23 @@ describe("public parser API with the experimental hook", () => {
           const tsNode = result.services.esTreeNodeToTSNodeMap.get(result.ast.body[2].declarations[0].id);
           return checker.typeToString(checker.getTypeAtLocation(tsNode));
         }
+        function selfType(source) {
+          const result = parser.parseForESLint(source, { ...options, filePath: componentPath, parser: tsParser });
+          const checker = result.services.program.getTypeChecker();
+          const script = result.ast.body.find(node => node.type === "SvelteScriptElement");
+          const id = script.body.find(node => node.type === "VariableDeclaration").declarations[0].id;
+          return checker.typeToString(checker.getTypeAtLocation(result.services.esTreeNodeToTSNodeMap.get(id)));
+        }
         assert.equal(countType(), "number");
-        const edited = '<script lang="ts">export let count: string;</script>';
+        const edited = component("string");
         fs.writeFileSync(componentPath, edited);
         const future = Date.now() / 1000 + 10;
         fs.utimesSync(componentPath, future, future);
-        parser.parseForESLint(edited, { ...options, filePath: componentPath, parser: tsParser });
+        assert.equal(selfType(edited), "string");
         assert.equal(countType(), "string");
+        // Like a linted .ts file, an unsaved buffer reaches importers too.
+        assert.equal(selfType(component("boolean")), "boolean");
+        assert.equal(countType(), "boolean");
       } finally {
         fs.rmSync(dir, { recursive: true, force: true });
       }

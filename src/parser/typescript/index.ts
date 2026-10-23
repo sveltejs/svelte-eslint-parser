@@ -34,6 +34,10 @@ export function parseTypeScriptInSvelte(
   // Share the shim with the ts.sys hook so projectService reads hit a cache.
   if (parserOptions.filePath) {
     primeTranslationCache(parserOptions.filePath, tsCtx.script);
+    // Before the component's own parse, so when the program already holds the
+    // companion, the component's rules see it current too, as in a component
+    // that imports itself.
+    refreshCompanion(parserOptions.filePath, parserOptions);
   }
 
   // Virtual scripts can be parsed repeatedly for the same file. In single-run
@@ -49,10 +53,6 @@ export function parseTypeScriptInSvelte(
   }
 
   tsCtx.restoreContext.restore(result as unknown as TSESParseForESLintResult);
-
-  if (parserOptions.filePath) {
-    refreshCompanion(parserOptions.filePath, parserOptions);
-  }
 
   return result;
 }
