@@ -308,7 +308,8 @@ so a `bind:this` target typed as the component sees them.
 With Svelte 5, a `generics` component's type arguments are inferred from the
 non-function attributes, bindings, and spreads passed to it, so its snippet
 parameters, callback attributes, and function binding setters receive the
-inferred types.
+inferred types. Such a component is also a generic type, so `Foo<Row>` names
+its instance with those type arguments; a bare `Foo` uses the constraints.
 
 This is not a full replacement for Svelte's generated component declarations.
 Unannotated props without defaults use `any`, and rest props keep the prop type
