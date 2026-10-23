@@ -305,10 +305,15 @@ supply event and slot types; otherwise those types remain permissive.
 Instance exports (`export const`, `export function`, `export class`, and
 `export { … }` in the instance script) are part of the component instance type,
 so a `bind:this` target typed as the component sees them.
+With Svelte 5, a `generics` component's type arguments are inferred from the
+non-function attributes, bindings, and spreads passed to it, so its snippet
+parameters, callback attributes, and function binding setters receive the
+inferred types.
 
 This is not a full replacement for Svelte's generated component declarations.
-Unannotated props without defaults use `any`, rest props keep the prop type
-open, and generic parameters are represented by their constraints rather than
+Unannotated props without defaults use `any`, and rest props keep the prop type
+open. Outside of that inference (for example `ComponentProps<typeof Foo>`, or
+Svelte 3/4), generic parameters are represented by their constraints rather than
 preserving a generic component signature. Slot types inferred from template
 markup are not synthesized. JavaScript-only components do not receive this
 TypeScript translation.

@@ -382,6 +382,10 @@ function convertGenericsAttribute(script: SvelteScriptElement, ctx: Context) {
   const typeParameters = (fnDecl as TSESTree.FunctionExpression)
     .typeParameters!;
   const params = typeParameters.params;
+  ctx.instanceGenerics = {
+    text: genericValueCode,
+    names: params.map((param) => param.name.name),
+  };
 
   // Replace tokens
   for (const tokensKey of ["tokens", "comments"] as const) {

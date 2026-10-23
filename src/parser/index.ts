@@ -166,6 +166,7 @@ function parseAsSvelte(
           slots: ctx.slots,
           svelteParseContext,
           instanceScriptRange: getInstanceScriptRange(resultTemplate.svelteAst),
+          instanceGenerics: ctx.instanceGenerics,
         },
       )
     : parseScriptInSvelte(
