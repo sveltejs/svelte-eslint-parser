@@ -259,7 +259,8 @@ export default [
         svelteFeatures: {
           // This is for Svelte 5. The default is true.
           // If false, ESLint won't recognize rune symbols.
-          // If not specified, the parser tries to read compilerOptions.runes from `svelte.config.js`.
+          // If not specified, the parser first uses `<svelte:options runes>` in the file.
+          // If that is not set, it reads compilerOptions.runes from the Svelte config.
           // If `parserOptions.svelteConfig` is not given and static analysis fails, it defaults to true.
           runes: true,
         },
