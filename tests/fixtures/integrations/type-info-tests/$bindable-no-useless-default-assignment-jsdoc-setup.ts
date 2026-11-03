@@ -3,6 +3,7 @@ import { generateParserOptions } from "../../../src/parser/test-utils";
 import { plugin } from "typescript-eslint";
 import * as parser from "../../../../src";
 import globals from "globals";
+import { propsTypeRule } from "./props-type-rule";
 import * as tsParser from "@typescript-eslint/parser";
 
 export function getConfig(): Linter.Config {
@@ -10,6 +11,9 @@ export function getConfig(): Linter.Config {
     plugins: {
       "@typescript-eslint": {
         rules: plugin.rules as any,
+      },
+      test: {
+        rules: { "props-type": propsTypeRule },
       },
     },
     languageOptions: {
@@ -27,6 +31,7 @@ export function getConfig(): Linter.Config {
     },
     rules: {
       "@typescript-eslint/no-useless-default-assignment": "error",
+      "test/props-type": "error",
     },
   };
 }

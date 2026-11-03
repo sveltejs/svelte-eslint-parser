@@ -532,8 +532,8 @@ function analyzeRuneVariables(
           "<T>(): T",
           // Used for `$props()` with `$bindable()` props. See `transformForBindableProps()`.
           // `T[P] | ...` keeps `undefined` in the types of other props. With `P extends K ? T[P] | undefined : T[P]`, TS drops it when inferring `T`.
-          // The keys are strings, and `${P}` also matches number keys such as `1: number`.
-          "<T, K extends string>(...bindableKeys: K[]): { [P in keyof T]: T[P] | (P extends string | number ? `${P}` extends K ? undefined : never : never) }",
+          // The keys are strings. This also works for number keys such as `1: number` when `T` is inferred.
+          "<T, K extends string>(...bindableKeys: K[]): { [P in keyof T]: T[P] | (P extends K ? undefined : never) }",
         ]);
         appendDeclareNamespaceVirtualScripts(globalName, [
           "export function id(): string;",
@@ -745,14 +745,14 @@ function* analyzeBindableProps(
         propsCall?.type !== "CallExpression" ||
         propsCall.callee.type !== "Identifier" ||
         propsCall.callee.name !== "$props" ||
-        propsCall.arguments.length
+        propsCall.arguments.length ||
+        // Svelte types `$props()` without type parameters, so `$props<T>()` is not supported.
+        // Also, with it the props would take their types from the mapped type.
+        propsCall.typeArguments
       ) {
         continue;
       }
-      if (propsCall.typeArguments) {
-        // e.g. `$props<{ value: string }>()`
-        if (propsCall.typeArguments.params.length !== 1) continue;
-      } else if (
+      if (
         // Without a type, `$props()` has no useful type.
         !decl.id.typeAnnotation &&
         (jsDocCode == null ||
@@ -772,16 +772,12 @@ function* analyzeBindableProps(
           continue;
         }
         const key = getStaticPropertyKey(prop);
-        if (key != null && !keys.includes(key)) keys.push(key);
+        if (key != null) keys.push(key);
       }
       if (!keys.length) continue;
-      const typeArguments = propsCall.typeArguments;
       yield {
         node: propsCall,
-        transform: (ctx) =>
-          typeArguments
-            ? transformForBindablePropsTypeArguments(typeArguments, keys, ctx)
-            : transformForBindableProps(propsCall, keys, ctx),
+        transform: (ctx) => transformForBindableProps(propsCall, keys, ctx),
       };
     }
   }
@@ -813,8 +809,9 @@ function getStaticPropertyKey(prop: TSESTree.Property): string | null {
 }
 
 /**
- * Checks whether the given statement has a JSDoc comment with `@type`.
+ * Checks whether the given statement has a JSDoc comment with a `@type` tag.
  * e.g. `/** @type {Props} *\/ let { value = $bindable() } = $props();`
+ * Other comments may be between them, like TypeScript allows.
  */
 function hasJSDocTypeComment(
   statement: TSESTree.VariableDeclaration,
@@ -822,15 +819,20 @@ function hasJSDocTypeComment(
   code: string,
 ): boolean {
   const comments = result.ast.comments ?? [];
+  let end = statement.range[0];
   for (let index = comments.length - 1; index >= 0; index--) {
     const comment = comments[index];
-    if (comment.range[1] > statement.range[0]) continue;
-    return (
+    if (comment.range[1] > end) continue;
+    // Stop at code between the comment and the statement.
+    if (code.slice(comment.range[1], end).trim()) return false;
+    if (
       comment.type === "Block" &&
       comment.value.startsWith("*") &&
-      /@type\b/u.test(comment.value) &&
-      !code.slice(comment.range[1], statement.range[0]).trim()
-    );
+      /(?:^|[\s*])@type\s*\{/u.test(comment.value)
+    ) {
+      return true;
+    }
+    end = comment.range[0];
   }
   return false;
 }
@@ -855,9 +857,11 @@ function transformForBindableProps(
     target: "CallExpression" as TSESTree.AST_NODE_TYPES.CallExpression,
     restore: (node) => {
       if (
+        // The restored range is the same as the range of the original `$props()`.
+        node.range[0] !== propsCall.range[0] ||
+        node.range[1] !== propsCall.range[1] ||
         node.callee.type !== "Identifier" ||
         node.callee.name !== "$props" ||
-        node.typeArguments ||
         node.arguments.length !== keys.length ||
         node.arguments.some(
           (arg, index) => arg.type !== "Literal" || arg.value !== keys[index],
@@ -866,36 +870,6 @@ function transformForBindableProps(
         return false;
       }
       node.arguments = [];
-      return true;
-    },
-  });
-}
-
-/**
- * Transform for `$props<T>()` to `$props<T, "key1" | "key2">()`.
- * Same as `transformForBindableProps()`, but for `$props()` with a type argument.
- */
-function transformForBindablePropsTypeArguments(
-  typeArguments: TSESTree.TSTypeParameterInstantiation,
-  keys: string[],
-  ctx: VirtualTypeScriptContext,
-) {
-  const keysText = keys.map((key) => JSON.stringify(key)).join("|");
-  ctx.appendOriginal(typeArguments.range[1] - 1);
-  ctx.appendVirtualScript(`,${keysText}`);
-
-  ctx.restoreContext.addRestoreExpressionProcess<TSESTree.CallExpression>({
-    target: "CallExpression" as TSESTree.AST_NODE_TYPES.CallExpression,
-    restore: (node) => {
-      if (
-        node.callee.type !== "Identifier" ||
-        node.callee.name !== "$props" ||
-        node.arguments.length !== 0 ||
-        node.typeArguments?.params.length !== 2
-      ) {
-        return false;
-      }
-      node.typeArguments.params.pop();
       return true;
     },
   });
