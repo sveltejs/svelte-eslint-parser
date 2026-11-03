@@ -18,6 +18,7 @@ export function getConfig(): Linter.Config {
     },
     rules: {
       "no-useless-assignment": "error",
+      "no-unused-vars": "error",
     },
   };
 }

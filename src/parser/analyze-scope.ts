@@ -1,4 +1,5 @@
 import type ESTree from "estree";
+import type { TSESTree } from "@typescript-eslint/types";
 import type * as eslintScope from "eslint-scope";
 import type * as eslint from "eslint";
 import { getFallbackKeys } from "../traverse.js";
@@ -216,10 +217,11 @@ export function analyzePropsScope(
       if (svelteParseContext.runes !== false) {
         // Process for Svelte v5 Runes props. e.g. `let { x = $bindable() } = $props()`;
         for (const decl of node.declarations) {
+          const init = decl.init && unwrapTypeScriptExpression(decl.init);
           if (
-            decl.init?.type === "CallExpression" &&
-            decl.init.callee.type === "Identifier" &&
-            decl.init.callee.name === "$props" &&
+            init?.type === "CallExpression" &&
+            init.callee.type === "Identifier" &&
+            init.callee.name === "$props" &&
             decl.id.type === "ObjectPattern"
           ) {
             for (const pattern of extractPattern(decl.id)) {
@@ -238,6 +240,26 @@ export function analyzePropsScope(
         }
       }
     }
+  }
+
+  /**
+   * Unwrap TypeScript-only expressions. The Svelte compiler removes them, so
+   * `$props()!`, `$props() as T`, `$props() satisfies T` and `<T>$props()` are
+   * all `$props()`.
+   */
+  function unwrapTypeScriptExpression(
+    node: ESTree.Expression,
+  ): ESTree.Expression {
+    let expr = node as ESTree.Expression | TSESTree.Expression;
+    while (
+      expr.type === "TSNonNullExpression" ||
+      expr.type === "TSAsExpression" ||
+      expr.type === "TSSatisfiesExpression" ||
+      expr.type === "TSTypeAssertion"
+    ) {
+      expr = expr.expression;
+    }
+    return expr as ESTree.Expression;
   }
 
   function* extractPattern(node: ESTree.Pattern): Iterable<ESTree.Pattern> {
