@@ -7,6 +7,32 @@ import { findVariable } from "../scope/index.js";
 import { getESLintScope } from "../parser/eslint-scope.js";
 
 export function parseConfig(code: string): SvelteConfig | null {
+  const { ast, scopeManager } = parseCode(code);
+  return parseAst(ast, scopeManager);
+}
+
+/**
+ * Statically reads the Svelte config from the code of `vite.config.*`.
+ * It looks for a `sveltekit(...)` call imported from `@sveltejs/kit/vite`,
+ * or a `svelte(...)` call imported from `@sveltejs/vite-plugin-svelte`,
+ * inside `plugins`, and reads its argument.
+ * Returns `null` if the plugin is not found, it has no argument,
+ * or the argument cannot be statically evaluated to an object.
+ * It never throws.
+ */
+export function parseViteConfig(code: string): SvelteConfig | null {
+  try {
+    const { ast, scopeManager } = parseCode(code);
+    return parseViteConfigAst(ast, scopeManager);
+  } catch {
+    return null;
+  }
+}
+
+function parseCode(code: string): {
+  ast: ESTree.Program;
+  scopeManager: Scope.ScopeManager;
+} {
   const espree = getEspree();
   const ast = espree.parse(code, {
     range: true,
@@ -32,7 +58,7 @@ export function parseConfig(code: string): SvelteConfig | null {
     sourceType: "module",
     fallback: getFallbackKeys,
   });
-  return parseAst(ast, scopeManager);
+  return { ast, scopeManager };
 }
 
 function parseAst(
@@ -58,14 +84,8 @@ function parseSvelteConfigExpression(
   if (evaluated?.type !== EvaluatedType.object) return {};
   const result: SvelteConfig = {};
   // Returns only known properties.
-  const compilerOptions = evaluated.getProperty("compilerOptions");
-  if (compilerOptions?.type === EvaluatedType.object) {
-    result.compilerOptions = {};
-    const runes = compilerOptions.getProperty("runes")?.getStatic();
-    if (runes?.value != null) {
-      result.compilerOptions.runes = Boolean(runes.value);
-    }
-  }
+  const compilerOptions = readCompilerOptions(evaluated);
+  if (compilerOptions) result.compilerOptions = compilerOptions;
   const kit = evaluated.getProperty("kit");
   if (kit?.type === EvaluatedType.object) {
     result.kit = {};
@@ -73,6 +93,198 @@ function parseSvelteConfigExpression(
     if (files?.value != null) result.kit.files = files.value as never;
   }
   return result;
+}
+
+function readCompilerOptions(
+  evaluated: EvaluatedObject,
+): SvelteConfig["compilerOptions"] | null {
+  const compilerOptions = evaluated.getProperty("compilerOptions");
+  if (compilerOptions?.type !== EvaluatedType.object) return null;
+  const result: NonNullable<SvelteConfig["compilerOptions"]> = {};
+  const runes = compilerOptions.getProperty("runes")?.getStatic();
+  if (runes?.value != null) {
+    result.runes = Boolean(runes.value);
+  }
+  return result;
+}
+
+/** The Vite plugins that accept Svelte config as their argument. */
+const SVELTE_VITE_PLUGINS: Record<string, string> = {
+  "@sveltejs/kit/vite": "sveltekit",
+  "@sveltejs/vite-plugin-svelte": "svelte",
+};
+
+function parseViteConfigAst(
+  ast: ESTree.Program,
+  scopeManager: Scope.ScopeManager,
+): SvelteConfig | null {
+  const edd = ast.body.find(
+    (node): node is ESTree.ExportDefaultDeclaration =>
+      node.type === "ExportDefaultDeclaration",
+  );
+  if (!edd) return null;
+  const decl = edd.declaration;
+  if (decl.type === "ClassDeclaration") return null;
+  const config = resolveViteConfigObject(decl as ESTree.Node);
+  if (!config) return null;
+  const plugins = getStaticProperty(config, "plugins");
+  if (!plugins) return null;
+  for (const call of iteratePluginCalls(plugins, new Set())) {
+    if (!isSveltePluginCallee(call.callee)) continue;
+    const arg = call.arguments[0];
+    if (!arg || arg.type === "SpreadElement") return null;
+    const evaluated = evaluateExpression(arg, scopeManager);
+    if (evaluated?.type !== EvaluatedType.object) return null;
+    // Returns only known properties, in the SvelteKit 3 flat shape.
+    const result: SvelteConfig = {};
+    const compilerOptions = readCompilerOptions(evaluated);
+    if (compilerOptions) result.compilerOptions = compilerOptions;
+    const files = evaluated.getProperty("files")?.getStatic();
+    if (files?.value != null) result.files = files.value as never;
+    return result;
+  }
+  return null;
+
+  /** Resolves the default export to the config object expression. */
+  function resolveViteConfigObject(
+    node: ESTree.Node,
+  ): ESTree.ObjectExpression | null {
+    const target = resolveConstNode(node);
+    if (!target) return null;
+    if (target.type === "ObjectExpression") return target;
+    if (target.type === "CallExpression") {
+      // defineConfig(...)
+      if (
+        target.callee.type !== "Identifier" ||
+        target.callee.name !== "defineConfig"
+      )
+        return null;
+      const arg = target.arguments[0];
+      if (!arg || arg.type === "SpreadElement") return null;
+      return resolveViteConfigObject(arg);
+    }
+    if (
+      target.type === "ArrowFunctionExpression" ||
+      target.type === "FunctionExpression" ||
+      target.type === "FunctionDeclaration"
+    ) {
+      if (target.body.type !== "BlockStatement") {
+        return resolveViteConfigObject(target.body);
+      }
+      const returns = target.body.body.filter(
+        (n): n is ESTree.ReturnStatement => n.type === "ReturnStatement",
+      );
+      if (returns.length !== 1 || !returns[0].argument) return null;
+      return resolveViteConfigObject(returns[0].argument);
+    }
+    return null;
+  }
+
+  /** Follows identifiers that are bound to a `const` with an initializer. */
+  function resolveConstNode(
+    node: ESTree.Node,
+    seen = new Set<ESTree.Node>(),
+  ): ESTree.Node | null {
+    if (seen.has(node)) return null;
+    seen.add(node);
+    if (node.type !== "Identifier") return node;
+    const defs = findVariable(scopeManager, node)?.defs;
+    if (!defs || defs.length !== 1) return null;
+    const def = defs[0];
+    if (def.type === "FunctionName") return def.node;
+    if (
+      def.type !== "Variable" ||
+      def.parent.kind !== "const" ||
+      def.node.id.type !== "Identifier" ||
+      !def.node.init
+    )
+      return null;
+    return resolveConstNode(def.node.init, seen);
+  }
+
+  function getStaticProperty(
+    object: ESTree.ObjectExpression,
+    name: string,
+  ): ESTree.Node | null {
+    for (const prop of [...object.properties].reverse()) {
+      if (prop.type !== "Property") continue;
+      const key =
+        !prop.computed && prop.key.type === "Identifier"
+          ? prop.key.name
+          : prop.key.type === "Literal"
+            ? String(prop.key.value)
+            : null;
+      if (key === name) return prop.value;
+    }
+    return null;
+  }
+
+  /** Iterates the call expressions in `plugins`. Vite flattens nested arrays. */
+  function* iteratePluginCalls(
+    node: ESTree.Node,
+    seen: Set<ESTree.Node>,
+  ): Iterable<ESTree.CallExpression> {
+    const target = resolveConstNode(node);
+    if (!target || seen.has(target)) return;
+    seen.add(target);
+    if (target.type === "ArrayExpression") {
+      for (const element of target.elements) {
+        if (!element) continue;
+        yield* iteratePluginCalls(
+          element.type === "SpreadElement" ? element.argument : element,
+          seen,
+        );
+      }
+    } else if (target.type === "CallExpression") {
+      yield target;
+    }
+  }
+
+  /** Checks whether the callee is imported from one of the Svelte Vite plugin modules. */
+  function isSveltePluginCallee(
+    callee: ESTree.Expression | ESTree.Super,
+  ): boolean {
+    if (callee.type === "Identifier") {
+      const def = getImportDefinition(callee);
+      if (!def || def.node.type !== "ImportSpecifier") return false;
+      const imported =
+        def.node.imported.type === "Identifier"
+          ? def.node.imported.name
+          : String(def.node.imported.value);
+      return SVELTE_VITE_PLUGINS[getImportSource(def)] === imported;
+    }
+    if (
+      callee.type === "MemberExpression" &&
+      callee.object.type === "Identifier"
+    ) {
+      // import * as kit from "@sveltejs/kit/vite"; kit.sveltekit()
+      const def = getImportDefinition(callee.object);
+      if (!def || def.node.type !== "ImportNamespaceSpecifier") return false;
+      const name =
+        !callee.computed && callee.property.type === "Identifier"
+          ? callee.property.name
+          : callee.property.type === "Literal"
+            ? String(callee.property.value)
+            : null;
+      return name != null && SVELTE_VITE_PLUGINS[getImportSource(def)] === name;
+    }
+    return false;
+  }
+
+  function getImportDefinition(
+    node: ESTree.Identifier,
+  ): Scope.Definition | null {
+    const defs = findVariable(scopeManager, node)?.defs;
+    if (!defs || defs.length !== 1) return null;
+    const def = defs[0];
+    return def.type === "ImportBinding" ? def : null;
+  }
+
+  function getImportSource(def: Scope.Definition): string {
+    const source = (def.parent as ESTree.ImportDeclaration | null)?.source
+      ?.value;
+    return String(source);
+  }
 }
 
 const enum EvaluatedType {

@@ -219,10 +219,27 @@ export default [
 
 ### parserOptions.svelteConfig
 
-If you use `eslint.config.js`, you can specify a `svelte.config.js` file via `parserOptions.svelteConfig`.
+You can pass your Svelte config to the parser via `parserOptions.svelteConfig`. We recommend this.
+
+SvelteKit 3 has no `svelte.config.js`. The config is the argument of the `sveltekit()` plugin in `vite.config.js`. Plain Vite projects pass it to `svelte()` from `@sveltejs/vite-plugin-svelte`. Move the plugin options into an exported const, so that `eslint.config.js` can import them. You can also put them in a separate file.
 
 ```js
-import svelteConfig from "./svelte.config.js";
+// vite.config.js
+import { defineConfig } from "vite";
+import { sveltekit } from "@sveltejs/kit/vite";
+
+export const svelteConfig = {
+  compilerOptions: { runes: true },
+};
+
+export default defineConfig({
+  plugins: [sveltekit(svelteConfig)],
+});
+```
+
+```js
+// eslint.config.js
+import { svelteConfig } from "./vite.config.js";
 
 export default [
   {
@@ -239,7 +256,9 @@ export default [
 ];
 ```
 
-If `parserOptions.svelteConfig` is not set, the parser attempts to statically read some config from `svelte.config.js`.
+If you still use `svelte.config.js`, import it instead: `import svelteConfig from "./svelte.config.js";`.
+
+If `parserOptions.svelteConfig` is not set, the parser tries to find the config by itself. This is only a fallback. It starts from the directory of the linted file and walks up. In each directory, it first reads `vite.config.*` and looks for a `sveltekit()` or `svelte()` call with options. If it finds none, it reads `svelte.config.js`. It reads these files statically and never runs them. So it only gets `compilerOptions.runes` and `files`. It cannot read values from functions or configs that are built at runtime.
 
 ### parserOptions.svelteFeatures
 
@@ -259,7 +278,7 @@ export default [
         svelteFeatures: {
           // This is for Svelte 5. The default is true.
           // If false, ESLint won't recognize rune symbols.
-          // If not specified, the parser tries to read compilerOptions.runes from `svelte.config.js`.
+          // If not specified, the parser tries to read compilerOptions.runes from `vite.config.*` or `svelte.config.js`.
           // If `parserOptions.svelteConfig` is not given and static analysis fails, it defaults to true.
           runes: true,
         },
