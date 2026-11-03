@@ -1,5 +1,15 @@
 # svelte-eslint-parser
 
+## 1.10.1
+
+### Patch Changes
+
+- [#986](https://github.com/sveltejs/svelte-eslint-parser/pull/986) [`a0bbaa6`](https://github.com/sveltejs/svelte-eslint-parser/commit/a0bbaa6139b6127daffc1fe75ca75c64b215afab) Thanks [@baseballyama](https://github.com/baseballyama)! - fix: mark `$bindable()` props as used, so `no-useless-assignment` does not report writes to them. Also handle `$props()!`, `$props() as T`, `$props() satisfies T` and `<T>$props()`.
+
+- [#989](https://github.com/sveltejs/svelte-eslint-parser/pull/989) [`c845e2e`](https://github.com/sveltejs/svelte-eslint-parser/commit/c845e2ece44721b37f6d365d45a88d910f9a9bf4) Thanks [@baseballyama](https://github.com/baseballyama)! - fix: type `$bindable()` props as possibly `undefined` in `$props()`, so `@typescript-eslint/no-useless-default-assignment` does not report them
+
+- [#988](https://github.com/sveltejs/svelte-eslint-parser/pull/988) [`7f81745`](https://github.com/sveltejs/svelte-eslint-parser/commit/7f8174532953db919a1c82c13168b48d27c084c0) Thanks [@baseballyama](https://github.com/baseballyama)! - fix: let `<svelte:options runes>` take precedence over `compilerOptions.runes`, like the Svelte compiler
+
 ## 1.10.0
 
 ### Minor Changes
