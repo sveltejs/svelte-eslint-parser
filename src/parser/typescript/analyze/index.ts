@@ -524,7 +524,8 @@ function analyzeRuneVariables(
         appendDeclareFunctionVirtualScripts(globalName, [
           "<T>(): T",
           // Used for `$props()` with `$bindable()` props. See `transformForBindableProps()`.
-          "<T, K extends PropertyKey>(...bindableKeys: K[]): { [P in keyof T]: P extends K ? T[P] | undefined : T[P] }",
+          // `T[P] | ...` keeps `undefined` in the types of other props. With `P extends K ? T[P] | undefined : T[P]`, TS drops it when inferring `T`.
+          "<T, K extends PropertyKey>(...bindableKeys: K[]): { [P in keyof T]: T[P] | (P extends K ? undefined : never) }",
         ]);
         appendDeclareNamespaceVirtualScripts(globalName, [
           "export function id(): string;",
