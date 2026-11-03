@@ -121,10 +121,10 @@ export function analyzeTypeScriptInSvelte(
   const rootScopeTransformers: TransformInfo[] = [];
   const renderStart = code.script.length;
   const rootScopeStart = code.script.length + code.render.length;
-  for (const transform of analyzeDollarDerivedScopes(
-    result,
-    context.svelteParseContext,
-  )) {
+  for (const transform of [
+    ...analyzeDollarDerivedScopes(result, context.svelteParseContext),
+    ...analyzeBindableProps(result, context.svelteParseContext),
+  ]) {
     if (transform.node.range[0] < renderStart) {
       scriptTransformers.push(transform);
     } else if (transform.node.range[0] < rootScopeStart) {
@@ -521,7 +521,11 @@ function analyzeRuneVariables(
       // See https://github.com/sveltejs/svelte/blob/3fa3dd78a1cbaa88a1571977b76bf6f02ed4231d/packages/svelte/types/index.d.ts#L3416
       case "$props": {
         // NOTE: In the Svelte repository's `index.d.ts`, the return type is any, but that triggers `@typescript-eslint/no-unsafe-assignment`. To avoid this, use generics here.
-        appendDeclareFunctionVirtualScripts(globalName, ["<T>(): T"]);
+        appendDeclareFunctionVirtualScripts(globalName, [
+          "<T>(): T",
+          // Used for `$props()` with `$bindable()` props. See `transformForBindableProps()`.
+          "<T, K extends PropertyKey>(...bindableKeys: K[]): { [P in keyof T]: P extends K ? T[P] | undefined : T[P] }",
+        ]);
         appendDeclareNamespaceVirtualScripts(globalName, [
           "export function id(): string;",
         ]);
@@ -705,6 +709,96 @@ function* analyzeDollarDerivedScopes(
       };
     }
   }
+}
+
+/**
+ * Analyze `$props()` with `$bindable()` props.
+ * e.g. `let { value = $bindable() }: { value: string } = $props();`
+ */
+function* analyzeBindableProps(
+  result: TSESParseForESLintResult,
+  svelteParseContext: SvelteParseContext,
+): Iterable<TransformInfo> {
+  // No processing is needed if the user is determined not to be in Runes mode.
+  if (svelteParseContext.runes === false) return;
+  for (const statement of result.ast.body) {
+    if (statement.type !== "VariableDeclaration") continue;
+    for (const decl of statement.declarations) {
+      if (
+        decl.id.type !== "ObjectPattern" ||
+        // Without a type annotation, `$props()` has no useful type.
+        !decl.id.typeAnnotation ||
+        decl.init?.type !== "CallExpression" ||
+        decl.init.callee.type !== "Identifier" ||
+        decl.init.callee.name !== "$props" ||
+        decl.init.arguments.length ||
+        decl.init.typeArguments
+      ) {
+        continue;
+      }
+      const keys: string[] = [];
+      for (const prop of decl.id.properties) {
+        if (
+          prop.type === "Property" &&
+          !prop.computed &&
+          prop.value.type === "AssignmentPattern" &&
+          prop.value.right.type === "CallExpression" &&
+          prop.value.right.callee.type === "Identifier" &&
+          prop.value.right.callee.name === "$bindable"
+        ) {
+          if (prop.key.type === "Identifier") {
+            keys.push(prop.key.name);
+          } else if (
+            prop.key.type === "Literal" &&
+            typeof prop.key.value === "string"
+          ) {
+            keys.push(prop.key.value);
+          }
+        }
+      }
+      if (!keys.length) continue;
+      const node = decl.init;
+      yield {
+        node,
+        transform: (ctx) => transformForBindableProps(node, keys, ctx),
+      };
+    }
+  }
+}
+
+/**
+ * Transform for `$props()` to `$props("key1", "key2")`.
+ * The keys are the `$bindable()` props.
+ * The `$props` overload gives these props `T[P] | undefined`,
+ * because a `$bindable()` default is not useless even if the prop type is not optional.
+ * See https://github.com/sveltejs/eslint-plugin-svelte/issues/1447
+ */
+function transformForBindableProps(
+  propsCall: TSESTree.CallExpression,
+  keys: string[],
+  ctx: VirtualTypeScriptContext,
+) {
+  const argsText = keys.map((key) => JSON.stringify(key)).join(",");
+  ctx.appendOriginal(propsCall.range[1] - 1);
+  ctx.appendVirtualScript(argsText);
+
+  ctx.restoreContext.addRestoreExpressionProcess<TSESTree.CallExpression>({
+    target: "CallExpression" as TSESTree.AST_NODE_TYPES.CallExpression,
+    restore: (node) => {
+      if (
+        node.callee.type !== "Identifier" ||
+        node.callee.name !== "$props" ||
+        node.arguments.length !== keys.length ||
+        node.arguments.some(
+          (arg, index) => arg.type !== "Literal" || arg.value !== keys[index],
+        )
+      ) {
+        return false;
+      }
+      node.arguments = [];
+      return true;
+    },
+  });
 }
 
 /**
