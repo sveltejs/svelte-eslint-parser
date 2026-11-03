@@ -132,16 +132,17 @@ function parseViteConfigAst(
   for (const call of iteratePluginCalls(plugins, new Set())) {
     if (!isSveltePluginCallee(call.callee)) continue;
     const arg = call.arguments[0];
-    if (!arg || arg.type === "SpreadElement") return null;
+    if (!arg || arg.type === "SpreadElement") continue;
     const evaluated = evaluateExpression(arg, scopeManager);
-    if (evaluated?.type !== EvaluatedType.object) return null;
+    if (evaluated?.type !== EvaluatedType.object) continue;
     // Returns only known properties, in the SvelteKit 3 flat shape.
     const result: SvelteConfig = {};
-    const compilerOptions = readCompilerOptions(evaluated);
-    if (compilerOptions) result.compilerOptions = compilerOptions;
+    const runes = readCompilerOptions(evaluated)?.runes;
+    if (runes != null) result.compilerOptions = { runes };
     const files = evaluated.getProperty("files")?.getStatic();
     if (files?.value != null) result.files = files.value as never;
-    return result;
+    // Skip the call if it has no usable value, e.g. `svelte({ hot: false })`.
+    if (result.compilerOptions || result.files) return result;
   }
   return null;
 
@@ -237,6 +238,16 @@ function parseViteConfigAst(
       }
     } else if (target.type === "CallExpression") {
       yield target;
+    } else if (target.type === "LogicalExpression") {
+      // `cond && plugin()`: only the right side can be a plugin.
+      // `a || b` and `a ?? b`: both sides can be.
+      if (target.operator !== "&&") {
+        yield* iteratePluginCalls(target.left, seen);
+      }
+      yield* iteratePluginCalls(target.right, seen);
+    } else if (target.type === "ConditionalExpression") {
+      yield* iteratePluginCalls(target.consequent, seen);
+      yield* iteratePluginCalls(target.alternate, seen);
     }
   }
 

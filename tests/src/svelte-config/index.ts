@@ -3,10 +3,7 @@ import fs from "fs";
 import os from "os";
 import path from "path";
 import { parseForESLint } from "../../../src/index.js";
-import {
-  resolveSvelteConfigFromOption,
-  stripTypeScriptTypes,
-} from "../../../src/svelte-config/index.js";
+import { resolveSvelteConfigFromOption } from "../../../src/svelte-config/index.js";
 import { svelteVersion } from "../../../src/parser/svelte-version.js";
 
 /** Creates a temp dir with the given files, and removes it after the callback. */
@@ -61,7 +58,7 @@ describe("resolveSvelteConfigFromOption", () => {
     );
   });
 
-  it("prefers vite.config.js over svelte.config.js in the same directory", () => {
+  it("merges vite.config.js with svelte.config.js in the same directory", () => {
     withFiles(
       {
         "vite.config.js": VITE_CONFIG_RUNES_FALSE,
@@ -72,8 +69,99 @@ describe("resolveSvelteConfigFromOption", () => {
         assert.deepStrictEqual(
           resolveSvelteConfigFromOption({
             filePath: path.join(dir, "src/App.svelte"),
-          })?.compilerOptions,
-          { runes: false },
+          }),
+          {
+            compilerOptions: { runes: false },
+            kit: { files: { lib: "src/l" } },
+            files: { routes: "src/r" },
+          },
+        );
+      },
+    );
+  });
+
+  it("vite runes win over svelte.config.js runes", () => {
+    withFiles(
+      {
+        "vite.config.js": `
+          import { svelte } from "@sveltejs/vite-plugin-svelte";
+          export default { plugins: [svelte({ compilerOptions: { runes: true } })] };
+          `,
+        "svelte.config.js": `export default { compilerOptions: { runes: false } };`,
+        "src/App.svelte": "",
+      },
+      (dir) => {
+        assert.deepStrictEqual(
+          resolveSvelteConfigFromOption({
+            filePath: path.join(dir, "src/App.svelte"),
+          }),
+          { compilerOptions: { runes: true } },
+        );
+      },
+    );
+  });
+
+  it("uses svelte.config.js runes if the plugin options have no runes", () => {
+    withFiles(
+      {
+        "vite.config.js": `
+          import { svelte } from "@sveltejs/vite-plugin-svelte";
+          export default { plugins: [svelte({ hot: false })] };
+          `,
+        "svelte.config.js": `export default { compilerOptions: { runes: false } };`,
+        "src/App.svelte": "",
+      },
+      (dir) => {
+        assert.deepStrictEqual(
+          resolveSvelteConfigFromOption({
+            filePath: path.join(dir, "src/App.svelte"),
+          }),
+          { compilerOptions: { runes: false } },
+        );
+      },
+    );
+  });
+
+  it("uses vite.config.js before vite.config.ts, like Vite", () => {
+    withFiles(
+      {
+        "vite.config.js": `
+          import { sveltekit } from "@sveltejs/kit/vite";
+          export default { plugins: [sveltekit({ compilerOptions: { runes: true } })] };
+          `,
+        "vite.config.ts": `
+          import { sveltekit } from "@sveltejs/kit/vite";
+          export default { plugins: [sveltekit({ compilerOptions: { runes: false } })] };
+          `,
+        "src/App.svelte": "",
+      },
+      (dir) => {
+        assert.deepStrictEqual(
+          resolveSvelteConfigFromOption({
+            filePath: path.join(dir, "src/App.svelte"),
+          }),
+          { compilerOptions: { runes: true } },
+        );
+      },
+    );
+  });
+
+  it("uses only the first vite config file", () => {
+    withFiles(
+      {
+        "vite.config.js": VITE_CONFIG_NO_ARGS,
+        "vite.config.ts": `
+          import { sveltekit } from "@sveltejs/kit/vite";
+          export default { plugins: [sveltekit({ compilerOptions: { runes: false } })] };
+          `,
+        "src/App.svelte": "",
+      },
+      (dir) => {
+        assert.strictEqual(
+          resolveSvelteConfigFromOption({
+            filePath: path.join(dir, "src/App.svelte"),
+          }),
+          null,
         );
       },
     );
@@ -136,10 +224,9 @@ describe("resolveSvelteConfigFromOption", () => {
     );
   });
 
-  // `module.stripTypeScriptTypes()` is only available on Node.js 22.13+.
-  const itIfStripTypes =
-    stripTypeScriptTypes("const a: number = 1") == null ? it.skip : it;
-  itIfStripTypes("reads vite.config.ts with type annotations", () => {
+  // Uses `module.stripTypeScriptTypes()` on Node.js 22.13+,
+  // and the `typescript` package (a dev dependency) on older versions.
+  it("reads vite.config.ts with type annotations", () => {
     withFiles(
       {
         "vite.config.ts": `

@@ -3,6 +3,7 @@ import fs from "fs";
 import Module from "module";
 import { parseConfig, parseViteConfig } from "./parser.js";
 import type * as Compiler from "svelte/compiler";
+import type * as TS from "typescript";
 
 /**
  * The Svelte config.
@@ -91,11 +92,15 @@ interface KitConfig {
 
 const caches = new Map<string, SvelteConfig | null>();
 
+/**
+ * The `vite.config.*` file names, in the same order as Vite looks for them.
+ * Vite uses only the first one that exists.
+ */
 const VITE_CONFIG_FILE_NAMES = [
   "vite.config.js",
   "vite.config.mjs",
-  "vite.config.cjs",
   "vite.config.ts",
+  "vite.config.cjs",
   "vite.config.mts",
   "vite.config.cts",
 ];
@@ -115,9 +120,9 @@ export function resolveSvelteConfigFromOption(
 /**
  * Resolves the Svelte config by static analysis.
  * It searches the given file's directory and its parents.
- * In each directory, it first reads `vite.config.*`, and uses the argument of
- * the `sveltekit()` or `svelte()` plugin if it can be read.
- * Otherwise, it reads `svelte.config.js` in the same directory.
+ * In each directory, it reads the first `vite.config.*` file and
+ * `svelte.config.js`, and merges them like `vite-plugin-svelte` does.
+ * It stops when `svelte.config.js` exists or the vite config gives a usable value.
  */
 function resolveSvelteConfig(
   filePath: string | undefined,
@@ -129,27 +134,58 @@ function resolveSvelteConfig(
   }
   let directory = path.resolve(cwd);
   for (;;) {
-    for (const name of VITE_CONFIG_FILE_NAMES) {
-      const target = path.join(directory, name);
-      if (!isFile(target)) continue;
-      const config = withCache(target, () => readViteConfig(target));
-      if (config) return config;
-    }
+    const viteConfigPath = findViteConfigPath(directory);
+    const viteConfig = viteConfigPath
+      ? withCache(viteConfigPath, () => readViteConfig(viteConfigPath))
+      : null;
     const svelteConfigPath = path.join(directory, "svelte.config.js");
     if (isFile(svelteConfigPath)) {
-      return withCache(svelteConfigPath, () => {
+      const svelteConfig = withCache(svelteConfigPath, () => {
         try {
           return parseConfig(fs.readFileSync(svelteConfigPath, "utf8"));
         } catch {
           return null;
         }
       });
+      return mergeConfigs(viteConfig, svelteConfig);
     }
+    if (viteConfig) return viteConfig;
     const next = path.dirname(directory);
     if (next === directory) break;
     directory = next;
   }
   return null;
+}
+
+/** Returns the first `vite.config.*` file in the directory, like Vite does. */
+function findViteConfigPath(directory: string): string | null {
+  for (const name of VITE_CONFIG_FILE_NAMES) {
+    const target = path.join(directory, name);
+    if (isFile(target)) return target;
+  }
+  return null;
+}
+
+/**
+ * Merges the config from `vite.config.*` with the config from `svelte.config.js`.
+ * `compilerOptions.runes` and top-level `files` come from the vite config if known.
+ * Everything else comes from `svelte.config.js`.
+ */
+function mergeConfigs(
+  viteConfig: SvelteConfig | null,
+  svelteConfig: SvelteConfig | null,
+): SvelteConfig | null {
+  if (!viteConfig) return svelteConfig;
+  if (!svelteConfig) return viteConfig;
+  const result: SvelteConfig = { ...svelteConfig };
+  if (viteConfig.files != null) result.files = viteConfig.files;
+  if (viteConfig.compilerOptions?.runes != null) {
+    result.compilerOptions = {
+      ...svelteConfig.compilerOptions,
+      runes: viteConfig.compilerOptions.runes,
+    };
+  }
+  return result;
 }
 
 function withCache(
@@ -174,13 +210,13 @@ function isFile(target: string): boolean {
 
 /**
  * Reads the Svelte config from `vite.config.*`.
- * Returns `null` if it cannot be read. It never throws.
+ * Returns `null` if it cannot be read or gives no usable value. It never throws.
  */
 function readViteConfig(filePath: string): SvelteConfig | null {
   try {
     let code = fs.readFileSync(filePath, "utf8");
     if (/\.[cm]?ts$/u.test(filePath)) {
-      const stripped = stripTypeScriptTypes(code);
+      const stripped = stripTypes(code, { dir: path.dirname(filePath) });
       if (stripped != null) code = stripped;
     }
     return parseViteConfig(code);
@@ -190,10 +226,24 @@ function readViteConfig(filePath: string): SvelteConfig | null {
 }
 
 /**
- * Removes TypeScript types with `module.stripTypeScriptTypes()` (Node.js 22.13+).
- * Returns `null` if it is not available or fails.
+ * Removes TypeScript types from the code.
+ * It uses `module.stripTypeScriptTypes()` (Node.js 22.13+) if available.
+ * Otherwise, it uses `transpileModule()` of the `typescript` package if it can be loaded.
+ * Returns `null` if both fail. It never throws.
  */
-export function stripTypeScriptTypes(code: string): string | null {
+export function stripTypes(
+  code: string,
+  options: { dir?: string; useNodeStrip?: boolean } = {},
+): string | null {
+  if (options.useNodeStrip !== false) {
+    const stripped = stripWithNode(code);
+    if (stripped != null) return stripped;
+  }
+  return transpileWithTypeScript(code, options.dir);
+}
+
+/** Uses `module.stripTypeScriptTypes()`. Returns `null` if it is not available or fails. */
+function stripWithNode(code: string): string | null {
   const strip = (Module as any)?.stripTypeScriptTypes as
     | ((code: string, options?: { mode?: "strip" }) => string)
     | undefined;
@@ -223,4 +273,47 @@ export function stripTypeScriptTypes(code: string): string | null {
   } finally {
     process.emitWarning = originalEmitWarning;
   }
+}
+
+/**
+ * Uses `transpileModule()` of the optional `typescript` package.
+ * It looks for the package from the given directory, then from the current working directory.
+ * Returns `null` if the package cannot be loaded or it fails.
+ */
+function transpileWithTypeScript(
+  code: string,
+  dir: string | undefined,
+): string | null {
+  const ts = loadTypeScript(dir);
+  if (!ts) return null;
+  try {
+    return ts.transpileModule(code, {
+      compilerOptions: {
+        module: ts.ModuleKind.ESNext,
+        target: ts.ScriptTarget.ESNext,
+        verbatimModuleSyntax: false,
+      },
+      reportDiagnostics: false,
+    }).outputText;
+  } catch {
+    return null;
+  }
+}
+
+function loadTypeScript(dir: string | undefined): typeof TS | null {
+  const bases: string[] = [];
+  if (dir) bases.push(dir);
+  if (typeof process !== "undefined") bases.push(process.cwd());
+  for (const base of bases) {
+    try {
+      const require = Module.createRequire(
+        path.join(base, "__placeholder__.js"),
+      );
+      const ts = require("typescript");
+      if (typeof ts?.transpileModule === "function") return ts;
+    } catch {
+      // ignore
+    }
+  }
+  return null;
 }

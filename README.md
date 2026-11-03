@@ -258,7 +258,7 @@ export default [
 
 If you still use `svelte.config.js`, import it instead: `import svelteConfig from "./svelte.config.js";`.
 
-If `parserOptions.svelteConfig` is not set, the parser tries to find the config by itself. This is only a fallback. It starts from the directory of the linted file and walks up. In each directory, it first reads `vite.config.*` and looks for a `sveltekit()` or `svelte()` call with options. If it finds none, it reads `svelte.config.js`. It reads these files statically and never runs them. So it only gets `compilerOptions.runes` and `files`. It cannot read values from functions or configs that are built at runtime.
+If `parserOptions.svelteConfig` is not set, the parser tries to find the config by itself. This is only a fallback. It starts from the directory of the linted file and walks up. In each directory, it reads the first `vite.config.*` file (in the same order as Vite) and looks for a `sveltekit()` or `svelte()` call with options. It also reads `svelte.config.js` in the same directory. If both have a value, the value from `vite.config.*` wins. It reads these files statically and never runs them. So it only gets `compilerOptions.runes`, `files` from `vite.config.*`, and `kit.files` from `svelte.config.js`. It cannot read values from functions or configs that are built at runtime. A `vite.config.ts` file needs Node.js 22.13+ or the `typescript` package.
 
 ### parserOptions.svelteFeatures
 
