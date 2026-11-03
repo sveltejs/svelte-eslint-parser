@@ -231,6 +231,7 @@ export function analyzePropsScope(
                 pattern.right.callee.name === "$bindable"
               ) {
                 addPropReference(pattern.left, moduleScope);
+                markBindableAsUsed(pattern.left, moduleScope);
               }
             }
           }
@@ -268,6 +269,24 @@ export function analyzePropsScope(
     }
     if (node.type === "RestElement") {
       yield* extractPattern(node.argument);
+    }
+  }
+
+  /**
+   * Mark the `$bindable()` prop as used.
+   * The parent component can read the value through `bind:`,
+   * so rules like `no-useless-assignment` should not report writes to it.
+   * This works the same as `sourceCode.markVariableAsUsed()`.
+   */
+  function markBindableAsUsed(
+    node: ESTree.Identifier,
+    scope: eslint.Scope.Scope,
+  ) {
+    const variable = scope.set.get(node.name);
+    if (variable) {
+      (
+        variable as eslint.Scope.Variable & { eslintUsed?: boolean }
+      ).eslintUsed = true;
     }
   }
 
