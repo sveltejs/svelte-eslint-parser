@@ -108,7 +108,9 @@ export function analyzeTypeScriptInSvelte(
 
   analyzeRuneVariables(result, ctx, context.svelteParseContext);
 
-  if (!attrs.lang || attrs.lang === "js" || attrs.lang === "javascript") {
+  const isJavaScript =
+    !attrs.lang || attrs.lang === "js" || attrs.lang === "javascript";
+  if (isJavaScript) {
     // Keep leading JSDoc attached to the user's declaration, not to the last
     // synthetic declaration inserted above it.
     ctx.appendVirtualScript("\n");
@@ -123,7 +125,12 @@ export function analyzeTypeScriptInSvelte(
   const rootScopeStart = code.script.length + code.render.length;
   for (const transform of [
     ...analyzeDollarDerivedScopes(result, context.svelteParseContext),
-    ...analyzeBindableProps(result, context.svelteParseContext),
+    ...analyzeBindableProps(
+      result,
+      // TypeScript does not use JSDoc types in TypeScript code.
+      isJavaScript ? code.script + code.render + code.rootScope : null,
+      context.svelteParseContext,
+    ),
   ]) {
     if (transform.node.range[0] < renderStart) {
       scriptTransformers.push(transform);
@@ -525,7 +532,8 @@ function analyzeRuneVariables(
           "<T>(): T",
           // Used for `$props()` with `$bindable()` props. See `transformForBindableProps()`.
           // `T[P] | ...` keeps `undefined` in the types of other props. With `P extends K ? T[P] | undefined : T[P]`, TS drops it when inferring `T`.
-          "<T, K extends PropertyKey>(...bindableKeys: K[]): { [P in keyof T]: T[P] | (P extends K ? undefined : never) }",
+          // The keys are strings, and `${P}` also matches number keys such as `1: number`.
+          "<T, K extends string>(...bindableKeys: K[]): { [P in keyof T]: T[P] | (P extends string | number ? `${P}` extends K ? undefined : never : never) }",
         ]);
         appendDeclareNamespaceVirtualScripts(globalName, [
           "export function id(): string;",
@@ -718,6 +726,8 @@ function* analyzeDollarDerivedScopes(
  */
 function* analyzeBindableProps(
   result: TSESParseForESLintResult,
+  /** The code to look for JSDoc `@type` comments in. `null` to skip it. */
+  jsDocCode: string | null,
   svelteParseContext: SvelteParseContext,
 ): Iterable<TransformInfo> {
   // No processing is needed if the user is determined not to be in Runes mode.
@@ -725,46 +735,104 @@ function* analyzeBindableProps(
   for (const statement of result.ast.body) {
     if (statement.type !== "VariableDeclaration") continue;
     for (const decl of statement.declarations) {
+      if (decl.id.type !== "ObjectPattern") continue;
+      // Also handle `$props()!`.
+      const propsCall =
+        decl.init?.type === "TSNonNullExpression"
+          ? decl.init.expression
+          : decl.init;
       if (
-        decl.id.type !== "ObjectPattern" ||
-        // Without a type annotation, `$props()` has no useful type.
-        !decl.id.typeAnnotation ||
-        decl.init?.type !== "CallExpression" ||
-        decl.init.callee.type !== "Identifier" ||
-        decl.init.callee.name !== "$props" ||
-        decl.init.arguments.length ||
-        decl.init.typeArguments
+        propsCall?.type !== "CallExpression" ||
+        propsCall.callee.type !== "Identifier" ||
+        propsCall.callee.name !== "$props" ||
+        propsCall.arguments.length
+      ) {
+        continue;
+      }
+      if (propsCall.typeArguments) {
+        // e.g. `$props<{ value: string }>()`
+        if (propsCall.typeArguments.params.length !== 1) continue;
+      } else if (
+        // Without a type, `$props()` has no useful type.
+        !decl.id.typeAnnotation &&
+        (jsDocCode == null ||
+          !hasJSDocTypeComment(statement, result, jsDocCode))
       ) {
         continue;
       }
       const keys: string[] = [];
       for (const prop of decl.id.properties) {
         if (
-          prop.type === "Property" &&
-          !prop.computed &&
-          prop.value.type === "AssignmentPattern" &&
-          prop.value.right.type === "CallExpression" &&
-          prop.value.right.callee.type === "Identifier" &&
-          prop.value.right.callee.name === "$bindable"
+          prop.type !== "Property" ||
+          prop.value.type !== "AssignmentPattern" ||
+          prop.value.right.type !== "CallExpression" ||
+          prop.value.right.callee.type !== "Identifier" ||
+          prop.value.right.callee.name !== "$bindable"
         ) {
-          if (prop.key.type === "Identifier") {
-            keys.push(prop.key.name);
-          } else if (
-            prop.key.type === "Literal" &&
-            typeof prop.key.value === "string"
-          ) {
-            keys.push(prop.key.value);
-          }
+          continue;
         }
+        const key = getStaticPropertyKey(prop);
+        if (key != null && !keys.includes(key)) keys.push(key);
       }
       if (!keys.length) continue;
-      const node = decl.init;
+      const typeArguments = propsCall.typeArguments;
       yield {
-        node,
-        transform: (ctx) => transformForBindableProps(node, keys, ctx),
+        node: propsCall,
+        transform: (ctx) =>
+          typeArguments
+            ? transformForBindablePropsTypeArguments(typeArguments, keys, ctx)
+            : transformForBindableProps(propsCall, keys, ctx),
       };
     }
   }
+}
+
+/**
+ * Get the static key of the given property as a string.
+ * e.g. `a`, `'a'`, `1`, `['a']`, `` [`a`] ``
+ */
+function getStaticPropertyKey(prop: TSESTree.Property): string | null {
+  const key = prop.key;
+  if (key.type === "Identifier") {
+    return prop.computed ? null : key.name;
+  }
+  if (key.type === "Literal") {
+    return typeof key.value === "string" || typeof key.value === "number"
+      ? String(key.value)
+      : null;
+  }
+  if (
+    key.type === "TemplateLiteral" &&
+    key.expressions.length === 0 &&
+    key.quasis.length === 1 &&
+    key.quasis[0].value.cooked != null
+  ) {
+    return key.quasis[0].value.cooked;
+  }
+  return null;
+}
+
+/**
+ * Checks whether the given statement has a JSDoc comment with `@type`.
+ * e.g. `/** @type {Props} *\/ let { value = $bindable() } = $props();`
+ */
+function hasJSDocTypeComment(
+  statement: TSESTree.VariableDeclaration,
+  result: TSESParseForESLintResult,
+  code: string,
+): boolean {
+  const comments = result.ast.comments ?? [];
+  for (let index = comments.length - 1; index >= 0; index--) {
+    const comment = comments[index];
+    if (comment.range[1] > statement.range[0]) continue;
+    return (
+      comment.type === "Block" &&
+      comment.value.startsWith("*") &&
+      /@type\b/u.test(comment.value) &&
+      !code.slice(comment.range[1], statement.range[0]).trim()
+    );
+  }
+  return false;
 }
 
 /**
@@ -789,6 +857,7 @@ function transformForBindableProps(
       if (
         node.callee.type !== "Identifier" ||
         node.callee.name !== "$props" ||
+        node.typeArguments ||
         node.arguments.length !== keys.length ||
         node.arguments.some(
           (arg, index) => arg.type !== "Literal" || arg.value !== keys[index],
@@ -797,6 +866,36 @@ function transformForBindableProps(
         return false;
       }
       node.arguments = [];
+      return true;
+    },
+  });
+}
+
+/**
+ * Transform for `$props<T>()` to `$props<T, "key1" | "key2">()`.
+ * Same as `transformForBindableProps()`, but for `$props()` with a type argument.
+ */
+function transformForBindablePropsTypeArguments(
+  typeArguments: TSESTree.TSTypeParameterInstantiation,
+  keys: string[],
+  ctx: VirtualTypeScriptContext,
+) {
+  const keysText = keys.map((key) => JSON.stringify(key)).join("|");
+  ctx.appendOriginal(typeArguments.range[1] - 1);
+  ctx.appendVirtualScript(`,${keysText}`);
+
+  ctx.restoreContext.addRestoreExpressionProcess<TSESTree.CallExpression>({
+    target: "CallExpression" as TSESTree.AST_NODE_TYPES.CallExpression,
+    restore: (node) => {
+      if (
+        node.callee.type !== "Identifier" ||
+        node.callee.name !== "$props" ||
+        node.arguments.length !== 0 ||
+        node.typeArguments?.params.length !== 2
+      ) {
+        return false;
+      }
+      node.typeArguments.params.pop();
       return true;
     },
   });
