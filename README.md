@@ -219,10 +219,14 @@ export default [
 
 ### parserOptions.svelteConfig
 
-If you use `eslint.config.js`, you can specify a `svelte.config.js` file via `parserOptions.svelteConfig`.
+You can pass your Svelte config to the parser via `parserOptions.svelteConfig`.
+
+In SvelteKit 3 projects, the Svelte config is passed to the `sveltekit()` plugin in `vite.config.js`. Plain Vite projects can also pass it to the `svelte()` plugin. Use [`@sveltejs/load-config`](https://www.npmjs.com/package/@sveltejs/load-config) to load it. It reads both `vite.config.js` and `svelte.config.js`.
 
 ```js
-import svelteConfig from "./svelte.config.js";
+import { loadConfig } from "@sveltejs/load-config";
+
+const svelteConfig = (await loadConfig("./", { traverse: false }))?.config;
 
 export default [
   {
@@ -239,7 +243,9 @@ export default [
 ];
 ```
 
-If `parserOptions.svelteConfig` is not set, the parser attempts to statically read some config from `svelte.config.js`.
+If you use `svelte.config.js`, you can also import it directly: `import svelteConfig from "./svelte.config.js";`.
+
+If `parserOptions.svelteConfig` is not set, the parser attempts to statically read some config from `svelte.config.js`. It does not read `vite.config.js`. If you put the Svelte config in `vite.config.js`, pass it via `parserOptions.svelteConfig`.
 
 ### parserOptions.svelteFeatures
 
