@@ -24,8 +24,8 @@ export type SvelteParseContext = {
    * - Svelte 3/4 does not support Runes mode.
    * - Checks if `runes` configuration exists in:
    *   - `parserOptions`
-   *   - `svelte.config.js`
    *   - `<svelte:options>` in the Svelte file.
+   *   - `svelte.config.js`
    * - Returns `true` if the `runes` symbol is present in the Svelte file.
    */
   runes?: boolean;
@@ -68,22 +68,24 @@ function isRunesAsParseContext(
     return false;
   }
 
-  // Compiler option.
+  // Parser option.
   if (parserOptions.svelteFeatures?.runes != null) {
     return parserOptions.svelteFeatures?.runes;
   }
+
+  // `<svelte:options>` takes precedence over the compiler option, like the Svelte compiler.
+  const svelteOptions = (svelteAst as Compiler.Root).options;
+  if (svelteOptions?.runes != null) {
+    return svelteOptions?.runes;
+  }
+
+  // Compiler option.
   if (svelteConfig?.compilerOptions?.runes != null) {
     return typeof svelteConfig.compilerOptions?.runes === "function"
       ? svelteConfig.compilerOptions.runes({
           filename: parserOptions.filePath ?? "",
         })
       : svelteConfig.compilerOptions?.runes;
-  }
-
-  // `<svelte:options>`.
-  const svelteOptions = (svelteAst as Compiler.Root).options;
-  if (svelteOptions?.runes != null) {
-    return svelteOptions?.runes;
   }
 
   return undefined;
