@@ -399,6 +399,13 @@ function convertBindingDirective(
   processDirective(node, directive, ctx, {
     processExpression(expression, shorthand) {
       directive.shorthand = shorthand;
+      if (ctx.isTypeScript() && expression.type === "Identifier") {
+        // TypeScript keeps a `let` narrowed inside closures unless it sees a
+        // write, so the write the binding performs must be visible to it.
+        ctx.scriptLet.addTypeOnlyStatement(
+          `${expression.name} = ${expression.name};`,
+        );
+      }
       return ctx.scriptLet.addExpression(
         expression,
         directive,
@@ -431,9 +438,10 @@ function convertBindingDirective(
 }
 
 /**
- * Function bindings on a component are typed as a setter of the bound prop. The
+ * Function bindings are typed as a setter of the bound value: the bound prop on
+ * a component, or the element or component instance for `bind:this`. The
  * assertion applies to the whole `getter, setter` sequence, so it contextually
- * types only the setter, whose parameter receives the prop value.
+ * types only the setter, whose parameter receives the value.
  */
 function buildFunctionBindingsType(
   node: SvAST.DirectiveForExpression | Compiler.BindDirective,
@@ -443,7 +451,6 @@ function buildFunctionBindingsType(
 ): string | null {
   if (
     element.type !== "SvelteElement" ||
-    element.kind !== "component" ||
     expression.type !== "SequenceExpression" ||
     !isFunctionBindings(ctx, {
       ...expression,
@@ -452,12 +459,38 @@ function buildFunctionBindingsType(
   ) {
     return null;
   }
+  if (node.name === "this") {
+    const instanceType = buildBindThisType(element, ctx);
+    // The binding is reset to `null` when the element or component goes away.
+    return instanceType && `(value: ${instanceType} | null) => void`;
+  }
+  if (element.kind !== "component") {
+    return null;
+  }
   const propType = buildAttributeType(element, node.name, ctx);
   // An undeclared prop resolves to `never`, which would poison the parameter.
   return (
     propType &&
     `(value: [${propType}] extends [never] ? any : (${propType})) => void`
   );
+}
+
+/** Type of the value `bind:this` receives from the element or component. */
+function buildBindThisType(
+  element: SvelteElement,
+  ctx: Context,
+): string | null {
+  // The element's own name node is not converted yet.
+  const name = ctx.elements.get(element)!.name;
+  if (element.kind === "component") {
+    // A Svelte 5 component instance is the object of its exports.
+    return `(typeof ${name} extends import('svelte').Component<any, infer E extends Record<string, any>> ? E : typeof ${name} extends new (...args: any[]) => infer I ? I : any)`;
+  }
+  if (element.kind === "special") {
+    return name === "svelte:element" ? "Element" : null;
+  }
+  const tag = JSON.stringify(name);
+  return `(${tag} extends infer K ? K extends keyof HTMLElementTagNameMap ? HTMLElementTagNameMap[K] : K extends keyof SVGElementTagNameMap ? SVGElementTagNameMap[K] : Element : never)`;
 }
 
 /**
