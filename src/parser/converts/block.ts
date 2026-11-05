@@ -21,6 +21,7 @@ import type { Context } from "../../context/index.js";
 import { convertChildren } from "./element.js";
 import { getWithLoc, indexOf, lastIndexOf } from "./common.js";
 import { svelteVersion } from "../svelte-version.js";
+import { getComponentPropsType } from "./component-props.js";
 import type * as ESTree from "estree";
 import {
   getAlternateFromIfBlock,
@@ -728,8 +729,7 @@ function buildSnippetParamTypes(
   ) {
     return null;
   }
-  const elementName = ctx.elements.get(parent)!.name;
-  const componentPropsType = `import('svelte').ComponentProps<typeof ${elementName}>`;
+  const componentPropsType = getComponentPropsType(parent, ctx);
   const snippetName = node.expression.name;
   // Fall back to `any` for a prop the component does not declare, rather than
   // letting `never` poison every use of the parameter.

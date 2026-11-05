@@ -50,6 +50,7 @@ export function svelteToVirtualTypeScript(
         slots: ctx.slots,
         svelteParseContext,
         instanceScriptRange: getInstanceScriptRange(template.svelteAst),
+        instanceGenerics: ctx.instanceGenerics,
       },
     );
     return tsCtx.script;
