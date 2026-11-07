@@ -23,6 +23,7 @@ import type { NormalizedParserOptions } from "../../parser-options.js";
 import { setParent } from "../set-parent.js";
 import { getGlobalsForSvelte, globalsForRunes } from "../../globals.js";
 import type { SvelteParseContext } from "../../svelte-parse-context.js";
+import { hasRunesSymbol } from "../../svelte-parse-context.js";
 import { withoutProjectParserOptions } from "../../parser-options.js";
 import { appendComponentDefaultExport } from "./component.js";
 
@@ -108,6 +109,13 @@ export function analyzeTypeScriptInSvelte(
 
   analyzeRuneVariables(result, ctx, context.svelteParseContext);
 
+  const legacyPropsTransformers = analyzeLegacyProps(
+    result,
+    context.instanceScriptRange ?? null,
+    context.svelteParseContext,
+    ctx,
+  );
+
   const isJavaScript =
     !attrs.lang || attrs.lang === "js" || attrs.lang === "javascript";
   if (isJavaScript) {
@@ -118,6 +126,7 @@ export function analyzeTypeScriptInSvelte(
 
   const scriptTransformers: TransformInfo[] = [
     ...analyzeReactiveScopes(result),
+    ...legacyPropsTransformers,
   ];
   const renderTransformers: TransformInfo[] = [];
   const rootScopeTransformers: TransformInfo[] = [];
@@ -784,6 +793,159 @@ function* analyzeBindableProps(
 }
 
 /**
+ * Analyze Svelte v4 style props. e.g. `export let x: string | undefined = undefined;`
+ * TypeScript narrows the prop to the type of its default value, but the parent
+ * component can pass any value of the declared type. So assign a value of type
+ * `any` to the prop right after its declaration to reset the narrowing.
+ * e.g. `export let x: T = undefined;` -> `export let x: T = undefined;x = $_any;`
+ */
+function analyzeLegacyProps(
+  result: TSESParseForESLintResult,
+  instanceScriptRange: [number, number] | null,
+  svelteParseContext: SvelteParseContext,
+  ctx: VirtualTypeScriptContext,
+): TransformInfo[] {
+  if (!instanceScriptRange) return [];
+  // In Runes mode, `export` declares component exports, not props.
+  if (svelteParseContext.runes ?? hasRunesSymbol(result.ast as never)) {
+    return [];
+  }
+  const [start, end] = instanceScriptRange;
+  const statements = result.ast.body.filter(
+    (node) => start <= node.range[0] && node.range[1] <= end,
+  );
+
+  const propNames = new Map<TSESTree.Node, string[]>();
+  const declarations = new Map<string, TSESTree.VariableDeclaration>();
+  for (const statement of statements) {
+    const declaration =
+      statement.type === "ExportNamedDeclaration"
+        ? statement.declaration
+        : statement;
+    if (
+      declaration?.type !== "VariableDeclaration" ||
+      (declaration.kind !== "let" && declaration.kind !== "var")
+    ) {
+      continue;
+    }
+    const names = declaration.declarations.flatMap((decl) => [
+      ...extractIdentifierNames(decl.id),
+    ]);
+    if (statement.type === "ExportNamedDeclaration") {
+      propNames.set(statement, names);
+    }
+    for (const name of names) {
+      declarations.set(name, declaration);
+    }
+  }
+  // Process for `let x; export { x }`.
+  for (const statement of statements) {
+    if (
+      statement.type !== "ExportNamedDeclaration" ||
+      statement.declaration ||
+      statement.source
+    ) {
+      continue;
+    }
+    for (const specifier of statement.specifiers) {
+      if (specifier.local.type !== "Identifier") continue;
+      const declaration = declarations.get(specifier.local.name);
+      if (!declaration) continue;
+      // Skip `export let x; export { x as y }`
+      if (declaration.parent?.type === "ExportNamedDeclaration") continue;
+      const names = propNames.get(declaration) ?? [];
+      if (!names.includes(specifier.local.name)) {
+        names.push(specifier.local.name);
+      }
+      propNames.set(declaration, names);
+    }
+  }
+  if (!propNames.size) return [];
+
+  const anyId = ctx.generateUniqueId("any");
+  ctx.appendVirtualScript(`declare const ${anyId}: any;`);
+  ctx.restoreContext.addRestoreStatementProcess((node, result) => {
+    if (
+      node.type !== "VariableDeclaration" ||
+      !node.declare ||
+      node.declarations.length !== 1 ||
+      node.declarations[0].id.type !== "Identifier" ||
+      node.declarations[0].id.name !== anyId
+    ) {
+      return false;
+    }
+    removeVirtualStatement(node, result);
+    return true;
+  });
+
+  return [...propNames].map(([node, names]) => ({
+    // Use the end of the declaration so that the transforms inside the
+    // declaration (e.g. `$derived()`) are not skipped.
+    node: {
+      ...node,
+      range: [node.range[1], node.range[1]],
+    } as TSESTree.Node,
+    transform: (ctx) => {
+      ctx.appendOriginal(node.range[1]);
+      const separator = ctx.script.trimEnd().endsWith(";") ? "" : ";";
+      ctx.appendVirtualScript(
+        `${separator}${names.map((name) => `${name} = ${anyId};`).join("")}`,
+      );
+      for (const name of names) {
+        ctx.restoreContext.addRestoreStatementProcess((node, result) => {
+          if (
+            node.type !== "ExpressionStatement" ||
+            node.expression.type !== "AssignmentExpression" ||
+            node.expression.left.type !== "Identifier" ||
+            node.expression.left.name !== name ||
+            node.expression.right.type !== "Identifier" ||
+            node.expression.right.name !== anyId
+          ) {
+            return false;
+          }
+          removeVirtualStatement(node, result);
+          return true;
+        });
+      }
+    },
+  }));
+
+  /** Extract identifier names from the given pattern. */
+  function* extractIdentifierNames(node: TSESTree.Node): Iterable<string> {
+    if (node.type === "Identifier") {
+      yield node.name;
+    } else if (node.type === "ObjectPattern") {
+      for (const prop of node.properties) {
+        yield* extractIdentifierNames(
+          prop.type === "Property" ? prop.value : prop,
+        );
+      }
+    } else if (node.type === "ArrayPattern") {
+      for (const element of node.elements) {
+        if (element) yield* extractIdentifierNames(element);
+      }
+    } else if (node.type === "AssignmentPattern") {
+      yield* extractIdentifierNames(node.left);
+    } else if (node.type === "RestElement") {
+      yield* extractIdentifierNames(node.argument);
+    }
+  }
+
+  /** Remove the given virtual statement and its scope information. */
+  function removeVirtualStatement(
+    node: TSESTree.ProgramStatement,
+    result: TSESParseForESLintResult,
+  ) {
+    const program = result.ast;
+    program.body.splice(program.body.indexOf(node), 1);
+    removeAllScopeAndVariableAndReference(node, {
+      visitorKeys: result.visitorKeys,
+      scopeManager: result.scopeManager as eslint.Scope.ScopeManager,
+    });
+  }
+}
+
+/**
  * Get the static key of the given property as a string.
  * e.g. `a`, `'a'`, `1`, `['a']`, `` [`a`] ``
  */
@@ -922,7 +1084,12 @@ function applyTransforms(
   transforms: TransformInfo[],
   ctx: VirtualTypeScriptContext,
 ) {
-  transforms.sort((a, b) => a.node.range[0] - b.node.range[0]);
+  transforms.sort(
+    (a, b) =>
+      a.node.range[0] - b.node.range[0] ||
+      // Apply a zero-width transform before a transform that starts at the same position.
+      a.node.range[1] - b.node.range[1],
+  );
 
   let offset = 0;
   for (const transform of transforms) {

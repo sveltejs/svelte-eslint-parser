@@ -178,3 +178,25 @@ function $_render6() {
   foo && foo.bar;
 }
 ```
+
+TypeScript also narrows a Svelte v4 style prop to the type of its default value, but the parent component can pass any value of the declared type.
+
+<!-- prettier-ignore -->
+```ts
+export let foo: { bar: number } | null = null;
+
+const r = foo && foo.bar;
+       // ^ never type
+```
+
+To avoid this problem, the parser assigns a value of type `any` to the prop right after its declaration. This resets the narrowing to the declared type.
+
+```ts
+declare const $_any1: any;
+export let foo: { bar: number } | null = null;
+foo = $_any1;
+
+const r = foo && foo.bar;
+```
+
+The parser removes these virtual statements from the AST and ScopeManager.
