@@ -66,6 +66,26 @@ describe("Check for AST.", () => {
           assert.deepStrictEqual(sortJson(json), sortJson(output));
         });
 
+      it("scope references must be connected to the AST.", () => {
+        if (result.ast.body.some((node: any) => !node.parent)) {
+          // Some parsers (e.g. espree for `.svelte.js`) do not set `parent`.
+          return;
+        }
+        for (const scope of result.scopeManager.scopes) {
+          for (const reference of scope.references) {
+            let node = reference.identifier;
+            while (node.parent) {
+              node = node.parent;
+            }
+            assert.strictEqual(
+              node,
+              result.ast,
+              `"${reference.identifier.name}" reference is not connected to the AST in ${inputFileName}`,
+            );
+          }
+        }
+      });
+
       it("location must be correct.", () => {
         // check tokens
         checkTokens(result.ast, input);
