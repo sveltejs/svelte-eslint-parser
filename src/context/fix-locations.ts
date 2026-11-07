@@ -1,7 +1,7 @@
 import type * as ESTree from "estree";
 import type { Comment, Locations, Token } from "../ast/index.js";
 import type { Context } from "./index.js";
-import { traverseNodes } from "../traverse.js";
+import { onDeprecatedGetterRead, traverseNodes } from "../traverse.js";
 
 /** Fix locations */
 export function fixLocations(
@@ -16,32 +16,37 @@ export function fixLocations(
     return;
   }
   const traversed = new Set<any>();
-  traverseNodes(node, {
-    visitorKeys,
-    enterNode: (n) => {
-      if (traversed.has(n)) {
-        return;
-      }
-      traversed.add(n);
-      if (traversed.has(n.range)) {
-        if (!traversed.has(n.loc)) {
-          // However, `Node#loc` may not be shared.
-          const locs = ctx.getConvertLocation({
-            start: n.range![0],
-            end: n.range![1],
-          });
-          applyLocs(n, locs);
-          traversed.add(n.loc);
-        }
-      } else {
-        const start = n.range![0] + offset;
-        const end = n.range![1] + offset;
-        const locs = ctx.getConvertLocation({ start, end });
+
+  /** Fix the location of the given node */
+  function fixNode(n: ESTree.Node) {
+    if (traversed.has(n)) {
+      return;
+    }
+    traversed.add(n);
+    if (traversed.has(n.range)) {
+      if (!traversed.has(n.loc)) {
+        // However, `Node#loc` may not be shared.
+        const locs = ctx.getConvertLocation({
+          start: n.range![0],
+          end: n.range![1],
+        });
         applyLocs(n, locs);
-        traversed.add(n.range);
         traversed.add(n.loc);
       }
-    },
+    } else {
+      const start = n.range![0] + offset;
+      const end = n.range![1] + offset;
+      const locs = ctx.getConvertLocation({ start, end });
+      applyLocs(n, locs);
+      traversed.add(n.range);
+      traversed.add(n.loc);
+    }
+    onDeprecatedGetterRead(n, visitorKeys, fixNode);
+  }
+
+  traverseNodes(node, {
+    visitorKeys,
+    enterNode: fixNode,
     leaveNode: Function.prototype as any,
   });
   for (const t of tokens) {
