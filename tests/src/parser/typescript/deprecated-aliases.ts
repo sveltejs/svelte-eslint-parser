@@ -3,11 +3,12 @@ import type { TSESTree } from "@typescript-eslint/types";
 import { parseForESLint } from "../../../../src/index.js";
 import * as tsParser from "@typescript-eslint/parser";
 import { traverseNodes } from "../../../../src/traverse.js";
+import { svelteVersion } from "../../../../src/parser/svelte-version.js";
 
 // typescript-eslint returns separate node copies from deprecated getters
 // (e.g. `TSEnumDeclaration.members`). They are not in the visitor keys,
 // but their locations must still point to the original source.
-const CASES = {
+const CASES: Record<string, string> = {
   "store access in <script>": `<script lang="ts">
   enum A { a }
   type M = { [K in keyof T]: T[K] };
@@ -25,6 +26,10 @@ const CASES = {
 </script>
 {@const v = p as { [K in keyof T]: T[K] } | import("a")}`,
 };
+if (!svelteVersion.gte(5)) {
+  // TypeScript in template expressions needs Svelte 5.
+  delete CASES["template expression"];
+}
 
 type Check = { name: string; node: any; alias: string; expected: string };
 
