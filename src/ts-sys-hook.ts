@@ -55,6 +55,20 @@ interface ScriptInfoLike {
 // component's virtual TypeScript there makes the import resolve to the real
 // prop types instead of Svelte's permissive ambient `declare module '*.svelte'`.
 const SVELTE_COMPANION_SUFFIX = ".svelte.ts";
+// A `package.json` `imports`/`exports` target gets no implicit extension, so
+// a `*.svelte` target probes only `X.d.svelte.ts`, which TypeScript loads only
+// with `allowArbitraryExtensions`. Pointing the target at the companion makes
+// it resolve like a relative `./X.svelte` import. Each field's subpath keys
+// start with its own prefix.
+const SUBPATH_FIELDS = [
+  ["imports", "#"],
+  ["exports", "."],
+] as const;
+
+type SubpathTarget =
+  | string
+  | SubpathTarget[]
+  | { [condition: string]: SubpathTarget };
 
 const translations = new Map<string, TranslationEntry>();
 // `.svelte` paths whose companion TypeScript has read. Only those companions
@@ -178,6 +192,120 @@ function translateCompanion(companionPath: string): string | null {
   return translateOnDemand(sveltePath);
 }
 
+/** `packageJsonText` with every `.svelte` subpath target pointed at its `X.svelte.ts` companion. */
+function redirectSvelteSubpathTargets(packageJsonText: string): string {
+  if (
+    !SUBPATH_FIELDS.some(([field]) => packageJsonText.includes(`"${field}"`))
+  ) {
+    return packageJsonText;
+  }
+  let packageJson: unknown;
+  try {
+    packageJson = JSON.parse(packageJsonText);
+  } catch {
+    return packageJsonText;
+  }
+  if (!isRecord(packageJson)) return packageJsonText;
+
+  let changed = false;
+  for (const [field, prefix] of SUBPATH_FIELDS) {
+    const value = packageJson[field];
+    const redirected = isSubpathMap(value, prefix)
+      ? redirectSubpathMap(value)
+      : redirectRootTarget(field, value);
+    if (redirected !== value) {
+      packageJson[field] = redirected;
+      changed = true;
+    }
+  }
+  return changed ? JSON.stringify(packageJson) : packageJsonText;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === "object" && !Array.isArray(value);
+}
+
+/** Whether `value` maps subpaths to targets, rather than being the bare target of the package root. */
+function isSubpathMap(
+  value: unknown,
+  prefix: string,
+): value is Record<string, unknown> {
+  return (
+    isRecord(value) &&
+    Object.keys(value).every((subpath) => subpath.startsWith(prefix))
+  );
+}
+
+/** An `exports` value that is the package root's own target; `imports` has no such form. */
+function redirectRootTarget(field: string, value: unknown): unknown {
+  if (field !== "exports") return value;
+  return toCompanionTarget(value) ?? value;
+}
+
+function redirectSubpathMap(
+  subpaths: Record<string, unknown>,
+): Record<string, unknown> {
+  const redirected: Record<string, unknown> = {};
+  let changed = false;
+  for (const [subpath, target] of Object.entries(subpaths)) {
+    if (subpath.endsWith("*") && !(`${subpath}.svelte` in subpaths)) {
+      const sibling = mapTargetLeaves(target, (leaf) =>
+        isRelative(leaf) && leaf.endsWith("*")
+          ? `${leaf}${SVELTE_COMPANION_SUFFIX}`
+          : null,
+      );
+      if (sibling !== null) {
+        redirected[`${subpath}.svelte`] = sibling;
+        changed = true;
+      }
+    }
+    const companion = toCompanionTarget(target);
+    if (companion !== null) changed = true;
+    redirected[subpath] = companion ?? target;
+  }
+  return changed ? redirected : subpaths;
+}
+
+/**
+ * `target` with each `./X.svelte` leaf pointed at `./X.svelte.ts`, or `null`
+ * when some leaf is not one. A bare specifier is left to TypeScript's package
+ * resolution, which appends `.ts` itself.
+ */
+function toCompanionTarget(target: unknown): SubpathTarget | null {
+  return mapTargetLeaves(target, (leaf) =>
+    isRelative(leaf) && leaf.endsWith(".svelte") ? `${leaf}.ts` : null,
+  );
+}
+
+function isRelative(target: string): boolean {
+  return target.startsWith("./");
+}
+
+/** `target` with each string leaf mapped, or `null` when any leaf maps to `null`. */
+function mapTargetLeaves(
+  target: unknown,
+  mapLeaf: (leaf: string) => string | null,
+): SubpathTarget | null {
+  if (typeof target === "string") return mapLeaf(target);
+  if (Array.isArray(target)) {
+    const mapped: SubpathTarget[] = [];
+    for (const fallback of target) {
+      const mappedFallback = mapTargetLeaves(fallback, mapLeaf);
+      if (mappedFallback === null) return null;
+      mapped.push(mappedFallback);
+    }
+    return mapped;
+  }
+  if (!isRecord(target)) return null;
+  const mapped: Record<string, SubpathTarget> = {};
+  for (const [condition, conditionTarget] of Object.entries(target)) {
+    const mappedTarget = mapTargetLeaves(conditionTarget, mapLeaf);
+    if (mappedTarget === null) return null;
+    mapped[condition] = mappedTarget;
+  }
+  return mapped;
+}
+
 /**
  * typescript-eslint lower-cases paths on case-insensitive file systems before
  * they reach `ts.sys.readFile`, so compare paths case-insensitively. A false
@@ -239,8 +367,8 @@ function warnCompanionConflict(
   companionConflictWarned = true;
   warn(
     `${sveltePath} and ${companionPath} both exist. TypeScript resolves ` +
-      `'./${path.basename(sveltePath)}' to the module, so component prop ` +
-      "types are not available for this component. The lint rule " +
+      `imports of '${path.basename(sveltePath)}' to the module, so component ` +
+      "prop types are not available for this component. The lint rule " +
       "'svelte/no-conflicting-module-names' (eslint-plugin-svelte >= 3.22.0) " +
       "reports this name collision.",
   );
@@ -316,6 +444,11 @@ function patchTsSys(sys: TsLike["sys"]): void {
           servedCompanions.add(companionKey(filePath.slice(0, -".ts".length)));
           return virtual;
         }
+      } else if (path.basename(filePath) === "package.json") {
+        const packageJsonText = originalReadFile(filePath, encoding);
+        return packageJsonText === undefined
+          ? undefined
+          : redirectSvelteSubpathTargets(packageJsonText);
       }
     }
     return originalReadFile(filePath, encoding);
