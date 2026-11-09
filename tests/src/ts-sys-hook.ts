@@ -1479,6 +1479,9 @@ describeLegacyClass(
  *   conflict guard.
  * - `template` translates the consumer as a Svelte component, exercising the
  *   actual template attribute typing rather than a handwritten props type.
+ * - `componentPath`, `specifier` and `files` place the component elsewhere,
+ *   import it through another specifier and add `package.json` files, to
+ *   resolve it through `imports`/`exports` subpaths.
  */
 function realResolutionDiagnostics(
   componentSource: string,
@@ -1487,17 +1490,33 @@ function realResolutionDiagnostics(
     patch = true,
     realCompanion,
     template,
-  }: { patch?: boolean; realCompanion?: string; template?: string } = {},
+    componentPath = "Foo.svelte",
+    specifier = "./Foo.svelte",
+    files = {},
+  }: {
+    patch?: boolean;
+    realCompanion?: string;
+    template?: string;
+    componentPath?: string;
+    specifier?: string;
+    files?: Record<string, string>;
+  } = {},
 ): ts.Diagnostic[] {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), "real-resolve-"));
   try {
-    const sveltePath = path.join(dir, "Foo.svelte");
+    const sveltePath = path.join(dir, componentPath);
+    fs.mkdirSync(path.dirname(sveltePath), { recursive: true });
     fs.writeFileSync(sveltePath, componentSource, "utf-8");
     if (realCompanion !== undefined) {
-      fs.writeFileSync(path.join(dir, "Foo.svelte.ts"), realCompanion, "utf-8");
+      fs.writeFileSync(`${sveltePath}.ts`, realCompanion, "utf-8");
+    }
+    for (const [relativePath, content] of Object.entries(files)) {
+      const filePath = path.join(dir, relativePath);
+      fs.mkdirSync(path.dirname(filePath), { recursive: true });
+      fs.writeFileSync(filePath, content, "utf-8");
     }
     const barPath = path.join(dir, "Bar.ts");
-    let consumerCode = `import Foo from "./Foo.svelte";\n${consumerBody}\n`;
+    let consumerCode = `import Foo from ${JSON.stringify(specifier)};\n${consumerBody}\n`;
     if (template !== undefined) {
       const translated = svelteToVirtualTypeScript(
         path.join(dir, "Bar.svelte"),
@@ -1948,6 +1967,320 @@ describe("imported component prop types via real `.svelte` resolution (legacy, e
       `expected TS2322 from the real module's \`real: string\`, got: ${bad
         .map((d) => d.code)
         .join(", ")}`,
+    );
+  });
+});
+
+describe("ts.sys `package.json` subpath targets (unit)", () => {
+  beforeEach(() => {
+    _resetTranslationCacheForTesting();
+  });
+
+  /** What TypeScript reads from a `package.json` with this text, through the hook. */
+  function readThroughHook(packageJsonText: string): string {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "ts-sys-hook-"));
+    try {
+      const packageJsonPath = path.join(dir, "package.json");
+      fs.writeFileSync(packageJsonPath, packageJsonText, "utf-8");
+      const sys = { readFile: (p: string) => fs.readFileSync(p, "utf-8") };
+      _patchTsSysForTesting(sys);
+      return sys.readFile(packageJsonPath);
+    } finally {
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
+  }
+
+  function redirect(packageJson: object): unknown {
+    return JSON.parse(readThroughHook(JSON.stringify(packageJson)));
+  }
+
+  it("points a `*.svelte` `exports` target at the companion", () => {
+    assert.deepStrictEqual(
+      redirect({
+        exports: { "./*.js": "./lib/*.js", "./*.svelte": "./lib/*.svelte" },
+      }),
+      {
+        exports: { "./*.js": "./lib/*.js", "./*.svelte": "./lib/*.svelte.ts" },
+      },
+    );
+  });
+
+  it("adds a `*.svelte` entry next to a bare `*` `imports` pattern", () => {
+    assert.deepStrictEqual(
+      redirect({ imports: { "#components/*": "./src/components/*" } }),
+      {
+        imports: {
+          "#components/*.svelte": "./src/components/*.svelte.ts",
+          "#components/*": "./src/components/*",
+        },
+      },
+    );
+  });
+
+  it("keeps an authored `*.svelte` entry instead of adding a second one", () => {
+    assert.deepStrictEqual(
+      redirect({
+        imports: { "#c/*": "./src/*", "#c/*.svelte": "./ui/*.svelte" },
+      }),
+      { imports: { "#c/*": "./src/*", "#c/*.svelte": "./ui/*.svelte.ts" } },
+    );
+  });
+
+  it("maps every leaf of a conditional target", () => {
+    assert.deepStrictEqual(
+      redirect({
+        imports: { "#c/*": { types: "./src/*", default: "./dist/*" } },
+      }),
+      {
+        imports: {
+          "#c/*.svelte": {
+            types: "./src/*.svelte.ts",
+            default: "./dist/*.svelte.ts",
+          },
+          "#c/*": { types: "./src/*", default: "./dist/*" },
+        },
+      },
+    );
+  });
+
+  it("leaves a conditional target alone when a leaf is not a pattern", () => {
+    const packageJson = {
+      imports: { "#c/*": { types: "./types/*.d.ts", default: "./src/*" } },
+    };
+    assert.deepStrictEqual(redirect(packageJson), packageJson);
+  });
+
+  it("rewrites a `.svelte` target under any subpath", () => {
+    assert.deepStrictEqual(
+      redirect({
+        exports: {
+          "./Foo.svelte": "./lib/Foo.svelte",
+          "./Button": "./lib/Button.svelte",
+          "./*": "./lib/*.svelte",
+        },
+      }),
+      {
+        exports: {
+          "./Foo.svelte": "./lib/Foo.svelte.ts",
+          "./Button": "./lib/Button.svelte.ts",
+          "./*": "./lib/*.svelte.ts",
+        },
+      },
+    );
+  });
+
+  it("rewrites the `exports` sugar for the package root", () => {
+    assert.deepStrictEqual(redirect({ exports: "./index.svelte" }), {
+      exports: "./index.svelte.ts",
+    });
+    assert.deepStrictEqual(
+      redirect({
+        exports: { svelte: "./index.svelte", default: "./index.svelte" },
+      }),
+      {
+        exports: { svelte: "./index.svelte.ts", default: "./index.svelte.ts" },
+      },
+    );
+  });
+
+  it("maps every entry of a fallback array", () => {
+    assert.deepStrictEqual(
+      redirect({
+        exports: { "./*.svelte": ["./lib/*.svelte", "./src/*.svelte"] },
+      }),
+      {
+        exports: { "./*.svelte": ["./lib/*.svelte.ts", "./src/*.svelte.ts"] },
+      },
+    );
+  });
+
+  // TypeScript resolves a bare target as a package import, where it appends
+  // `.ts` itself, and a rewritten one would break the checker's assumption
+  // that a `.ts`-resolved specifier ends with a TypeScript extension.
+  it("leaves bare and parent-relative targets to TypeScript", () => {
+    const packageJson = {
+      imports: {
+        "#ui/*": "ui/components/*",
+        "#ui/Foo.svelte": "ui/components/Foo.svelte",
+        "#shared/*": "../shared/*",
+      },
+    };
+    assert.deepStrictEqual(redirect(packageJson), packageJson);
+  });
+
+  it("leaves a `types` condition for shipped declarations alone", () => {
+    const packageJson = {
+      exports: {
+        "./*.svelte": {
+          types: "./dist/*.svelte.d.ts",
+          svelte: "./dist/*.svelte",
+          default: "./dist/*.svelte",
+        },
+      },
+    };
+    assert.deepStrictEqual(redirect(packageJson), packageJson);
+  });
+
+  it("leaves a `package.json` without `.svelte` subpath targets byte-for-byte untouched", () => {
+    for (const text of [
+      JSON.stringify({ name: "pkg", main: "./index.js" }),
+      JSON.stringify({ exports: "./index.js" }),
+      JSON.stringify({
+        exports: { import: "./index.mjs", require: "./index.cjs" },
+      }),
+      JSON.stringify({ exports: { "#not/an/export/*": "./src/*" } }),
+      JSON.stringify({ imports: { "#a/*": "./src/*.js" } }),
+      JSON.stringify({ imports: { "#a/*": null, "#a/*.svelte": null } }),
+      JSON.stringify({
+        imports: { "#a/*": { browser: null, default: "./src/*" } },
+      }),
+      "{ not json",
+    ]) {
+      assert.strictEqual(readThroughHook(text), text);
+    }
+  });
+});
+
+describe("imported component prop types via `package.json` subpaths (e2e)", () => {
+  const COMPONENT = `<script lang="ts">
+  export let value: string;
+</script>
+<p>{value}</p>`;
+  const WRONG = `const value: import("svelte").ComponentProps<Foo>["value"] = 123; void value;`;
+  const RIGHT = `const value: import("svelte").ComponentProps<Foo>["value"] = "ok"; void value;`;
+
+  const IMPORTS = {
+    componentPath: "src/components/Foo.svelte",
+    specifier: "#components/Foo.svelte",
+    files: {
+      "package.json": JSON.stringify({
+        name: "app",
+        imports: { "#components/*": "./src/components/*" },
+      }),
+    },
+  };
+  const EXPORTS = {
+    componentPath: "node_modules/ui/lib/Foo.svelte",
+    specifier: "ui/Foo.svelte",
+    files: {
+      "node_modules/ui/package.json": JSON.stringify({
+        name: "ui",
+        exports: { "./*.svelte": "./lib/*.svelte" },
+      }),
+    },
+  };
+  // A bare `imports` target resolves as a package import, which TypeScript
+  // extends with `.ts` on its own; the hook must stay out of its way.
+  const BARE_IMPORTS = {
+    componentPath: "node_modules/ui/components/Foo.svelte",
+    specifier: "#ui/Foo.svelte",
+    files: {
+      "package.json": JSON.stringify({
+        name: "app",
+        imports: { "#ui/*": "ui/components/*" },
+      }),
+      "node_modules/ui/package.json": JSON.stringify({ name: "ui" }),
+    },
+  };
+  // The specifier carries no `.svelte`, so the ambient module never matched it
+  // and the import was a TS2307 before.
+  const PLAIN_SUBPATH = {
+    componentPath: "node_modules/ui/lib/Foo.svelte",
+    specifier: "ui/Button",
+    files: {
+      "node_modules/ui/package.json": JSON.stringify({
+        name: "ui",
+        exports: { "./Button": "./lib/Foo.svelte" },
+      }),
+    },
+  };
+
+  function format(diagnostics: ts.Diagnostic[]): string[] {
+    return diagnostics.map(
+      (d) =>
+        `${d.code}: ${ts.flattenDiagnosticMessageText(d.messageText, " ")}`,
+    );
+  }
+
+  function assertCompanionTypes(
+    name: string,
+    layout: Parameters<typeof realResolutionDiagnostics>[2],
+  ): void {
+    const bad = realResolutionDiagnostics(COMPONENT, WRONG, layout);
+    assert.ok(
+      bad.some((d) => d.code === 2322),
+      `expected TS2322 through ${name}, got: ${format(bad).join("; ")}`,
+    );
+    const good = realResolutionDiagnostics(COMPONENT, RIGHT, layout);
+    assert.deepStrictEqual(format(good), []);
+  }
+
+  for (const [name, layout] of [
+    ["an `imports` subpath", IMPORTS],
+    ["a dependency's `exports` subpath", EXPORTS],
+  ] as const) {
+    it(`resolves ${name} to the companion`, () => {
+      assertCompanionTypes(name, layout);
+    });
+
+    it(`resolves ${name} to the ambient module without the hook`, () => {
+      const ambient = realResolutionDiagnostics(COMPONENT, WRONG, {
+        ...layout,
+        patch: false,
+      });
+      assert.ok(
+        !ambient.some((d) => d.code === 2307),
+        "the ambient `declare module '*.svelte'` should resolve the import",
+      );
+      assert.ok(
+        !ambient.some((d) => d.code === 2322),
+        "the ambient module's props are permissive, so no type error is expected",
+      );
+    });
+  }
+
+  it("leaves a bare `imports` target to TypeScript, which still reaches the companion", () => {
+    assertCompanionTypes("a bare `imports` target", BARE_IMPORTS);
+  });
+
+  it("resolves a `.svelte` target behind a subpath without the extension", () => {
+    assertCompanionTypes("a plain subpath", PLAIN_SUBPATH);
+    const unhooked = realResolutionDiagnostics(COMPONENT, WRONG, {
+      ...PLAIN_SUBPATH,
+      patch: false,
+    });
+    assert.ok(
+      unhooked.some((d) => d.code === 2307),
+      `expected TS2307 without the hook, got: ${format(unhooked).join("; ")}`,
+    );
+  });
+
+  it("stays a passthrough to a real `X.svelte.ts` behind a subpath (conflict guard)", () => {
+    const realCompanion = `const _c: { real: string } = { real: "" };\nexport default _c;\n`;
+    const ok = withoutHookWarnings(() =>
+      realResolutionDiagnostics(
+        COMPONENT,
+        `const r: string = Foo.real; void r;`,
+        {
+          ...EXPORTS,
+          realCompanion,
+        },
+      ),
+    );
+    assert.deepStrictEqual(format(ok), []);
+    const bad = withoutHookWarnings(() =>
+      realResolutionDiagnostics(
+        COMPONENT,
+        `const n: number = Foo.real; void n;`,
+        {
+          ...EXPORTS,
+          realCompanion,
+        },
+      ),
+    );
+    assert.ok(
+      bad.some((d) => d.code === 2322),
+      `expected TS2322 from the real module's \`real: string\`, got: ${format(bad).join("; ")}`,
     );
   });
 });
