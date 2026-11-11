@@ -50,37 +50,48 @@ describe("parseForESLint", () => {
       fs.rmSync(root, { recursive: true, force: true });
     });
 
-    it("uses the TypeScript that typescript-eslint uses", () => {
-      // Child process so the cwd and linter lookups aren't cached from this run.
-      const child = spawnSync(
-        process.execPath,
-        [
-          "--import",
-          "tsx/esm",
-          "--input-type=module",
-          "-e",
-          `
+    it("reads JSDoc types in a plain <script>", () => {
+      assert.strictEqual(
+        typeOf("<script>/** @type {number} */ let count;</script>", app),
+        "number",
+      );
+    });
+  });
+});
+
+/** Parse a component in a child process, so cwd and linter lookups aren't cached, and return the type of its first variable. */
+function typeOf(code: string, cwd: string): string {
+  const child = spawnSync(
+    process.execPath,
+    [
+      "--import",
+      "tsx/esm",
+      "--input-type=module",
+      "-e",
+      `
       import path from "path";
       import * as tsParser from "@typescript-eslint/parser";
       import { parseForESLint } from ${JSON.stringify(new URL("../../../../src/index.ts", import.meta.url).href)};
-      // Plain <script> takes the JS path that loads TypeScript.
-      process.chdir(${JSON.stringify(app)});
-      parseForESLint("<script>let count = 0;</script>", {
+      process.chdir(${JSON.stringify(cwd)});
+      const { ast, services } = parseForESLint(${JSON.stringify(code)}, {
         parser: tsParser,
         project: "tsconfig.json",
         tsconfigRootDir: process.cwd(),
         filePath: path.join(process.cwd(), "App.svelte"),
         extraFileExtensions: [".svelte"],
       });
-      `,
-        ],
-        { encoding: "utf8" },
+      const id = ast.body[0].body[0].declarations[0].id;
+      const checker = services.program.getTypeChecker();
+      process.stdout.write(
+        checker.typeToString(checker.getTypeAtLocation(services.esTreeNodeToTSNodeMap.get(id))),
       );
-
-      assert.strictEqual(child.stderr, "");
-    });
-  });
-});
+      `,
+    ],
+    { encoding: "utf8" },
+  );
+  assert.strictEqual(child.stderr, "");
+  return child.stdout;
+}
 
 function writePackage(dir: string, name: string, version: string) {
   fs.mkdirSync(dir, { recursive: true });
