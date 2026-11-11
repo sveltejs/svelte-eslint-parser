@@ -56,27 +56,6 @@ export function loadTypeScript<T>(): T {
   );
 }
 
-/** Resolve `typescript` from `@typescript-eslint/typescript-estree`, starting where `@typescript-eslint/parser` is installed. */
-export function resolveTypeScriptFromTSESLint<T>(
-  requires: (NodeJS.Require | null)[],
-): T | null {
-  for (const require of requires) {
-    if (!require) continue;
-    try {
-      const fromParser = createRequire(
-        require.resolve("@typescript-eslint/parser"),
-      );
-      const fromEstree = createRequire(
-        fromParser.resolve("@typescript-eslint/typescript-estree"),
-      );
-      return fromEstree("typescript");
-    } catch {
-      // ignore
-    }
-  }
-  return null;
-}
-
 /**
  * Get NodeJS.Require from Linter
  */
@@ -134,4 +113,25 @@ function isLinterPath(p: string): boolean {
     // ESLint 5
     p.includes(`eslint${path.sep}lib${path.sep}linter.js`)
   );
+}
+
+/** Resolve `typescript` from `@typescript-eslint/typescript-estree`, starting where `@typescript-eslint/parser` is installed. */
+function resolveTypeScriptFromTSESLint<T>(
+  requires: (NodeJS.Require | null)[],
+): T | null {
+  for (const require of requires) {
+    if (!require) continue;
+    try {
+      const fromParser = createRequire(
+        require.resolve("@typescript-eslint/parser"),
+      );
+      const fromEstree = createRequire(
+        fromParser.resolve("@typescript-eslint/typescript-estree"),
+      );
+      return fromEstree("typescript");
+    } catch {
+      // ignore
+    }
+  }
+  return null;
 }
