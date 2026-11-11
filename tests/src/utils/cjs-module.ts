@@ -9,26 +9,36 @@ const require = createRequire(import.meta.url);
 const typescriptVersion: string = require("typescript/package.json").version;
 
 describe("loadTypeScript", () => {
-  it("loads the TypeScript that typescript-eslint uses", () => {
-    assert.strictEqual(
-      loadedTypeScriptVersion(process.cwd()),
-      typescriptVersion,
+  let root: string, app: string;
+
+  // root/
+  //   app/                                      cwd
+  //     node_modules/@typescript-eslint/parser  -> real parser (uses real TS)
+  before(() => {
+    root = fs.mkdtempSync(path.join(os.tmpdir(), "load-typescript-"));
+    app = path.join(root, "app");
+    link(
+      path.dirname(require.resolve("@typescript-eslint/parser/package.json")),
+      path.join(app, "node_modules/@typescript-eslint/parser"),
     );
   });
 
-  describe("when a newer TypeScript is hoisted next to ESLint by pnpm", () => {
-    let root: string, app: string;
+  after(() => {
+    fs.rmSync(root, { recursive: true, force: true });
+  });
 
+  it("loads the TypeScript that typescript-eslint uses", () => {
+    assert.strictEqual(loadedTypeScriptVersion(app), typescriptVersion);
+  });
+
+  describe("when a newer TypeScript is hoisted next to ESLint by pnpm", () => {
     // root/
     //   node_modules/.pnpm/
-    //     eslint@10.0.0/node_modules/eslint       fake ESLint
-    //     node_modules/typescript                 fake TS 7, hoisted by pnpm
-    //   app/                                      cwd
-    //     node_modules/eslint                     -> fake ESLint
-    //     node_modules/@typescript-eslint/parser  -> real parser (uses real TS)
+    //     eslint@10.0.0/node_modules/eslint  fake ESLint
+    //     node_modules/typescript            fake TS 7, hoisted by pnpm
+    //   app/
+    //     node_modules/eslint                -> fake ESLint
     before(() => {
-      root = fs.mkdtempSync(path.join(os.tmpdir(), "load-typescript-"));
-      app = path.join(root, "app");
       const store = path.join(root, "node_modules/.pnpm");
       const eslint = path.join(store, "eslint@10.0.0/node_modules/eslint");
 
@@ -39,14 +49,6 @@ describe("loadTypeScript", () => {
         "7.0.0",
       );
       link(eslint, path.join(app, "node_modules/eslint"));
-      link(
-        path.dirname(require.resolve("@typescript-eslint/parser/package.json")),
-        path.join(app, "node_modules/@typescript-eslint/parser"),
-      );
-    });
-
-    after(() => {
-      fs.rmSync(root, { recursive: true, force: true });
     });
 
     it("loads the TypeScript that typescript-eslint uses", () => {
