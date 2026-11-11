@@ -44,6 +44,40 @@ export function loadNewestModule<T>(module: string): T {
 }
 
 /**
+ * Load the TypeScript that typescript-eslint uses to create the program,
+ * falling back to the newest reachable copy.
+ */
+export function loadTypeScript<T>(): T {
+  return (
+    resolveTypeScriptFromTSESLint<T>([
+      getRequireFromCwd(),
+      getRequireFromLinter(),
+    ]) ?? loadNewestModule<T>("typescript")
+  );
+}
+
+/** Resolve `typescript` from `@typescript-eslint/typescript-estree`, starting where `@typescript-eslint/parser` is installed. */
+export function resolveTypeScriptFromTSESLint<T>(
+  requires: (NodeJS.Require | null)[],
+): T | null {
+  for (const require of requires) {
+    if (!require) continue;
+    try {
+      const fromParser = createRequire(
+        require.resolve("@typescript-eslint/parser"),
+      );
+      const fromEstree = createRequire(
+        fromParser.resolve("@typescript-eslint/typescript-estree"),
+      );
+      return fromEstree("typescript");
+    } catch {
+      // ignore
+    }
+  }
+  return null;
+}
+
+/**
  * Get NodeJS.Require from Linter
  */
 function getRequireFromLinter(): NodeJS.Require | null {
