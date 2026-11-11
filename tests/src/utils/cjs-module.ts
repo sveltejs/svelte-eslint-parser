@@ -2,57 +2,105 @@ import assert from "assert";
 import fs from "fs";
 import os from "os";
 import path from "path";
-import { createRequire } from "module";
 import { spawnSync } from "child_process";
 
-const require = createRequire(import.meta.url);
-const typescriptVersion: string = require("typescript/package.json").version;
-
 describe("loadTypeScript", () => {
-  let root: string, app: string;
+  let root: string;
 
-  // root/
-  //   app/                                      cwd
-  //     node_modules/@typescript-eslint/parser  -> real parser (uses real TS)
   before(() => {
     root = fs.mkdtempSync(path.join(os.tmpdir(), "load-typescript-"));
-    app = path.join(root, "app");
-    link(
-      path.dirname(require.resolve("@typescript-eslint/parser/package.json")),
-      path.join(app, "node_modules/@typescript-eslint/parser"),
-    );
   });
 
   after(() => {
     fs.rmSync(root, { recursive: true, force: true });
   });
 
-  it("loads the TypeScript that typescript-eslint uses", () => {
-    assert.strictEqual(loadedTypeScriptVersion(app), typescriptVersion);
-  });
+  describe("when installed with npm", () => {
+    let app: string;
 
-  describe("when a newer TypeScript is hoisted next to ESLint by pnpm", () => {
-    // root/
-    //   node_modules/.pnpm/
-    //     eslint@10.0.0/node_modules/eslint  fake ESLint
-    //     node_modules/typescript            fake TS 7, hoisted by pnpm
-    //   app/
-    //     node_modules/eslint                -> fake ESLint
+    // app/                                      cwd
+    //   node_modules/
+    //     eslint
+    //     @typescript-eslint/parser
+    //     @typescript-eslint/typescript-estree
+    //     typescript                            6.0.0
     before(() => {
-      const store = path.join(root, "node_modules/.pnpm");
-      const eslint = path.join(store, "eslint@10.0.0/node_modules/eslint");
+      app = path.join(root, "npm-app");
+      const modules = path.join(app, "node_modules");
 
-      writePackage(eslint, "eslint", "10.0.0");
+      writePackage(path.join(modules, "eslint"), "eslint", "10.0.0");
       writePackage(
-        path.join(store, "node_modules/typescript"),
-        "typescript",
-        "7.0.0",
+        path.join(modules, "@typescript-eslint/parser"),
+        "@typescript-eslint/parser",
+        "8.0.0",
       );
-      link(eslint, path.join(app, "node_modules/eslint"));
+      writePackage(
+        path.join(modules, "@typescript-eslint/typescript-estree"),
+        "@typescript-eslint/typescript-estree",
+        "8.0.0",
+      );
+      writePackage(path.join(modules, "typescript"), "typescript", "6.0.0");
     });
 
-    it("loads the TypeScript that typescript-eslint uses", () => {
-      assert.strictEqual(loadedTypeScriptVersion(app), typescriptVersion);
+    it("loads the app's TypeScript", () => {
+      assert.strictEqual(loadedTypeScriptVersion(app), "6.0.0");
+    });
+  });
+
+  describe("when installed with pnpm in a monorepo that also uses TypeScript 7", () => {
+    let app: string;
+
+    // node_modules/.pnpm/
+    //   eslint@10.0.0/node_modules/eslint
+    //   @typescript-eslint+parser@8.0.0/node_modules/@typescript-eslint/
+    //     parser
+    //     typescript-estree                     -> estree below
+    //   @typescript-eslint+typescript-estree@8.0.0/node_modules/
+    //     @typescript-eslint/typescript-estree
+    //     typescript                            -> typescript@6.0.0
+    //   typescript@6.0.0/node_modules/typescript
+    //   typescript@7.0.0/node_modules/typescript
+    //   node_modules/typescript                 -> typescript@7.0.0, hoisted
+    // sveltekit-app/                            cwd
+    //   node_modules/
+    //     eslint                                -> eslint@10.0.0
+    //     @typescript-eslint/parser             -> parser@8.0.0
+    //     typescript                            -> typescript@6.0.0
+    before(() => {
+      const monorepo = path.join(root, "pnpm-monorepo");
+      const store = path.join(monorepo, "node_modules/.pnpm");
+      const eslint = path.join(store, "eslint@10.0.0/node_modules/eslint");
+      const parser = path.join(
+        store,
+        "@typescript-eslint+parser@8.0.0/node_modules/@typescript-eslint/parser",
+      );
+      const estreeModules = path.join(
+        store,
+        "@typescript-eslint+typescript-estree@8.0.0/node_modules",
+      );
+      const estree = path.join(
+        estreeModules,
+        "@typescript-eslint/typescript-estree",
+      );
+      const ts6 = path.join(store, "typescript@6.0.0/node_modules/typescript");
+      const ts7 = path.join(store, "typescript@7.0.0/node_modules/typescript");
+      app = path.join(monorepo, "sveltekit-app");
+
+      writePackage(eslint, "eslint", "10.0.0");
+      writePackage(parser, "@typescript-eslint/parser", "8.0.0");
+      writePackage(estree, "@typescript-eslint/typescript-estree", "8.0.0");
+      writePackage(ts6, "typescript", "6.0.0");
+      writePackage(ts7, "typescript", "7.0.0");
+      link(estree, path.join(path.dirname(parser), "typescript-estree"));
+      link(ts6, path.join(estreeModules, "typescript"));
+      link(ts7, path.join(store, "node_modules/typescript"));
+      link(eslint, path.join(app, "node_modules/eslint"));
+      link(parser, path.join(app, "node_modules/@typescript-eslint/parser"));
+      link(ts6, path.join(app, "node_modules/typescript"));
+    });
+
+    it("loads the app's TypeScript", () => {
+      assert.strictEqual(loadedTypeScriptVersion(app), "6.0.0");
     });
   });
 });
