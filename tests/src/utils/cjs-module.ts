@@ -18,12 +18,12 @@ describe("loadTypeScript", () => {
   describe("when installed with npm", () => {
     let app: string;
 
-    // app/                                      cwd
-    //   node_modules/
-    //     eslint
-    //     @typescript-eslint/parser
-    //     @typescript-eslint/typescript-estree
-    //     typescript                            6.0.0
+    // npm-app/  (cwd)
+    // └── node_modules/
+    //     ├── eslint
+    //     ├── @typescript-eslint/parser
+    //     ├── @typescript-eslint/typescript-estree
+    //     └── typescript  6.0.0
     before(() => {
       app = path.join(root, "npm-app");
       const modules = path.join(app, "node_modules");
@@ -50,22 +50,21 @@ describe("loadTypeScript", () => {
   describe("when installed with pnpm in a monorepo that also uses a newer TypeScript", () => {
     let app: string;
 
-    // node_modules/.pnpm/
-    //   eslint@10.0.0/node_modules/eslint
-    //   @typescript-eslint+parser@8.0.0/node_modules/@typescript-eslint/
-    //     parser
-    //     typescript-estree                     -> estree below
-    //   @typescript-eslint+typescript-estree@8.0.0/node_modules/
-    //     @typescript-eslint/typescript-estree
-    //     typescript                            -> typescript@6.0.0
-    //   typescript@6.0.0/node_modules/typescript
-    //   typescript@7.0.0/node_modules/typescript
-    //   node_modules/typescript                 -> typescript@7.0.0, hoisted
-    // sveltekit-app/                            cwd
-    //   node_modules/
-    //     eslint                                -> eslint@10.0.0
-    //     @typescript-eslint/parser             -> parser@8.0.0
-    //     typescript                            -> typescript@6.0.0
+    // pnpm-monorepo/
+    // ├── node_modules/.pnpm/
+    // │   ├── eslint@10.0.0/node_modules/eslint
+    // │   ├── @typescript-eslint+parser@8.0.0/node_modules/@typescript-eslint/parser
+    // │   ├── @typescript-eslint+parser@8.0.0/node_modules/@typescript-eslint/typescript-estree  -> @typescript-eslint+typescript-estree@8.0.0
+    // │   ├── @typescript-eslint+typescript-estree@8.0.0/node_modules/@typescript-eslint/typescript-estree
+    // │   ├── @typescript-eslint+typescript-estree@8.0.0/node_modules/typescript  -> typescript@6.0.0
+    // │   ├── typescript@6.0.0/node_modules/typescript
+    // │   ├── typescript@7.0.0/node_modules/typescript
+    // │   └── node_modules/typescript  -> typescript@7.0.0, hoisted
+    // └── sveltekit-app/  (cwd)
+    //     └── node_modules/
+    //         ├── eslint  -> eslint@10.0.0
+    //         ├── @typescript-eslint/parser  -> @typescript-eslint+parser@8.0.0
+    //         └── typescript  -> typescript@6.0.0
     before(() => {
       const monorepo = path.join(root, "pnpm-monorepo");
       const store = path.join(monorepo, "node_modules/.pnpm");
