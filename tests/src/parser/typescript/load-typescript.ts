@@ -9,6 +9,14 @@ describe("parseForESLint", () => {
   describe("when a newer TypeScript is hoisted next to ESLint in a pnpm layout", () => {
     let root: string, app: string;
 
+    // root/
+    //   node_modules/.pnpm/
+    //     eslint@10.0.0/node_modules/eslint       fake ESLint
+    //     node_modules/typescript                 fake TS 7, hoisted by pnpm
+    //   app/                                      cwd
+    //     node_modules/eslint                     -> fake ESLint
+    //     node_modules/@typescript-eslint/parser  -> real parser (uses real TS)
+    //     tsconfig.json, App.svelte
     before(() => {
       root = fs.mkdtempSync(path.join(os.tmpdir(), "load-typescript-"));
       app = path.join(root, "app");
@@ -22,6 +30,7 @@ describe("parseForESLint", () => {
         "7.0.0",
       );
       link(eslint, path.join(app, "node_modules/eslint"));
+      // Resolves `typescript` from the repo, not the fake TS 7.
       link(
         path.dirname(
           createRequire(import.meta.url).resolve(
@@ -42,6 +51,7 @@ describe("parseForESLint", () => {
     });
 
     it("uses the TypeScript that typescript-eslint uses", () => {
+      // Child process so the cwd and linter lookups aren't cached from this run.
       const child = spawnSync(
         process.execPath,
         [
@@ -53,6 +63,7 @@ describe("parseForESLint", () => {
       import path from "path";
       import * as tsParser from "@typescript-eslint/parser";
       import { parseForESLint } from ${JSON.stringify(new URL("../../../../src/index.ts", import.meta.url).href)};
+      // Plain <script> takes the JS path that loads TypeScript.
       process.chdir(${JSON.stringify(app)});
       parseForESLint("<script>let count = 0;</script>", {
         parser: tsParser,
