@@ -47,7 +47,7 @@ describe("loadTypeScript", () => {
     });
   });
 
-  describe("when installed with pnpm in a monorepo that also uses TypeScript 7", () => {
+  describe("when installed with pnpm in a monorepo that also uses a newer TypeScript", () => {
     let app: string;
 
     // node_modules/.pnpm/
