@@ -361,6 +361,29 @@ export class Context {
       ),
     );
   }
+
+  /**
+   * In the script code, the `</script>` tag and the rest of its line are blanked with spaces.
+   * So a line comment at the end of a script runs over them.
+   * Cut such a comment at the end of the script content.
+   */
+  public fixLineCommentsAtScriptEnd(comments: Comment[]): void {
+    for (const comment of comments) {
+      if (comment.type !== "Line") continue;
+      const block = this.blocks.find(
+        (block): block is Exclude<Block, SelfClosingBlock> =>
+          block.tag === "script" &&
+          !block.selfClosing &&
+          block.contentRange[0] <= comment.range[0] &&
+          comment.range[0] < block.contentRange[1],
+      );
+      if (!block || comment.range[1] <= block.contentRange[1]) continue;
+      const end = block.contentRange[1];
+      comment.range[1] = end;
+      comment.value = this.code.slice(comment.range[0] + 2, end);
+      comment.loc.end = this.getLocFromIndex(end);
+    }
+  }
 }
 
 type Block =
