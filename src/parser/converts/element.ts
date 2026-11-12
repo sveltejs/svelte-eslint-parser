@@ -267,20 +267,25 @@ function extractLetDirectives(fragment: {
 }
 
 /**
- * Check if the attributes have a static `slot` attribute.
+ * Get the value of the static `slot` attribute, or `null` if there is none.
  * This is the same check as `determine_slot()` in svelte/compiler.
  */
-function hasStaticSlotAttribute(
-  attributes: ReturnType<typeof extractLetDirectives>["attributes"],
-): boolean {
-  return attributes.some(
-    (attr) =>
-      attr.type === "Attribute" &&
-      attr.name === "slot" &&
-      Array.isArray(attr.value) &&
-      attr.value.length === 1 &&
-      attr.value[0].type === "Text",
-  );
+function getStaticSlotName(
+  attributes: readonly { type: string }[],
+): string | null {
+  for (const attr of attributes) {
+    if (attr.type !== "Attribute") continue;
+    const { name, value } = attr as SvAST.Attribute | Compiler.Attribute;
+    if (name !== "slot") continue;
+    if (
+      Array.isArray(value) &&
+      value.length === 1 &&
+      value[0].type === "Text"
+    ) {
+      return value[0].data;
+    }
+  }
+  return null;
 }
 
 /** Check if children needs a scope. */
@@ -305,6 +310,92 @@ function needScopeByChildren(
     }
   }
   return false;
+}
+
+const SLOTTABLE_NODE_TYPES = new Set([
+  // Svelte v5
+  "RegularElement",
+  "SvelteElement",
+  "SvelteFragment",
+  "Component",
+  "SvelteComponent",
+  "SvelteSelf",
+  "SlotElement",
+  // Svelte v4
+  "Element",
+  "InlineComponent",
+  "Slot",
+  "SlotTemplate",
+]);
+
+/**
+ * Split the children of a component into the ones in the scope of the
+ * component's `let:` directives and the ones with a named `slot`.
+ * A child with a static `slot` (other than `default`) gets the scope outside
+ * the component, so it does not see the component's `let:` names.
+ * Each such child is added to `ctx.slottedChildren` to get its own scope.
+ * If the component itself has a static `slot`, its `let:` names reach all children.
+ * A `{#snippet}` child is placed in a block around the component, outside
+ * the `let:` scope. So it goes with the slotted children, and `hasSnippet`
+ * tells the caller to open that block.
+ */
+function splitSlottedChildren(
+  node: { type: string; attributes: { type: string }[] },
+  fragment: { children?: SvAST.TemplateNode[] } | Compiler.Fragment,
+  letParams: ScriptLetBlockParam[],
+  ctx: Context,
+): {
+  scoped: { nodes: (Child | SvAST.TemplateNode)[] };
+  slotted: { nodes: (Child | SvAST.TemplateNode)[] };
+  hasSnippet: boolean;
+} {
+  const children = getChildren(fragment) ?? [];
+  if (
+    !letParams.length ||
+    !(
+      node.type === "Component" ||
+      node.type === "SvelteComponent" ||
+      node.type === "SvelteSelf" ||
+      node.type === "InlineComponent"
+    ) ||
+    getStaticSlotName(node.attributes) != null
+  ) {
+    return {
+      scoped: { nodes: children },
+      slotted: { nodes: [] },
+      hasSnippet: false,
+    };
+  }
+  const scoped: (Child | SvAST.TemplateNode)[] = [];
+  const slotted: (Child | SvAST.TemplateNode)[] = [];
+  let hasSnippet = false;
+  for (const child of children) {
+    if (child.type === "SnippetBlock") {
+      // svelte/compiler's analysis (`phases/scope.js`) visits the snippet in
+      // the `let:` scope, but the generated code puts it in a block outside
+      // the component, so a snippet body cannot read `let:` names at runtime.
+      // We follow the generated code.
+      hasSnippet = true;
+      slotted.push(child);
+      continue;
+    }
+    const slotName = SLOTTABLE_NODE_TYPES.has(child.type)
+      ? getStaticSlotName(
+          (child as { attributes: { type: string }[] }).attributes,
+        )
+      : null;
+    if (slotName != null && slotName !== "default") {
+      slotted.push(child);
+      ctx.slottedChildren.add(child);
+    } else {
+      scoped.push(child);
+    }
+  }
+  return {
+    scoped: { nodes: scoped },
+    slotted: { nodes: slotted },
+    hasSnippet,
+  };
 }
 
 /** Convert for HTML Comment */
@@ -375,7 +466,11 @@ function convertHTMLElement(
     letParams.push(...ctx.letDirCollections.extract().getLetParams());
   }
   const fragment = getFragment(node);
-  if (!letParams.length && !needScopeByChildren(fragment)) {
+  if (
+    !letParams.length &&
+    !needScopeByChildren(fragment) &&
+    !ctx.slottedChildren.has(node)
+  ) {
     element.startTag.attributes.push(
       ...convertAttributes(attributes, element.startTag, ctx),
     );
@@ -496,7 +591,11 @@ function convertSpecialElement(
     letParams.push(...ctx.letDirCollections.extract().getLetParams());
   }
   const fragment = getFragment(node);
-  if (!letParams.length && !needScopeByChildren(fragment)) {
+  if (
+    !letParams.length &&
+    !needScopeByChildren(fragment) &&
+    !ctx.slottedChildren.has(node)
+  ) {
     element.startTag.attributes.push(
       ...convertAttributes(attributes, element.startTag, ctx),
     );
@@ -508,7 +607,17 @@ function convertSpecialElement(
       (node.type === "SvelteComponent" ||
         node.type === "SvelteSelf" ||
         node.type === "InlineComponent") &&
-      !hasStaticSlotAttribute(attributes);
+      getStaticSlotName(attributes) == null;
+    const { scoped, slotted, hasSnippet } = splitSlottedChildren(
+      node,
+      fragment,
+      letParams,
+      ctx,
+    );
+    if (hasSnippet) {
+      // `{#snippet}` children live in a block around the component.
+      ctx.scriptLet.nestBlock(element);
+    }
     if (attributesInOuterScope) {
       element.startTag.attributes.push(
         ...convertAttributes(attributes, element.startTag, ctx),
@@ -521,8 +630,17 @@ function convertSpecialElement(
       );
     }
     sortNodes(element.startTag.attributes);
-    element.children.push(...convertChildren(fragment, element, ctx));
+    element.children.push(...convertChildren(scoped, element, ctx));
     ctx.scriptLet.closeScope();
+    if (slotted.nodes.length) {
+      // Children with a named `slot` and `{#snippet}` children do not see
+      // the component's `let:` names.
+      element.children.push(...convertChildren(slotted, element, ctx));
+      sortNodes(element.children);
+    }
+    if (hasSnippet) {
+      ctx.scriptLet.closeScope();
+    }
   }
 
   const thisExpression =
@@ -794,7 +912,11 @@ function convertComponentElement(
     letParams.push(...ctx.letDirCollections.extract().getLetParams());
   }
   const fragment = getFragment(node);
-  if (!letParams.length && !needScopeByChildren(fragment)) {
+  if (
+    !letParams.length &&
+    !needScopeByChildren(fragment) &&
+    !ctx.slottedChildren.has(node)
+  ) {
     element.startTag.attributes.push(
       ...convertAttributes(attributes, element.startTag, ctx),
     );
@@ -804,7 +926,17 @@ function convertComponentElement(
     // Its `let:` names are only visible in the slot content.
     // But if the component has `slot`, its `let:` names come from the
     // parent's slot, so its own attributes can see them.
-    const attributesInOuterScope = !hasStaticSlotAttribute(attributes);
+    const attributesInOuterScope = getStaticSlotName(attributes) == null;
+    const { scoped, slotted, hasSnippet } = splitSlottedChildren(
+      node,
+      fragment,
+      letParams,
+      ctx,
+    );
+    if (hasSnippet) {
+      // `{#snippet}` children live in a block around the component.
+      ctx.scriptLet.nestBlock(element);
+    }
     if (attributesInOuterScope) {
       element.startTag.attributes.push(
         ...convertAttributes(attributes, element.startTag, ctx),
@@ -817,8 +949,17 @@ function convertComponentElement(
       );
     }
     sortNodes(element.startTag.attributes);
-    element.children.push(...convertChildren(fragment, element, ctx));
+    element.children.push(...convertChildren(scoped, element, ctx));
     ctx.scriptLet.closeScope();
+    if (slotted.nodes.length) {
+      // Children with a named `slot` and `{#snippet}` children do not see
+      // the component's `let:` names.
+      element.children.push(...convertChildren(slotted, element, ctx));
+      sortNodes(element.children);
+    }
+    if (hasSnippet) {
+      ctx.scriptLet.closeScope();
+    }
   }
 
   extractElementTags(element, ctx, {
