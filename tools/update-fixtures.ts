@@ -140,9 +140,16 @@ for (const {
   }
 }
 
-for (const { input, inputFileName, outputFileName, config } of listupFixtures(
-  ERROR_FIXTURE_ROOT,
-)) {
+for (const {
+  input,
+  inputFileName,
+  outputFileName,
+  config,
+  meetRequirements,
+} of listupFixtures(ERROR_FIXTURE_ROOT)) {
+  if (!meetRequirements("test")) {
+    continue;
+  }
   // eslint-disable-next-line no-console -- ignore
   console.log(inputFileName);
   try {
