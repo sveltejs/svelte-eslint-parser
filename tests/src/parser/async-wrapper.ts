@@ -13,12 +13,15 @@ const dirname = path.dirname(fileURLToPath(import.meta.url));
 const blocks: Record<string, string> = {
   each: "{#each xs as x}{x}{/each}",
   "each with index and key": "{#each xs as x, i (x)}{x}{i}{/each}",
-  "each without context": "{#each xs}a{/each}",
   "await then": "{#await p then v}{v}{/await}",
   "await catch": "{#await p}a{:catch e}{e}{/await}",
   "let directive": "<div let:x>{x}</div>",
   ...(svelteVersion.gte(5)
-    ? { snippet: "{#snippet s(a)}{a}{/snippet}{@render s(1)}" }
+    ? {
+        // `{#each}` without `as` and snippets need Svelte 5.
+        "each without context": "{#each xs}a{/each}",
+        snippet: "{#snippet s(a)}{a}{/snippet}{@render s(1)}",
+      }
     : {}),
 };
 
