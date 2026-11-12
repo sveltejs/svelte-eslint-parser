@@ -549,7 +549,7 @@ export class ScriptLetContext {
     const ctxRange = context && getNodeRange(context, this.ctx.code);
     let source = "Array.from(";
     const exprOffset = source.length;
-    source += `${this.ctx.code.slice(...exprRange)}).forEach((`;
+    source += `${this.ctx.code.slice(...exprRange)}).forEach(${this.getAsyncPrefix()}(`;
     const ctxOffset = source.length;
     if (ctxRange) {
       source += this.ctx.code.slice(...ctxRange);
@@ -689,9 +689,10 @@ export class ScriptLetContext {
     const closeToken = isTypeScript
       ? "return (null as unknown as import('svelte').Snippet)();}"
       : "}";
+    const asyncPrefix = this.getAsyncPrefix();
     const restore = this.appendScript(
-      `function ${part}{`,
-      idRange[0] - 9,
+      `${asyncPrefix}function ${part}{`,
+      idRange[0] - asyncPrefix.length - 9,
       scopeKind,
       "FunctionDeclaration",
       (st, tokens, comments, result) => {
@@ -733,6 +734,9 @@ export class ScriptLetContext {
         // Process for scope
         result.registerNodeToScope(snippetBlock, scope);
 
+        if (asyncPrefix) {
+          tokens.shift(); // async
+        }
         tokens.shift(); // function
         tokens.pop(); // {
         tokens.pop(); // }
@@ -913,9 +917,10 @@ export class ScriptLetContext {
           source += `: (${param.typing})`;
         }
       }
+      const asyncPrefix = this.getAsyncPrefix();
       const restore = this.appendScript(
-        `(${source})=>{`,
-        maps[0].range[0] - 1,
+        `${asyncPrefix}(${source})=>{`,
+        maps[0].range[0] - asyncPrefix.length - 1,
         this.currentScriptScopeKind,
         "ExpressionStatement",
         (st, tokens, comments, result) => {
@@ -952,6 +957,9 @@ export class ScriptLetContext {
             }
           }
 
+          if (asyncPrefix) {
+            tokens.shift(); // async
+          }
           tokens.shift(); // (
           tokens.pop(); // )
           tokens.pop(); // =>
@@ -1310,6 +1318,29 @@ export class ScriptLetContext {
       );
     }
     tokens.splice(tokenIndex);
+  }
+
+  /**
+   * Get the prefix that makes a generated wrapper function async.
+   * With Svelte's `experimental.async`, the template can use `await` inside
+   * blocks such as `{#each}` and `{#snippet}`. A JavaScript parser accepts
+   * `await` there only if the wrapper is async. The TypeScript parser accepts
+   * it anyway, and an async snippet function would change the snippet's type,
+   * so TypeScript gets no prefix. Before ES2017 there are no async functions,
+   * and `await` cannot be used anyway, so those versions get no prefix either.
+   */
+  private getAsyncPrefix(): string {
+    if (this.ctx.isTypeScript()) {
+      return "";
+    }
+    const ecmaVersion = this.ctx.parserOptions.ecmaVersion;
+    if (
+      typeof ecmaVersion === "number" &&
+      (ecmaVersion < 8 || (ecmaVersion >= 2015 && ecmaVersion < 2017))
+    ) {
+      return "";
+    }
+    return "async ";
   }
 
   private generateUniqueId(base: string) {
