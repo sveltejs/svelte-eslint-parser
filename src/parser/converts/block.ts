@@ -316,7 +316,7 @@ export function convertEachBlock(
   }
 
   if (node.key) {
-    ctx.scriptLet.addExpression(node.key, eachBlock, null, (key) => {
+    ctx.scriptLet.addEachBlockKey(node.key, eachBlock, (key) => {
       eachBlock.key = key;
     });
   }
