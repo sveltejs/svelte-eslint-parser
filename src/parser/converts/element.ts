@@ -266,6 +266,23 @@ function extractLetDirectives(fragment: {
   return { letDirectives, attributes };
 }
 
+/**
+ * Check if the attributes have a static `slot` attribute.
+ * This is the same check as `determine_slot()` in svelte/compiler.
+ */
+function hasStaticSlotAttribute(
+  attributes: ReturnType<typeof extractLetDirectives>["attributes"],
+): boolean {
+  return attributes.some(
+    (attr) =>
+      attr.type === "Attribute" &&
+      attr.name === "slot" &&
+      Array.isArray(attr.value) &&
+      attr.value.length === 1 &&
+      attr.value[0].type === "Text",
+  );
+}
+
 /** Check if children needs a scope. */
 function needScopeByChildren(
   fragment:
@@ -485,10 +502,24 @@ function convertSpecialElement(
     );
     element.children.push(...convertChildren(fragment, element, ctx));
   } else {
+    // Like a component, `<svelte:component>` and `<svelte:self>` evaluate
+    // their own attributes in the outer scope, unless they have `slot`.
+    const attributesInOuterScope =
+      (node.type === "SvelteComponent" ||
+        node.type === "SvelteSelf" ||
+        node.type === "InlineComponent") &&
+      !hasStaticSlotAttribute(attributes);
+    if (attributesInOuterScope) {
+      element.startTag.attributes.push(
+        ...convertAttributes(attributes, element.startTag, ctx),
+      );
+    }
     ctx.scriptLet.nestBlock(element, letParams);
-    element.startTag.attributes.push(
-      ...convertAttributes(attributes, element.startTag, ctx),
-    );
+    if (!attributesInOuterScope) {
+      element.startTag.attributes.push(
+        ...convertAttributes(attributes, element.startTag, ctx),
+      );
+    }
     sortNodes(element.startTag.attributes);
     element.children.push(...convertChildren(fragment, element, ctx));
     ctx.scriptLet.closeScope();
@@ -769,10 +800,22 @@ function convertComponentElement(
     );
     element.children.push(...convertChildren(fragment, element, ctx));
   } else {
+    // A component's own attributes are evaluated in the outer scope.
+    // Its `let:` names are only visible in the slot content.
+    // But if the component has `slot`, its `let:` names come from the
+    // parent's slot, so its own attributes can see them.
+    const attributesInOuterScope = !hasStaticSlotAttribute(attributes);
+    if (attributesInOuterScope) {
+      element.startTag.attributes.push(
+        ...convertAttributes(attributes, element.startTag, ctx),
+      );
+    }
     ctx.scriptLet.nestBlock(element, letParams);
-    element.startTag.attributes.push(
-      ...convertAttributes(attributes, element.startTag, ctx),
-    );
+    if (!attributesInOuterScope) {
+      element.startTag.attributes.push(
+        ...convertAttributes(attributes, element.startTag, ctx),
+      );
+    }
     sortNodes(element.startTag.attributes);
     element.children.push(...convertChildren(fragment, element, ctx));
     ctx.scriptLet.closeScope();
