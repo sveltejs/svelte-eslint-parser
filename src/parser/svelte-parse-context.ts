@@ -92,15 +92,22 @@ function isRunesAsParseContext(
 }
 
 export function hasRunesSymbol(ast: ESLintProgram): boolean {
+  const bindingTargets = new Set<unknown>();
   let hasRuneSymbol = false;
   traverseNodes(ast, {
-    enterNode(node) {
+    enterNode(node, parent) {
       if (hasRuneSymbol) {
         return;
       }
-      if (node.type === "Identifier" && runeSymbols.includes(node.name)) {
+      if (
+        node.type === "Identifier" &&
+        runeSymbols.includes(node.name) &&
+        isReference(node, parent) &&
+        !bindingTargets.has(node)
+      ) {
         hasRuneSymbol = true;
       }
+      collectBindingTargets(node, bindingTargets);
     },
     leaveNode() {
       // do nothing
@@ -108,4 +115,108 @@ export function hasRunesSymbol(ast: ESLintProgram): boolean {
   });
 
   return hasRuneSymbol;
+}
+
+/**
+ * Checks whether the given identifier is a reference.
+ * Svelte only counts references when it decides on runes mode.
+ * This follows `is_reference` from the `is-reference` package used by `svelte/compiler`.
+ */
+function isReference(node: any, parent: any): boolean {
+  switch (parent?.type) {
+    // `bar` in `foo.bar`
+    case "MemberExpression":
+      return parent.computed || node === parent.object;
+    // `foo` in `class { foo() {} }`
+    case "MethodDefinition":
+      return parent.computed;
+    // `meta` in `import.meta`
+    case "MetaProperty":
+      return parent.meta === node;
+    // `foo` in `class { foo = bar }` and `bar` in `{ bar: foo }`
+    case "PropertyDefinition":
+    case "Property":
+      return parent.computed || node === parent.value;
+    // `bar` in `export { foo as bar }` and `foo` in `import { foo as bar }`
+    case "ExportSpecifier":
+    case "ImportSpecifier":
+      return node === parent.local;
+    // `foo` in `foo: while (...) { break foo; }`
+    case "LabeledStatement":
+    case "BreakStatement":
+    case "ContinueStatement":
+      return false;
+    default:
+      return true;
+  }
+}
+
+/**
+ * Adds the patterns that the given node declares to `bindingTargets`.
+ * Svelte declares these names, so it does not count them as references.
+ * Default values and computed keys inside the patterns are not added.
+ */
+function collectBindingTargets(node: any, bindingTargets: Set<unknown>): void {
+  const targets: unknown[] = [];
+  switch (node.type) {
+    case "VariableDeclarator":
+      targets.push(node.id);
+      break;
+    case "FunctionDeclaration":
+    case "FunctionExpression":
+    case "ArrowFunctionExpression":
+      targets.push(node.id, ...node.params);
+      break;
+    // Svelte does not declare the name of a class expression.
+    case "ClassDeclaration":
+      targets.push(node.id);
+      break;
+    case "CatchClause":
+      targets.push(node.param);
+      break;
+    case "SvelteEachBlock":
+      targets.push(node.context, node.index);
+      break;
+    case "SvelteSnippetBlock":
+      targets.push(node.id, ...node.params);
+      break;
+    case "SvelteAwaitThenBlock":
+      targets.push(node.value);
+      break;
+    case "SvelteAwaitCatchBlock":
+      targets.push(node.error);
+      break;
+    case "SvelteDirective":
+      if (node.kind === "Let") targets.push(node.expression);
+      break;
+    default:
+      if (bindingTargets.has(node)) {
+        targets.push(...getPatternChildren(node));
+      }
+      break;
+  }
+  for (const target of targets) {
+    if (target) bindingTargets.add(target);
+  }
+}
+
+/**
+ * Gets the child patterns of the given pattern that are also declared.
+ * Default values and computed keys are not included.
+ */
+function getPatternChildren(node: any): unknown[] {
+  switch (node.type) {
+    case "ObjectPattern":
+      return node.properties.map((property: any) =>
+        property.type === "Property" ? property.value : property,
+      );
+    case "ArrayPattern":
+      return node.elements;
+    case "RestElement":
+      return [node.argument];
+    case "AssignmentPattern":
+      return [node.left];
+    default:
+      return [];
+  }
 }
