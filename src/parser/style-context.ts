@@ -70,9 +70,11 @@ export function parseStyleContext(
     default:
       return { status: "unknown-lang", sourceLang };
   }
-  const styleCode = ctx.code.slice(
-    styleElement.startTag.range[1],
-    styleElement.endTag.range[0],
+  const styleCode = maskHTMLComments(
+    ctx.code.slice(
+      styleElement.startTag.range[1],
+      styleElement.endTag.range[0],
+    ),
   );
   try {
     sourceAst = parseFn(styleCode, {
@@ -157,6 +159,53 @@ export function styleSelectorNodeLoc(
         : undefined,
     end: node.source?.end,
   };
+}
+
+/**
+ * Replaces HTML comments with whitespace so that PostCSS can parse the style
+ * source. Svelte's own CSS parser skips `<!-- -->` the same way it skips CSS
+ * comments.
+ */
+function maskHTMLComments(code: string): string {
+  const len = code.length;
+  const ranges: [number, number][] = [];
+  let index = 0;
+  while (index < len) {
+    const c = code[index];
+    if (c === '"' || c === "'") {
+      const quote = c;
+      index++;
+      while (index < len && code[index] !== quote) {
+        index += code[index] === "\\" ? 2 : 1;
+      }
+      index++;
+    } else if (code.startsWith("/*", index)) {
+      const end = code.indexOf("*/", index + 2);
+      index = end === -1 ? len : end + 2;
+    } else if (code.startsWith("<!--", index)) {
+      const end = code.indexOf("-->", index + 4);
+      if (end === -1) {
+        index += 4;
+      } else {
+        ranges.push([index, end + 3]);
+        index = end + 3;
+      }
+    } else {
+      index++;
+    }
+  }
+  if (ranges.length === 0) {
+    return code;
+  }
+  let result = "";
+  let last = 0;
+  for (const [start, end] of ranges) {
+    result +=
+      code.slice(last, start) +
+      code.slice(start, end).replace(/[^\n\r\u2028\u2029]/g, " ");
+    last = end;
+  }
+  return result + code.slice(last);
 }
 
 /**
