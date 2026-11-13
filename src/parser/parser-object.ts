@@ -58,8 +58,16 @@ export function isTSESLintParserObject(
   value: unknown,
 ): value is TSESLintParser {
   if (!isEnhancedParserObject(value)) return false;
+  // e.g. the `parser` of the `typescript-eslint` package, which only has `meta`
+  // and `parseForESLint`, so `maybeTSESLintParserObject()` does not match it.
+  if ((value as any).meta?.name === "typescript-eslint/parser") return true;
   try {
-    const result = (value as unknown as TSESLintParser).parseForESLint("", {});
+    const result = (value as unknown as TSESLintParser).parseForESLint("", {
+      // Without it, typescript-eslint infers `tsconfigRootDir` from the
+      // `eslint.config.*` files that use its configs, and throws when there are
+      // several of them, e.g. in a monorepo.
+      tsconfigRootDir: process.cwd(),
+    });
     const services = result.services;
     return Boolean(
       services &&
