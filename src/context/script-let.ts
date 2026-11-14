@@ -15,6 +15,7 @@ import type {
 import type { ESLintExtendedProgram } from "../parser/index.js";
 import { getWithLoc } from "../parser/converts/common.js";
 import {
+  addReference,
   getScopeFromNode,
   removeAllScopeAndVariableAndReference,
   removeIdentifierVariable,
@@ -655,6 +656,60 @@ export class ScriptLetContext {
       },
     );
     this.pushScope(restore, "});", this.currentScriptScopeKind);
+  }
+
+  /**
+   * Add the key expression of an each block.
+   * Call it inside the scope opened by `nestEachBlock()`.
+   */
+  public addEachBlockKey(
+    key: ESTree.Expression,
+    eachBlock: SvelteEachBlock,
+    callback: (key: ESTree.Expression) => void,
+  ): void {
+    this.addExpression(key, eachBlock, null, (node, result) => {
+      callback(node);
+
+      // The key sees the item and the index, but not the declarations of the body,
+      // such as `{@const}`. Resolve such references in the upper scopes.
+      // `node` may be a function, which has its own scope. So get the each scope
+      // from the parent of `node`, which is the virtual `ExpressionStatement`.
+      const eachScope = result.getScope((node as any).parent);
+      traverseNodes(node, {
+        visitorKeys: result.visitorKeys,
+        enterNode(n) {
+          if (n.type !== "Identifier") return;
+          const reference = result
+            .getScope(n)
+            .references.find((r) => r.identifier === n);
+          const variable = reference?.resolved;
+          if (
+            !reference ||
+            !variable ||
+            variable.scope !== eachScope ||
+            variable.defs.some((def) => def.type === "Parameter")
+          ) {
+            return;
+          }
+          const index = variable.references.indexOf(reference);
+          if (index >= 0) variable.references.splice(index, 1);
+          reference.resolved = null;
+          addReference(eachScope.through, reference);
+          for (let scope = eachScope.upper; scope; scope = scope.upper) {
+            const upperVariable = scope.set.get(n.name);
+            if (upperVariable && canResolve(reference, upperVariable)) {
+              reference.resolved = upperVariable;
+              addReference(upperVariable.references, reference);
+              return;
+            }
+            addReference(scope.through, reference);
+          }
+        },
+        leaveNode() {
+          // noop
+        },
+      });
+    });
   }
 
   public nestSnippetBlock(
@@ -1390,6 +1445,26 @@ function getTokenIndex(
     index++;
   }
   return null;
+}
+
+/**
+ * Checks whether the given reference can resolve to the given variable.
+ * With typescript-eslint, a value reference only resolves to a value variable,
+ * and a type reference only resolves to a type variable.
+ */
+function canResolve(
+  reference: eslint.Scope.Reference,
+  variable: eslint.Scope.Variable,
+): boolean {
+  const ref = reference as Partial<
+    Pick<TSScope["references"][number], "isValueReference" | "isTypeReference">
+  >;
+  const v = variable as Partial<
+    Pick<TSScope["variables"][number], "isValueVariable" | "isTypeVariable">
+  >;
+  if (ref.isValueReference && v.isValueVariable === false) return false;
+  if (ref.isTypeReference && v.isTypeVariable === false) return false;
+  return true;
 }
 
 /** Get the node to scope map from given scope manager  */
