@@ -304,11 +304,10 @@ export class ScriptLetContext {
   ): ScriptLetCallback<ESTree.VariableDeclarator>[] {
     const range =
       declarator.type === "VariableDeclarator"
-        ? // As of Svelte v5-next.65, VariableDeclarator nodes do not have location information.
-          [
-            getNodeRange(declarator.id, this.ctx.code)[0],
-            getNodeRange(declarator.init!, this.ctx.code)[1],
-          ]
+        ? // Do not use the end of `init` or of the declarator.
+          // `init` does not include wrapping parentheses, and the declarator end can include a trailing line comment.
+          // Take everything up to the closing `}` of the tag.
+          [getNodeRange(declarator.id, this.ctx.code)[0], parent.range[1] - 1]
         : getNodeRange(declarator, this.ctx.code);
     const part = this.ctx.code.slice(...range);
     this.appendScript(
