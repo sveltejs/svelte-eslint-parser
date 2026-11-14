@@ -15,6 +15,6 @@
 	</p>
 {/if}
 
-<!-- Treat it as a compile error, as it will be a run-time error. -->
+<!-- In Svelte 3 and 4, treat it as a compile error, as it will be a run-time error. Svelte 5 supports it. -->
 
 <!-- https://svelte.dev/repl/4d94297a6c80488595e1e1fd7558d081?version=3.52.0 -->
