@@ -407,10 +407,9 @@ function convertHTMLElement(
   if (element.startTag.selfClosing && element.name.name.endsWith("-")) {
     // Restore the self-closing block.
     const selfClosingBlock =
-      /^[a-z]-+$/iu.test(element.name.name) &&
-      ctx.findSelfClosingBlock(element);
+      /^[a-z]-+$/u.test(element.name.name) && ctx.findSelfClosingBlock(element);
     if (selfClosingBlock) {
-      element.name.name = selfClosingBlock.originalTag;
+      element.name.name = selfClosingBlock.tag;
     }
   }
 
