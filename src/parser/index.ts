@@ -59,6 +59,7 @@ import type { SvelteConfig } from "../svelte-config/index.js";
 import { resolveSvelteConfigFromOption } from "../svelte-config/index.js";
 import { getESLintScope } from "./eslint-scope.js";
 import { rememberParserOptions } from "../ts-sys-hook.js";
+import { svelteVersion } from "./svelte-version.js";
 
 export {
   StyleContext,
@@ -215,16 +216,7 @@ function parseAsSvelte(
       statements.shift();
       statement = statements[0];
     }
-    if (
-      !body.startTag.attributes.some(
-        (attr) =>
-          attr.type === "SvelteAttribute" &&
-          attr.key.name === "context" &&
-          attr.value.length === 1 &&
-          attr.value[0].type === "SvelteLiteral" &&
-          attr.value[0].value === "module",
-      )
-    ) {
+    if (!isModuleScript(body)) {
       analyzePropsScope(body, resultScript.scopeManager!, svelteParseContext);
     }
   }
@@ -369,4 +361,21 @@ function extractTokens(ctx: Context) {
   function isPunctuator(c: string) {
     return /^[^\w$]$/iu.test(c);
   }
+}
+
+/** Checks whether the given script element is a module script. */
+function isModuleScript(script: SvelteScriptElement): boolean {
+  return script.startTag.attributes.some((attr) => {
+    if (attr.type !== "SvelteAttribute") return false;
+    if (attr.key.name === "context") {
+      return (
+        attr.value.length === 1 &&
+        attr.value[0].type === "SvelteLiteral" &&
+        attr.value[0].value === "module"
+      );
+    }
+    // Svelte 5 supports `<script module>`.
+    // Svelte 4 treats it as an instance script.
+    return attr.key.name === "module" && svelteVersion.gte(5);
+  });
 }
