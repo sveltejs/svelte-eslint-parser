@@ -2695,8 +2695,15 @@ describe("public parser API with the experimental hook", () => {
     assert.ifError(child.error);
   });
 
-  for (const mode of ["project", "projectService"]) {
-    it(`refreshes the component and its importers after an edit, saved or not (${mode})`, () => {
+  // \`linked\` imports the component from a workspace package linked into
+  // \`node_modules\`, which must refresh the same as a relative import.
+  for (const [mode, linked] of [
+    ["project", false],
+    ["projectService", false],
+    ["project", true],
+    ["projectService", true],
+  ] as const) {
+    it(`refreshes the component and its importers after an edit, saved or not (${mode}${linked ? ", linked package" : ""})`, () => {
       const child = spawnSync(
         process.execPath,
         [
@@ -2713,8 +2720,17 @@ describe("public parser API with the experimental hook", () => {
       import * as parser from ${JSON.stringify(new URL("../../src/index.ts", import.meta.url).href)};
       const dir = fs.mkdtempSync(path.join(os.tmpdir(), "component-refresh-"));
       try {
-        const componentPath = path.join(dir, "Foo.svelte");
-        const consumer = 'import Foo from "./Foo.svelte"; import type { ComponentProps } from "svelte"; let count: ComponentProps<Foo>["count"];';
+        const linked = ${JSON.stringify(linked)};
+        const componentDir = linked ? path.join(dir, "packages", "ui", "src") : dir;
+        const componentPath = path.join(componentDir, "Foo.svelte");
+        fs.mkdirSync(componentDir, { recursive: true });
+        if (linked) {
+          fs.writeFileSync(path.join(dir, "packages", "ui", "package.json"), JSON.stringify({ name: "@org/ui", exports: { "./*.svelte": "./src/*.svelte" } }));
+          fs.mkdirSync(path.join(dir, "node_modules", "@org"), { recursive: true });
+          fs.symlinkSync(path.join(dir, "packages", "ui"), path.join(dir, "node_modules", "@org", "ui"), "dir");
+        }
+        const specifier = linked ? "@org/ui/Foo.svelte" : "./Foo.svelte";
+        const consumer = 'import Foo from "' + specifier + '"; import type { ComponentProps } from "svelte"; let count: ComponentProps<Foo>["count"];';
         // The component imports itself, so its own rules read the companion too.
         const component = (type) => '<script lang="ts">import type Foo from "./Foo.svelte"; import type { ComponentProps } from "svelte"; let self: ComponentProps<Foo>["count"]; export let count: ' + type + ';</script>';
         fs.writeFileSync(componentPath, component("number"));
