@@ -33,6 +33,7 @@ interface TsLike {
   sys?: {
     readFile?: (path: string, encoding?: string) => string | undefined;
     fileExists?: (path: string) => boolean;
+    realpath?: (path: string) => string;
   };
   server?: {
     ProjectService?: { prototype: ProjectServiceLike };
@@ -57,9 +58,10 @@ interface ScriptInfoLike {
 const SVELTE_COMPANION_SUFFIX = ".svelte.ts";
 // A `package.json` `imports`/`exports` target gets no implicit extension, so
 // a `*.svelte` target probes only `X.d.svelte.ts`, which TypeScript loads only
-// with `allowArbitraryExtensions`. Pointing the target at the companion makes
-// it resolve like a relative `./X.svelte` import. Each field's subpath keys
-// start with its own prefix.
+// with `allowArbitraryExtensions`. Adding the companion as a fallback after the
+// original target makes it resolve like a relative `./X.svelte` import, while a
+// real `X.d.svelte.ts` still wins. Each field's subpath keys start with its own
+// prefix.
 const SUBPATH_FIELDS = [
   ["imports", "#"],
   ["exports", "."],
@@ -192,7 +194,7 @@ function translateCompanion(companionPath: string): string | null {
   return translateOnDemand(sveltePath);
 }
 
-/** `packageJsonText` with every `.svelte` subpath target pointed at its `X.svelte.ts` companion. */
+/** `packageJsonText` with every `.svelte` subpath target falling back to its `X.svelte.ts` companion. */
 function redirectSvelteSubpathTargets(packageJsonText: string): string {
   if (
     !SUBPATH_FIELDS.some(([field]) => packageJsonText.includes(`"${field}"`))
@@ -249,9 +251,11 @@ function redirectSubpathMap(
   let changed = false;
   for (const [subpath, target] of Object.entries(subpaths)) {
     if (subpath.endsWith("*") && !(`${subpath}.svelte` in subpaths)) {
+      // Every `*` in a target is replaced, so `./src/*/*` cannot be extended
+      // with a suffix; only a single trailing `*` is.
       const sibling = mapTargetLeaves(target, (leaf) =>
-        isRelative(leaf) && leaf.endsWith("*")
-          ? `${leaf}${SVELTE_COMPANION_SUFFIX}`
+        isRelative(leaf) && leaf.indexOf("*") === leaf.length - 1
+          ? withCompanionFallback(`${leaf}.svelte`)
           : null,
       );
       if (sibling !== null) {
@@ -267,14 +271,24 @@ function redirectSubpathMap(
 }
 
 /**
- * `target` with each `./X.svelte` leaf pointed at `./X.svelte.ts`, or `null`
- * when some leaf is not one. A bare specifier is left to TypeScript's package
- * resolution, which appends `.ts` itself.
+ * `target` with each `./X.svelte` leaf falling back to `./X.svelte.ts`, or
+ * `null` when some leaf is not one. A bare specifier is left to TypeScript's
+ * package resolution, which appends `.ts` itself.
  */
 function toCompanionTarget(target: unknown): SubpathTarget | null {
   return mapTargetLeaves(target, (leaf) =>
-    isRelative(leaf) && leaf.endsWith(".svelte") ? `${leaf}.ts` : null,
+    isRelative(leaf) && leaf.endsWith(".svelte")
+      ? withCompanionFallback(leaf)
+      : null,
   );
+}
+
+/**
+ * TypeScript tries each entry of a fallback array in turn, so the original
+ * `./X.svelte` keeps a real `X.d.svelte.ts` ahead of the companion.
+ */
+function withCompanionFallback(svelteTarget: string): string[] {
+  return [svelteTarget, `${svelteTarget}.ts`];
 }
 
 function isRelative(target: string): boolean {
@@ -284,7 +298,7 @@ function isRelative(target: string): boolean {
 /** `target` with each string leaf mapped, or `null` when any leaf maps to `null`. */
 function mapTargetLeaves(
   target: unknown,
-  mapLeaf: (leaf: string) => string | null,
+  mapLeaf: (leaf: string) => SubpathTarget | null,
 ): SubpathTarget | null {
   if (typeof target === "string") return mapLeaf(target);
   if (Array.isArray(target)) {
@@ -292,7 +306,8 @@ function mapTargetLeaves(
     for (const fallback of target) {
       const mappedFallback = mapTargetLeaves(fallback, mapLeaf);
       if (mappedFallback === null) return null;
-      mapped.push(mappedFallback);
+      if (Array.isArray(mappedFallback)) mapped.push(...mappedFallback);
+      else mapped.push(mappedFallback);
     }
     return mapped;
   }
@@ -445,6 +460,8 @@ function patchTsSys(sys: TsLike["sys"]): void {
           return virtual;
         }
       } else if (path.basename(filePath) === "package.json") {
+        // This is also what `import pkg from "./package.json"` sees under
+        // `resolveJsonModule`, so its type gains the added entries. Harmless.
         const packageJsonText = originalReadFile(filePath, encoding);
         return packageJsonText === undefined
           ? undefined
@@ -467,6 +484,27 @@ function patchTsSys(sys: TsLike["sys"]): void {
         return true;
       }
       return originalFileExists(filePath);
+    };
+  }
+
+  // A virtual companion is not on disk, so the real `realpath` returns it
+  // unchanged, e.g. still under a workspace symlink in `node_modules`. Resolve
+  // it through its `X.svelte` instead, so the program holds the same path that
+  // ESLint lints and the hook caches.
+  if (typeof sys.realpath === "function") {
+    const originalRealpath = sys.realpath.bind(sys);
+    sys.realpath = (filePath: string) => {
+      if (
+        typeof filePath === "string" &&
+        filePath.endsWith(SVELTE_COMPANION_SUFFIX) &&
+        !realFileExists(filePath)
+      ) {
+        const sveltePath = filePath.slice(0, -".ts".length);
+        if (realFileExists(sveltePath)) {
+          return `${originalRealpath(sveltePath)}.ts`;
+        }
+      }
+      return originalRealpath(filePath);
     };
   }
 }

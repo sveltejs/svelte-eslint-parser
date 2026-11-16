@@ -1482,6 +1482,9 @@ describeLegacyClass(
  * - `componentPath`, `specifier` and `files` place the component elsewhere,
  *   import it through another specifier and add `package.json` files, to
  *   resolve it through `imports`/`exports` subpaths.
+ * - `symlinks` maps a link path to the directory it points at, both relative,
+ *   like a workspace package linked into `node_modules`.
+ * - `compilerOptions` are added to the program's options.
  */
 function realResolutionDiagnostics(
   componentSource: string,
@@ -1493,6 +1496,8 @@ function realResolutionDiagnostics(
     componentPath = "Foo.svelte",
     specifier = "./Foo.svelte",
     files = {},
+    symlinks = {},
+    compilerOptions: extraCompilerOptions = {},
   }: {
     patch?: boolean;
     realCompanion?: string;
@@ -1500,6 +1505,8 @@ function realResolutionDiagnostics(
     componentPath?: string;
     specifier?: string;
     files?: Record<string, string>;
+    symlinks?: Record<string, string>;
+    compilerOptions?: ts.CompilerOptions;
   } = {},
 ): ts.Diagnostic[] {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), "real-resolve-"));
@@ -1514,6 +1521,11 @@ function realResolutionDiagnostics(
       const filePath = path.join(dir, relativePath);
       fs.mkdirSync(path.dirname(filePath), { recursive: true });
       fs.writeFileSync(filePath, content, "utf-8");
+    }
+    for (const [link, target] of Object.entries(symlinks)) {
+      const linkPath = path.join(dir, link);
+      fs.mkdirSync(path.dirname(linkPath), { recursive: true });
+      fs.symlinkSync(path.join(dir, target), linkPath, "dir");
     }
     const barPath = path.join(dir, "Bar.ts");
     let consumerCode = `import Foo from ${JSON.stringify(specifier)};\n${consumerBody}\n`;
@@ -1538,6 +1550,13 @@ function realResolutionDiagnostics(
         }
       },
       fileExists: (p: string): boolean => fs.existsSync(p),
+      realpath: (p: string): string => {
+        try {
+          return fs.realpathSync.native(p);
+        } catch {
+          return p;
+        }
+      },
     };
     if (patch) {
       _resetTranslationCacheForTesting();
@@ -1556,10 +1575,12 @@ function realResolutionDiagnostics(
       types: [],
       baseUrl: dir,
       paths: { svelte: [svelteTypesPath] },
+      ...extraCompilerOptions,
     };
     const host = ts.createCompilerHost(compilerOptions);
     host.fileExists = (p) => sys.fileExists(p);
     host.readFile = (p) => sys.readFile(p);
+    host.realpath = (p) => sys.realpath(p);
     host.getSourceFile = (fileName, languageVersionOrOptions) => {
       const text = sys.readFile(fileName);
       return text === undefined
@@ -2000,7 +2021,10 @@ describe("ts.sys `package.json` subpath targets (unit)", () => {
         exports: { "./*.js": "./lib/*.js", "./*.svelte": "./lib/*.svelte" },
       }),
       {
-        exports: { "./*.js": "./lib/*.js", "./*.svelte": "./lib/*.svelte.ts" },
+        exports: {
+          "./*.js": "./lib/*.js",
+          "./*.svelte": ["./lib/*.svelte", "./lib/*.svelte.ts"],
+        },
       },
     );
   });
@@ -2010,7 +2034,10 @@ describe("ts.sys `package.json` subpath targets (unit)", () => {
       redirect({ imports: { "#components/*": "./src/components/*" } }),
       {
         imports: {
-          "#components/*.svelte": "./src/components/*.svelte.ts",
+          "#components/*.svelte": [
+            "./src/components/*.svelte",
+            "./src/components/*.svelte.ts",
+          ],
           "#components/*": "./src/components/*",
         },
       },
@@ -2018,12 +2045,24 @@ describe("ts.sys `package.json` subpath targets (unit)", () => {
   });
 
   it("keeps an authored `*.svelte` entry instead of adding a second one", () => {
+    const authored = ["./ui/*.svelte", "./ui/*.svelte.ts"];
     assert.deepStrictEqual(
       redirect({
         imports: { "#c/*": "./src/*", "#c/*.svelte": "./ui/*.svelte" },
       }),
-      { imports: { "#c/*": "./src/*", "#c/*.svelte": "./ui/*.svelte.ts" } },
+      { imports: { "#c/*": "./src/*", "#c/*.svelte": authored } },
     );
+    assert.deepStrictEqual(
+      redirect({
+        imports: { "#c/*.svelte": "./ui/*.svelte", "#c/*": "./src/*" },
+      }),
+      { imports: { "#c/*.svelte": authored, "#c/*": "./src/*" } },
+    );
+  });
+
+  it("adds no `*.svelte` entry for a target with more than one `*`", () => {
+    const packageJson = { imports: { "#c/*": "./src/*/*" } };
+    assert.deepStrictEqual(redirect(packageJson), packageJson);
   });
 
   it("maps every leaf of a conditional target", () => {
@@ -2034,8 +2073,8 @@ describe("ts.sys `package.json` subpath targets (unit)", () => {
       {
         imports: {
           "#c/*.svelte": {
-            types: "./src/*.svelte.ts",
-            default: "./dist/*.svelte.ts",
+            types: ["./src/*.svelte", "./src/*.svelte.ts"],
+            default: ["./dist/*.svelte", "./dist/*.svelte.ts"],
           },
           "#c/*": { types: "./src/*", default: "./dist/*" },
         },
@@ -2061,25 +2100,24 @@ describe("ts.sys `package.json` subpath targets (unit)", () => {
       }),
       {
         exports: {
-          "./Foo.svelte": "./lib/Foo.svelte.ts",
-          "./Button": "./lib/Button.svelte.ts",
-          "./*": "./lib/*.svelte.ts",
+          "./Foo.svelte": ["./lib/Foo.svelte", "./lib/Foo.svelte.ts"],
+          "./Button": ["./lib/Button.svelte", "./lib/Button.svelte.ts"],
+          "./*": ["./lib/*.svelte", "./lib/*.svelte.ts"],
         },
       },
     );
   });
 
   it("rewrites the `exports` sugar for the package root", () => {
+    const index = ["./index.svelte", "./index.svelte.ts"];
     assert.deepStrictEqual(redirect({ exports: "./index.svelte" }), {
-      exports: "./index.svelte.ts",
+      exports: index,
     });
     assert.deepStrictEqual(
       redirect({
         exports: { svelte: "./index.svelte", default: "./index.svelte" },
       }),
-      {
-        exports: { svelte: "./index.svelte.ts", default: "./index.svelte.ts" },
-      },
+      { exports: { svelte: index, default: index } },
     );
   });
 
@@ -2089,9 +2127,21 @@ describe("ts.sys `package.json` subpath targets (unit)", () => {
         exports: { "./*.svelte": ["./lib/*.svelte", "./src/*.svelte"] },
       }),
       {
-        exports: { "./*.svelte": ["./lib/*.svelte.ts", "./src/*.svelte.ts"] },
+        exports: {
+          "./*.svelte": [
+            "./lib/*.svelte",
+            "./lib/*.svelte.ts",
+            "./src/*.svelte",
+            "./src/*.svelte.ts",
+          ],
+        },
       },
     );
+  });
+
+  it("leaves a fallback array alone when an entry cannot be mapped", () => {
+    const packageJson = { imports: { "#c/*": ["./src/*", "ui/*"] } };
+    assert.deepStrictEqual(redirect(packageJson), packageJson);
   });
 
   // TypeScript resolves a bare target as a package import, where it appends
@@ -2134,6 +2184,9 @@ describe("ts.sys `package.json` subpath targets (unit)", () => {
       JSON.stringify({
         imports: { "#a/*": { browser: null, default: "./src/*" } },
       }),
+      JSON.stringify({ imports: { "#a/*": "./src/*.js" } }, null, 2),
+      "null",
+      JSON.stringify(["imports"]),
       "{ not json",
     ]) {
       assert.strictEqual(readThroughHook(text), text);
@@ -2253,6 +2306,63 @@ describe("imported component prop types via `package.json` subpaths (e2e)", () =
       unhooked.some((d) => d.code === 2307),
       `expected TS2307 without the hook, got: ${format(unhooked).join("; ")}`,
     );
+  });
+
+  it("keeps a real `X.d.svelte.ts` ahead of the companion with `allowArbitraryExtensions`", () => {
+    const layout = {
+      ...IMPORTS,
+      files: {
+        ...IMPORTS.files,
+        "src/components/Foo.d.svelte.ts": `declare const Foo: { declared: string };\nexport default Foo;\n`,
+      },
+      compilerOptions: { allowArbitraryExtensions: true },
+    };
+    const ok = realResolutionDiagnostics(
+      COMPONENT,
+      `const d: string = Foo.declared; void d;`,
+      layout,
+    );
+    assert.deepStrictEqual(format(ok), []);
+    const bad = realResolutionDiagnostics(
+      COMPONENT,
+      `const d: number = Foo.declared; void d;`,
+      layout,
+    );
+    assert.ok(
+      bad.some((d) => d.code === 2322),
+      `expected TS2322 from the declaration file, got: ${format(bad).join("; ")}`,
+    );
+  });
+
+  it("resolves a workspace package linked into `node_modules` to the real companion path", () => {
+    const component = `<script lang="ts" context="module">
+  export class Store { #value = 0; get value() { return this.#value; } }
+</script>
+<script lang="ts">
+  export let value: string;
+</script>
+<p>{value}</p>`;
+    // Through the link and through the real path, \`Store\` must be one class;
+    // two companion copies make its \`#private\` field incompatible.
+    const diagnostics = realResolutionDiagnostics(
+      component,
+      `import { Store as LinkedStore } from "@org/ui/Foo.svelte";
+import { Store as RealStore } from "./packages/ui/src/Foo.svelte";
+const store: RealStore = new LinkedStore();
+void store;`,
+      {
+        componentPath: "packages/ui/src/Foo.svelte",
+        specifier: "@org/ui/Foo.svelte",
+        files: {
+          "packages/ui/package.json": JSON.stringify({
+            name: "@org/ui",
+            exports: { "./*.svelte": "./src/*.svelte" },
+          }),
+        },
+        symlinks: { "node_modules/@org/ui": "packages/ui" },
+      },
+    );
+    assert.deepStrictEqual(format(diagnostics), []);
   });
 
   it("stays a passthrough to a real `X.svelte.ts` behind a subpath (conflict guard)", () => {
