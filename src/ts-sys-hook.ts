@@ -4,7 +4,7 @@ import { createRequire } from "module";
 import type { NormalizedParserOptions } from "./parser/parser-options.js";
 import { normalizeParserOptions } from "./parser/parser-options.js";
 import { svelteToVirtualTypeScript } from "./parser/svelte-to-virtual-ts.js";
-import { loadNewestModule } from "./utils/cjs-module.js";
+import { loadNewestModule, loadTypeScript } from "./utils/cjs-module.js";
 
 /**
  * Experimental hook that intercepts `ts.sys.readFile` and returns virtual
@@ -360,7 +360,7 @@ function patchProjectService(proto: ProjectServiceLike | undefined): void {
  */
 function ensureTypeScriptLoaded(): void {
   try {
-    loadNewestModule<TsLike>("typescript");
+    loadTypeScript<TsLike>();
   } catch (e) {
     warn(
       `failed to load 'typescript' from the project: ${

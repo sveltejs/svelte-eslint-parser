@@ -2,7 +2,7 @@ import type * as TS from "typescript";
 import type { ESLintExtendedProgram } from "../index.js";
 import type { NormalizedParserOptions } from "../parser-options.js";
 import { withoutProjectParserOptions } from "../parser-options.js";
-import { loadNewestModule } from "../../utils/cjs-module.js";
+import { loadTypeScript } from "../../utils/cjs-module.js";
 
 /**
  * TypeScript treats unknown extensions as TS, where JSDoc type annotations
@@ -23,7 +23,7 @@ export function getJavaScriptParserOptions(
   const originalSource = originalProgram.getSourceFile(parserOptions.filePath);
   if (!originalSource) return null;
 
-  const ts = loadNewestModule<typeof TS>("typescript");
+  const ts = loadTypeScript<typeof TS>();
   if (originalSource.flags & ts.NodeFlags.JavaScriptFile) return null;
   const source = ts.createSourceFile(
     originalSource.fileName,
