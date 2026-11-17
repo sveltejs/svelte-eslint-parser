@@ -124,7 +124,11 @@ export function analyzeTypeScriptInSvelte(
   const renderStart = code.script.length;
   const rootScopeStart = code.script.length + code.render.length;
   for (const transform of [
-    ...analyzeDollarDerivedScopes(result, context.svelteParseContext),
+    ...analyzeDollarDerivedScopes(
+      result,
+      context.svelteParseContext,
+      renderStart,
+    ),
     ...analyzeBindableProps(
       result,
       // TypeScript does not use JSDoc types in TypeScript code.
@@ -693,6 +697,18 @@ function* analyzeReactiveScopes(
 function* analyzeDollarDerivedScopes(
   result: TSESParseForESLintResult,
   svelteParseContext: SvelteParseContext,
+  /**
+   * End of the `<script>` code. `$derived(...)` calls after it, in the
+   * template, are not transformed.
+   *
+   * A declaration tag in the template only lives while its enclosing blocks
+   * are rendered, so its `$derived(...)` argument keeps the narrowing of the
+   * enclosing `{#if}`, `{:else}`, etc., as with svelte2tsx:
+   *   {#if action?.name === "change"}
+   *     {const value = $derived(action.id)}
+   *   {/if}
+   */
+  scriptEnd = Infinity,
 ): Iterable<TransformInfo> {
   // No processing is needed if the user is determined not to be in Runes mode.
   if (svelteParseContext.runes === false) return;
@@ -707,6 +723,7 @@ function* analyzeDollarDerivedScopes(
   for (const ref of derivedReferences) {
     const derived = ref.identifier;
     if (
+      derived.range[0] < scriptEnd &&
       derived.parent.type === "CallExpression" &&
       derived.parent.callee === derived &&
       derived.parent.arguments[0]?.type !== "SpreadElement"
