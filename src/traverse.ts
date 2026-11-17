@@ -139,3 +139,49 @@ export function traverseNodes(
 ): void {
   traverse(node, null, visitor);
 }
+
+/**
+ * typescript-eslint defines some deprecated properties as getters that return
+ * node copies (e.g. `TSEnumDeclaration.members`, `TSMappedType.typeParameter`).
+ * The copies are not in the visitor keys, so `traverseNodes()` skips them.
+ * This wraps the getters of the given node to call `enterNode` for the copies
+ * when they are first read. The getters are not read here, because reading
+ * them may emit deprecation warnings.
+ * @param node The node to wrap the getters of.
+ * @param visitorKeys The visitor keys to traverse the copies.
+ * @param enterNode Called for each node in the copies.
+ */
+export function onDeprecatedGetterRead(
+  node: any,
+  visitorKeys: VisitorKeys | TSESVisitorKeys | undefined,
+  enterNode: (node: any) => void,
+): void {
+  for (const key of Object.getOwnPropertyNames(node)) {
+    const descriptor = Object.getOwnPropertyDescriptor(node, key)!;
+    if (!descriptor.get || !descriptor.configurable) {
+      continue;
+    }
+    let read = false;
+    Object.defineProperty(node, key, {
+      ...descriptor,
+      get() {
+        const value = descriptor.get!.call(this);
+        if (!read) {
+          read = true;
+          for (const child of Array.isArray(value) ? value : [value]) {
+            if (isNode(child)) {
+              traverseNodes(child, {
+                visitorKeys,
+                enterNode,
+                leaveNode() {
+                  // noop
+                },
+              });
+            }
+          }
+        }
+        return value;
+      },
+    });
+  }
+}

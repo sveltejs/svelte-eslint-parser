@@ -1,5 +1,5 @@
 import type { TSESTree } from "@typescript-eslint/types";
-import { traverseNodes } from "../../traverse.js";
+import { onDeprecatedGetterRead, traverseNodes } from "../../traverse.js";
 import { LinesAndColumns } from "../../context/index.js";
 import type { TSESParseForESLintResult } from "./types.js";
 import type { SvelteReactiveStatement } from "../../ast/script.js";
@@ -172,17 +172,24 @@ function remapLocations(
     removeToken: (node: TSESTree.Token) => boolean;
   },
 ) {
-  const traversed = new Map<TSESTree.Node, TSESTree.Node | null>();
+  const traversed = new Set<TSESTree.Node>();
+
+  /** Remap the location of the given node */
+  function remapNode(node: TSESTree.Node) {
+    if (traversed.has(node)) {
+      return;
+    }
+    traversed.add(node);
+    remapLocation(node);
+    onDeprecatedGetterRead(node, result.visitorKeys, remapNode);
+  }
+
   // remap locations
   traverseNodes(result.ast, {
     visitorKeys: result.visitorKeys,
     enterNode: (node, parent) => {
       (node as any).parent = parent;
-      if (!traversed.has(node)) {
-        traversed.set(node, parent);
-
-        remapLocation(node);
-      }
+      remapNode(node);
     },
     leaveNode: (_node) => {
       // noop
