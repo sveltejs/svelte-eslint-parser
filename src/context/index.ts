@@ -1,3 +1,4 @@
+import type { InstanceGenerics } from "../parser/typescript/analyze/component.js";
 import type {
   Comment,
   Locations,
@@ -173,6 +174,12 @@ export class Context {
   >();
 
   public readonly snippets: SvelteSnippetBlock[] = [];
+
+  /** Syntactically valid `generics` attribute of the instance script. */
+  public instanceGenerics: InstanceGenerics | null = null;
+
+  /** Props type text of each component element, keyed by the element. */
+  public readonly componentPropsTypes = new Map<SvelteElement, string>();
 
   // ----- States ------
   private readonly state: { isTypeScript?: boolean } = {};
