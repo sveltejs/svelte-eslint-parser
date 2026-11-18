@@ -1477,6 +1477,8 @@ describeLegacyClass(
  *   ambient module instead: the negative control for the ambient-shadow test.
  * - `realCompanion` writes a real `Foo.svelte.ts` to disk to exercise the
  *   conflict guard.
+ * - `realDeclaration` writes a real `Foo.svelte.d.ts`, as a package built with
+ *   `svelte-package` ships next to its components.
  * - `template` translates the consumer as a Svelte component, exercising the
  *   actual template attribute typing rather than a handwritten props type.
  */
@@ -1486,8 +1488,14 @@ function realResolutionDiagnostics(
   {
     patch = true,
     realCompanion,
+    realDeclaration,
     template,
-  }: { patch?: boolean; realCompanion?: string; template?: string } = {},
+  }: {
+    patch?: boolean;
+    realCompanion?: string;
+    realDeclaration?: string;
+    template?: string;
+  } = {},
 ): ts.Diagnostic[] {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), "real-resolve-"));
   try {
@@ -1495,6 +1503,13 @@ function realResolutionDiagnostics(
     fs.writeFileSync(sveltePath, componentSource, "utf-8");
     if (realCompanion !== undefined) {
       fs.writeFileSync(path.join(dir, "Foo.svelte.ts"), realCompanion, "utf-8");
+    }
+    if (realDeclaration !== undefined) {
+      fs.writeFileSync(
+        path.join(dir, "Foo.svelte.d.ts"),
+        realDeclaration,
+        "utf-8",
+      );
     }
     const barPath = path.join(dir, "Bar.ts");
     let consumerCode = `import Foo from "./Foo.svelte";\n${consumerBody}\n`;
@@ -1665,6 +1680,42 @@ describe("ts.sys `X.svelte.ts` companion (unit)", () => {
           /declare const \$_svelteComponent\d+:/,
         );
       });
+    });
+  });
+
+  it("does not claim a companion when a real `X.svelte.d.ts` exists", () => {
+    withTempSvelteFile(TS_SCRIPT, (sveltePath) => {
+      const companion = `${sveltePath}.ts`;
+      const declaration = `${sveltePath}.d.ts`;
+      fs.writeFileSync(
+        declaration,
+        "declare const C: number;\nexport default C;\n",
+        "utf-8",
+      );
+      const sys = {
+        readFile: (p: string): string | undefined => {
+          try {
+            return fs.readFileSync(p, "utf-8");
+          } catch {
+            return undefined;
+          }
+        },
+        fileExists: (p: string) => fs.existsSync(p),
+      };
+      _patchTsSysForTesting(sys);
+      rememberParserOptions(makeParserOptions(sveltePath));
+
+      // Resolution must move on to the declaration the package wrote.
+      assert.strictEqual(sys.fileExists(companion), false);
+      assert.strictEqual(sys.readFile(companion), undefined);
+
+      // Once the declaration is gone, the virtual companion takes over.
+      fs.rmSync(declaration);
+      assert.strictEqual(sys.fileExists(companion), true);
+      assert.match(
+        sys.readFile(companion)!,
+        /declare const \$_svelteComponent\d+:/,
+      );
     });
   });
 });
@@ -1946,6 +1997,35 @@ describe("imported component prop types via real `.svelte` resolution (legacy, e
     assert.ok(
       bad.some((d) => d.code === 2322),
       `expected TS2322 from the real module's \`real: string\`, got: ${bad
+        .map((d) => d.code)
+        .join(", ")}`,
+    );
+  });
+
+  it("resolves to a real `X.svelte.d.ts` next to `X.svelte` instead of the companion", () => {
+    // A package built with `svelte-package` ships `Foo.svelte.d.ts`, so its
+    // `shipped` export must resolve, not the synthetic component type.
+    const realDeclaration = `declare const Foo: { shipped: string };\nexport default Foo;\n`;
+    const ok = realResolutionDiagnostics(
+      LEGACY_COMPONENT,
+      `const s: string = Foo.shipped; void s;`,
+      { realDeclaration },
+    );
+    assert.deepStrictEqual(
+      ok.map((d) => d.code),
+      [],
+      `expected the shipped .svelte.d.ts to be used, got: ${ok
+        .map((d) => ts.flattenDiagnosticMessageText(d.messageText, " "))
+        .join("; ")}`,
+    );
+    const bad = realResolutionDiagnostics(
+      LEGACY_COMPONENT,
+      `const n: number = Foo.shipped; void n;`,
+      { realDeclaration },
+    );
+    assert.ok(
+      bad.some((d) => d.code === 2322),
+      `expected TS2322 from the declaration's \`shipped: string\`, got: ${bad
         .map((d) => d.code)
         .join(", ")}`,
     );
