@@ -91,19 +91,56 @@ function isRunesAsParseContext(
   return undefined;
 }
 
+/**
+ * TypeScript nodes that hold a JavaScript expression.
+ * Svelte keeps the expression and removes the type.
+ */
+const tsNodesWithExpression = new Set<string>([
+  "TSAsExpression",
+  "TSSatisfiesExpression",
+  "TSNonNullExpression",
+  "TSTypeAssertion",
+  "TSInstantiationExpression",
+  "TSParameterProperty",
+  "TSExportAssignment",
+]);
+
+/**
+ * Checks whether the given node is removed with the TypeScript types.
+ * Svelte removes these nodes before it decides on runes mode.
+ * See `remove_typescript_nodes` in `svelte/compiler`.
+ */
+function isTypeOnlyNode(node: any): boolean {
+  if (node.type.startsWith("TS")) {
+    return !tsNodesWithExpression.has(node.type);
+  }
+  return (
+    node.declare === true ||
+    node.importKind === "type" ||
+    node.exportKind === "type"
+  );
+}
+
 export function hasRunesSymbol(ast: ESLintProgram): boolean {
   let hasRuneSymbol = false;
+  let typeOnlyNode: unknown = null;
   traverseNodes(ast, {
     enterNode(node) {
-      if (hasRuneSymbol) {
+      if (hasRuneSymbol || typeOnlyNode) {
+        return;
+      }
+      if (isTypeOnlyNode(node)) {
+        typeOnlyNode = node;
         return;
       }
       if (node.type === "Identifier" && runeSymbols.includes(node.name)) {
         hasRuneSymbol = true;
       }
     },
-    leaveNode() {
-      // do nothing
+    leaveNode(node) {
+      if (typeOnlyNode === node) {
+        typeOnlyNode = null;
+      }
     },
   });
 
