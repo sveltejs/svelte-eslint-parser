@@ -121,11 +121,11 @@ export class ScriptsSourceCode {
   public stripCode(start: number, end: number): void {
     this.raw =
       this.raw.slice(0, start) +
-      this.raw.slice(start, end).replace(/[^\n\r ]/g, " ") +
+      this.raw.slice(start, end).replace(/[^\n\r \u2028\u2029]/g, " ") +
       this.raw.slice(end);
     this.trimmedRaw =
       this.trimmedRaw.slice(0, start) +
-      this.trimmedRaw.slice(start, end).replace(/[^\n\r ]/g, " ") +
+      this.trimmedRaw.slice(start, end).replace(/[^\n\r \u2028\u2029]/g, " ") +
       this.trimmedRaw.slice(end);
   }
 }
@@ -185,6 +185,9 @@ export class Context {
     this.locs = new LinesAndColumns(code);
 
     const spaces = code.replace(/[^\n\r ]/g, " ");
+    // Keep U+2028 and U+2029 in the script code, because the script parser
+    // counts them as line breaks when it computes the locations.
+    const scriptSpaces = code.replace(/[^\n\r \u2028\u2029]/g, " ");
 
     let templateCode = "";
     let scriptCode = "";
@@ -224,7 +227,7 @@ export class Context {
           block.startTagRange[0] + 1 /* skip `<` */ + block.tag.length,
           block.startTagRange[1],
         )}`;
-        scriptCode += spaces.slice(start, block.startTagRange[1]);
+        scriptCode += scriptSpaces.slice(start, block.startTagRange[1]);
         start = block.startTagRange[1];
       } else {
         templateCode +=
@@ -232,7 +235,7 @@ export class Context {
           spaces.slice(block.contentRange[0], block.contentRange[1]);
         if (block.tag === "script") {
           scriptCode +=
-            spaces.slice(start, block.contentRange[0]) +
+            scriptSpaces.slice(start, block.contentRange[0]) +
             code.slice(...block.contentRange);
           for (const attr of block.attrs) {
             if (Array.isArray(attr.value)) {
@@ -244,13 +247,13 @@ export class Context {
             }
           }
         } else {
-          scriptCode += spaces.slice(start, block.contentRange[1]);
+          scriptCode += scriptSpaces.slice(start, block.contentRange[1]);
         }
         start = block.contentRange[1];
       }
     }
     templateCode += code.slice(start);
-    scriptCode += spaces.slice(start);
+    scriptCode += scriptSpaces.slice(start);
 
     this.sourceCode = {
       template: templateCode,
@@ -471,7 +474,7 @@ export class LinesAndColumns {
           index++;
         }
         lineStartIndices.push(index + 1);
-      } else if (c === "\n") {
+      } else if (c === "\n" || c === "\u2028" || c === "\u2029") {
         lineStartIndices.push(index + 1);
       }
     }
