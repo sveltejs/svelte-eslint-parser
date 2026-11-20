@@ -51,6 +51,7 @@ import { isTypeScript, normalizeParserOptions } from "./parser-options.js";
 import { getFragmentFromRoot, getInstanceScriptRange } from "./compat.js";
 import {
   hasRunesSymbol,
+  hasTopLevelAwait,
   resolveSvelteParseContextForSvelte,
   resolveSvelteParseContextForSvelteScript,
   type SvelteParseContext,
@@ -270,7 +271,10 @@ function parseAsSvelte(
     svelteParseContext: {
       ...svelteParseContext,
       // The compiler decides if runes mode is used after parsing.
-      runes: svelteParseContext.runes ?? hasRunesSymbol(resultScript.ast),
+      runes:
+        svelteParseContext.runes ??
+        (hasRunesSymbol(resultScript.ast) ||
+          hasTopLevelAwait(resultScript.ast)),
     },
   });
   resultScript.visitorKeys = Object.assign({}, KEYS, resultScript.visitorKeys);
