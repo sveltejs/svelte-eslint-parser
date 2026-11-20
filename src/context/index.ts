@@ -39,10 +39,15 @@ export class ScriptsSourceCode {
 
   public separateIndexes: number[] = [];
 
+  /** Whether line breaks were put between script blocks on the same line. */
+  public readonly hasInsertedLineBreaks: boolean;
+
   public constructor(
     script: string,
     attrs: Record<string, string | undefined>,
+    hasInsertedLineBreaks = false,
   ) {
+    this.hasInsertedLineBreaks = hasInsertedLineBreaks;
     this.raw = script;
     this.trimmedRaw = script.trimEnd();
     this.attrs = attrs;
@@ -191,6 +196,8 @@ export class Context {
     const scriptAttrs: Record<string, string | undefined> = {};
 
     let start = 0;
+    let lastScriptEnd: number | null = null;
+    let hasInsertedLineBreaks = false;
     for (const block of extractBlocks(code)) {
       if (block.tag === "template") {
         if (block.selfClosing) {
@@ -231,9 +238,20 @@ export class Context {
           code.slice(start, block.contentRange[0]) +
           spaces.slice(block.contentRange[0], block.contentRange[1]);
         if (block.tag === "script") {
-          scriptCode +=
-            spaces.slice(start, block.contentRange[0]) +
-            code.slice(...block.contentRange);
+          let before = spaces.slice(start, block.contentRange[0]);
+          if (
+            lastScriptEnd != null &&
+            !/[\n\r\u2028\u2029]/u.test(
+              spaces.slice(lastScriptEnd, block.contentRange[0]),
+            )
+          ) {
+            // Script blocks on the same line would run into each other, so put
+            // a line break between them. The locations are fixed after parsing.
+            before = `\n${before.slice(1)}`;
+            hasInsertedLineBreaks = true;
+          }
+          scriptCode += before + code.slice(...block.contentRange);
+          lastScriptEnd = block.contentRange[1];
           for (const attr of block.attrs) {
             if (Array.isArray(attr.value)) {
               const attrValue = attr.value[0];
@@ -254,7 +272,11 @@ export class Context {
 
     this.sourceCode = {
       template: templateCode,
-      scripts: new ScriptsSourceCode(scriptCode, scriptAttrs),
+      scripts: new ScriptsSourceCode(
+        scriptCode,
+        scriptAttrs,
+        hasInsertedLineBreaks,
+      ),
     };
     this.scriptLet = new ScriptLetContext(this);
   }
