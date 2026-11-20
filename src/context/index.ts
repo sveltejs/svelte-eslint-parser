@@ -174,6 +174,13 @@ export class Context {
 
   public readonly snippets: SvelteSnippetBlock[] = [];
 
+  /**
+   * Slotted children that are moved out of the component's `let:` scope.
+   * Like svelte/compiler, each one gets its own scope, so that `getScope()`
+   * on a node inside it does not reach the component's `let:` scope.
+   */
+  public readonly slottedChildren = new WeakSet();
+
   // ----- States ------
   private readonly state: { isTypeScript?: boolean } = {};
 

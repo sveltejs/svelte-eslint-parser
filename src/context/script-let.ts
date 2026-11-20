@@ -1106,10 +1106,28 @@ export class ScriptLetContext {
 
       const scopes = nodeToScope.get(node);
       if (scopes) {
-        scopes.push(scope);
+        // Restore callbacks run from the inner scope to the outer scope, but
+        // `scopeManager.acquire()` expects the outer scope first.
+        const innerIndex = scopes.findIndex((s) => isUpperScope(scope, s));
+        if (innerIndex >= 0) {
+          scopes.splice(innerIndex, 0, scope);
+        } else {
+          scopes.push(scope);
+        }
       } else {
         nodeToScope.set(node, [scope]);
       }
+    }
+
+    /** Check if `upper` is an upper scope of `scope`. */
+    function isUpperScope(
+      upper: eslint.Scope.Scope,
+      scope: eslint.Scope.Scope,
+    ): boolean {
+      for (let s = scope.upper; s; s = s.upper) {
+        if (s === upper) return true;
+      }
+      return false;
     }
   }
 
