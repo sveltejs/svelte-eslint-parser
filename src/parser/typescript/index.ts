@@ -1,3 +1,4 @@
+import type * as ts from "typescript";
 import type { ESLintExtendedProgram } from "../index.js";
 import type { NormalizedParserOptions } from "../parser-options.js";
 import {
@@ -54,7 +55,21 @@ export function parseTypeScriptInSvelte(
 
   tsCtx.restoreContext.restore(result as unknown as TSESParseForESLintResult);
 
+  if (parserOptions.project != null) rememberProgram(result);
+
   return result;
+}
+
+// The latest program typescript-eslint gave for each tsconfig, keyed by the
+// tsconfig path. Used to find the programs that hold a companion.
+const programsByConfig = new Map<string, ts.Program>();
+
+function rememberProgram(result: ESLintExtendedProgram): void {
+  const program = result.services?.program as ts.Program | null | undefined;
+  const configFilePath = program?.getCompilerOptions().configFilePath;
+  if (typeof configFilePath === "string") {
+    programsByConfig.set(configFilePath, program!);
+  }
 }
 
 /**
@@ -77,13 +92,21 @@ function refreshCompanion(
   const companion = getCompanionToRefresh(filePath);
   if (!companion) return;
   // Parsing the companion path makes typescript-eslint fire the companion's
-  // file watcher, as it does for a linted file.
+  // file watcher in every program that holds it, as it does for a linted file.
+  // The companion is no tsconfig's root file, so typescript-eslint also looks
+  // for it in each tsconfig in `project`. A tsconfig without it gets its folder
+  // watchers fired, which rebuilds every program. So pass only the tsconfigs
+  // whose programs hold the companion.
+  const projects = [...programsByConfig]
+    .filter(([, program]) => program.getSourceFile(companion.filePath))
+    .map(([configFilePath]) => configFilePath);
   try {
     parseScriptWithoutAnalyzeScope(
       companion.code,
       { lang: "ts" },
       {
         ...parserOptions,
+        project: projects.length ? projects : parserOptions.project,
         filePath: companion.filePath,
         disallowAutomaticSingleRunInference: true,
       },

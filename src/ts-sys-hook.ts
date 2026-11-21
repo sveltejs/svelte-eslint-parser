@@ -57,10 +57,11 @@ interface ScriptInfoLike {
 const SVELTE_COMPANION_SUFFIX = ".svelte.ts";
 
 const translations = new Map<string, TranslationEntry>();
-// `.svelte` paths whose companion TypeScript has read. Only those companions
-// can be stale in a program, so only those need a refresh after a parse.
+// `.svelte` paths whose companion TypeScript has read, with the code it last
+// got. Only those companions can be stale in a program, and only when the code
+// has changed since, so only those need a refresh after a parse.
 // Keys come from `companionKey`.
-const servedCompanions = new Set<string>();
+const servedCompanions = new Map<string, string>();
 const patchedSysObjects = new WeakSet();
 const patchedProjectServicePrototypes = new WeakSet();
 // Project services typescript-eslint has used, seen through `openClientFile`.
@@ -204,13 +205,18 @@ function companionKey(sveltePath: string): string {
 export function getCompanionToRefresh(
   sveltePath: string,
 ): { filePath: string; code: string } | null {
-  if (!installed || !servedCompanions.has(companionKey(sveltePath))) {
-    return null;
-  }
+  if (!installed) return null;
+  const key = companionKey(sveltePath);
+  const served = servedCompanions.get(key);
+  if (served === undefined) return null;
   const companionPath = `${sveltePath}.ts`;
   if (realFileExists(companionPath)) return null;
   const code = translateOnDemand(sveltePath);
-  return code === null ? null : { filePath: companionPath, code };
+  // TypeScript already has this code, as in a CLI run. A refresh would
+  // only make typescript-eslint update its programs for nothing.
+  if (code === null || code === served) return null;
+  servedCompanions.set(key, code);
+  return { filePath: companionPath, code };
 }
 
 /**
@@ -317,7 +323,10 @@ function patchTsSys(sys: TsLike["sys"]): void {
         const virtual = translateCompanion(filePath);
         if (virtual !== null) {
           svelteReadFileCount++;
-          servedCompanions.add(companionKey(filePath.slice(0, -".ts".length)));
+          servedCompanions.set(
+            companionKey(filePath.slice(0, -".ts".length)),
+            virtual,
+          );
           return virtual;
         }
       }

@@ -2332,7 +2332,9 @@ describe("public parser API with the experimental hook", () => {
     assert.ifError(child.error);
   });
 
-  for (const mode of ["project", "projectService"]) {
+  // `projects` adds a tsconfig that does not hold the component. Its program
+  // must not be built, as that rebuilt every program for each refresh.
+  for (const mode of ["project", "projects", "projectService"]) {
     it(`refreshes the component and its importers after an edit, saved or not (${mode})`, () => {
       const child = spawnSync(
         process.execPath,
@@ -2346,6 +2348,7 @@ describe("public parser API with the experimental hook", () => {
       import fs from "node:fs";
       import os from "node:os";
       import path from "node:path";
+      import ts from "typescript";
       import * as tsParser from "@typescript-eslint/parser";
       import * as parser from ${JSON.stringify(new URL("../../src/index.ts", import.meta.url).href)};
       const dir = fs.mkdtempSync(path.join(os.tmpdir(), "component-refresh-"));
@@ -2363,7 +2366,18 @@ describe("public parser API with the experimental hook", () => {
         // An editor keeps one long-lived process. Keep CI=true from switching
         // typescript-eslint to single-run mode, which assumes files never change.
         const options = { filePath: path.join(dir, "consumer.ts"), extraFileExtensions: [".svelte"], loc: true, range: true, tsconfigRootDir: dir, disallowAutomaticSingleRunInference: true };
+        const otherConfig = path.join(dir, "other", "tsconfig.json");
+        fs.mkdirSync(path.dirname(otherConfig));
+        fs.writeFileSync(otherConfig, JSON.stringify({ include: ["./**/*.ts"] }));
+        fs.writeFileSync(path.join(dir, "other", "x.ts"), "export const x = 1;");
+        let otherConfigReads = 0;
+        const readFile = ts.sys.readFile;
+        ts.sys.readFile = (file, encoding) => {
+          if (path.resolve(file).toLowerCase() === otherConfig.toLowerCase()) otherConfigReads++;
+          return readFile(file, encoding);
+        };
         if (${JSON.stringify(mode)} === "project") options.project = path.join(dir, "tsconfig.json");
+        else if (${JSON.stringify(mode)} === "projects") options.project = [path.join(dir, "tsconfig.json"), otherConfig];
         else options.projectService = true;
         function countType() {
           const result = tsParser.parseForESLint(consumer, options);
@@ -2379,6 +2393,9 @@ describe("public parser API with the experimental hook", () => {
           return checker.typeToString(checker.getTypeAtLocation(result.services.esTreeNodeToTSNodeMap.get(id)));
         }
         assert.equal(countType(), "number");
+        // An editor lints the component when it opens it. The refresh after the
+        // edit then knows which tsconfig holds the companion.
+        if (${JSON.stringify(mode)} === "projects") assert.equal(selfType(component("number")), "number");
         const edited = component("string");
         fs.writeFileSync(componentPath, edited);
         const future = Date.now() / 1000 + 10;
@@ -2388,6 +2405,7 @@ describe("public parser API with the experimental hook", () => {
         // Like a linted .ts file, an unsaved buffer reaches importers too.
         assert.equal(selfType(component("boolean")), "boolean");
         assert.equal(countType(), "boolean");
+        assert.equal(otherConfigReads, 0);
       } finally {
         fs.rmSync(dir, { recursive: true, force: true });
       }
@@ -2407,6 +2425,67 @@ describe("public parser API with the experimental hook", () => {
       assert.ifError(child.error);
     });
   }
+
+  it("does not refresh a companion whose code TypeScript already has", () => {
+    const child = spawnSync(
+      process.execPath,
+      [
+        "--import",
+        "tsx/esm",
+        "--input-type=module",
+        "-e",
+        `
+      import assert from "node:assert/strict";
+      import fs from "node:fs";
+      import os from "node:os";
+      import path from "node:path";
+      import ts from "typescript";
+      import * as tsParser from "@typescript-eslint/parser";
+      import * as parser from ${JSON.stringify(new URL("../../src/index.ts", import.meta.url).href)};
+      const dir = fs.mkdtempSync(path.join(os.tmpdir(), "companion-unchanged-"));
+      try {
+        const parent = '<script lang="ts">import Child from "./Child.svelte";</script><Child count={1} />';
+        const child = '<script lang="ts">let { count }: { count: number } = $props();</script>{count}';
+        fs.writeFileSync(path.join(dir, "Parent.svelte"), parent);
+        fs.writeFileSync(path.join(dir, "Child.svelte"), child);
+        fs.writeFileSync(path.join(dir, "tsconfig.json"), JSON.stringify({ compilerOptions: {
+          strict: true, module: "ESNext", moduleResolution: "Bundler", types: [],
+          paths: { svelte: [${JSON.stringify(svelteTypesPath)}] },
+        }, include: ["./*.svelte"] }));
+        // A tsconfig that does not hold the components, like a test tsconfig.
+        const otherConfig = path.join(dir, "other", "tsconfig.json");
+        fs.mkdirSync(path.dirname(otherConfig));
+        fs.writeFileSync(otherConfig, JSON.stringify({ include: ["./**/*.ts"] }));
+        fs.writeFileSync(path.join(dir, "other", "x.ts"), "export const x = 1;");
+        let otherConfigReads = 0;
+        const readFile = ts.sys.readFile;
+        ts.sys.readFile = (file, encoding) => {
+          if (path.resolve(file).toLowerCase() === otherConfig.toLowerCase()) otherConfigReads++;
+          return readFile(file, encoding);
+        };
+        const options = { extraFileExtensions: [".svelte"], loc: true, range: true, tsconfigRootDir: dir, parser: tsParser, project: [path.join(dir, "tsconfig.json"), otherConfig] };
+        // Parsing the parent makes TypeScript read the child's companion.
+        parser.parseForESLint(parent, { ...options, filePath: path.join(dir, "Parent.svelte") });
+        parser.parseForESLint(child, { ...options, filePath: path.join(dir, "Child.svelte") });
+        assert.equal(otherConfigReads, 0);
+      } finally {
+        fs.rmSync(dir, { recursive: true, force: true });
+      }
+    `,
+      ],
+      {
+        encoding: "utf8",
+        timeout: 30000,
+        env: {
+          // eslint-disable-next-line no-process-env -- isolate the opt-in hook in a subprocess
+          ...process.env,
+          SVELTE_ESLINT_PARSER_EXPERIMENTAL_TS_SYS_HOOK: "1",
+        },
+      },
+    );
+    assert.strictEqual(child.status, 0, child.stdout + child.stderr);
+    assert.ifError(child.error);
+  });
 });
 
 describe("virtual companion lifecycle", () => {
