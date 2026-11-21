@@ -2351,7 +2351,10 @@ describe("public parser API with the experimental hook", () => {
       import ts from "typescript";
       import * as tsParser from "@typescript-eslint/parser";
       import * as parser from ${JSON.stringify(new URL("../../src/index.ts", import.meta.url).href)};
-      const dir = fs.mkdtempSync(path.join(os.tmpdir(), "component-refresh-"));
+      // Parentheses, as in a folder copied by Finder or Explorer. typescript-eslint
+      // reads them in a \`project\` path as a glob.
+      const dir = path.join(fs.mkdtempSync(path.join(os.tmpdir(), "component-refresh-")), "app (copy)");
+      fs.mkdirSync(dir);
       try {
         const componentPath = path.join(dir, "Foo.svelte");
         const consumer = 'import Foo from "./Foo.svelte"; import type { ComponentProps } from "svelte"; let count: ComponentProps<Foo>["count"];';
@@ -2376,8 +2379,8 @@ describe("public parser API with the experimental hook", () => {
           if (path.resolve(file).toLowerCase() === otherConfig.toLowerCase()) otherConfigReads++;
           return readFile(file, encoding);
         };
-        if (${JSON.stringify(mode)} === "project") options.project = path.join(dir, "tsconfig.json");
-        else if (${JSON.stringify(mode)} === "projects") options.project = [path.join(dir, "tsconfig.json"), otherConfig];
+        if (${JSON.stringify(mode)} === "project") options.project = "./tsconfig.json";
+        else if (${JSON.stringify(mode)} === "projects") options.project = ["./tsconfig.json", "./other/tsconfig.json"];
         else options.projectService = true;
         function countType() {
           const result = tsParser.parseForESLint(consumer, options);
@@ -2407,7 +2410,7 @@ describe("public parser API with the experimental hook", () => {
         assert.equal(countType(), "boolean");
         assert.equal(otherConfigReads, 0);
       } finally {
-        fs.rmSync(dir, { recursive: true, force: true });
+        fs.rmSync(path.dirname(dir), { recursive: true, force: true });
       }
     `,
         ],
@@ -2425,6 +2428,133 @@ describe("public parser API with the experimental hook", () => {
       assert.ifError(child.error);
     });
   }
+
+  it("updates importers in a tsconfig that holds no linted component after an unsaved edit", () => {
+    const child = spawnSync(
+      process.execPath,
+      [
+        "--import",
+        "tsx/esm",
+        "--input-type=module",
+        "-e",
+        `
+      import assert from "node:assert/strict";
+      import fs from "node:fs";
+      import os from "node:os";
+      import path from "node:path";
+      import * as tsParser from "@typescript-eslint/parser";
+      import * as parser from ${JSON.stringify(new URL("../../src/index.ts", import.meta.url).href)};
+      const dir = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), "companion-other-program-")));
+      try {
+        // An upper-case name, so a case-insensitive file system gets the path lower-cased.
+        const componentPath = path.join(dir, "Comp.svelte");
+        const component = (type) => '<script lang="ts">export const count: ' + type + ' = null!;</script>{count}';
+        fs.writeFileSync(componentPath, component("number"));
+        const compilerOptions = { strict: true, module: "ESNext", moduleResolution: "Bundler", types: [], paths: { svelte: [${JSON.stringify(svelteTypesPath)}] } };
+        fs.writeFileSync(path.join(dir, "tsconfig.json"), JSON.stringify({ compilerOptions, include: ["./*.svelte", "./*.ts"] }));
+        fs.writeFileSync(path.join(dir, "main.ts"), 'import { count } from "./Comp.svelte"; export const m = count;');
+        // Only .ts files, so no component parse returns this program.
+        fs.mkdirSync(path.join(dir, "test"));
+        fs.writeFileSync(path.join(dir, "test", "tsconfig.json"), JSON.stringify({ compilerOptions, include: ["./*.ts"] }));
+        const testCode = 'import { count } from "../Comp.svelte"; export const c = count;';
+        fs.writeFileSync(path.join(dir, "test", "a.test.ts"), testCode);
+        const options = { extraFileExtensions: [".svelte"], loc: true, range: true, tsconfigRootDir: dir, disallowAutomaticSingleRunInference: true, project: ["./tsconfig.json", "./test/tsconfig.json"] };
+        function testType() {
+          const result = tsParser.parseForESLint(testCode, { ...options, filePath: path.join(dir, "test", "a.test.ts") });
+          const id = result.ast.body[1].declaration.declarations[0].id;
+          const checker = result.services.program.getTypeChecker();
+          return checker.typeToString(checker.getTypeAtLocation(result.services.esTreeNodeToTSNodeMap.get(id)));
+        }
+        assert.equal(testType(), "number");
+        parser.parseForESLint(component("number"), { ...options, parser: tsParser, filePath: componentPath });
+        for (const type of ["string", "boolean"]) {
+          parser.parseForESLint(component(type), { ...options, parser: tsParser, filePath: componentPath });
+          assert.equal(testType(), type);
+        }
+      } finally {
+        fs.rmSync(dir, { recursive: true, force: true });
+      }
+    `,
+      ],
+      {
+        encoding: "utf8",
+        timeout: 30000,
+        env: {
+          // eslint-disable-next-line no-process-env -- isolate the opt-in hook in a subprocess
+          ...process.env,
+          SVELTE_ESLINT_PARSER_EXPERIMENTAL_TS_SYS_HOOK: "1",
+        },
+      },
+    );
+    assert.strictEqual(child.status, 0, child.stdout + child.stderr);
+    assert.ifError(child.error);
+  });
+
+  it("refreshes a companion when another reader got a different code", () => {
+    const child = spawnSync(
+      process.execPath,
+      [
+        "--import",
+        "tsx/esm",
+        "--input-type=module",
+        "-e",
+        `
+      import assert from "node:assert/strict";
+      import fs from "node:fs";
+      import os from "node:os";
+      import path from "node:path";
+      import * as tsParser from "@typescript-eslint/parser";
+      import * as parser from ${JSON.stringify(new URL("../../src/index.ts", import.meta.url).href)};
+      const dir = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), "companion-readers-")));
+      try {
+        const componentPath = path.join(dir, "Foo.svelte");
+        const consumer = 'import Foo from "./Foo.svelte"; import type { ComponentProps } from "svelte"; let count: ComponentProps<Foo>["count"];';
+        const component = (type) => '<script lang="ts">export let count: ' + type + ';</script>';
+        fs.writeFileSync(componentPath, component("number"));
+        fs.writeFileSync(path.join(dir, "consumer.ts"), consumer);
+        fs.writeFileSync(path.join(dir, "consumer2.ts"), consumer);
+        fs.writeFileSync(path.join(dir, "tsconfig.json"), JSON.stringify({ compilerOptions: {
+          strict: true, module: "ESNext", moduleResolution: "Bundler", types: [],
+          paths: { svelte: [${JSON.stringify(svelteTypesPath)}] },
+        }, include: ["./**/*"] }));
+        const base = { extraFileExtensions: [".svelte"], loc: true, range: true, tsconfigRootDir: dir, disallowAutomaticSingleRunInference: true };
+        const project = { ...base, project: path.join(dir, "tsconfig.json") };
+        const service = { ...base, projectService: true };
+        function countType(file, options) {
+          const result = tsParser.parseForESLint(consumer, { ...options, filePath: path.join(dir, file) });
+          const checker = result.services.program.getTypeChecker();
+          return checker.typeToString(checker.getTypeAtLocation(result.services.esTreeNodeToTSNodeMap.get(result.ast.body[2].declarations[0].id)));
+        }
+        function lint(source) {
+          parser.parseForESLint(source, { ...project, filePath: componentPath, parser: tsParser });
+        }
+        assert.equal(countType("consumer.ts", project), "number");
+        lint(component("number"));
+        fs.writeFileSync(componentPath, component("string"));
+        const future = Date.now() / 1000 + 10;
+        fs.utimesSync(componentPath, future, future);
+        // The project service reads the new code, while the program still has the old one.
+        assert.equal(countType("consumer2.ts", service), "string");
+        lint(component("string"));
+        assert.equal(countType("consumer.ts", project), "string");
+      } finally {
+        fs.rmSync(dir, { recursive: true, force: true });
+      }
+    `,
+      ],
+      {
+        encoding: "utf8",
+        timeout: 30000,
+        env: {
+          // eslint-disable-next-line no-process-env -- isolate the opt-in hook in a subprocess
+          ...process.env,
+          SVELTE_ESLINT_PARSER_EXPERIMENTAL_TS_SYS_HOOK: "1",
+        },
+      },
+    );
+    assert.strictEqual(child.status, 0, child.stdout + child.stderr);
+    assert.ifError(child.error);
+  });
 
   it("does not refresh a companion whose code TypeScript already has", () => {
     const child = spawnSync(
@@ -2463,10 +2593,17 @@ describe("public parser API with the experimental hook", () => {
           if (path.resolve(file).toLowerCase() === otherConfig.toLowerCase()) otherConfigReads++;
           return readFile(file, encoding);
         };
-        const options = { extraFileExtensions: [".svelte"], loc: true, range: true, tsconfigRootDir: dir, parser: tsParser, project: [path.join(dir, "tsconfig.json"), otherConfig] };
+        // Count the refreshes, which parse the companion path.
+        let companionParses = 0;
+        const countingParser = { ...tsParser, parseForESLint(code, options) {
+          if (options.filePath.endsWith(".svelte.ts")) companionParses++;
+          return tsParser.parseForESLint(code, options);
+        } };
+        const options = { extraFileExtensions: [".svelte"], loc: true, range: true, tsconfigRootDir: dir, parser: countingParser, project: ["./tsconfig.json", "./other/tsconfig.json"] };
         // Parsing the parent makes TypeScript read the child's companion.
         parser.parseForESLint(parent, { ...options, filePath: path.join(dir, "Parent.svelte") });
         parser.parseForESLint(child, { ...options, filePath: path.join(dir, "Child.svelte") });
+        assert.equal(companionParses, 0);
         assert.equal(otherConfigReads, 0);
       } finally {
         fs.rmSync(dir, { recursive: true, force: true });
