@@ -175,6 +175,10 @@ function translateCompanion(companionPath: string): string | null {
     warnCompanionConflict(companionPath, sveltePath);
     return null;
   }
+  // A package's own `X.svelte.d.ts`, as `svelte-package` emits, wins too.
+  // TypeScript probes `X.svelte.ts` first, so a companion would put a
+  // translation of the source in place of the types the package declares.
+  if (realFileExists(`${sveltePath}.d.ts`)) return null;
   return translateOnDemand(sveltePath);
 }
 
