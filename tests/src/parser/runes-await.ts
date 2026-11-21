@@ -23,6 +23,12 @@ const cases: Record<string, string> = {
 	const arrow = async () => await Promise.resolve(1);
 	const obj = { async method() { await Promise.resolve(1); } };
 </script>`,
+  "top-level await after a function": `<script>
+	async function load() {
+		return await Promise.resolve(1);
+	}
+	await load();
+</script>`,
   "for await in the instance script": `<script>
 	for await (const x of []) {
 		console.log(x);
@@ -34,6 +40,18 @@ const cases: Record<string, string> = {
   'top-level await in <script context="module">': `<script context="module">
 	const data = await Promise.resolve(1);
 </script>`,
+  "top-level await in the instance script after <script module>": `<script module>
+	export const a = 1;
+</script>
+
+<script>
+	await Promise.resolve(a);
+</script>`,
+  "await in a template expression after <script module>": `<script module>
+	export const p = Promise.resolve(1);
+</script>
+
+<p>{await p}</p>`,
   "await in a template expression": `<script>
 	const p = Promise.resolve(1);
 </script>
@@ -69,6 +87,34 @@ const cases: Record<string, string> = {
 </script>
 
 {#await p}a{:then v}{v}{/await}`,
+  // These use TypeScript, because espree fails to parse them (#1027).
+  "await in an {#each} body (TypeScript)": `<script lang="ts">
+	const p = Promise.resolve(1);
+	const items: number[] = [];
+</script>
+
+{#each items as i}{await p}{i}{/each}`,
+  "await in {@const} in an {#each} body (TypeScript)": `<script lang="ts">
+	const p = Promise.resolve(1);
+	const items: number[] = [];
+</script>
+
+{#each items as i}{@const x = await p}{x}{i}{/each}`,
+  "await in a {#snippet} body (TypeScript)": `<script lang="ts">
+	const p = Promise.resolve(1);
+</script>
+
+{#snippet s()}{await p}{/snippet}`,
+  "await in a {:then} body (TypeScript)": `<script lang="ts">
+	const p = Promise.resolve(1);
+</script>
+
+{#await p then v}{await p}{v}{/await}`,
+  "await in a {:catch} body (TypeScript)": `<script lang="ts">
+	const p = Promise.resolve(1);
+</script>
+
+{#await p catch e}{await p}{e}{/await}`,
 };
 
 describe("Runes mode from top-level await", () => {
