@@ -1,5 +1,9 @@
 import { KEYS } from "../visitor-keys.js";
 import { Context } from "../context/index.js";
+import {
+  fixErrorLocation,
+  fixLocationsFromRanges,
+} from "../context/fix-locations.js";
 import type {
   Comment,
   SourceLocation,
@@ -157,24 +161,43 @@ function parseAsSvelte(
   );
 
   const scripts = ctx.sourceCode.scripts;
-  const resultScript = ctx.isTypeScript()
-    ? parseTypeScriptInSvelte(
-        scripts.getCurrentVirtualCodeInfo(),
-        scripts.attrs,
-        parserOptions,
-        {
-          slots: ctx.slots,
-          svelteParseContext,
-          instanceScriptRange: getInstanceScriptRange(resultTemplate.svelteAst),
-        },
-      )
-    : parseScriptInSvelte(
-        scripts.getCurrentVirtualCode(),
-        scripts.attrs,
-        parserOptions,
-      );
+  let resultScript: ESLintExtendedProgram;
+  try {
+    resultScript = ctx.isTypeScript()
+      ? parseTypeScriptInSvelte(
+          scripts.getCurrentVirtualCodeInfo(),
+          scripts.attrs,
+          parserOptions,
+          {
+            slots: ctx.slots,
+            svelteParseContext,
+            instanceScriptRange: getInstanceScriptRange(
+              resultTemplate.svelteAst,
+            ),
+          },
+        )
+      : parseScriptInSvelte(
+          scripts.getCurrentVirtualCode(),
+          scripts.attrs,
+          parserOptions,
+        );
+  } catch (e) {
+    if (scripts.hasInsertedLineBreaks) {
+      fixErrorLocation(e, scripts.getCurrentVirtualCode(), ctx);
+    }
+    throw e;
+  }
 
   ctx.scriptLet.restore(resultScript);
+  if (scripts.hasInsertedLineBreaks) {
+    fixLocationsFromRanges(
+      resultScript.ast,
+      resultScript.ast.tokens,
+      resultScript.ast.comments,
+      resultScript.visitorKeys,
+      ctx,
+    );
+  }
   ctx.tokens.push(...resultScript.ast.tokens);
   ctx.comments.push(...resultScript.ast.comments);
   sortNodes(ctx.comments);
