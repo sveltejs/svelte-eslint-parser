@@ -175,6 +175,7 @@ function parseAsSvelte(
       );
 
   ctx.scriptLet.restore(resultScript);
+  ctx.fixScriptLocations(resultScript);
   ctx.fixLineCommentsAtScriptEnd(resultScript.ast.comments);
   ctx.tokens.push(...resultScript.ast.tokens);
   ctx.comments.push(...resultScript.ast.comments);

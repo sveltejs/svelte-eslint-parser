@@ -36,6 +36,38 @@ describe("A line comment right before `</script>`", () => {
     });
   }
 
+  for (const { lang, ts } of [
+    { lang: "", ts: false },
+    { lang: ' lang="ts"', ts: true },
+  ]) {
+    it(`does not hide a script on the same line (${ts ? "TS" : "JS"})`, () => {
+      const linter = new Linter();
+      const code = `<script${lang} module>export const b = 2 // c</script><script${lang}>console.log(b);</script>`;
+      const messages = linter.verify(
+        code,
+        createConfig({ "no-console": "error" }, ts),
+        "Component.svelte",
+      );
+      assert.deepStrictEqual(
+        messages.map((m) => [m.line, m.column, m.message]),
+        [[1, code.indexOf("console") + 1, "Unexpected console statement."]],
+      );
+    });
+  }
+
+  it("keeps a script on the same line with the `no-multi-spaces` autofix", () => {
+    const linter = new Linter();
+    const code =
+      "<script module>export const b = 2 // c</script><script>let  a = b;</script>\n";
+    const config = createConfig({ "no-multi-spaces": "error" }, false);
+    const result = linter.verifyAndFix(code, config, "Component.svelte");
+    assert.strictEqual(
+      result.output,
+      "<script module>export const b = 2 // c</script><script>let a = b;</script>\n",
+    );
+    assert.deepStrictEqual(result.messages, []);
+  });
+
   it("keeps `</script>` with the `multiline-comment-style` autofix", () => {
     const linter = new Linter();
     const code = "<script>\n\t// first line\n\t// second line</script>\n";
