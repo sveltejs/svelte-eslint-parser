@@ -2,4 +2,4 @@
 "svelte-eslint-parser": patch
 ---
 
-fix: parse a TypeScript script at the end of the file when its last statement has no `;`
+fix: parse a script with the TypeScript parser when no line break follows its last statement
