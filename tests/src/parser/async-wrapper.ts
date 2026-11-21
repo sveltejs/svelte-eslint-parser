@@ -10,30 +10,51 @@ import { generateParserOptions } from "./test-utils.js";
 
 const dirname = path.dirname(fileURLToPath(import.meta.url));
 
-const blocks: Record<string, string> = {
-  each: "{#each xs as x}{x}{/each}",
-  "each with index and key": "{#each xs as x, i (x)}{x}{i}{/each}",
-  "await then": "{#await p then v}{v}{/await}",
-  "await catch": "{#await p}a{:catch e}{e}{/await}",
-  "let directive": "<div let:x>{x}</div>",
+// Each block form puts `body` in a wrapper function of the virtual script.
+const blocks: Record<string, (body: string) => string> = {
+  each: (body) => `{#each xs as x}{x}${body}{/each}`,
+  "each with index and key": (body) =>
+    `{#each xs as x, i (x)}{x}{i}${body}{/each}`,
+  "await then": (body) => `{#await p then v}{v}${body}{/await}`,
+  "await catch": (body) => `{#await p}a{:catch e}{e}${body}{/await}`,
+  "let directive": (body) => `<div let:x>{x}${body}</div>`,
   ...(svelteVersion.gte(5)
     ? {
         // `{#each}` without `as` and snippets need Svelte 5.
-        "each without context": "{#each xs}a{/each}",
-        snippet: "{#snippet s(a)}{a}{/snippet}{@render s(1)}",
+        "each without context": (body: string) => `{#each xs}a${body}{/each}`,
+        snippet: (body: string) =>
+          `{#snippet s(a)}{a}${body}{/snippet}{@render s(1)}`,
       }
     : {}),
 };
 
+/** Parse the template with the given parser options. */
+function parseTemplate(template: string, options: object) {
+  const code = `<script>let xs = [1]; let p = Promise.resolve(1);</script>\n${template}`;
+  return parseForESLint(code, options as never);
+}
+
 describe("Wrappers of template blocks in the virtual script", () => {
   // Async functions exist since ES2017. Older versions must not get `async`.
-  for (const ecmaVersion of [6, 7, 2015, 2016, 8, 2017, undefined]) {
-    for (const [name, template] of Object.entries(blocks)) {
+  for (const ecmaVersion of [3, 5, 6, 7, 2015, 2016]) {
+    for (const [name, block] of Object.entries(blocks)) {
       it(`parses ${name} with ecmaVersion ${ecmaVersion}`, () => {
-        const code = `<script>let xs = [1]; let p = Promise.resolve(1);</script>\n${template}`;
-        assert.doesNotThrow(() =>
-          parseForESLint(code, { ecmaVersion } as never),
-        );
+        assert.doesNotThrow(() => parseTemplate(block(""), { ecmaVersion }));
+      });
+    }
+  }
+
+  // From ES2017, the wrappers are async, so `await` can be used inside them.
+  const asyncOptions: Record<string, object> = {
+    "ecmaVersion 8": { ecmaVersion: 8 },
+    "ecmaVersion 2017": { ecmaVersion: 2017 },
+    'ecmaVersion "latest"': { ecmaVersion: "latest" },
+    "the default ecmaVersion": {},
+  };
+  for (const [optionsName, options] of Object.entries(asyncOptions)) {
+    for (const [name, block] of Object.entries(blocks)) {
+      it(`parses \`await\` in ${name} with ${optionsName}`, () => {
+        assert.doesNotThrow(() => parseTemplate(block("{await p}"), options));
       });
     }
   }
