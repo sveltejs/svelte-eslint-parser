@@ -137,6 +137,11 @@ const cases: Case[] = [
     code: "{#if true}{@const $state = 1}{/if}\n",
     runes: false,
   },
+  {
+    name: "declaration tag",
+    code: "{#if true}{const $state = 1}{/if}\n",
+    runes: false,
+  },
   // References.
   { name: "call", code: script("let a = $state(0);"), runes: true },
   {

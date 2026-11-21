@@ -167,7 +167,7 @@ function collectBindingTargets(node: any, bindingTargets: Set<unknown>): void {
     case "ArrowFunctionExpression":
       targets.push(node.id, ...node.params);
       break;
-    // Svelte does not declare the name of a class expression.
+    // `ClassExpression` is not here, because Svelte does not declare its name.
     case "ClassDeclaration":
       targets.push(node.id);
       break;
