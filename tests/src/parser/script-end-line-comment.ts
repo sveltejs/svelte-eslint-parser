@@ -42,7 +42,7 @@ describe("A line comment right before `</script>`", () => {
   ]) {
     it(`does not hide a script on the same line (${ts ? "TS" : "JS"})`, () => {
       const linter = new Linter();
-      const code = `<script${lang} module>export const b = 2 // c</script><script${lang}>console.log(b);</script>`;
+      const code = `<script${lang} context="module">export const b = 2 // c</script><script${lang}>console.log(b);</script>`;
       const messages = linter.verify(
         code,
         createConfig({ "no-console": "error" }, ts),
@@ -58,12 +58,12 @@ describe("A line comment right before `</script>`", () => {
   it("keeps a script on the same line with the `no-multi-spaces` autofix", () => {
     const linter = new Linter();
     const code =
-      "<script module>export const b = 2 // c</script><script>let  a = b;</script>\n";
+      '<script context="module">export const b = 2 // c</script><script>let  a = b;</script>\n';
     const config = createConfig({ "no-multi-spaces": "error" }, false);
     const result = linter.verifyAndFix(code, config, "Component.svelte");
     assert.strictEqual(
       result.output,
-      "<script module>export const b = 2 // c</script><script>let a = b;</script>\n",
+      '<script context="module">export const b = 2 // c</script><script>let a = b;</script>\n',
     );
     assert.deepStrictEqual(result.messages, []);
   });
