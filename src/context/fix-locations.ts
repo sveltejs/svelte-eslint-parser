@@ -98,6 +98,7 @@ export function fixErrorLocation(
     pos?: unknown;
     lineNumber?: unknown;
     column?: unknown;
+    message?: unknown;
   } | null;
   if (!e || typeof e.lineNumber !== "number" || typeof e.column !== "number") {
     return;
@@ -118,17 +119,25 @@ export function fixErrorLocation(
   }
   const virtualLoc = virtualLocs.getLocFromIndex(index);
   const loc = ctx.getLocFromIndex(index);
+  const lineNumber = e.lineNumber + loc.line - virtualLoc.line;
+  const column = e.column + loc.column - virtualLoc.column;
+  // Some parsers (e.g. @babel/eslint-parser) put the location at the end of
+  // the message, like `Unexpected token (2:27)`.
+  const locSuffix = ` (${e.lineNumber}:${e.column})`;
+  if (typeof e.message === "string" && e.message.endsWith(locSuffix)) {
+    e.message = `${e.message.slice(0, -locSuffix.length)} (${lineNumber}:${column})`;
+  }
   // Define own properties, since some parsers (e.g. typescript-eslint) only
   // have getters for them.
   Object.defineProperties(e, {
     lineNumber: {
-      value: e.lineNumber + loc.line - virtualLoc.line,
+      value: lineNumber,
       configurable: true,
       enumerable: true,
       writable: true,
     },
     column: {
-      value: e.column + loc.column - virtualLoc.column,
+      value: column,
       configurable: true,
       enumerable: true,
       writable: true,
