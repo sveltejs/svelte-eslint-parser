@@ -102,7 +102,7 @@ export function parseSelector(rule: Rule, ctx: Context): SelectorRoot {
   // move the next lines.
   const lineStartIndices =
     ruleStart !== undefined && ruleEnd !== undefined
-      ? getLineStartIndices(ctx.code.slice(ruleStart, ruleEnd))
+      ? getPostCSSLineStartIndices(ctx.code.slice(ruleStart, ruleEnd))
       : null;
   fixSelectorNodeLocation(root, ctx, ruleStart, lineStartIndices);
   root.walk((node) => {
@@ -202,7 +202,7 @@ function fixPostCSSNodeLocation(
 }
 
 /**
- * Gets the start indices of the lines in the same way as PostCSS (which splits lines only at `\n`).
+ * Gets the start indices of the lines in the same way as PostCSS and postcss-selector-parser (which split lines only at `\n`).
  */
 function getPostCSSLineStartIndices(code: string): number[] {
   const lineStartIndices = [0];
@@ -251,17 +251,4 @@ function fixSelectorNodeLocation(
     );
     node.source.end = { line: loc.line, column: loc.column };
   }
-}
-
-/**
- * Gets the start indices of the lines in the same way as postcss-selector-parser (which splits lines only at `\n`).
- */
-function getLineStartIndices(code: string): number[] {
-  const lineStartIndices = [0];
-  let index = code.indexOf("\n");
-  while (index >= 0) {
-    lineStartIndices.push(index + 1);
-    index = code.indexOf("\n", index + 1);
-  }
-  return lineStartIndices;
 }
