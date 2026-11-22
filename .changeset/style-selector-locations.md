@@ -2,4 +2,4 @@
 "svelte-eslint-parser": patch
 ---
 
-fix: give the right style selector locations after CR and CRLF line breaks and for a selector that starts with a line break
+fix: give the right style selector locations after CR, U+2028 and U+2029 line breaks and for selector nodes that start with a line break
