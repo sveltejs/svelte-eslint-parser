@@ -1,5 +1,9 @@
 import { KEYS } from "../visitor-keys.js";
 import { Context } from "../context/index.js";
+import {
+  fixErrorLocation,
+  fixLocationsFromRanges,
+} from "../context/fix-locations.js";
 import type {
   Comment,
   SourceLocation,
@@ -50,7 +54,8 @@ import type { NormalizedParserOptions } from "./parser-options.js";
 import { isTypeScript, normalizeParserOptions } from "./parser-options.js";
 import { getFragmentFromRoot, getInstanceScriptRange } from "./compat.js";
 import {
-  hasRunesSymbol,
+  hasRuneReference,
+  hasTopLevelAwait,
   resolveSvelteParseContextForSvelte,
   resolveSvelteParseContextForSvelteScript,
   type SvelteParseContext,
@@ -158,24 +163,44 @@ function parseAsSvelte(
   );
 
   const scripts = ctx.sourceCode.scripts;
-  const resultScript = ctx.isTypeScript()
-    ? parseTypeScriptInSvelte(
-        scripts.getCurrentVirtualCodeInfo(),
-        scripts.attrs,
-        parserOptions,
-        {
-          slots: ctx.slots,
-          svelteParseContext,
-          instanceScriptRange: getInstanceScriptRange(resultTemplate.svelteAst),
-        },
-      )
-    : parseScriptInSvelte(
-        scripts.getCurrentVirtualCode(),
-        scripts.attrs,
-        parserOptions,
-      );
+  let resultScript: ESLintExtendedProgram;
+  try {
+    resultScript = ctx.isTypeScript()
+      ? parseTypeScriptInSvelte(
+          scripts.getCurrentVirtualCodeInfo(),
+          scripts.attrs,
+          parserOptions,
+          {
+            slots: ctx.slots,
+            svelteParseContext,
+            instanceScriptRange: getInstanceScriptRange(
+              resultTemplate.svelteAst,
+            ),
+          },
+        )
+      : parseScriptInSvelte(
+          scripts.getCurrentVirtualCode(),
+          scripts.attrs,
+          parserOptions,
+        );
+  } catch (e) {
+    if (scripts.hasInsertedLineBreaks) {
+      fixErrorLocation(e, scripts.getCurrentVirtualCode(), ctx);
+    }
+    throw e;
+  }
 
   ctx.scriptLet.restore(resultScript);
+  if (scripts.hasInsertedLineBreaks) {
+    fixLocationsFromRanges(
+      resultScript.ast,
+      resultScript.ast.tokens,
+      resultScript.ast.comments,
+      resultScript.visitorKeys,
+      ctx,
+    );
+  }
+  ctx.fixLineCommentsAtScriptEnd(resultScript.ast.comments);
   ctx.tokens.push(...resultScript.ast.tokens);
   ctx.comments.push(...resultScript.ast.comments);
   sortNodes(ctx.comments);
@@ -185,6 +210,10 @@ function parseAsSvelte(
   analyzeReactiveScope(resultScript.scopeManager!);
   analyzeStoreScope(resultScript.scopeManager!, svelteParseContext); // for reactive vars
   analyzeSnippetsScope(ctx.snippets, resultScript.scopeManager!);
+  // Check it before the rune names are added as global variables.
+  const runeReferenced =
+    svelteParseContext.runes == null &&
+    hasRuneReference(resultScript.scopeManager!);
 
   // Add $$xxx variable
   addGlobalVariables(
@@ -252,7 +281,12 @@ function parseAsSvelte(
       if (cached !== undefined) {
         return cached;
       }
-      const ast = parseSelector(rule);
+      const ast = parseSelector(
+        rule,
+        ctx,
+        styleContext?.status === "success" &&
+          styleContext.sourceLang === "scss",
+      );
       selectorASTs.set(rule, ast);
       return ast;
     },
@@ -262,7 +296,9 @@ function parseAsSvelte(
     svelteParseContext: {
       ...svelteParseContext,
       // The compiler decides if runes mode is used after parsing.
-      runes: svelteParseContext.runes ?? hasRunesSymbol(resultScript.ast),
+      runes:
+        svelteParseContext.runes ??
+        (runeReferenced || hasTopLevelAwait(resultScript.ast)),
     },
   });
   resultScript.visitorKeys = Object.assign({}, KEYS, resultScript.visitorKeys);

@@ -595,8 +595,9 @@ interface BaseSvelteDirectiveKey<N extends ESTree.Expression | SvelteName>
   parent: SvelteDirective | SvelteStyleDirective;
 }
 export type SvelteDirectiveKeyTextName = BaseSvelteDirectiveKey<SvelteName>;
-export type SvelteDirectiveKeyFunctionName =
-  BaseSvelteDirectiveKey<ESTree.Identifier>;
+export type SvelteDirectiveKeyFunctionName = BaseSvelteDirectiveKey<
+  ESTree.Identifier | ESTree.MemberExpression
+>;
 export type SvelteDirectiveKeyForEventHandler =
   BaseSvelteDirectiveKey<SvelteName>;
 export type SvelteDirectiveKeyForAction = BaseSvelteDirectiveKey<

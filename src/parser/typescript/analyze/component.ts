@@ -246,7 +246,7 @@ function exportName(
 }
 
 /** Top-level statements of the instance `<script>`, filtered out of the concatenated body by source range. */
-function getInstanceStatements(
+export function getInstanceStatements(
   result: TSESParseForESLintResult,
   instanceScriptRange: [number, number] | null,
 ): TSESTree.ProgramStatement[] {

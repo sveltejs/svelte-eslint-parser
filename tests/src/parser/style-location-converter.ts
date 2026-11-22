@@ -6,6 +6,7 @@ import type { Node } from "postcss";
 import { parseForESLint } from "../../../src/index.js";
 import { generateParserOptions, listupFixtures } from "./test-utils.js";
 import type { SourceLocation } from "../../../src/ast/common.js";
+import { LinesAndColumns } from "../../../src/context/index.js";
 
 const dirname = path.dirname(new URL(import.meta.url).pathname);
 const STYLE_LOCATION_CONVERTER_FIXTURE_ROOT = path.resolve(
@@ -53,6 +54,17 @@ describe("Check for AST.", () => {
             services.styleNodeRange(node),
           ]);
         });
+        const locs = new LinesAndColumns(input);
+        for (const [type, loc, [start, end]] of locations) {
+          assert.deepStrictEqual(
+            loc,
+            {
+              start: locs.getLocFromIndex(start!),
+              end: locs.getLocFromIndex(end!),
+            },
+            `The location of ${type} must match its range.`,
+          );
+        }
         const output = fs.readFileSync(outputFileName, "utf8");
         assert.strictEqual(
           `${JSON.stringify(locations, undefined, 2)}\n`,

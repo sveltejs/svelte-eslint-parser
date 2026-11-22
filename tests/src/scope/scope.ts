@@ -2,6 +2,7 @@ import { Linter } from "eslint";
 import assert from "assert";
 import * as parser from "../../../src/index.js";
 import type * as eslint from "eslint";
+import { svelteVersion } from "../../../src/parser/svelte-version.js";
 
 function generateScopeTestCase(code: string, selector: string, type: string) {
   const linter = new Linter();
@@ -81,4 +82,113 @@ describe("context.getScope", () => {
       "function",
     );
   });
+
+  it("returns the outer scope for the attributes of a component with `let:`", () => {
+    generateScopeTestCase(
+      "<script>let message;</script><C {message} let:message>{message}</C>",
+      "SvelteShorthandAttribute > Identifier",
+      "module",
+    );
+  });
+
+  it("returns the `let:` scope for the children of a component with `let:`", () => {
+    generateScopeTestCase(
+      "<script>let message;</script><C {message} let:message>{message}</C>",
+      "SvelteElement > SvelteMustacheTag > Identifier",
+      "function",
+    );
+  });
+
+  it("returns the `let:` scope for the attributes of a component with `slot` and `let:`", () => {
+    generateScopeTestCase(
+      '<O><C slot="a" title={x} let:x>{x}</C></O>',
+      "SvelteAttribute Identifier",
+      "function",
+    );
+  });
+});
+
+/** Find `name` from `getScope()` of each mustache identifier and return the definition types. */
+function getDefTypesFromScope(code: string, name: string): string[] {
+  const linter = new Linter();
+  const result: string[] = [];
+  linter.verify(code, {
+    plugins: {
+      test: {
+        rules: {
+          test: {
+            create(context) {
+              return {
+                [`SvelteMustacheTag > Identifier[name="${name}"]`](node: any) {
+                  let scope: eslint.Scope.Scope | null = (
+                    context.sourceCode as any
+                  ).getScope(node);
+                  for (; scope; scope = scope.upper) {
+                    const variable = scope.set.get(name);
+                    if (variable) {
+                      result.push(variable.defs[0].type);
+                      return;
+                    }
+                  }
+                  result.push("none");
+                },
+              };
+            },
+          },
+        },
+      },
+    },
+    languageOptions: {
+      parser,
+      parserOptions: { ecmaVersion: 2020, sourceType: "module" },
+    },
+    rules: {
+      "test/test": "error",
+    },
+  });
+  return result;
+}
+
+describe("context.getScope with component `let:` directives", () => {
+  const script = "<script>import C from './C.svelte'; let x = 1;</script>";
+
+  it("finds the `let:` name in the default slot", () => {
+    assert.deepStrictEqual(
+      getDefTypesFromScope(`${script}<C let:x><p>{x}</p>{x}</C>`, "x"),
+      ["Parameter", "Parameter"],
+    );
+  });
+
+  it("does not find the `let:` name in a named slot", () => {
+    assert.deepStrictEqual(
+      getDefTypesFromScope(
+        `${script}<C let:x><p slot="a">{x}</p><div slot="b"><span>{x}</span></div></C>`,
+        "x",
+      ),
+      ["Variable", "Variable"],
+    );
+  });
+
+  it("does not find the `let:` name in a named slot of `<svelte:fragment>` or a component", () => {
+    assert.deepStrictEqual(
+      getDefTypesFromScope(
+        `${script}<C let:x><svelte:fragment slot="a">{x}</svelte:fragment><C slot="b">{x}</C></C>`,
+        "x",
+      ),
+      ["Variable", "Variable"],
+    );
+  });
+
+  (svelteVersion.gte(5) ? it : it.skip)(
+    "finds the `let:` name in the default slot next to a snippet",
+    () => {
+      assert.deepStrictEqual(
+        getDefTypesFromScope(
+          `${script}<C let:x>{#snippet s()}{x}{/snippet}<p>{x}</p><p slot="a">{x}</p></C>`,
+          "x",
+        ),
+        ["Variable", "Parameter", "Variable"],
+      );
+    },
+  );
 });
