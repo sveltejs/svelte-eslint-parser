@@ -1,6 +1,10 @@
 import type { Node, Parser, Root, Rule } from "postcss";
 import postcss from "postcss";
 import { parse as SCSSparse } from "postcss-scss";
+// @ts-expect-error -- PostCSS does not have types for its tokenizer.
+import postcssTokenize from "postcss/lib/tokenize";
+// @ts-expect-error -- postcss-scss does not have types for its tokenizer.
+import scssTokenize from "postcss-scss/lib/scss-tokenize";
 import {
   default as selectorParser,
   type Node as SelectorNode,
@@ -92,21 +96,34 @@ export function parseStyleContext(
 /**
  * Parses a PostCSS Rule node's selector and returns its AST.
  */
-export function parseSelector(rule: Rule, ctx: Context): SelectorRoot {
+export function parseSelector(
+  rule: Rule,
+  ctx: Context,
+  isSCSS: boolean,
+): SelectorRoot {
   const processor = selectorParser();
   const root = processor.astSync(rule.selector);
   const ruleStart = rule.source?.start?.offset;
-  const ruleEnd = rule.source?.end?.offset;
-  // PostCSS removes some comments from `rule.selector`, so take the line
-  // starts from the source text. Then a comment without line breaks does not
-  // move the next lines.
-  const lineStartIndices =
-    ruleStart !== undefined && ruleEnd !== undefined
-      ? getPostCSSLineStartIndices(ctx.code.slice(ruleStart, ruleEnd))
+  const selectorLineStartIndices = getPostCSSLineStartIndices(rule.selector);
+  const sourceOffsets =
+    ruleStart !== undefined
+      ? getSelectorSourceOffsets(rule, ctx.code, ruleStart, isSCSS)
       : null;
-  fixSelectorNodeLocation(root, ctx, ruleStart, lineStartIndices);
+  fixSelectorNodeLocation(
+    root,
+    ctx,
+    ruleStart,
+    selectorLineStartIndices,
+    sourceOffsets,
+  );
   root.walk((node) => {
-    fixSelectorNodeLocation(node, ctx, ruleStart, lineStartIndices);
+    fixSelectorNodeLocation(
+      node,
+      ctx,
+      ruleStart,
+      selectorLineStartIndices,
+      sourceOffsets,
+    );
   });
   return root;
 }
@@ -227,12 +244,13 @@ function fixSelectorNodeLocation(
   node: SelectorNode,
   ctx: Context,
   ruleStart: number | undefined,
-  lineStartIndices: number[] | null,
+  selectorLineStartIndices: number[],
+  sourceOffsets: number[] | null,
 ) {
   if (node.source === undefined) {
     return;
   }
-  if (ruleStart === undefined || lineStartIndices === null) {
+  if (ruleStart === undefined || sourceOffsets === null) {
     node.source.start = undefined;
     node.source.end = undefined;
     return;
@@ -240,21 +258,132 @@ function fixSelectorNodeLocation(
   // postcss-selector-parser only ends lines at `\n`, so compute the line and
   // column again from the offset in the same way as ESLint.
   if (node.source.start !== undefined) {
+    const index =
+      selectorLineStartIndices[node.source.start.line - 1] +
+      node.source.start.column -
+      1;
     const loc = ctx.getLocFromIndex(
-      ruleStart +
-        lineStartIndices[node.source.start.line - 1] +
-        node.source.start.column -
-        1,
+      ruleStart + getSourceOffset(sourceOffsets, index),
     );
     node.source.start = { line: loc.line, column: loc.column + 1 };
   }
   if (node.source.end !== undefined) {
     // The end column is the column of the last character.
+    const index =
+      selectorLineStartIndices[node.source.end.line - 1] +
+      node.source.end.column -
+      1;
     const loc = ctx.getLocFromIndex(
-      ruleStart +
-        lineStartIndices[node.source.end.line - 1] +
-        node.source.end.column,
+      ruleStart + getSourceOffset(sourceOffsets, index) + 1,
     );
     node.source.end = { line: loc.line, column: loc.column };
   }
+}
+
+/**
+ * Gets the offset in the source text of the given index in `rule.selector`.
+ */
+function getSourceOffset(sourceOffsets: number[], index: number): number {
+  const last = sourceOffsets.length - 1;
+  // postcss-selector-parser can give a position after the end.
+  return index <= last
+    ? sourceOffsets[index]
+    : sourceOffsets[last] + index - last;
+}
+
+/**
+ * Gets the offset from the rule start of each character in `rule.selector`,
+ * and of the end of `rule.selector`.
+ * PostCSS removes some comments from `rule.selector`, so they can differ.
+ */
+function getSelectorSourceOffsets(
+  rule: Rule,
+  code: string,
+  ruleStart: number,
+  isSCSS: boolean,
+): number[] {
+  const selector = rule.selector;
+  const raws = rule.raws.selector as { raw: string; scss?: string } | undefined;
+  // postcss-scss keeps the source text in `scss` when it changes `raw`.
+  const source = raws ? (raws.scss ?? raws.raw) : selector;
+  if (source === selector || !code.startsWith(source, ruleStart)) {
+    return Array.from({ length: selector.length + 1 }, (_, index) => index);
+  }
+  return (
+    getOffsetsWithoutRemovedComments(source, selector, isSCSS) ??
+    getOffsetsFromLineStarts(source, selector)
+  );
+}
+
+/**
+ * Gets the offset in the source text of each character in `rule.selector` and
+ * of its end, by taking each line start from the source text.
+ * This is only right when no comment is removed before a character on the same line.
+ */
+function getOffsetsFromLineStarts(source: string, selector: string): number[] {
+  const sourceLineStartIndices = getPostCSSLineStartIndices(source);
+  const offsets: number[] = [];
+  let line = 0;
+  let lineStart = 0;
+  for (let index = 0; index <= selector.length; index++) {
+    if (index > 0 && selector[index - 1] === "\n") {
+      line++;
+      lineStart = index;
+    }
+    offsets.push(
+      (sourceLineStartIndices[line] ?? lineStart) + index - lineStart,
+    );
+  }
+  return offsets;
+}
+
+/**
+ * Removes comments from the source text of a selector in the same way as
+ * `Parser#raw()` in PostCSS, and gets the offset of each character that is
+ * left and of the end. Returns null if the result is not the given selector.
+ */
+function getOffsetsWithoutRemovedComments(
+  source: string,
+  selector: string,
+  isSCSS: boolean,
+): number[] | null {
+  const tokenizer = (isSCSS ? scssTokenize : postcssTokenize)(
+    { css: source },
+    { ignoreErrors: true },
+  );
+  const tokens: [string, string][] = [];
+  while (!tokenizer.endOfFile()) {
+    tokens.push(tokenizer.nextToken());
+  }
+  const offsets: number[] = [];
+  let value = "";
+  let offset = 0;
+  for (let index = 0; index < tokens.length; index++) {
+    const [type, text] = tokens[index];
+    const isKept =
+      type === "comment"
+        ? !isSafeCommentNeighbor(tokens[index - 1]) &&
+          !isSafeCommentNeighbor(tokens[index + 1]) &&
+          !value.endsWith(",")
+        : type !== "space" || index !== tokens.length - 1;
+    if (isKept) {
+      for (let i = 0; i < text.length; i++) {
+        offsets.push(offset + i);
+      }
+      value += text;
+    }
+    offset += text.length;
+  }
+  if (value !== selector) {
+    return null;
+  }
+  offsets.push(offset);
+  return offsets;
+}
+
+/**
+ * Checks if PostCSS removes a comment next to the given token from the selector.
+ */
+function isSafeCommentNeighbor(token: [string, string] | undefined): boolean {
+  return token === undefined || token[0] === "space";
 }

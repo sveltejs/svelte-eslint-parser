@@ -289,7 +289,12 @@ function parseAsSvelte(
       if (cached !== undefined) {
         return cached;
       }
-      const ast = parseSelector(rule, ctx);
+      const ast = parseSelector(
+        rule,
+        ctx,
+        styleContext?.status === "success" &&
+          styleContext.sourceLang === "scss",
+      );
       selectorASTs.set(rule, ast);
       return ast;
     },
