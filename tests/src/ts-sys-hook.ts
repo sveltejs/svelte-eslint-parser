@@ -1513,7 +1513,11 @@ function realResolutionDiagnostics(
     compilerOptions?: ts.CompilerOptions;
   } = {},
 ): ts.Diagnostic[] {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "real-resolve-"));
+  // The real path: TypeScript resolves a linked package to it, while a
+  // relative import keeps the path as given, as `/var` on macOS.
+  const dir = fs.realpathSync(
+    fs.mkdtempSync(path.join(os.tmpdir(), "real-resolve-")),
+  );
   try {
     const sveltePath = path.join(dir, componentPath);
     fs.mkdirSync(path.dirname(sveltePath), { recursive: true });
@@ -2793,7 +2797,7 @@ describe("public parser API with the experimental hook", () => {
       import * as parser from ${JSON.stringify(new URL("../../src/index.ts", import.meta.url).href)};
       // Parentheses, as in a folder copied by Finder or Explorer. typescript-eslint
       // reads them in a \`project\` path as a glob.
-      const dir = path.join(fs.mkdtempSync(path.join(os.tmpdir(), "component-refresh-")), "app (copy)");
+      const dir = path.join(fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), "component-refresh-"))), "app (copy)");
       fs.mkdirSync(dir);
       try {
         const linked = ${JSON.stringify(linked)};
