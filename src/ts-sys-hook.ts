@@ -34,6 +34,7 @@ interface TsLike {
   sys?: {
     readFile?: (path: string, encoding?: string) => string | undefined;
     fileExists?: (path: string) => boolean;
+    realpath?: (path: string) => string;
     useCaseSensitiveFileNames?: boolean;
   };
   server?: {
@@ -57,6 +58,21 @@ interface ScriptInfoLike {
 // component's virtual TypeScript there makes the import resolve to the real
 // prop types instead of Svelte's permissive ambient `declare module '*.svelte'`.
 const SVELTE_COMPANION_SUFFIX = ".svelte.ts";
+// A `package.json` `imports`/`exports` target gets no implicit extension, so
+// a `*.svelte` target probes only `X.d.svelte.ts`, which TypeScript loads only
+// with `allowArbitraryExtensions`. Adding the companion and `X.svelte.d.ts` as
+// fallbacks after the original target makes it resolve like a relative
+// `./X.svelte` import, while a real `X.d.svelte.ts` still wins. Each field's
+// subpath keys start with its own prefix.
+const SUBPATH_FIELDS = [
+  ["imports", "#"],
+  ["exports", "."],
+] as const;
+
+type SubpathTarget =
+  | string
+  | SubpathTarget[]
+  | { [condition: string]: SubpathTarget };
 
 const translations = new Map<string, TranslationEntry>();
 // `.svelte` paths whose companion TypeScript has read, with every code it got
@@ -190,6 +206,135 @@ function translateCompanion(companionPath: string): string | null {
   return translateOnDemand(sveltePath);
 }
 
+/** `packageJsonText` with every `.svelte` subpath target falling back to its `X.svelte.ts` companion. */
+function redirectSvelteSubpathTargets(packageJsonText: string): string {
+  if (
+    !SUBPATH_FIELDS.some(([field]) => packageJsonText.includes(`"${field}"`))
+  ) {
+    return packageJsonText;
+  }
+  let packageJson: unknown;
+  try {
+    packageJson = JSON.parse(packageJsonText);
+  } catch {
+    return packageJsonText;
+  }
+  if (!isRecord(packageJson)) return packageJsonText;
+
+  let changed = false;
+  for (const [field, prefix] of SUBPATH_FIELDS) {
+    const value = packageJson[field];
+    const redirected = isSubpathMap(value, prefix)
+      ? redirectSubpathMap(value)
+      : redirectRootTarget(field, value);
+    if (redirected !== value) {
+      packageJson[field] = redirected;
+      changed = true;
+    }
+  }
+  return changed ? JSON.stringify(packageJson) : packageJsonText;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === "object" && !Array.isArray(value);
+}
+
+/** Whether `value` maps subpaths to targets, rather than being the bare target of the package root. */
+function isSubpathMap(
+  value: unknown,
+  prefix: string,
+): value is Record<string, unknown> {
+  return (
+    isRecord(value) &&
+    Object.keys(value).every((subpath) => subpath.startsWith(prefix))
+  );
+}
+
+/** An `exports` value that is the package root's own target; `imports` has no such form. */
+function redirectRootTarget(field: string, value: unknown): unknown {
+  if (field !== "exports") return value;
+  return toCompanionTarget(value) ?? value;
+}
+
+function redirectSubpathMap(
+  subpaths: Record<string, unknown>,
+): Record<string, unknown> {
+  const redirected: Record<string, unknown> = {};
+  let changed = false;
+  for (const [subpath, target] of Object.entries(subpaths)) {
+    if (subpath.endsWith("*") && !(`${subpath}.svelte` in subpaths)) {
+      // Every `*` in a target is replaced, so `./src/*/*` cannot be extended
+      // with a suffix; only a single trailing `*` is.
+      const sibling = mapTargetLeaves(target, (leaf) =>
+        isRelative(leaf) && leaf.indexOf("*") === leaf.length - 1
+          ? withCompanionFallback(`${leaf}.svelte`)
+          : null,
+      );
+      if (sibling !== null) {
+        redirected[`${subpath}.svelte`] = sibling;
+        changed = true;
+      }
+    }
+    const companion = toCompanionTarget(target);
+    if (companion !== null) changed = true;
+    redirected[subpath] = companion ?? target;
+  }
+  return changed ? redirected : subpaths;
+}
+
+/**
+ * `target` with each `./X.svelte` leaf falling back to `./X.svelte.ts`, or
+ * `null` when some leaf is not one. A bare specifier is left to TypeScript's
+ * package resolution, which appends `.ts` itself.
+ */
+function toCompanionTarget(target: unknown): SubpathTarget | null {
+  return mapTargetLeaves(target, (leaf) =>
+    isRelative(leaf) && leaf.endsWith(".svelte")
+      ? withCompanionFallback(leaf)
+      : null,
+  );
+}
+
+/**
+ * TypeScript tries each entry of a fallback array in turn, so the original
+ * `./X.svelte` keeps a real `X.d.svelte.ts` ahead of the companion. The hook
+ * serves no companion next to a shipped `X.svelte.d.ts`, so that one comes
+ * last, as TypeScript probes it for a relative import.
+ */
+function withCompanionFallback(svelteTarget: string): string[] {
+  return [svelteTarget, `${svelteTarget}.ts`, `${svelteTarget}.d.ts`];
+}
+
+function isRelative(target: string): boolean {
+  return target.startsWith("./");
+}
+
+/** `target` with each string leaf mapped, or `null` when any leaf maps to `null`. */
+function mapTargetLeaves(
+  target: unknown,
+  mapLeaf: (leaf: string) => SubpathTarget | null,
+): SubpathTarget | null {
+  if (typeof target === "string") return mapLeaf(target);
+  if (Array.isArray(target)) {
+    const mapped: SubpathTarget[] = [];
+    for (const fallback of target) {
+      const mappedFallback = mapTargetLeaves(fallback, mapLeaf);
+      if (mappedFallback === null) return null;
+      if (Array.isArray(mappedFallback)) mapped.push(...mappedFallback);
+      else mapped.push(mappedFallback);
+    }
+    return mapped;
+  }
+  if (!isRecord(target)) return null;
+  const mapped: Record<string, SubpathTarget> = {};
+  for (const [condition, conditionTarget] of Object.entries(target)) {
+    const mappedTarget = mapTargetLeaves(conditionTarget, mapLeaf);
+    if (mappedTarget === null) return null;
+    mapped[condition] = mappedTarget;
+  }
+  return mapped;
+}
+
 let caseSensitiveFileSystem: boolean | undefined,
   // `useCaseSensitiveFileNames` of the first patched `ts.sys`.
   tsCaseSensitiveFileNames: boolean | undefined;
@@ -286,8 +431,8 @@ function warnCompanionConflict(
   companionConflictWarned = true;
   warn(
     `${sveltePath} and ${companionPath} both exist. TypeScript resolves ` +
-      `'./${path.basename(sveltePath)}' to the module, so component prop ` +
-      "types are not available for this component. The lint rule " +
+      `imports of '${path.basename(sveltePath)}' to the module, so component ` +
+      "prop types are not available for this component. The lint rule " +
       "'svelte/no-conflicting-module-names' (eslint-plugin-svelte >= 3.22.0) " +
       "reports this name collision.",
   );
@@ -370,6 +515,13 @@ function patchTsSys(sys: TsLike["sys"]): void {
           else servedCompanions.set(key, new Set([virtual]));
           return virtual;
         }
+      } else if (path.basename(filePath) === "package.json") {
+        // This is also what `import pkg from "./package.json"` sees under
+        // `resolveJsonModule`, so its type gains the added entries. Harmless.
+        const packageJsonText = originalReadFile(filePath, encoding);
+        return packageJsonText === undefined
+          ? undefined
+          : redirectSvelteSubpathTargets(packageJsonText);
       }
     }
     return originalReadFile(filePath, encoding);
@@ -388,6 +540,27 @@ function patchTsSys(sys: TsLike["sys"]): void {
         return true;
       }
       return originalFileExists(filePath);
+    };
+  }
+
+  // A virtual companion is not on disk, so the real `realpath` returns it
+  // unchanged, e.g. still under a workspace symlink in `node_modules`. Resolve
+  // it through its `X.svelte` instead, so the program holds the same path that
+  // ESLint lints and the hook caches.
+  if (typeof sys.realpath === "function") {
+    const originalRealpath = sys.realpath.bind(sys);
+    sys.realpath = (filePath: string) => {
+      if (
+        typeof filePath === "string" &&
+        filePath.endsWith(SVELTE_COMPANION_SUFFIX) &&
+        !realFileExists(filePath)
+      ) {
+        const sveltePath = filePath.slice(0, -".ts".length);
+        if (realFileExists(sveltePath)) {
+          return `${originalRealpath(sveltePath)}.ts`;
+        }
+      }
+      return originalRealpath(filePath);
     };
   }
 }
