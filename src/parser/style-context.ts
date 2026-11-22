@@ -120,7 +120,12 @@ export function styleNodeLoc(node: Node): Partial<SourceLocation> {
       node.source.end !== undefined
         ? {
             line: node.source.end.line,
-            column: node.source.end.column,
+            // PostCSS gives the 1-based column of the last character, but for
+            // the root it gives the column after the end.
+            column:
+              node.type === "root"
+                ? node.source.end.column - 1
+                : node.source.end.column,
           }
         : undefined,
   };
@@ -137,7 +142,8 @@ export function styleNodeRange(
   }
   return [
     node.source.start !== undefined ? node.source.start.offset : undefined,
-    node.source.end !== undefined ? node.source.end.offset + 1 : undefined,
+    // `end.offset` is already the offset after the end (since PostCSS 8.4.29).
+    node.source.end !== undefined ? node.source.end.offset : undefined,
   ];
 }
 
