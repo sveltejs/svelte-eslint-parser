@@ -81,9 +81,10 @@ export function parseStyleContext(
   } catch (error) {
     return { status: "parse-error", sourceLang, error: error as Error };
   }
-  fixPostCSSNodeLocation(sourceAst, styleElement);
+  const styleLineStartIndices = getPostCSSLineStartIndices(styleCode);
+  fixPostCSSNodeLocation(sourceAst, styleElement, ctx, styleLineStartIndices);
   sourceAst.walk((node) => {
-    fixPostCSSNodeLocation(node, styleElement);
+    fixPostCSSNodeLocation(node, styleElement, ctx, styleLineStartIndices);
   });
   return { status: "success", sourceLang, sourceAst };
 }
@@ -162,25 +163,46 @@ export function styleSelectorNodeLoc(
 /**
  * Fixes PostCSS AST locations to be relative to the whole file instead of relative to the <style> element.
  */
-function fixPostCSSNodeLocation(node: Node, styleElement: SvelteStyleElement) {
+function fixPostCSSNodeLocation(
+  node: Node,
+  styleElement: SvelteStyleElement,
+  ctx: Context,
+  styleLineStartIndices: number[],
+) {
   if (node.source?.start?.offset !== undefined) {
     node.source.start.offset += styleElement.startTag.range[1];
-  }
-  if (node.source?.start?.line !== undefined) {
-    node.source.start.line += styleElement.loc.start.line - 1;
   }
   if (node.source?.end?.offset !== undefined) {
     node.source.end.offset += styleElement.startTag.range[1];
   }
-  if (node.source?.end?.line !== undefined) {
-    node.source.end.line += styleElement.loc.start.line - 1;
+  for (const position of [node.source?.start, node.source?.end]) {
+    if (position?.line === undefined) {
+      continue;
+    }
+    // PostCSS only ends lines at `\n`, so compute the line and column again
+    // in the same way as ESLint (which also ends lines at `\r`, U+2028 and U+2029).
+    const index =
+      styleElement.startTag.range[1] +
+      styleLineStartIndices[position.line - 1] +
+      position.column -
+      1;
+    const loc = ctx.getLocFromIndex(index);
+    position.line = loc.line;
+    position.column = loc.column + 1;
   }
-  if (node.source?.start?.line === styleElement.loc.start.line) {
-    node.source.start.column += styleElement.startTag.loc.end.column;
+}
+
+/**
+ * Gets the start indices of the lines in the same way as PostCSS (which splits lines only at `\n`).
+ */
+function getPostCSSLineStartIndices(code: string): number[] {
+  const lineStartIndices = [0];
+  let index = code.indexOf("\n");
+  while (index >= 0) {
+    lineStartIndices.push(index + 1);
+    index = code.indexOf("\n", index + 1);
   }
-  if (node.source?.end?.line === styleElement.loc.start.line) {
-    node.source.end.column += styleElement.startTag.loc.end.column;
-  }
+  return lineStartIndices;
 }
 
 /**
