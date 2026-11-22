@@ -60,10 +60,10 @@ interface ScriptInfoLike {
 const SVELTE_COMPANION_SUFFIX = ".svelte.ts";
 // A `package.json` `imports`/`exports` target gets no implicit extension, so
 // a `*.svelte` target probes only `X.d.svelte.ts`, which TypeScript loads only
-// with `allowArbitraryExtensions`. Adding the companion as a fallback after the
-// original target makes it resolve like a relative `./X.svelte` import, while a
-// real `X.d.svelte.ts` still wins. Each field's subpath keys start with its own
-// prefix.
+// with `allowArbitraryExtensions`. Adding the companion and `X.svelte.d.ts` as
+// fallbacks after the original target makes it resolve like a relative
+// `./X.svelte` import, while a real `X.d.svelte.ts` still wins. Each field's
+// subpath keys start with its own prefix.
 const SUBPATH_FIELDS = [
   ["imports", "#"],
   ["exports", "."],
@@ -297,10 +297,12 @@ function toCompanionTarget(target: unknown): SubpathTarget | null {
 
 /**
  * TypeScript tries each entry of a fallback array in turn, so the original
- * `./X.svelte` keeps a real `X.d.svelte.ts` ahead of the companion.
+ * `./X.svelte` keeps a real `X.d.svelte.ts` ahead of the companion. The hook
+ * serves no companion next to a shipped `X.svelte.d.ts`, so that one comes
+ * last, as TypeScript probes it for a relative import.
  */
 function withCompanionFallback(svelteTarget: string): string[] {
-  return [svelteTarget, `${svelteTarget}.ts`];
+  return [svelteTarget, `${svelteTarget}.ts`, `${svelteTarget}.d.ts`];
 }
 
 function isRelative(target: string): boolean {

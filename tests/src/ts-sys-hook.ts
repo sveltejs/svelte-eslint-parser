@@ -2087,6 +2087,11 @@ describe("ts.sys `package.json` subpath targets (unit)", () => {
     }
   }
 
+  /** A `.svelte` target with the fallbacks the hook adds. */
+  function fallback(svelteTarget: string): string[] {
+    return [svelteTarget, `${svelteTarget}.ts`, `${svelteTarget}.d.ts`];
+  }
+
   function redirect(packageJson: object): unknown {
     return JSON.parse(readThroughHook(JSON.stringify(packageJson)));
   }
@@ -2099,7 +2104,7 @@ describe("ts.sys `package.json` subpath targets (unit)", () => {
       {
         exports: {
           "./*.js": "./lib/*.js",
-          "./*.svelte": ["./lib/*.svelte", "./lib/*.svelte.ts"],
+          "./*.svelte": fallback("./lib/*.svelte"),
         },
       },
     );
@@ -2110,10 +2115,7 @@ describe("ts.sys `package.json` subpath targets (unit)", () => {
       redirect({ imports: { "#components/*": "./src/components/*" } }),
       {
         imports: {
-          "#components/*.svelte": [
-            "./src/components/*.svelte",
-            "./src/components/*.svelte.ts",
-          ],
+          "#components/*.svelte": fallback("./src/components/*.svelte"),
           "#components/*": "./src/components/*",
         },
       },
@@ -2121,7 +2123,7 @@ describe("ts.sys `package.json` subpath targets (unit)", () => {
   });
 
   it("keeps an authored `*.svelte` entry instead of adding a second one", () => {
-    const authored = ["./ui/*.svelte", "./ui/*.svelte.ts"];
+    const authored = fallback("./ui/*.svelte");
     assert.deepStrictEqual(
       redirect({
         imports: { "#c/*": "./src/*", "#c/*.svelte": "./ui/*.svelte" },
@@ -2149,8 +2151,8 @@ describe("ts.sys `package.json` subpath targets (unit)", () => {
       {
         imports: {
           "#c/*.svelte": {
-            types: ["./src/*.svelte", "./src/*.svelte.ts"],
-            default: ["./dist/*.svelte", "./dist/*.svelte.ts"],
+            types: fallback("./src/*.svelte"),
+            default: fallback("./dist/*.svelte"),
           },
           "#c/*": { types: "./src/*", default: "./dist/*" },
         },
@@ -2176,16 +2178,16 @@ describe("ts.sys `package.json` subpath targets (unit)", () => {
       }),
       {
         exports: {
-          "./Foo.svelte": ["./lib/Foo.svelte", "./lib/Foo.svelte.ts"],
-          "./Button": ["./lib/Button.svelte", "./lib/Button.svelte.ts"],
-          "./*": ["./lib/*.svelte", "./lib/*.svelte.ts"],
+          "./Foo.svelte": fallback("./lib/Foo.svelte"),
+          "./Button": fallback("./lib/Button.svelte"),
+          "./*": fallback("./lib/*.svelte"),
         },
       },
     );
   });
 
   it("rewrites the `exports` sugar for the package root", () => {
-    const index = ["./index.svelte", "./index.svelte.ts"];
+    const index = fallback("./index.svelte");
     assert.deepStrictEqual(redirect({ exports: "./index.svelte" }), {
       exports: index,
     });
@@ -2205,10 +2207,8 @@ describe("ts.sys `package.json` subpath targets (unit)", () => {
       {
         exports: {
           "./*.svelte": [
-            "./lib/*.svelte",
-            "./lib/*.svelte.ts",
-            "./src/*.svelte",
-            "./src/*.svelte.ts",
+            ...fallback("./lib/*.svelte"),
+            ...fallback("./src/*.svelte"),
           ],
         },
       },
@@ -2402,6 +2402,30 @@ describe("imported component prop types via `package.json` subpaths (e2e)", () =
     const bad = realResolutionDiagnostics(
       COMPONENT,
       `const d: number = Foo.declared; void d;`,
+      layout,
+    );
+    assert.ok(
+      bad.some((d) => d.code === 2322),
+      `expected TS2322 from the declaration file, got: ${format(bad).join("; ")}`,
+    );
+  });
+
+  it("resolves to a shipped `X.svelte.d.ts` behind a subpath, as for a relative import", () => {
+    // A package built with `svelte-package` ships `Foo.svelte.d.ts`, which
+    // TypeScript does not probe for a `*.svelte` subpath target on its own.
+    const layout = {
+      ...EXPORTS,
+      realDeclaration: `declare const Foo: { shipped: string };\nexport default Foo;\n`,
+    };
+    const ok = realResolutionDiagnostics(
+      COMPONENT,
+      `const s: string = Foo.shipped; void s;`,
+      layout,
+    );
+    assert.deepStrictEqual(format(ok), []);
+    const bad = realResolutionDiagnostics(
+      COMPONENT,
+      `const s: number = Foo.shipped; void s;`,
       layout,
     );
     assert.ok(
