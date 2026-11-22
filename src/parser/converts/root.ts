@@ -29,6 +29,7 @@ import {
   getOptionsFromRoot,
 } from "../compat.js";
 import { sortNodes } from "../sort.js";
+import { traverseNodes } from "../../traverse.js";
 import { withoutProjectParserOptions } from "../parser-options.js";
 import { ParseError } from "../../main.js";
 
@@ -382,6 +383,20 @@ function convertGenericsAttribute(script: SvelteScriptElement, ctx: Context) {
   ctx.instanceGenerics = {
     text: genericValueCode,
     names: params.map((param) => param.name.name),
+    params: params.map((param, index) => ({
+      name: param.name.name,
+      constraint: param.constraint
+        ? ctx.code.slice(...param.constraint.range)
+        : null,
+      default: param.default ? ctx.code.slice(...param.default.range) : null,
+      readsLaterParameter:
+        param.constraint != null &&
+        referencesTypeNames(
+          param.constraint,
+          new Set(params.slice(index + 1).map((p) => p.name.name)),
+          result.visitorKeys,
+        ),
+    })),
   };
 
   // Replace tokens
@@ -415,4 +430,29 @@ function convertGenericsAttribute(script: SvelteScriptElement, ctx: Context) {
       },
     );
   }
+}
+
+/** Check whether the type node refers to one of the given type names. */
+function referencesTypeNames(
+  node: TSESTree.TypeNode,
+  names: Set<string>,
+  visitorKeys: TSESParseForESLintResult["visitorKeys"],
+): boolean {
+  let found = false;
+  traverseNodes(node, {
+    visitorKeys,
+    enterNode(n) {
+      if (
+        n.type === "TSTypeReference" &&
+        n.typeName.type === "Identifier" &&
+        names.has(n.typeName.name)
+      ) {
+        found = true;
+      }
+    },
+    leaveNode() {
+      // noop
+    },
+  });
+  return found;
 }
