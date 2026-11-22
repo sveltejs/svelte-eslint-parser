@@ -62,6 +62,10 @@ function getSelectorTexts(code: string): string[] {
     services.getStyleSelectorAST(rule).walk((node: SelectorNode) => {
       if (node.type !== "class" && node.type !== "id") return;
       const loc = services.styleSelectorNodeLoc(node);
+      for (const position of [loc.start, loc.end]) {
+        assert.ok(Number.isInteger(position.line));
+        assert.ok(Number.isInteger(position.column));
+      }
       texts.push(
         code.slice(
           locs.getIndexFromLoc(loc.start),
@@ -118,4 +122,73 @@ describe("Selector locations with comments at the end of a line.", () => {
       });
     }
   }
+});
+
+describe("Selector locations with comments that PostCSS removes from the selector.", () => {
+  for (const [name, code, expected] of [
+    [
+      "a comment before a node",
+      "<style>.a /* c */ .b {}</style>",
+      [".a", ".b"],
+    ],
+    [
+      "comments with line breaks",
+      "<style>\n.a, /* c\nc */\n.b,\r\n/* c\r\nc */ #d {}</style>",
+      [".a", ".b", "#d"],
+    ],
+    [
+      "comments in a pseudo",
+      "<style>.a:not(/* c */ .b) /* c */ .c {}</style>",
+      [".a", ".b", ".c"],
+    ],
+    [
+      "a comment that is kept",
+      "<style>.a /* c *//* c */#b {}</style>",
+      [".a", "#b"],
+    ],
+    [
+      "comments in strings",
+      '<style>[a="/*"][b="\\"/*"] /* c */ .b {}</style>',
+      [".b"],
+    ],
+    [
+      "SCSS line comments",
+      '<style lang="scss">.a // c\n.b, // c\r\n#c {}</style>',
+      [".a", ".b", "#c"],
+    ],
+    [
+      "comments in a row",
+      "<style>.a /* c *//* c */ .b {}</style>",
+      [".a", ".b"],
+    ],
+    [
+      "a quote in a kept comment",
+      '<style>.a/* " */.b /* c */ .c {}</style>',
+      [".a", ".b", ".c"],
+    ],
+    [
+      "a backslash before a comment",
+      "<style>.x .a\\/* c */ .b, .y\\\\/* c */ .z {}</style>",
+      // PostCSS removes the comment, so `\ ` is an escaped space.
+      [".x", ".a\\/* c */ ", ".b", ".y\\\\", ".z"],
+    ],
+    [
+      "SCSS line comments after a backslash",
+      '<style lang="scss">.x .a\\// c\n.b {}</style>',
+      [".x", ".a\\", ".b"],
+    ],
+    ["`//` in CSS", "<style>.a:is(url(//x)) .b {}</style>", [".a", ".b"]],
+  ] as const) {
+    it(`must point to the selector nodes with ${name}`, () => {
+      assert.deepStrictEqual(getSelectorTexts(code), expected);
+    });
+  }
+});
+
+it("must point to the selector node after SCSS interpolation", () => {
+  // postcss-selector-parser does not support SCSS interpolation, so only check the next node.
+  const texts = getSelectorTexts(
+    '<style lang="scss">.a-#{$x} /* c */ .b {}</style>',
+  );
+  assert.strictEqual(texts[texts.length - 1], ".b");
 });

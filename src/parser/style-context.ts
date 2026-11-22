@@ -91,21 +91,39 @@ export function parseStyleContext(
 /**
  * Parses a PostCSS Rule node's selector and returns its AST.
  */
-export function parseSelector(rule: Rule, ctx: Context): SelectorRoot {
+export function parseSelector(
+  rule: Rule,
+  ctx: Context,
+  isSCSS: boolean,
+): SelectorRoot {
   const processor = selectorParser();
   const root = processor.astSync(rule.selector);
   const ruleStart = rule.source?.start?.offset;
   const ruleEnd = rule.source?.end?.offset;
-  // PostCSS removes some comments from `rule.selector`, so take the line
-  // starts from the source text. Then a comment without line breaks does not
-  // move the next lines.
-  const lineStartIndices =
+  const selectorLineStartIndices = getLineStartIndices(rule.selector);
+  const sourceOffsets =
     ruleStart !== undefined && ruleEnd !== undefined
-      ? getLineStartIndices(ctx.code.slice(ruleStart, ruleEnd))
+      ? getSelectorSourceOffsets(
+          rule.selector,
+          ctx.code.slice(ruleStart, ruleEnd),
+          isSCSS,
+        )
       : null;
-  fixSelectorNodeLocation(root, ctx, ruleStart, lineStartIndices);
+  fixSelectorNodeLocation(
+    root,
+    ctx,
+    ruleStart,
+    selectorLineStartIndices,
+    sourceOffsets,
+  );
   root.walk((node) => {
-    fixSelectorNodeLocation(node, ctx, ruleStart, lineStartIndices);
+    fixSelectorNodeLocation(
+      node,
+      ctx,
+      ruleStart,
+      selectorLineStartIndices,
+      sourceOffsets,
+    );
   });
   return root;
 }
@@ -199,12 +217,13 @@ function fixSelectorNodeLocation(
   node: SelectorNode,
   ctx: Context,
   ruleStart: number | undefined,
-  lineStartIndices: number[] | null,
+  selectorLineStartIndices: number[],
+  sourceOffsets: number[] | null,
 ) {
   if (node.source === undefined) {
     return;
   }
-  if (ruleStart === undefined || lineStartIndices === null) {
+  if (ruleStart === undefined || sourceOffsets === null) {
     node.source.start = undefined;
     node.source.end = undefined;
     return;
@@ -212,23 +231,106 @@ function fixSelectorNodeLocation(
   // postcss-selector-parser only ends lines at `\n`, so compute the line and
   // column again from the offset in the same way as ESLint.
   if (node.source.start !== undefined) {
+    const index =
+      selectorLineStartIndices[node.source.start.line - 1] +
+      node.source.start.column -
+      1;
     const loc = ctx.getLocFromIndex(
-      ruleStart +
-        lineStartIndices[node.source.start.line - 1] +
-        node.source.start.column -
-        1,
+      ruleStart + getSourceOffset(sourceOffsets, index),
     );
     node.source.start = { line: loc.line, column: loc.column + 1 };
   }
   if (node.source.end !== undefined) {
     // The end column is the column of the last character.
+    const index =
+      selectorLineStartIndices[node.source.end.line - 1] +
+      node.source.end.column -
+      1;
     const loc = ctx.getLocFromIndex(
-      ruleStart +
-        lineStartIndices[node.source.end.line - 1] +
-        node.source.end.column,
+      ruleStart + getSourceOffset(sourceOffsets, index) + 1,
     );
     node.source.end = { line: loc.line, column: loc.column };
   }
+}
+
+/**
+ * Gets the offset in the source text of the given index in `rule.selector`.
+ */
+function getSourceOffset(sourceOffsets: number[], index: number): number {
+  if (index < sourceOffsets.length) {
+    return sourceOffsets[index];
+  }
+  // postcss-selector-parser can give a position after the end.
+  return (
+    sourceOffsets[sourceOffsets.length - 1] + 1 + index - sourceOffsets.length
+  );
+}
+
+/**
+ * Gets the offset in the source text of each character in `rule.selector`.
+ * PostCSS removes some comments from `rule.selector`, so they can differ.
+ */
+function getSelectorSourceOffsets(
+  selector: string,
+  source: string,
+  isSCSS: boolean,
+): number[] {
+  const offsets: number[] = [];
+  let offset = 0;
+  let quote: string | null = null;
+  let escaped = false;
+  // The end of a comment that is also in the selector.
+  let keptCommentEnd = 0;
+  for (let index = 0; index < selector.length; index++) {
+    if (!quote && !escaped && offset >= keptCommentEnd) {
+      // Skip the comments that are not in the selector.
+      for (;;) {
+        const commentEnd = getCommentEnd(source, offset, isSCSS);
+        if (commentEnd === -1) {
+          break;
+        }
+        if (selector.startsWith(source.slice(offset, commentEnd), index)) {
+          keptCommentEnd = commentEnd;
+          break;
+        }
+        offset = commentEnd;
+      }
+    }
+    offsets.push(offset);
+    const c = source[offset];
+    if (offset < keptCommentEnd) {
+      // Inside a comment.
+    } else if (escaped) {
+      escaped = false;
+    } else if (c === "\\" && source[offset + 1] !== "/") {
+      // PostCSS does not take `\/` as an escape, so `\/*` starts a comment.
+      escaped = true;
+    } else if (quote) {
+      if (c === quote) {
+        quote = null;
+      }
+    } else if (c === '"' || c === "'") {
+      quote = c;
+    }
+    offset++;
+  }
+  return offsets;
+}
+
+/**
+ * Gets the end offset of the comment at the given offset, or -1 if there is no comment.
+ * `//` comments are only for SCSS.
+ */
+function getCommentEnd(code: string, offset: number, isSCSS: boolean): number {
+  if (code.startsWith("/*", offset)) {
+    const end = code.indexOf("*/", offset + 2);
+    return end === -1 ? code.length : end + 2;
+  }
+  if (isSCSS && code.startsWith("//", offset)) {
+    const end = code.slice(offset).search(/[\n\f\r]/u);
+    return end === -1 ? code.length : offset + end;
+  }
+  return -1;
 }
 
 /**
