@@ -3,6 +3,13 @@ on:
   # Safe because this workflow never checks out or runs code from the PR.
   pull_request_target:
     types: [opened]
+  # A maintainer can ask on an existing PR. This skips the checks below.
+  workflow_dispatch:
+    inputs:
+      pr:
+        description: PR number
+        required: true
+        type: number
   schedule:
     - cron: "0 * * * *"
 
@@ -22,12 +29,14 @@ jobs:
   ask:
     if: >-
       github.repository == 'sveltejs/svelte-eslint-parser' &&
-      github.event_name == 'pull_request_target' &&
-      contains(fromJSON('["FIRST_TIME_CONTRIBUTOR","FIRST_TIMER","NONE"]'), github.event.pull_request.author_association)
+      (github.event_name == 'workflow_dispatch' ||
+        (github.event_name == 'pull_request_target' &&
+          contains(fromJSON('["FIRST_TIME_CONTRIBUTOR","FIRST_TIMER","NONE"]'), github.event.pull_request.author_association)))
     runs-on: ubuntu-latest
     steps:
       # Only used as one signal. It does not comment or label in silent mode.
       - id: agentscan
+        if: github.event_name == 'pull_request_target'
         uses: MatteoGabriele/agentscan-action@7ad606f1e21df2119da8be99b763f282a670a1c5 # v2.8.0
         continue-on-error: true
         with:
@@ -38,68 +47,75 @@ jobs:
           AGENTSCAN_COMMUNITY_FLAGGED: ${{ steps.agentscan.outputs.community-flagged }}
         with:
           script: |
-            const pr = context.payload.pull_request;
+            const manual = context.eventName === "workflow_dispatch";
+            const pr = manual
+              ? (await github.rest.pulls.get({ ...context.repo, pull_number: Number(context.payload.inputs.pr) })).data
+              : context.payload.pull_request;
             const author = pr.user.login;
-            const { repository } = await github.graphql(
-              `query ($owner: String!, $repo: String!, $num: Int!) {
-                repository(owner: $owner, name: $repo) {
-                  pullRequest(number: $num) {
-                    closingIssuesReferences(first: 10) {
-                      nodes { number createdAt author { login } assignees(first: 10) { nodes { login } } }
+            if (manual) {
+              core.info(`Asked manually by ${context.actor}.`);
+            } else {
+              const { repository } = await github.graphql(
+                `query ($owner: String!, $repo: String!, $num: Int!) {
+                  repository(owner: $owner, name: $repo) {
+                    pullRequest(number: $num) {
+                      closingIssuesReferences(first: 10) {
+                        nodes { number createdAt author { login } assignees(first: 10) { nodes { login } } }
+                      }
                     }
                   }
-                }
-              }`,
-              { owner: context.repo.owner, repo: context.repo.repo, num: pr.number },
-            );
-            const linked = repository.pullRequest.closingIssuesReferences.nodes;
-            // The author filed the issue or a maintainer assigned it to them.
-            if (linked.some((i) => i.author?.login === author || i.assignees.nodes.some((a) => a.login === author))) {
-              core.info("Skipped: the author filed or was assigned a linked issue.");
-              return;
-            }
-
-            const reasons = [];
-
-            const maxAge = Number(process.env.ISSUE_AGE_HOURS) * 3600e3;
-            const rushed = linked.filter((i) => new Date(pr.created_at) - new Date(i.createdAt) < maxAge);
-            if (rushed.length > 0) {
-              reasons.push(`opened less than ${process.env.ISSUE_AGE_HOURS} hour after ${rushed.map((i) => `#${i.number}`).join(", ")}`);
-            }
-
-            // Many PRs to unrelated repositories in a short time.
-            const since = new Date(Date.now() - Number(process.env.BREADTH_DAYS) * 86400e3).toISOString().slice(0, 10);
-            try {
-              const { data } = await github.rest.search.issuesAndPullRequests({
-                q: `type:pr author:${author} created:>=${since}`,
-                per_page: 100,
-              });
-              const ownRepo = `${context.repo.owner}/${context.repo.repo}`.toLowerCase();
-              const repos = new Set(
-                data.items
-                  .map((i) => i.repository_url.split("/repos/")[1].toLowerCase())
-                  .filter((r) => r !== ownRepo && !r.startsWith(`${author.toLowerCase()}/`)),
+                }`,
+                { owner: context.repo.owner, repo: context.repo.repo, num: pr.number },
               );
-              core.info(`PRs to ${repos.size} other repositories since ${since}.`);
-              if (repos.size >= Number(process.env.BREADTH_REPOS)) {
-                reasons.push(`PRs to ${repos.size} other repositories since ${since}`);
+              const linked = repository.pullRequest.closingIssuesReferences.nodes;
+              // The author filed the issue or a maintainer assigned it to them.
+              if (linked.some((i) => i.author?.login === author || i.assignees.nodes.some((a) => a.login === author))) {
+                core.info("Skipped: the author filed or was assigned a linked issue.");
+                return;
               }
-            } catch (error) {
-              core.warning(`Search failed: ${error}`);
-            }
 
-            const classification = process.env.AGENTSCAN_CLASSIFICATION;
-            core.info(`AgentScan: ${classification || "no result"}`);
-            if (["automation", "mixed"].includes(classification) || process.env.AGENTSCAN_COMMUNITY_FLAGGED === "true") {
-              reasons.push(`AgentScan result: ${classification}`);
-            }
+              const reasons = [];
 
-            if (reasons.length === 0) {
-              core.info("No signals.");
-              return;
+              const maxAge = Number(process.env.ISSUE_AGE_HOURS) * 3600e3;
+              const rushed = linked.filter((i) => new Date(pr.created_at) - new Date(i.createdAt) < maxAge);
+              if (rushed.length > 0) {
+                reasons.push(`opened less than ${process.env.ISSUE_AGE_HOURS} hour after ${rushed.map((i) => `#${i.number}`).join(", ")}`);
+              }
+
+              // Many PRs to unrelated repositories in a short time.
+              const since = new Date(Date.now() - Number(process.env.BREADTH_DAYS) * 86400e3).toISOString().slice(0, 10);
+              try {
+                const { data } = await github.rest.search.issuesAndPullRequests({
+                  q: `type:pr author:${author} created:>=${since}`,
+                  per_page: 100,
+                });
+                const ownRepo = `${context.repo.owner}/${context.repo.repo}`.toLowerCase();
+                const repos = new Set(
+                  data.items
+                    .map((i) => i.repository_url.split("/repos/")[1].toLowerCase())
+                    .filter((r) => r !== ownRepo && !r.startsWith(`${author.toLowerCase()}/`)),
+                );
+                core.info(`PRs to ${repos.size} other repositories since ${since}.`);
+                if (repos.size >= Number(process.env.BREADTH_REPOS)) {
+                  reasons.push(`PRs to ${repos.size} other repositories since ${since}`);
+                }
+              } catch (error) {
+                core.warning(`Search failed: ${error}`);
+              }
+
+              const classification = process.env.AGENTSCAN_CLASSIFICATION;
+              core.info(`AgentScan: ${classification || "no result"}`);
+              if (["automation", "mixed"].includes(classification) || process.env.AGENTSCAN_COMMUNITY_FLAGGED === "true") {
+                reasons.push(`AgentScan result: ${classification}`);
+              }
+
+              if (reasons.length === 0) {
+                core.info("No signals.");
+                return;
+              }
+              // Only the job log shows the reasons. The comment does not.
+              core.info(`Signals: ${reasons.join("; ")}`);
             }
-            // Only the job log shows the reasons. The comment does not.
-            core.info(`Signals: ${reasons.join("; ")}`);
 
             const body = [
               `@${author} Thanks for the PR. Before we review it, could you tell us why you want to work on this and how you checked the fix? A short reply is enough. If there is no reply within ${process.env.REPLY_HOURS} hours, this PR will be closed automatically, and a maintainer may fix the issue in a separate PR. See the [Contributing](https://github.com/sveltejs/svelte-eslint-parser#contributing) section in the README for why.`,
