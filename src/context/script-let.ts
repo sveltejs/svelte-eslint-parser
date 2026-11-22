@@ -432,6 +432,10 @@ export class ScriptLetContext {
           eqToken.value = "extends";
           eqToken.range[0] = eqToken.range[0] - 1;
           eqToken.range[1] = eqToken.range[0] + 7;
+          eqToken.loc = {
+            start: this.ctx.getLocFromIndex(eqToken.range[0]),
+            end: this.ctx.getLocFromIndex(eqToken.range[1]),
+          };
           tokens.pop(); // ;
         } else {
           tokens.pop(); // ;
