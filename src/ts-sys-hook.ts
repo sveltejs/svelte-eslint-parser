@@ -1,6 +1,7 @@
 import fs from "fs";
 import path from "path";
 import { createRequire } from "module";
+import { fileURLToPath } from "url";
 import type { NormalizedParserOptions } from "./parser/parser-options.js";
 import { normalizeParserOptions } from "./parser/parser-options.js";
 import { svelteToVirtualTypeScript } from "./parser/svelte-to-virtual-ts.js";
@@ -33,6 +34,7 @@ interface TsLike {
   sys?: {
     readFile?: (path: string, encoding?: string) => string | undefined;
     fileExists?: (path: string) => boolean;
+    useCaseSensitiveFileNames?: boolean;
   };
   server?: {
     ProjectService?: { prototype: ProjectServiceLike };
@@ -57,10 +59,12 @@ interface ScriptInfoLike {
 const SVELTE_COMPANION_SUFFIX = ".svelte.ts";
 
 const translations = new Map<string, TranslationEntry>();
-// `.svelte` paths whose companion TypeScript has read. Only those companions
-// can be stale in a program, so only those need a refresh after a parse.
-// Keys come from `companionKey`.
-const servedCompanions = new Set<string>();
+// `.svelte` paths whose companion TypeScript has read, with every code it got
+// since the last refresh. Programs and project services read at different
+// times, so they can hold different codes. Only those companions can be stale,
+// and only when some reader may not hold the current code, so only those need
+// a refresh after a parse. Keys come from `fileKey`.
+const servedCompanions = new Map<string, Set<string>>();
 const patchedSysObjects = new WeakSet();
 const patchedProjectServicePrototypes = new WeakSet();
 // Project services typescript-eslint has used, seen through `openClientFile`.
@@ -89,8 +93,8 @@ export function rememberParserOptions(options: NormalizedParserOptions): void {
 
   // Drop fallback translations so they are redone with the real options.
   if (!hadOptions) {
-    for (const [filePath, entry] of translations) {
-      if (entry.provisional) translations.delete(filePath);
+    for (const [key, entry] of translations) {
+      if (entry.provisional) translations.delete(key);
     }
   }
 
@@ -146,7 +150,11 @@ export function primeTranslationCache(
   // does for a linted `.ts` file.
   const mtimeMs = statMtimeMs(filePath);
   if (mtimeMs === null) return;
-  translations.set(filePath, { mtimeMs, virtualCode, provisional: false });
+  translations.set(fileKey(filePath), {
+    mtimeMs,
+    virtualCode,
+    provisional: false,
+  });
   primeStoredCount++;
 }
 
@@ -182,13 +190,36 @@ function translateCompanion(companionPath: string): string | null {
   return translateOnDemand(sveltePath);
 }
 
+let caseSensitiveFileSystem: boolean | undefined,
+  // `useCaseSensitiveFileNames` of the first patched `ts.sys`.
+  tsCaseSensitiveFileNames: boolean | undefined;
+
 /**
- * typescript-eslint lower-cases paths on case-insensitive file systems before
- * they reach `ts.sys.readFile`, so compare paths case-insensitively. A false
- * match only costs one extra refresh.
+ * What typescript-eslint uses to key paths: the patched `ts.sys`'s
+ * `useCaseSensitiveFileNames`. Before any `ts.sys` is patched, the same check
+ * TypeScript does, on this file instead of `typescript.js`.
  */
-function companionKey(sveltePath: string): string {
-  return path.resolve(sveltePath).toLowerCase();
+function isFileSystemCaseSensitive(): boolean {
+  if (tsCaseSensitiveFileNames !== undefined) return tsCaseSensitiveFileNames;
+  if (caseSensitiveFileSystem !== undefined) return caseSensitiveFileSystem;
+  if (process.platform === "win32") return (caseSensitiveFileSystem = false);
+  const file = fileURLToPath(import.meta.url);
+  const swapped = file.replace(/\w/gu, (ch) =>
+    ch === ch.toUpperCase() ? ch.toLowerCase() : ch.toUpperCase(),
+  );
+  caseSensitiveFileSystem = swapped === file || !fs.existsSync(swapped);
+  return caseSensitiveFileSystem;
+}
+
+/**
+ * The key for a path in `translations` and `servedCompanions`.
+ * typescript-eslint lower-cases paths on case-insensitive file systems before
+ * they reach `ts.sys.readFile`, but a parse gets the path as given. Both must
+ * find the same entry, or `ts.sys.readFile` misses the latest parse.
+ */
+function fileKey(filePath: string): string {
+  const resolved = path.resolve(filePath);
+  return isFileSystemCaseSensitive() ? resolved : resolved.toLowerCase();
 }
 
 /**
@@ -204,13 +235,25 @@ function companionKey(sveltePath: string): string {
 export function getCompanionToRefresh(
   sveltePath: string,
 ): { filePath: string; code: string } | null {
-  if (!installed || !servedCompanions.has(companionKey(sveltePath))) {
-    return null;
-  }
+  if (!installed) return null;
+  const key = fileKey(sveltePath);
+  const served = servedCompanions.get(key);
+  if (!served) return null;
   const companionPath = `${sveltePath}.ts`;
   if (realFileExists(companionPath)) return null;
   const code = translateOnDemand(sveltePath);
-  return code === null ? null : { filePath: companionPath, code };
+  // Every reader already has this code, as in a CLI run. A refresh would
+  // only make typescript-eslint update its programs for nothing.
+  if (code === null || (served.size === 1 && served.has(code))) return null;
+  return { filePath: companionPath, code };
+}
+
+/** Record that a refresh gave `code` for the companion of `sveltePath` to every reader. */
+export function rememberServedCompanion(
+  sveltePath: string,
+  code: string,
+): void {
+  servedCompanions.set(fileKey(sveltePath), new Set([code]));
 }
 
 /**
@@ -279,12 +322,13 @@ function translateOnDemand(filePath: string): string | null {
   const mtimeMs = statMtimeMs(filePath);
   if (mtimeMs === null) return null;
 
-  const cached = translations.get(filePath);
+  const key = fileKey(filePath);
+  const cached = translations.get(key);
   if (cached && cached.mtimeMs === mtimeMs) return cached.virtualCode;
 
   const svelteSource = readUtf8(filePath);
   if (svelteSource === null) {
-    translations.set(filePath, { mtimeMs, virtualCode: null, provisional });
+    translations.set(key, { mtimeMs, virtualCode: null, provisional });
     return null;
   }
 
@@ -294,7 +338,7 @@ function translateOnDemand(filePath: string): string | null {
     parserOptions,
   );
   // Store the outcome — including `null` — to negative-cache failed translations.
-  translations.set(filePath, { mtimeMs, virtualCode, provisional });
+  translations.set(key, { mtimeMs, virtualCode, provisional });
   return virtualCode;
 }
 
@@ -302,6 +346,9 @@ function patchTsSys(sys: TsLike["sys"]): void {
   if (!sys || typeof sys.readFile !== "function") return;
   if (patchedSysObjects.has(sys)) return;
   patchedSysObjects.add(sys);
+  if (typeof sys.useCaseSensitiveFileNames === "boolean") {
+    tsCaseSensitiveFileNames ??= sys.useCaseSensitiveFileNames;
+  }
   patchAppliedCount++;
 
   const originalReadFile = sys.readFile.bind(sys);
@@ -317,7 +364,10 @@ function patchTsSys(sys: TsLike["sys"]): void {
         const virtual = translateCompanion(filePath);
         if (virtual !== null) {
           svelteReadFileCount++;
-          servedCompanions.add(companionKey(filePath.slice(0, -".ts".length)));
+          const key = fileKey(filePath.slice(0, -".ts".length));
+          const served = servedCompanions.get(key);
+          if (served) served.add(virtual);
+          else servedCompanions.set(key, new Set([virtual]));
           return virtual;
         }
       }
