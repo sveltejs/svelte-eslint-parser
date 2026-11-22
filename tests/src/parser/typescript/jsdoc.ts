@@ -6,7 +6,6 @@ import { spawnSync } from "child_process";
 import * as tsParser from "@typescript-eslint/parser";
 import type { TSESTree } from "@typescript-eslint/types";
 import { Linter } from "eslint";
-import type { ESLint } from "eslint";
 import { plugin } from "typescript-eslint";
 import * as parser from "../../../../src/index.js";
 import { parseForESLint } from "../../../../src/index.js";
@@ -94,7 +93,7 @@ consume(read(result));
           const linter = new Linter({ cwd: directory });
           const config = {
             files: ["**/*.svelte"],
-            plugins: { "@typescript-eslint": plugin as ESLint.Plugin },
+            plugins: { "@typescript-eslint": plugin },
             languageOptions: {
               parser,
               parserOptions: {
@@ -213,9 +212,7 @@ consume(read(result));
           visitorKeys: result.visitorKeys,
           enterNode(node) {
             if (node.type !== "Identifier") return;
-            const tsNode = result.services.esTreeNodeToTSNodeMap.get(
-              node as TSESTree.Identifier,
-            );
+            const tsNode = result.services.esTreeNodeToTSNodeMap.get(node);
             if (!tsNode) return;
             const found = types.get(node.name) ?? [];
             found.push(checker.typeToString(checker.getTypeAtLocation(tsNode)));

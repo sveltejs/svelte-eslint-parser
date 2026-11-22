@@ -198,10 +198,7 @@ export function convertSvelteRoot(
       ),
     ];
     let element:
-      | SvelteScriptElement
-      | SvelteStyleElement
-      | SvelteElement
-      | undefined;
+      SvelteScriptElement | SvelteStyleElement | SvelteElement | undefined;
     while ((element = elementsBuffer.shift())) {
       tags.push(element.startTag);
       if (element.type === "SvelteElement") {
@@ -369,7 +366,7 @@ function convertGenericsAttribute(script: SvelteScriptElement, ctx: Context) {
   fixLocations(
     result.ast as any,
     result.ast.tokens as any,
-    result.ast.comments as any,
+    result.ast.comments,
     value.range[0] - 14,
     result.visitorKeys as any,
     ctx,

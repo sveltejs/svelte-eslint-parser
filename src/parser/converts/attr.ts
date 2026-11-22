@@ -220,10 +220,7 @@ function convertAttribute(
 function processAttributeValue(
   nodeValue:
     | (
-        | SvAST.Text
-        | SvAST.MustacheTag
-        | Compiler.Text
-        | Compiler.ExpressionTag
+        SvAST.Text | SvAST.MustacheTag | Compiler.Text | Compiler.ExpressionTag
       )[]
     | Compiler.ExpressionTag,
   attribute: SvelteAttribute | SvelteStyleDirectiveLongform,
@@ -869,10 +866,8 @@ function buildLetDirectiveType(
   /** Find parent component element */
   function findParentComponent(node: SvelteElement) {
     let parent:
-      | SvelteElement["parent"]
-      | SvelteElseBlock
-      | SvelteAwaitBlock
-      | null = node.parent;
+      SvelteElement["parent"] | SvelteElseBlock | SvelteAwaitBlock | null =
+      node.parent;
     while (parent && parent.type !== "SvelteElement") {
       parent = parent.parent;
     }

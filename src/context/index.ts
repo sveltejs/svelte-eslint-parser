@@ -388,8 +388,8 @@ export class Context {
     return this.blocks.find((block): block is SelfClosingBlock =>
       Boolean(
         block.selfClosing &&
-          element.startTag.range[0] <= block.startTagRange[0] &&
-          block.startTagRange[1] <= element.startTag.range[1],
+        element.startTag.range[0] <= block.startTagRange[0] &&
+        block.startTagRange[1] <= element.startTag.range[1],
       ),
     );
   }

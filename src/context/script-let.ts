@@ -1552,7 +1552,7 @@ function getNodeToScope(
       return true;
     }
 
-    const scopes = nodeToScope.get(node as any);
+    const scopes = nodeToScope.get(node);
 
     if (!scopes || scopes.length === 0) {
       return null;

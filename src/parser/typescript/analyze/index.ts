@@ -887,7 +887,7 @@ function analyzeLegacyProps(
     node: {
       ...statement,
       range: [statement.range[1], statement.range[1]],
-    } as TSESTree.Node,
+    },
     transform: (ctx) => {
       ctx.appendOriginal(statement.range[1]);
       const separator = ctx.script.endsWith(";") ? "" : ";";

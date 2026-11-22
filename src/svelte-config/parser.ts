@@ -83,7 +83,7 @@ function parseSvelteConfigExpression(
         experimentalResult.customRenderer = customRenderer.value;
       }
       if (Object.keys(experimentalResult).length) {
-        result.compilerOptions.experimental = experimentalResult as never;
+        result.compilerOptions.experimental = experimentalResult;
       }
     }
   }
@@ -91,7 +91,7 @@ function parseSvelteConfigExpression(
   if (kit?.type === EvaluatedType.object) {
     result.kit = {};
     const files = kit.getProperty("files")?.getStatic();
-    if (files?.value != null) result.kit.files = files.value as never;
+    if (files?.value != null) result.kit.files = files.value;
   }
   return result;
 }

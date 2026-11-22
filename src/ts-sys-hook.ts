@@ -70,9 +70,7 @@ const SUBPATH_FIELDS = [
 ] as const;
 
 type SubpathTarget =
-  | string
-  | SubpathTarget[]
-  | { [condition: string]: SubpathTarget };
+  string | SubpathTarget[] | { [condition: string]: SubpathTarget };
 
 const translations = new Map<string, TranslationEntry>();
 // `.svelte` paths whose companion TypeScript has read, with every code it got
@@ -600,8 +598,7 @@ function ensureTypeScriptLoaded(): void {
 /** Patch every `typescript.js` and `tsserverlibrary.js` already in `require.cache`. */
 function patchAllLoadedTypeScripts(): void {
   const cache = createRequire(import.meta.url).cache as
-    | Record<string, { exports?: TsLike } | undefined>
-    | undefined;
+    Record<string, { exports?: TsLike } | undefined> | undefined;
   if (!cache) return;
   for (const [resolvedPath, mod] of Object.entries(cache)) {
     if (

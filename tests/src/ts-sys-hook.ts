@@ -103,6 +103,7 @@ function interceptHookWarnings<T>(body: () => T): {
 } {
   const warnings: string[] = [];
   const original = process.stderr.write.bind(process.stderr);
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion -- tsc needs this assertion
   process.stderr.write = ((chunk: unknown, ...rest: unknown[]) => {
     if (typeof chunk === "string" && chunk.includes("ts-sys-hook")) {
       warnings.push(chunk);
