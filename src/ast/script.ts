@@ -3,8 +3,7 @@ import type { BaseNode } from "./base.js";
 import type { SvelteBindingDirective } from "./html.js";
 
 export type SvelteScriptNode =
-  | SvelteReactiveStatement
-  | SvelteFunctionBindingsExpression;
+  SvelteReactiveStatement | SvelteFunctionBindingsExpression;
 
 /** Node of `$` statement. */
 export interface SvelteReactiveStatement extends BaseNode {

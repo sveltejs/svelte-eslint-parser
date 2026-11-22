@@ -8,13 +8,13 @@
 	}
 </script>
 
-<label class="ast-options"
-	><input
+<label class="ast-options">
+	<input
 		type="checkbox"
 		checked={options.showLocations}
 		on:change={(e) => updateShowLocations(e.target.checked)}
-	/>Locations</label
->
+	/>Locations
+</label>
 
 <style>
 	.ast-options {

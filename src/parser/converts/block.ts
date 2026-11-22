@@ -63,10 +63,7 @@ function startBlockIndex(
 
 function startIndexFromFragment(
   fragment:
-    | Compiler.Fragment
-    | SvAST.ElseBlock
-    | SvAST.ThenBlock
-    | SvAST.CatchBlock,
+    Compiler.Fragment | SvAST.ElseBlock | SvAST.ThenBlock | SvAST.CatchBlock,
   getBeforeEndIndex: () => number,
 ) {
   if ((fragment as { start: number }).start != null) {
@@ -390,8 +387,8 @@ export function convertAwaitBlock(
     expression: null as any,
     kind: "await",
     pending: null as any,
-    then: null as any,
-    catch: null as any,
+    then: null,
+    catch: null,
     parent,
     ...ctx.getConvertLocation({ start: nodeStart, end: node.end }),
   } as SvelteAwaitBlock;

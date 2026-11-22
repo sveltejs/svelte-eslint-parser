@@ -7,7 +7,7 @@ import * as parser from "../../../../src";
 export function getConfig(): Linter.Config {
   return {
     plugins: {
-      svelte: svelte as any,
+      svelte,
     },
     languageOptions: {
       parser,

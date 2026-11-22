@@ -29,8 +29,7 @@ export function parseTemplate(
       ...(svelteVersion.gte(5) ? { modern: true } : ({} as never)),
     };
     const svelteAst = parse(code, options) as never as
-      | Compiler.Root
-      | SvAST.AstLegacy;
+      Compiler.Root | SvAST.AstLegacy;
     const ast = convertSvelteRoot(svelteAst, ctx);
 
     return {
