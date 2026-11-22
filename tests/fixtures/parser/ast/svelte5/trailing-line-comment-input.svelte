@@ -18,3 +18,10 @@
 }{/key}
 {@html xs // html
 }
+{(xs) // parenthesized
+}
+<div title={((xs)) // nested parentheses
+}></div>
+{#key ( xs) // spaced parentheses
+}{/key}
+{(xs) /* block */}

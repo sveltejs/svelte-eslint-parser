@@ -140,20 +140,19 @@ function getNodeRange(
   }
 
   // Adjust the range so that the parentheses match up.
-  if (openingParenCount < closingParenCount) {
-    for (; openingParenCount < closingParenCount && start >= 0; start--) {
-      const c = code[start].trim();
-      if (c) continue;
-      if (c !== "(") break;
-      openingParenCount++;
-    }
-  } else if (openingParenCount > closingParenCount) {
-    for (; openingParenCount > closingParenCount && end < code.length; end++) {
-      const c = code[end].trim();
-      if (c) continue;
-      if (c !== ")") break;
-      closingParenCount++;
-    }
+  while (openingParenCount < closingParenCount) {
+    let index = start - 1;
+    while (index >= 0 && !code[index].trim()) index--;
+    if (code[index] !== "(") break;
+    start = index;
+    openingParenCount++;
+  }
+  while (openingParenCount > closingParenCount) {
+    let index = end;
+    while (index < code.length && !code[index].trim()) index++;
+    if (code[index] !== ")") break;
+    end = index + 1;
+    closingParenCount++;
   }
 
   return [start, end];
