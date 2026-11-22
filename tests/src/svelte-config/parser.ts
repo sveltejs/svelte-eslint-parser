@@ -373,6 +373,183 @@ describe("parseConfig", () => {
         `,
       output: { kit: {} },
     },
+    {
+      code: `
+        const {css, runes} = {css:"injected", runes:false}
+        export default {compilerOptions:{css, runes}}
+        `,
+      output: { compilerOptions: { runes: false } },
+    },
+    {
+      code: `
+        const {a, kit} = {a:1, kit:{files:{routes:"src/pages"}}}
+        export default {kit}
+        `,
+      output: { kit: { files: { routes: "src/pages" } } },
+    },
+    {
+      code: `
+        const {a, b: {runes}} = {a:1, b:{runes:false}}
+        export default {compilerOptions:{runes}}
+        `,
+      output: { compilerOptions: { runes: false } },
+    },
+    {
+      code: `
+        const {a: {x}, b: {runes}} = {a:{x:1}, b:{runes:false}}
+        export default {compilerOptions:{runes}}
+        `,
+      output: { compilerOptions: { runes: false } },
+    },
+    {
+      code: `
+        const {a = 1, runes = false} = {}
+        export default {compilerOptions:{runes}}
+        `,
+      output: { compilerOptions: { runes: false } },
+    },
+    {
+      code: `
+        const k = "a"
+        const {[k]: x, runes} = {a:1, runes:true}
+        export default {compilerOptions:{runes}}
+        `,
+      output: { compilerOptions: { runes: true } },
+    },
+    {
+      code: `
+        const k = "runes"
+        const {[k]: runes} = {runes:false}
+        export default {compilerOptions:{runes}}
+        `,
+      output: { compilerOptions: { runes: false } },
+    },
+    {
+      code: `
+        const {"": runes} = {"": false}
+        export default {compilerOptions:{runes}}
+        `,
+      output: { compilerOptions: { runes: false } },
+    },
+    {
+      code: `
+        const {kit, ...rest} = {kit:{files:{lib:"a"}}, compilerOptions:{runes:false}}
+        export default {kit:{files:{routes:"b"}}, ...rest}
+        `,
+      output: {
+        compilerOptions: { runes: false },
+        kit: { files: { routes: "b" } },
+      },
+    },
+    {
+      code: `
+        const {compilerOptions, ...rest} = {compilerOptions:{runes:true}, kit:{}}
+        export default {compilerOptions:{runes:false}, ...rest}
+        `,
+      output: { compilerOptions: { runes: false }, kit: {} },
+    },
+    {
+      code: `
+        const {a, ...files} = {a:1, routes:"src/pages"}
+        export default {kit:{files}}
+        `,
+      output: { kit: { files: { routes: "src/pages" } } },
+    },
+    {
+      code: `
+        const {routes, ...r1} = {routes:"a", lib:"b", assets:"c"}
+        const {lib, ...files} = r1
+        export default {kit:{files}}
+        `,
+      output: { kit: { files: { assets: "c" } } },
+    },
+    {
+      code: `
+        const {a: {routes, ...files}} = {a:{routes:"a", lib:"b"}}
+        export default {kit:{files}}
+        `,
+      output: { kit: { files: { lib: "b" } } },
+    },
+    {
+      code: `
+        const k = "x"
+        const {[k]: x, ...files} = {x:1, routes:"a"}
+        export default {kit:{files}}
+        `,
+      output: { kit: { files: { routes: "a" } } },
+    },
+    {
+      code: `
+        const {runes, ...rest} = {runes:true}
+        export default {compilerOptions:{runes:false, ...rest}}
+        `,
+      output: { compilerOptions: { runes: false } },
+    },
+    {
+      code: `
+        const {a, ...rest} = {a:1, runes:true}
+        export default {compilerOptions:{runes:false, ...rest}}
+        `,
+      output: { compilerOptions: { runes: true } },
+    },
+    {
+      code: `
+        const {a: [x, ...y], runes} = {a: [], runes: false}
+        export default {compilerOptions:{runes}}
+        `,
+      output: { compilerOptions: { runes: false } },
+    },
+    {
+      code: `
+        const {runes, ...rest} = {runes: true}
+        const {runes: r = false} = rest
+        export default {compilerOptions:{runes: r}}
+        `,
+      output: { compilerOptions: { runes: false } },
+    },
+    {
+      code: `
+        const k = "x"
+        const {[k]: a, ...rest} = {compilerOptions: false}
+        export default {compilerOptions:{runes:true}, ...rest}
+        `,
+      output: {},
+    },
+    {
+      code: `
+        const {[f()]: x, ...files} = {x:1, routes:"a"}
+        export default {kit:{files}}
+        `,
+      output: { kit: {} },
+    },
+    {
+      code: `
+        const a = b
+        const b = a
+        export default {compilerOptions:{runes:a}}
+        `,
+      output: { compilerOptions: {} },
+    },
+    {
+      code: `
+        const {[k]: x, ...files} = {routes:"a"}
+        const k = x
+        export default {kit:{files}}
+        `,
+      output: { kit: {} },
+    },
+    {
+      code: `
+        const cfg = {kit:{files:{lib:"x"}}}
+        const {[{["__proto__"]: null}]: a, kit} = cfg
+        export default {kit}
+        `,
+      output: { kit: { files: { lib: "x" } } },
+    },
+    {
+      code: `export default {[{["__proto__"]: null}]: 1, kit:{files:{lib:"y"}}}`,
+      output: { kit: { files: { lib: "y" } } },
+    },
   ];
   for (const { code, output } of testCases) {
     it(code, () => {
