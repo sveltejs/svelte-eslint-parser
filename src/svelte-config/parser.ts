@@ -103,6 +103,13 @@ const enum EvaluatedType {
 
 type Evaluated = EvaluatedLiteral | EvaluatedObject;
 
+const ABSENT = Symbol("absent");
+
+type FoundProperties = Map<
+  ESTree.ObjectExpression,
+  Map<string, Evaluated | null | typeof ABSENT>
+>;
+
 class EvaluatedLiteral {
   public readonly type = EvaluatedType.literal;
 
@@ -123,42 +130,78 @@ class EvaluatedObject {
 
   private readonly cached = new Map<string, Evaluated | null>();
 
+  // `getStatic()` caches each property's own value, while `getProperty()`
+  // caches the final value, so they must not share a cache.
+  private readonly staticCached = new Map<string, Evaluated | null>();
+
   private readonly node: ESTree.ObjectExpression;
 
   private readonly parseExpression: (
     node: ESTree.Expression | ESTree.Pattern | ESTree.PrivateIdentifier,
   ) => Evaluated | null;
 
+  private readonly found: FoundProperties;
+
   public constructor(
     node: ESTree.ObjectExpression,
     parseExpression: (
       node: ESTree.Expression | ESTree.Pattern | ESTree.PrivateIdentifier,
     ) => Evaluated | null,
+    found: FoundProperties,
   ) {
     this.node = node;
     this.parseExpression = parseExpression;
+    this.found = found;
   }
 
   /** Gets the evaluated value of the property with the given name. */
   public getProperty(key: string): Evaluated | null {
     return this.withCache(key, () => {
-      let unknown = false;
-      for (const prop of [...this.node.properties].reverse()) {
-        if (prop.type === "Property") {
-          const name = this.getKey(prop);
-          if (name === key) return this.parseExpression(prop.value);
-          if (name == null) unknown = true;
-        } else if (prop.type === "SpreadElement") {
-          const evaluated = this.parseExpression(prop.argument);
-          if (evaluated?.type === EvaluatedType.object) {
-            const value = evaluated.getProperty(key);
-            if (value) return value;
-          }
-          unknown = true;
-        }
-      }
-      return unknown ? null : new EvaluatedLiteral(undefined);
+      const value = this.findProperty(key);
+      return value === ABSENT ? new EvaluatedLiteral(undefined) : value;
     });
+  }
+
+  /**
+   * Like `getProperty()`, but returns `ABSENT` when the object surely does
+   * not have the property, so a spread without it can be skipped.
+   * Results are shared by all objects of the same node.
+   */
+  private findProperty(key: string): Evaluated | null | typeof ABSENT {
+    let found = this.found.get(this.node);
+    if (!found) this.found.set(this.node, (found = new Map()));
+    if (found.has(key)) return found.get(key)!;
+    // A cyclic lookup of the same key gives unknown.
+    found.set(key, null);
+    const value = this.scanProperty(key);
+    found.set(key, value);
+    return value;
+  }
+
+  private scanProperty(key: string): Evaluated | null | typeof ABSENT {
+    let unknown = false;
+    for (const prop of [...this.node.properties].reverse()) {
+      if (prop.type === "Property") {
+        const name = this.getKey(prop);
+        if (name === key) return this.parseExpression(prop.value);
+        if (name == null) unknown = true;
+      } else if (prop.type === "SpreadElement") {
+        const evaluated = this.parseExpression(prop.argument);
+        if (evaluated?.type === EvaluatedType.object) {
+          const value = evaluated.findProperty(key);
+          if (value === ABSENT) continue;
+          if (value) return value;
+        } else if (
+          evaluated?.type === EvaluatedType.literal &&
+          evaluated.value == null
+        ) {
+          // Spreading `null` or `undefined` adds no properties.
+          continue;
+        }
+        unknown = true;
+      }
+    }
+    return unknown ? null : ABSENT;
   }
 
   public getStatic(): { value: Record<string, unknown> } | null {
@@ -167,8 +210,10 @@ class EvaluatedObject {
       if (prop.type === "Property") {
         const name = this.getKey(prop);
         if (name == null) return null;
-        const evaluated = this.withCache(name, () =>
-          this.parseExpression(prop.value),
+        const evaluated = this.withCache(
+          name,
+          () => this.parseExpression(prop.value),
+          this.staticCached,
         )?.getStatic();
         if (!evaluated) return null;
         object[name] = evaluated.value;
@@ -184,10 +229,11 @@ class EvaluatedObject {
   private withCache(
     key: string,
     parse: () => Evaluated | null,
+    cached = this.cached,
   ): Evaluated | null {
-    if (this.cached.has(key)) return this.cached.get(key) || null;
+    if (cached.has(key)) return cached.get(key) || null;
     const evaluated = parse();
-    this.cached.set(key, evaluated);
+    cached.set(key, evaluated);
     return evaluated;
   }
 
@@ -204,6 +250,7 @@ function evaluateExpression(
   scopeManager: Scope.ScopeManager,
 ): Evaluated | null {
   const tracked = new Map<ESTree.Identifier, Scope.Definition[]>();
+  const found: FoundProperties = new Map();
   return parseExpression(node);
 
   function parseExpression(
@@ -216,7 +263,7 @@ function evaluateExpression(
       return parseIdentifier(node);
     }
     if (node.type === "ObjectExpression") {
-      return new EvaluatedObject(node, parseExpression);
+      return new EvaluatedObject(node, parseExpression, found);
     }
 
     return null;

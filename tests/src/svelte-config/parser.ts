@@ -156,6 +156,175 @@ describe("parseConfig", () => {
         kit: { files: { routes: "src/custom" } },
       },
     },
+    {
+      code: `export default {compilerOptions:{runes:true, ...{}}}`,
+      output: { compilerOptions: { runes: true } },
+    },
+    {
+      code: `
+        const shared = {css:"injected"}
+        export default {compilerOptions:{runes:true, ...shared}}
+        `,
+      output: { compilerOptions: { runes: true } },
+    },
+    {
+      code: `export default {compilerOptions:{runes:true, ...{a:1}}}`,
+      output: { compilerOptions: { runes: true } },
+    },
+    {
+      code: `export default {compilerOptions:{runes:true, ...{...{}}}}`,
+      output: { compilerOptions: { runes: true } },
+    },
+    {
+      code: `export default {compilerOptions:{runes:true, ...null}}`,
+      output: { compilerOptions: { runes: true } },
+    },
+    {
+      code: `export default {compilerOptions:{runes:true, ...undefined}}`,
+      output: { compilerOptions: { runes: true } },
+    },
+    {
+      code: `
+        const {runes = false} = {runes:true, ...{}}
+        export default {compilerOptions:{runes}}
+        `,
+      output: { compilerOptions: { runes: true } },
+    },
+    {
+      code: `
+        const s = {alias:{}}
+        export default {kit:{files:{routes:"src/pages"}, ...s}}
+        `,
+      output: { kit: { files: { routes: "src/pages" } } },
+    },
+    {
+      code: `export default {kit:{files:{routes:"src/pages"}, ...{}}}`,
+      output: { kit: { files: { routes: "src/pages" } } },
+    },
+    {
+      code: `
+        import importedShared from "./x.js"
+        export default {compilerOptions:{runes:true, ...importedShared}}
+        `,
+      output: { compilerOptions: { runes: true } },
+    },
+    {
+      code: `export default {compilerOptions:{runes:true, ...f()}}`,
+      output: { compilerOptions: { runes: true } },
+    },
+    {
+      code: `export default {compilerOptions:{runes:true, ...{runes:undefined}}}`,
+      output: { compilerOptions: {} },
+    },
+    {
+      code: `export default {compilerOptions:{runes:false, ...{runes:true}}}`,
+      output: { compilerOptions: { runes: true } },
+    },
+    {
+      code: `export default {compilerOptions:{...{}, runes:true}}`,
+      output: { compilerOptions: { runes: true } },
+    },
+    {
+      code: `export default {compilerOptions:{runes:true}, ...{}}`,
+      output: { compilerOptions: { runes: true } },
+    },
+    {
+      code: `
+        const {runes = true} = {...null}
+        export default {compilerOptions:{runes}}
+        `,
+      output: { compilerOptions: { runes: true } },
+    },
+    {
+      code: `
+        const {runes = true} = {...undefined}
+        export default {compilerOptions:{runes}}
+        `,
+      output: { compilerOptions: { runes: true } },
+    },
+    {
+      code: `
+        const {runes = true} = {...f()}
+        export default {compilerOptions:{runes}}
+        `,
+      output: { compilerOptions: {} },
+    },
+    {
+      code: `
+        const {runes = true} = {[f()]: 1}
+        export default {compilerOptions:{runes}}
+        `,
+      output: { compilerOptions: {} },
+    },
+    {
+      code: `
+        const {runes = true} = {...{}}
+        export default {compilerOptions:{runes}}
+        `,
+      output: { compilerOptions: { runes: true } },
+    },
+    {
+      code: `
+        const {runes = true} = {...{...f()}}
+        export default {compilerOptions:{runes}}
+        `,
+      output: { compilerOptions: {} },
+    },
+    {
+      code: `export default {compilerOptions:{runes:true, ...{...f()}}}`,
+      output: { compilerOptions: { runes: true } },
+    },
+    {
+      code: `
+        const a = {...a}
+        export default {compilerOptions:{...a, ...{}}}
+        `,
+      output: { compilerOptions: {} },
+    },
+    {
+      code: `
+        const s = {x: {kit: {files:{lib:"a"}}, ...{kit:{files:{lib:"b"}}}}}
+        const {x: o} = s
+        const {x: {kit}} = s
+        export default {[o]: 1, kit}
+        `,
+      output: { kit: { files: { lib: "b" } } },
+    },
+    {
+      code: `
+        const shared = {x: {files: {lib:"a"}, ...{files: {lib:"b"}}}}
+        const {x: r} = shared
+        const {x: k} = shared
+        export default {compilerOptions: {runes: r}, kit: k}
+        `,
+      output: {
+        compilerOptions: { runes: true },
+        kit: { files: { lib: "b" } },
+      },
+    },
+    {
+      code: `
+        const shared = {x: {files: {lib:"a"}, files: {lib:"b"}}}
+        const {x: r} = shared
+        const {x: k} = shared
+        export default {compilerOptions: {runes: r}, kit: k}
+        `,
+      output: {
+        compilerOptions: { runes: true },
+        kit: { files: { lib: "b" } },
+      },
+    },
+    {
+      code: [
+        "const a0 = {}",
+        ...Array.from(
+          { length: 25 },
+          (_, i) => `const a${i + 1} = {...a${i}, ...a${i}}`,
+        ),
+        "export default {compilerOptions:{runes:true, ...a25}}",
+      ].join("\n"),
+      output: { compilerOptions: { runes: true } },
+    },
   ];
   for (const { code, output } of testCases) {
     it(code, () => {
