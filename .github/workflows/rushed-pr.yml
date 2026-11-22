@@ -53,7 +53,7 @@ jobs:
             await github.rest.issues.createComment({
               ...context.repo,
               issue_number: pr.number,
-              body: `@${author} Thanks for the PR. It was opened less than ${process.env.ISSUE_AGE_HOURS} hour after ${issues} was filed, so before we review it, could you tell us why you want to work on this and how you checked the fix? If there is no reply within ${process.env.REPLY_HOURS} hours, this PR will be closed automatically.`,
+              body: `@${author} Thanks for the PR. It was opened less than ${process.env.ISSUE_AGE_HOURS} hour after ${issues} was filed, so before we review it, could you tell us why you want to work on this and how you checked the fix? If there is no reply within ${process.env.REPLY_HOURS} hours, this PR will be closed automatically. See the [Contributing](https://github.com/sveltejs/svelte-eslint-parser#contributing) section in the README for why.`,
             });
             await github.rest.issues.addLabels({
               ...context.repo,

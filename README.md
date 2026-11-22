@@ -359,6 +359,8 @@ By default, it only targets `*.js` and `*.jsx`, so you need to configure `.svelt
 Contributions are welcome! Please open an issue or submit a PR on GitHub.  
 For internal details, see [internal-mechanism.md](./docs/internal-mechanism.md).
 
+If you want to fix an issue that was filed less than 1 hour ago, please comment on the issue first. For PRs from first-time contributors opened that soon, a bot asks the author why they want to work on it and how they checked the fix, and closes the PR if there is no reply within 24 hours. We do this so that a merged PR here stays a fair signal of the author's experience for anyone who looks at it later.
+
 ---
 
 ## License
