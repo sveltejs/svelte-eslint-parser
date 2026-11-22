@@ -34,6 +34,7 @@ interface TsLike {
   sys?: {
     readFile?: (path: string, encoding?: string) => string | undefined;
     fileExists?: (path: string) => boolean;
+    useCaseSensitiveFileNames?: boolean;
   };
   server?: {
     ProjectService?: { prototype: ProjectServiceLike };
@@ -189,13 +190,17 @@ function translateCompanion(companionPath: string): string | null {
   return translateOnDemand(sveltePath);
 }
 
-let caseSensitiveFileSystem: boolean | undefined;
+let caseSensitiveFileSystem: boolean | undefined,
+  // `useCaseSensitiveFileNames` of the first patched `ts.sys`.
+  tsCaseSensitiveFileNames: boolean | undefined;
 
 /**
- * The same check as TypeScript's `ts.sys.useCaseSensitiveFileNames`: a file
- * system is case-sensitive when this file cannot be found with its case swapped.
+ * What typescript-eslint uses to key paths: the patched `ts.sys`'s
+ * `useCaseSensitiveFileNames`. Before any `ts.sys` is patched, the same check
+ * TypeScript does, on this file instead of `typescript.js`.
  */
 function isFileSystemCaseSensitive(): boolean {
+  if (tsCaseSensitiveFileNames !== undefined) return tsCaseSensitiveFileNames;
   if (caseSensitiveFileSystem !== undefined) return caseSensitiveFileSystem;
   if (process.platform === "win32") return (caseSensitiveFileSystem = false);
   const file = fileURLToPath(import.meta.url);
@@ -341,6 +346,9 @@ function patchTsSys(sys: TsLike["sys"]): void {
   if (!sys || typeof sys.readFile !== "function") return;
   if (patchedSysObjects.has(sys)) return;
   patchedSysObjects.add(sys);
+  if (typeof sys.useCaseSensitiveFileNames === "boolean") {
+    tsCaseSensitiveFileNames ??= sys.useCaseSensitiveFileNames;
+  }
   patchAppliedCount++;
 
   const originalReadFile = sys.readFile.bind(sys);

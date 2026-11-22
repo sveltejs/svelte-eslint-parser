@@ -94,6 +94,9 @@ function toProjectOptions(
     path.relative(rootDir, p).split(path.sep).join("/"),
   );
   if (project.some((p) => GLOB_CHARS.test(p))) return null;
+  // On Windows, typescript-eslint rejects a `tsconfigRootDir` without a drive
+  // letter, such as a UNC path.
+  if (process.platform === "win32" && !/^[A-Za-z]:/u.test(rootDir)) return null;
   return { project, tsconfigRootDir: rootDir };
 }
 
@@ -136,7 +139,11 @@ function refreshCompanion(
   const projects = [...programsByConfig]
     .filter(([, program]) => program.getSourceFile(companion.filePath))
     .map(([configFilePath]) => configFilePath);
-  const narrowed = toProjectOptions(projects);
+  // typescript-eslint resolves a relative `filePath` against `tsconfigRootDir`,
+  // so keep the user's when the path is relative.
+  const narrowed = path.isAbsolute(companion.filePath)
+    ? toProjectOptions(projects)
+    : null;
   // A program that is not passed still updates the companion when it next
   // syncs, through the hooked `ts.sys.readFile`.
   try {
@@ -150,14 +157,16 @@ function refreshCompanion(
         disallowAutomaticSingleRunInference: true,
       },
     );
-    // Without a program, no watcher was told, so the next parse tries again.
-    if (!result.services?.program) return;
     // A program that holds the companion, so later refreshes can skip the
     // other tsconfigs even when no component in it is linted.
     rememberProgram(result);
-    rememberServedCompanion(filePath, companion.code);
   } catch {
     // The refresh is best effort. Linting the component itself has succeeded.
+  } finally {
+    // typescript-eslint fires the companion's watchers before it looks for a
+    // program, so they are told even when the parse throws. Retrying the same
+    // code would only redo that work on every parse.
+    rememberServedCompanion(filePath, companion.code);
   }
 }
 
