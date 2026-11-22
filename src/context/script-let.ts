@@ -15,6 +15,7 @@ import type {
 import type { ESLintExtendedProgram } from "../parser/index.js";
 import { getWithLoc } from "../parser/converts/common.js";
 import {
+  addReference,
   getScopeFromNode,
   removeAllScopeAndVariableAndReference,
   removeIdentifierVariable,
@@ -57,6 +58,8 @@ export type ScriptLetRestoreCallback = (
 type ScriptLetRestoreCallbackOption = {
   getScope: (node: ESTree.Node) => eslint.Scope.Scope;
   registerNodeToScope: (node: any, scope: eslint.Scope.Scope) => void;
+  /** Make `scopeManager.acquire(node)` return the scope, without changing `scope.block`. */
+  addNodeToScope: (node: any, scope: eslint.Scope.Scope) => void;
   scopeManager: eslint.Scope.ScopeManager;
   visitorKeys?: { [type: string]: string[] };
   addPostProcess: (callback: () => void) => void;
@@ -660,6 +663,48 @@ export class ScriptLetContext {
     this.pushScope(restore, "});", this.currentScriptScopeKind);
   }
 
+  /**
+   * Add the key expression of an each block.
+   * Call it inside the scope opened by `nestEachBlock()`.
+   */
+  public addEachBlockKey(
+    key: ESTree.Expression,
+    eachBlock: SvelteEachBlock,
+    callback: (key: ESTree.Expression) => void,
+  ): void {
+    this.addExpression(key, eachBlock, null, (node, result) => {
+      callback(node);
+
+      // The key sees the item and the index, but not the declarations of the body,
+      // such as `{@const}`. Resolve such references in the upper scopes.
+      // `node` may be a function, which has its own scope. So get the each scope
+      // from the parent of `node`, which is the virtual `ExpressionStatement`.
+      const eachScope = result.getScope((node as any).parent);
+      const [start, end] = node.range!;
+      for (const variable of eachScope.variables) {
+        if (variable.defs.some((def) => def.type === "Parameter")) continue;
+        const keyReferences = variable.references.filter(
+          (r) =>
+            start <= r.identifier.range![0] && r.identifier.range![1] <= end,
+        );
+        for (const reference of keyReferences) {
+          variable.references.splice(variable.references.indexOf(reference), 1);
+          reference.resolved = null;
+          addReference(eachScope.through, reference);
+          for (let scope = eachScope.upper; scope; scope = scope.upper) {
+            const upperVariable = scope.set.get(variable.name);
+            if (upperVariable && canResolve(reference, upperVariable)) {
+              reference.resolved = upperVariable;
+              addReference(upperVariable.references, reference);
+              break;
+            }
+            addReference(scope.through, reference);
+          }
+        }
+      }
+    });
+  }
+
   public nestSnippetBlock(
     id: ESTree.Identifier,
     closeParentIndex: number,
@@ -833,6 +878,8 @@ export class ScriptLetContext {
           param: ScriptLetBlockParam;
           preparationScript?: { script: string; nodeType: StatementNodeType }[];
         }),
+    /** The nodes that are converted before the block, in the outer scope. */
+    outerNodes: SvelteNode[] = [],
   ): void {
     let resolvedParams;
     if (typeof params === "function") {
@@ -874,6 +921,9 @@ export class ScriptLetContext {
           // Process for scope
           const scope = result.getScope(blockSt);
           result.registerNodeToScope(block, scope);
+          for (const node of outerNodes) {
+            result.addNodeToScope(node, scope.upper!);
+          }
 
           tokens.length = 0; // clear tokens
 
@@ -952,6 +1002,9 @@ export class ScriptLetContext {
 
           // Process for scope
           result.registerNodeToScope(block, scope);
+          for (const node of outerNodes) {
+            result.addNodeToScope(node, scope.upper!);
+          }
           for (const v of scope.variables) {
             for (const def of v.defs) {
               if (def.node === fn) {
@@ -1080,6 +1133,7 @@ export class ScriptLetContext {
     const callbackOption: ScriptLetRestoreCallbackOption = {
       getScope,
       registerNodeToScope,
+      addNodeToScope,
       scopeManager: result.scopeManager!,
       visitorKeys: result.visitorKeys,
       addPostProcess: (cb) => postprocessList.push(cb),
@@ -1115,6 +1169,11 @@ export class ScriptLetContext {
         }
       });
 
+      addNodeToScope(node, scope);
+    }
+
+    /** Add node to scope, without changing `scope.block` */
+    function addNodeToScope(node: any, scope: eslint.Scope.Scope): void {
       const scopes = nodeToScope.get(node);
       if (scopes) {
         scopes.push(scope);
@@ -1424,6 +1483,26 @@ function getTokenIndex(
     index++;
   }
   return null;
+}
+
+/**
+ * Checks whether the given reference can resolve to the given variable.
+ * With typescript-eslint, a value reference only resolves to a value variable,
+ * and a type reference only resolves to a type variable.
+ */
+function canResolve(
+  reference: eslint.Scope.Reference,
+  variable: eslint.Scope.Variable,
+): boolean {
+  const ref = reference as Partial<
+    Pick<TSScope["references"][number], "isValueReference" | "isTypeReference">
+  >;
+  const v = variable as Partial<
+    Pick<TSScope["variables"][number], "isValueVariable" | "isTypeVariable">
+  >;
+  if (ref.isValueReference && v.isValueVariable === false) return false;
+  if (ref.isTypeReference && v.isTypeVariable === false) return false;
+  return true;
 }
 
 /** Get the node to scope map from given scope manager  */
