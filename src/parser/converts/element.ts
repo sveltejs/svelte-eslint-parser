@@ -509,12 +509,11 @@ function convertSpecialElement(
         node.type === "SvelteSelf" ||
         node.type === "InlineComponent") &&
       !hasStaticSlotAttribute(attributes);
-    if (attributesInOuterScope) {
-      element.startTag.attributes.push(
-        ...convertAttributes(attributes, element.startTag, ctx),
-      );
-    }
-    ctx.scriptLet.nestBlock(element, letParams);
+    const outerAttributes = attributesInOuterScope
+      ? [...convertAttributes(attributes, element.startTag, ctx)]
+      : [];
+    element.startTag.attributes.push(...outerAttributes);
+    ctx.scriptLet.nestBlock(element, letParams, outerAttributes);
     if (!attributesInOuterScope) {
       element.startTag.attributes.push(
         ...convertAttributes(attributes, element.startTag, ctx),
@@ -805,12 +804,11 @@ function convertComponentElement(
     // But if the component has `slot`, its `let:` names come from the
     // parent's slot, so its own attributes can see them.
     const attributesInOuterScope = !hasStaticSlotAttribute(attributes);
-    if (attributesInOuterScope) {
-      element.startTag.attributes.push(
-        ...convertAttributes(attributes, element.startTag, ctx),
-      );
-    }
-    ctx.scriptLet.nestBlock(element, letParams);
+    const outerAttributes = attributesInOuterScope
+      ? [...convertAttributes(attributes, element.startTag, ctx)]
+      : [];
+    element.startTag.attributes.push(...outerAttributes);
+    ctx.scriptLet.nestBlock(element, letParams, outerAttributes);
     if (!attributesInOuterScope) {
       element.startTag.attributes.push(
         ...convertAttributes(attributes, element.startTag, ctx),

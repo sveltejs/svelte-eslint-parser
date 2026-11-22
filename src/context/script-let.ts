@@ -57,6 +57,8 @@ export type ScriptLetRestoreCallback = (
 type ScriptLetRestoreCallbackOption = {
   getScope: (node: ESTree.Node) => eslint.Scope.Scope;
   registerNodeToScope: (node: any, scope: eslint.Scope.Scope) => void;
+  /** Make `scopeManager.acquire(node)` return the scope, without changing `scope.block`. */
+  addNodeToScope: (node: any, scope: eslint.Scope.Scope) => void;
   scopeManager: eslint.Scope.ScopeManager;
   visitorKeys?: { [type: string]: string[] };
   addPostProcess: (callback: () => void) => void;
@@ -826,6 +828,8 @@ export class ScriptLetContext {
           param: ScriptLetBlockParam;
           preparationScript?: { script: string; nodeType: StatementNodeType }[];
         }),
+    /** The nodes that are converted before the block, in the outer scope. */
+    outerNodes: SvelteNode[] = [],
   ): void {
     let resolvedParams;
     if (typeof params === "function") {
@@ -867,6 +871,9 @@ export class ScriptLetContext {
           // Process for scope
           const scope = result.getScope(blockSt);
           result.registerNodeToScope(block, scope);
+          for (const node of outerNodes) {
+            result.addNodeToScope(node, scope.upper!);
+          }
 
           tokens.length = 0; // clear tokens
 
@@ -944,6 +951,9 @@ export class ScriptLetContext {
 
           // Process for scope
           result.registerNodeToScope(block, scope);
+          for (const node of outerNodes) {
+            result.addNodeToScope(node, scope.upper!);
+          }
           for (const v of scope.variables) {
             for (const def of v.defs) {
               if (def.node === fn) {
@@ -1069,6 +1079,7 @@ export class ScriptLetContext {
     const callbackOption: ScriptLetRestoreCallbackOption = {
       getScope,
       registerNodeToScope,
+      addNodeToScope,
       scopeManager: result.scopeManager!,
       visitorKeys: result.visitorKeys,
       addPostProcess: (cb) => postprocessList.push(cb),
@@ -1104,6 +1115,11 @@ export class ScriptLetContext {
         }
       });
 
+      addNodeToScope(node, scope);
+    }
+
+    /** Add node to scope, without changing `scope.block` */
+    function addNodeToScope(node: any, scope: eslint.Scope.Scope): void {
       const scopes = nodeToScope.get(node);
       if (scopes) {
         scopes.push(scope);

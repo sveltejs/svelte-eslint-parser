@@ -7,6 +7,7 @@ import type {
   SvelteReactiveStatement,
   SvelteScriptElement,
   SvelteSnippetBlock,
+  SvelteStartTag,
 } from "../ast/index.js";
 import {
   addReference,
@@ -355,20 +356,40 @@ export function analyzeSnippetsScope(
   snippets: SvelteSnippetBlock[],
   scopeManager: eslint.Scope.ScopeManager,
 ): void {
+  let allReferences: eslint.Scope.Reference[] | null = null;
   for (const snippet of snippets) {
     const parent = snippet.parent;
-    if (
-      parent.type === "SvelteElement" &&
-      (parent.kind === "component" ||
-        (parent.kind === "special" &&
-          (parent.name.name === "svelte:component" ||
-            parent.name.name === "svelte:boundary")))
-    ) {
-      const scope = getScopeFromNode(scopeManager, snippet.id);
-      const upperScope = scope.upper;
-      if (!upperScope) continue;
-      const variable = upperScope.set.get(snippet.id.name);
-      if (!variable) continue;
+    if (parent.type !== "SvelteElement") continue;
+    const specialName = parent.kind === "special" ? parent.name.name : null;
+    const passedAsProp =
+      parent.kind === "component" ||
+      specialName === "svelte:component" ||
+      specialName === "svelte:boundary";
+    // The attributes of these elements are in the outer scope.
+    // See `convertComponentElement()` and `convertSpecialElement()`.
+    const hasOuterAttributes =
+      parent.kind === "component" ||
+      specialName === "svelte:component" ||
+      specialName === "svelte:self";
+    if (!passedAsProp && !hasOuterAttributes) continue;
+
+    const scope = getScopeFromNode(scopeManager, snippet.id);
+    const upperScope = scope.upper;
+    if (!upperScope) continue;
+    const variable = upperScope.set.get(snippet.id.name);
+    if (!variable) continue;
+
+    if (hasOuterAttributes) {
+      // Svelte hoists the snippets of a component above the component,
+      // so the component's own attributes can read them.
+      allReferences ??= scopeManager.scopes.flatMap((s) => s.references);
+      resolveAttributeReferencesToSnippet(
+        parent.startTag,
+        variable,
+        allReferences,
+      );
+    }
+    if (passedAsProp) {
       const defIds = variable.defs.map((d) => d.name);
       const refs = variable.references.filter(
         (id) => !defIds.includes(id.identifier),
@@ -391,6 +412,49 @@ export function analyzeSnippetsScope(
         (reference as any).svelteSnippetReference = true;
       }
     }
+  }
+}
+
+/**
+ * Resolve the references in the attributes of the start tag
+ * that have the same name as the snippet to the snippet.
+ */
+function resolveAttributeReferencesToSnippet(
+  startTag: SvelteStartTag,
+  variable: eslint.Scope.Variable,
+  allReferences: eslint.Scope.Reference[],
+) {
+  const attrRanges = startTag.attributes
+    .filter((attr) => attr.type !== "SvelteDirective" || attr.kind !== "Let")
+    .map((attr) => attr.range);
+  const [tagStart, tagEnd] = startTag.range;
+  for (const reference of allReferences) {
+    if (reference.identifier.name !== variable.name) continue;
+    if (reference.resolved === variable) continue;
+    const [start, end] = reference.identifier.range!;
+    if (!attrRanges.some(([s, e]) => s <= start && end <= e)) continue;
+    const resolved = reference.resolved;
+    if (
+      resolved &&
+      // A variable declared in the start tag, e.g. a parameter of an arrow function.
+      resolved.defs.some(
+        (d) => tagStart <= d.name.range![0] && d.name.range![1] <= tagEnd,
+      )
+    ) {
+      continue;
+    }
+    if (resolved) {
+      const index = resolved.references.indexOf(reference);
+      if (index >= 0) resolved.references.splice(index, 1);
+    }
+    let scope: eslint.Scope.Scope | null = reference.from;
+    while (scope) {
+      const index = scope.through.indexOf(reference);
+      if (index >= 0) scope.through.splice(index, 1);
+      scope = scope.upper;
+    }
+    reference.resolved = variable;
+    addReference(variable.references, reference);
   }
 }
 
