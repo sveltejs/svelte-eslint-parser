@@ -1,14 +1,13 @@
 import assert from "assert";
+import * as tsParser from "@typescript-eslint/parser";
 import { compile } from "svelte/compiler";
 import { parseForESLint } from "../../../src/index.js";
 import { svelteVersion } from "../../../src/parser/svelte-version.js";
-import { generateParserOptions } from "./test-utils.js";
 
 type Case = {
-  name: string;
   code: string;
   runes: boolean;
-  /** The compiler throws a runes-only error with this code. */
+  /** The compiler throws this runes-only error instead of compiling the code. */
   compileError?: string;
 };
 
@@ -17,313 +16,193 @@ function script(code: string): string {
   return `<script>\n\t${code}\n</script>\n`;
 }
 
-const cases: Case[] = [
-  // Not references.
-  { name: "object key", code: script("let o = { $state: 1 };"), runes: false },
-  {
-    name: "object method",
-    code: script("let o = { $state() {} };"),
-    runes: false,
-  },
-  {
-    name: "member property",
-    code: script("let o = {}; o.$state;"),
-    runes: false,
-  },
-  {
-    name: "class field",
-    code: script("class A { $state = 1; }"),
-    runes: false,
-  },
-  {
-    name: "class method",
-    code: script("class A { $state() {} }"),
-    runes: false,
-  },
-  {
-    name: "label",
-    code: script("$state: for (;;) break $state;"),
-    runes: false,
-  },
-  {
-    name: "label with continue",
-    code: script("$state: for (;;) continue $state;"),
-    runes: false,
-  },
-  {
-    name: "imported name",
-    code: script("import { $state as s } from 'x';"),
-    runes: false,
-  },
-  {
-    name: "exported name",
-    code: script("let a = 1; export { a as $state };"),
-    runes: false,
-  },
-  // Declared names.
-  {
-    name: "function parameter",
-    code: script("function f($state) {}"),
-    runes: false,
-  },
-  {
-    name: "each block object pattern",
-    code: "{#each [] as { $state }}{/each}\n",
-    runes: false,
-  },
-  {
-    name: "arrow function parameter",
-    code: "<button onclick={($state) => 1}></button>\n",
-    runes: false,
-  },
-  {
-    name: "function expression parameter",
-    code: "<button onclick={function ($state) {}}></button>\n",
-    runes: false,
-  },
-  {
-    name: "each block object rest",
-    code: "{#each xs as { ...$state }}{/each}\n",
-    runes: false,
-  },
-  {
-    name: "each block array pattern",
-    code: "{#each [] as [$state]}{/each}\n",
-    runes: false,
-  },
-  {
-    name: "each block rest element",
-    code: "{#each [] as [...$state]}{/each}\n",
-    runes: false,
-  },
-  {
-    name: "each block default value target",
-    code: "{#each [] as { a: $state = 1 }}{/each}\n",
-    runes: false,
-  },
-  {
-    name: "each block index",
-    code: "{#each [] as a, $state}{/each}\n",
-    runes: false,
-  },
-  {
-    name: "snippet parameter",
-    code: "{#snippet foo($state)}{/snippet}\n",
-    runes: false,
-  },
-  {
-    name: "snippet name",
-    code: "{#snippet $state()}{/snippet}\n",
-    runes: false,
-  },
-  {
-    name: "await then value",
-    code: "{#await p then $state}{/await}\n",
-    runes: false,
-  },
-  {
-    name: "await catch error",
-    code: "{#await p catch $state}{/await}\n",
-    runes: false,
-  },
-  { name: "let directive", code: "<Foo let:$state />\n", runes: false },
-  {
-    name: "let directive with pattern",
-    code: "<Foo let:a={$state} />\n",
-    runes: false,
-  },
-  {
-    name: "use of a function parameter",
-    code: script("function f($state) { return $state; }"),
-    runes: false,
-  },
-  {
-    name: "use of an arrow function parameter",
-    code: "<button onclick={($state) => $state}></button>\n",
-    runes: false,
-  },
-  {
-    name: "use of an each block index",
-    code: "{#each [] as a, $state}{$state}{/each}\n",
-    runes: false,
-  },
-  {
-    name: "use of a let directive",
-    code: "<Foo let:$state>{$state}</Foo>\n",
-    runes: false,
-  },
-  {
-    name: "render of a snippet",
-    code: "{#snippet $state()}{/snippet}{@render $state()}\n",
-    runes: false,
-  },
-  {
-    name: "const tag",
-    code: "{#if true}{@const $state = 1}{/if}\n",
-    runes: false,
-  },
-  {
-    name: "declaration tag",
-    code: "{#if true}{const $state = 1}{/if}\n",
-    runes: false,
-  },
-  // Store subscriptions.
-  {
-    name: "store subscription",
-    code: script("let state = 1; let a = $state;"),
-    runes: false,
-  },
-  {
-    name: "store subscription of a store",
-    code: script(
-      "import { writable } from 'svelte/store'; const state = writable(0); let a = $state;",
-    ),
-    runes: false,
-  },
-  {
-    name: "store subscription in the template",
-    code: "<script>\n\tlet state = 1;\n</script>\n{$state}\n",
-    runes: false,
-  },
-  {
-    name: "store subscription of a variable in the module script",
-    code: "<script module>\n\tlet state = 1;\n</script>\n<script>\n\tlet a = $state;\n</script>\n",
-    runes: false,
-  },
-  {
-    name: "store subscription of a function",
-    code: script("let effect = 1; $effect(() => {});"),
-    runes: false,
-  },
-  // References.
-  { name: "call", code: script("let a = $state(0);"), runes: true },
-  {
-    name: "object value",
-    code: script("let o = { a: $state.snapshot(1) };"),
-    runes: true,
-  },
-  {
-    name: "class field value",
-    code: script("class A { a = $state(0); }"),
-    runes: true,
-  },
-  {
-    name: "member object",
-    code: script("let o = {}; let a = o[$state.snapshot(1)];"),
-    runes: true,
-  },
-  {
-    name: "default value in a pattern",
-    code: "{#each [] as { a = $state.snapshot(1) }}{/each}\n",
-    runes: true,
-  },
-  {
-    name: "identifier default value in a pattern",
-    code: "{#each [] as { a = $state }}{/each}\n",
-    runes: true,
-  },
-  {
-    name: "computed key in a pattern",
-    code: "{#each [] as { [$state.snapshot(1)]: a }}{/each}\n",
-    runes: true,
-  },
-  {
-    name: "default value of a parameter",
-    code: script("function f(a = $state.snapshot(1)) {}"),
-    runes: true,
-  },
-  {
-    name: "computed object key",
-    code: script("let o = { [$state]: 1 };"),
-    runes: true,
-    compileError: "rune_missing_parentheses",
-  },
-  {
-    name: "computed member property",
-    code: script("let o = {}; o[$state];"),
-    runes: true,
-    compileError: "rune_invalid_computed_property",
-  },
-  {
-    name: "computed class field",
-    code: script("class A { [$state] = 1; }"),
-    runes: true,
-    compileError: "rune_missing_parentheses",
-  },
-  {
-    name: "computed class method",
-    code: script("class A { [$state]() {} }"),
-    runes: true,
-    compileError: "rune_missing_parentheses",
-  },
-  {
-    name: "action directive",
-    code: "<div use:a={$state}></div>\n",
-    runes: true,
-    compileError: "rune_missing_parentheses",
-  },
-  {
-    name: "rune with a variable that has a rune initializer",
-    code: script("let state = $state(0); let a = $state(1);"),
-    runes: true,
-  },
-  {
-    name: "rune with a variable that has a rune initializer and a member",
-    code: script("let state = $state.raw(0); let a = $state(1);"),
-    runes: true,
-  },
-  {
-    name: "$props with a variable named props",
-    code: script("let props = $props(); let id = $props.id();"),
-    runes: true,
-  },
-  {
-    name: "$derived with derived from svelte/store",
-    code: script(
-      "import { derived } from 'svelte/store'; let d = $derived(1);",
-    ),
-    runes: true,
-  },
-  {
-    name: "class expression name",
-    code: script("let C = class $state {};"),
-    runes: true,
-    compileError: "rune_missing_parentheses",
-  },
-  {
-    name: "assignment pattern",
-    code: script("let o = {}; ({ $state } = o);"),
-    runes: true,
-    compileError: "rune_missing_parentheses",
-  },
-  {
-    name: "re-exported name",
-    code: script("export { $state } from 'x';"),
-    runes: true,
-  },
-  {
-    name: "re-exported name with alias",
-    code: script("export { $state as a } from 'x';"),
-    runes: true,
-  },
-];
+/** Wraps the given code in a `<script lang="ts">` tag. */
+function ts(code: string): string {
+  return `<script lang="ts">\n\t${code}\n</script>\n`;
+}
 
-describe("Runes mode detection only counts references", () => {
+const cases: Record<string, Case[]> = {
+  "a rune name that is not a reference": [
+    { code: script("let o = { $state: 1 };"), runes: false },
+    { code: script("let o = { $state() {} };"), runes: false },
+    { code: script("let o = {}; o.$state;"), runes: false },
+    { code: script("class A { $state = 1; }"), runes: false },
+    { code: script("class A { $state() {} }"), runes: false },
+    { code: script("$state: for (;;) break $state;"), runes: false },
+    { code: script("$state: for (;;) continue $state;"), runes: false },
+    { code: script("import { $state as s } from 'x';"), runes: false },
+    { code: script("let a = 1; export { a as $state };"), runes: false },
+  ],
+  "a declared rune name": [
+    { code: script("function f($state) {}"), runes: false },
+    { code: "{#each [] as { $state }}{/each}\n", runes: false },
+    { code: "<button onclick={($state) => 1}></button>\n", runes: false },
+    {
+      code: "<button onclick={function ($state) {}}></button>\n",
+      runes: false,
+    },
+    { code: "{#each xs as { ...$state }}{/each}\n", runes: false },
+    { code: "{#each [] as [$state]}{/each}\n", runes: false },
+    { code: "{#each [] as [...$state]}{/each}\n", runes: false },
+    { code: "{#each [] as { a: $state = 1 }}{/each}\n", runes: false },
+    { code: "{#each [] as a, $state}{/each}\n", runes: false },
+    { code: "{#snippet foo($state)}{/snippet}\n", runes: false },
+    { code: "{#snippet $state()}{/snippet}\n", runes: false },
+    { code: "{#await p then $state}{/await}\n", runes: false },
+    { code: "{#await p catch $state}{/await}\n", runes: false },
+    { code: "<Foo let:$state />\n", runes: false },
+    { code: "<Foo let:a={$state} />\n", runes: false },
+    { code: script("function f($state) { return $state; }"), runes: false },
+    { code: "<button onclick={($state) => $state}></button>\n", runes: false },
+    { code: "{#each [] as a, $state}{$state}{/each}\n", runes: false },
+    { code: "<Foo let:$state>{$state}</Foo>\n", runes: false },
+    { code: "{#snippet $state()}{/snippet}{@render $state()}\n", runes: false },
+    { code: "{#if true}{@const $state = 1}{/if}\n", runes: false },
+    { code: "{#if true}{const $state = 1}{/if}\n", runes: false },
+  ],
+  "a store subscription": [
+    { code: script("let state = 1; let a = $state;"), runes: false },
+    {
+      code: script(
+        "import { writable } from 'svelte/store'; const state = writable(0); let a = $state;",
+      ),
+      runes: false,
+    },
+    { code: "<script>\n\tlet state = 1;\n</script>\n{$state}\n", runes: false },
+    {
+      code: "<script module>\n\tlet state = 1;\n</script>\n<script>\n\tlet a = $state;\n</script>\n",
+      runes: false,
+    },
+    { code: script("let effect = 1; $effect(() => {});"), runes: false },
+  ],
+  "a rune name in a TypeScript type": [
+    { code: ts("let o: $state;"), runes: false },
+    { code: ts("let o = 1 as $state;"), runes: false },
+    { code: ts("let o = 1 satisfies $state;"), runes: false },
+    { code: ts("let o = <$state>1;"), runes: false },
+    { code: ts("type T = $state;"), runes: false },
+    { code: ts("interface I { a: $state }"), runes: false },
+    {
+      code: ts("function f<T extends $state>(): $state { return 1 as any; }"),
+      runes: false,
+    },
+    { code: ts("const f = <T,>() => 1; f<$state>();"), runes: false },
+    { code: ts("const f = <T,>() => 1; const g = f<$state>;"), runes: false },
+    { code: ts("let o: typeof $state.raw;"), runes: false },
+    { code: ts("class A implements $state {}"), runes: false },
+    { code: ts("abstract class A { abstract m(): $state; }"), runes: false },
+    { code: ts("namespace N { export type X = $state; }"), runes: false },
+    { code: ts("declare let o: $state;"), runes: false },
+    { code: ts("declare let { a = $state(1) }: any;"), runes: false },
+    { code: ts("declare function f(a: $state): void;"), runes: false },
+    { code: ts("import type { $state } from './x';"), runes: false },
+    { code: ts("import { type $state } from './x';"), runes: false },
+    { code: ts("type A = 1; export type { A as $state };"), runes: false },
+  ],
+  "a rune reference": [
+    { code: script("let a = $state(0);"), runes: true },
+    { code: script("let o = { a: $state.snapshot(1) };"), runes: true },
+    { code: script("class A { a = $state(0); }"), runes: true },
+    { code: script("let o = {}; let a = o[$state.snapshot(1)];"), runes: true },
+    { code: "{#each [] as { a = $state.snapshot(1) }}{/each}\n", runes: true },
+    { code: "{#each [] as { a = $state }}{/each}\n", runes: true },
+    { code: "{#each [] as { [$state.snapshot(1)]: a }}{/each}\n", runes: true },
+    { code: script("function f(a = $state.snapshot(1)) {}"), runes: true },
+    {
+      code: script("let o = { [$state]: 1 };"),
+      runes: true,
+      compileError: "rune_missing_parentheses",
+    },
+    {
+      code: script("let o = {}; o[$state];"),
+      runes: true,
+      compileError: "rune_invalid_computed_property",
+    },
+    {
+      code: script("class A { [$state] = 1; }"),
+      runes: true,
+      compileError: "rune_missing_parentheses",
+    },
+    {
+      code: script("class A { [$state]() {} }"),
+      runes: true,
+      compileError: "rune_missing_parentheses",
+    },
+    {
+      code: "<div use:a={$state}></div>\n",
+      runes: true,
+      compileError: "rune_missing_parentheses",
+    },
+    { code: script("let state = $state(0); let a = $state(1);"), runes: true },
+    {
+      code: script("let state = $state.raw(0); let a = $state(1);"),
+      runes: true,
+    },
+    {
+      code: script("let props = $props(); let id = $props.id();"),
+      runes: true,
+    },
+    {
+      code: script(
+        "import { derived } from 'svelte/store'; let d = $derived(1);",
+      ),
+      runes: true,
+    },
+    {
+      code: script("let o = {}; ({ $state } = o);"),
+      runes: true,
+      compileError: "rune_missing_parentheses",
+    },
+  ],
+  "a rune reference in TypeScript": [
+    { code: ts("let o = $state(1);"), runes: true },
+    { code: ts("type T = number; let o = $state(1);"), runes: true },
+    { code: ts("let o = $state(1) as number;"), runes: true },
+    { code: ts("let o = $state(1) satisfies number;"), runes: true },
+    { code: ts("let o = $state(1)!;"), runes: true },
+    { code: ts("let o = <number>$state(1);"), runes: true },
+    { code: ts("let o = $state<number>(1);"), runes: true },
+    { code: ts("let o: number = $state(1);"), runes: true },
+    { code: ts("let o = ($state.snapshot<number>)(1);"), runes: true },
+    {
+      code: ts(
+        "class B {} class A extends B { constructor(override x = $state.snapshot(1)) { super(); } }",
+      ),
+      runes: true,
+    },
+    { code: ts("export = $state.snapshot(1);"), runes: true },
+    {
+      code: ts("import type { state } from './x'; let o = $state(1);"),
+      runes: true,
+    },
+    { code: ts("declare let state: number; let o = $state(1);"), runes: true },
+    {
+      code: ts("let state = $state(0) as number; let o = $state(1);"),
+      runes: true,
+    },
+  ],
+};
+
+describe("Runes mode detection from rune references", () => {
   if (!svelteVersion.gte(5)) {
     return;
   }
-  for (const { name, code, runes, compileError } of cases) {
-    it(`${name}: ${code.trim()}`, () => {
-      if (compileError) {
-        assert.throws(() => compile(code, {}), { code: compileError });
-      } else {
-        assert.strictEqual(compile(code, {}).metadata.runes, runes);
+  for (const [title, list] of Object.entries(cases)) {
+    describe(title, () => {
+      for (const { code, runes, compileError } of list) {
+        it(code.trim(), () => {
+          if (compileError) {
+            assert.throws(() => compile(code, {}), { code: compileError });
+          } else {
+            assert.strictEqual(compile(code, {}).metadata.runes, runes);
+          }
+          const result = parseForESLint(code, {
+            filePath: "test.svelte",
+            parser: { ts: tsParser },
+          });
+          assert.strictEqual(result.services.svelteParseContext.runes, runes);
+        });
       }
-      const result = parseForESLint(
-        code,
-        generateParserOptions({ filePath: "test.svelte" }),
-      );
-      assert.strictEqual(result.services.svelteParseContext.runes, runes);
     });
   }
 });

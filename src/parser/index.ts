@@ -54,8 +54,7 @@ import type { NormalizedParserOptions } from "./parser-options.js";
 import { isTypeScript, normalizeParserOptions } from "./parser-options.js";
 import { getFragmentFromRoot, getInstanceScriptRange } from "./compat.js";
 import {
-  getRuneReferences,
-  hasRunesReference,
+  hasRuneReference,
   hasTopLevelAwait,
   resolveSvelteParseContextForSvelte,
   resolveSvelteParseContextForSvelteScript,
@@ -209,11 +208,10 @@ function parseAsSvelte(
   analyzeReactiveScope(resultScript.scopeManager!);
   analyzeStoreScope(resultScript.scopeManager!, svelteParseContext); // for reactive vars
   analyzeSnippetsScope(ctx.snippets, resultScript.scopeManager!);
-  // Get them before the rune names are added as global variables.
-  const runeReferences =
-    svelteParseContext.runes == null
-      ? getRuneReferences(resultScript.scopeManager!)
-      : null;
+  // Check it before the rune names are added as global variables.
+  const runeReferenced =
+    svelteParseContext.runes == null &&
+    hasRuneReference(resultScript.scopeManager!);
 
   // Add $$xxx variable
   addGlobalVariables(
@@ -302,11 +300,7 @@ function parseAsSvelte(
       // The compiler decides if runes mode is used after parsing.
       runes:
         svelteParseContext.runes ??
-        (hasRunesReference(resultScript.ast, runeReferences!, {
-          ...KEYS,
-          ...resultScript.visitorKeys,
-        }) ||
-          hasTopLevelAwait(resultScript.ast)),
+        (runeReferenced || hasTopLevelAwait(resultScript.ast)),
     },
   });
   resultScript.visitorKeys = Object.assign({}, KEYS, resultScript.visitorKeys);
