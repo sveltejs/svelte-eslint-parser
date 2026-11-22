@@ -3672,6 +3672,63 @@ void picked;`;
       }
     }
 
+    it("infers from text and boolean attributes as svelte2tsx does", () => {
+      const component = `<script lang="ts" generics="T extends string, B extends boolean = false">
+  import type { Snippet } from "svelte";
+  let { variant, flag, children }: {
+    variant: T;
+    flag?: B;
+    children?: Snippet<[T, B]>;
+  } = $props();
+</script>`;
+      for (const [template, errors] of [
+        [
+          `<Foo variant="primary" flag>
+  {#snippet children(v, f)}{((x: "primary", y: true) => x)(v, f)}{/snippet}
+</Foo>`,
+          [],
+        ],
+        [
+          `<Foo variant="a&amp;b">
+  {#snippet children(v)}{((x: "a&b") => x)(v)}{/snippet}
+</Foo>`,
+          [],
+        ],
+        // Text mixed with an expression is not a literal.
+        [
+          `<Foo variant="a{"b"}">
+  {#snippet children(v)}{((x: "ab") => x)(v)}{/snippet}
+</Foo>`,
+          [2345],
+        ],
+      ] as const) {
+        const diagnostics = realResolutionDiagnostics(component, "", {
+          template,
+        }).filter((d) => d.code !== 2695);
+        assert.deepStrictEqual(
+          diagnostics.map((d) => d.code),
+          errors,
+          diagnostics
+            .map((d) => ts.flattenDiagnosticMessageText(d.messageText, " "))
+            .join("\n"),
+        );
+      }
+    });
+
+    it("does not pass `bind:this` as a prop", () => {
+      const template = `<Foo rows={users} bind:this={ref} />`;
+      const translated = translate(
+        `<script lang="ts">
+  import Foo from "./Foo.svelte";
+  const users = [{ name: "a" }];
+  let ref: unknown;
+</script>
+${template}`,
+      );
+      const call = /\.m\(\{(.*?)\}\);/.exec(translated)?.[1];
+      assert.strictEqual(call, `"rows":(users)`, translated);
+    });
+
     it("leaves no trace of the props scope in the generic component's scopes", () => {
       const result = parseComponent(interfaceComponent);
       const scopeManager = result.scopeManager;

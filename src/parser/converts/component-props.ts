@@ -41,16 +41,32 @@ export function prepareGenericComponentProps(
   const entries: string[] = [];
   for (const attr of node.attributes as Compiler.Component["attributes"]) {
     if (attr.type === "Attribute") {
-      const value = Array.isArray(attr.value)
-        ? attr.value.length === 1
+      const key = JSON.stringify(attr.name);
+      const value =
+        Array.isArray(attr.value) && attr.value.length === 1
           ? attr.value[0]
-          : null
-        : attr.value;
-      if (value !== true && value?.type === "ExpressionTag") {
-        pushEntry(JSON.stringify(attr.name), value.expression);
+          : attr.value;
+      if (value === true) {
+        // `<Foo flag>`, as svelte2tsx passes it.
+        entries.push(`${key}:true`);
+      } else if (!Array.isArray(value) && value.type === "ExpressionTag") {
+        pushEntry(key, value.expression);
+      } else {
+        // A plain text value is a string literal; text mixed with
+        // expressions is left out.
+        const parts = Array.isArray(value) ? value : [value];
+        if (parts.every((part) => part.type === "Text")) {
+          entries.push(
+            `${key}:${JSON.stringify(parts.map((part) => part.data).join(""))}`,
+          );
+        }
       }
     } else if (attr.type === "BindDirective") {
-      if (attr.expression.type !== "SequenceExpression") {
+      // `bind:this` binds the instance, not a prop.
+      if (
+        attr.name !== "this" &&
+        attr.expression.type !== "SequenceExpression"
+      ) {
         pushEntry(JSON.stringify(attr.name), attr.expression);
       }
     } else if (attr.type === "SpreadAttribute") {
