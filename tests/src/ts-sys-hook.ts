@@ -441,6 +441,11 @@ describeSvelte5("synthetic component default export (runes, Svelte 5)", () => {
       code,
       /\$\$genericProps<const T extends readonly string\[\]>\(/u,
     );
+    // A type alias does not accept it.
+    assert.match(
+      code,
+      /type \$_svelteComponent\d+<T extends readonly string\[\] = /u,
+    );
   });
 
   it("references `generics` type parameters in the recovered props type", () => {
@@ -3738,6 +3743,32 @@ void picked;`;
           [2345],
         ],
       ] as const) {
+        const diagnostics = realResolutionDiagnostics(component, "", {
+          template,
+        }).filter((d) => d.code !== 2695);
+        assert.deepStrictEqual(
+          diagnostics.map((d) => d.code),
+          errors,
+          diagnostics
+            .map((d) => ts.flattenDiagnosticMessageText(d.messageText, " "))
+            .join("\n"),
+        );
+      }
+    });
+
+    it("infers literal types for a `const` type parameter", () => {
+      const template = `<Foo items={["a", "b"]}>
+  {#snippet children(item)}{((x: "a" | "b") => x)(item)}{/snippet}
+</Foo>`;
+      for (const [modifier, errors] of [
+        ["const ", []],
+        // Without the modifier, `T` is inferred as `string[]`.
+        ["", [2345]],
+      ] as const) {
+        const component = `<script lang="ts" generics="${modifier}T extends readonly string[]">
+  import type { Snippet } from "svelte";
+  let { items, children }: { items: T; children?: Snippet<[T[number]]> } = $props();
+</script>`;
         const diagnostics = realResolutionDiagnostics(component, "", {
           template,
         }).filter((d) => d.code !== 2695);
