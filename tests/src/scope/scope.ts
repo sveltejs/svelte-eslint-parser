@@ -81,4 +81,28 @@ describe("context.getScope", () => {
       "function",
     );
   });
+
+  it("returns the outer scope for the attributes of a component with `let:`", () => {
+    generateScopeTestCase(
+      "<script>let message;</script><C {message} let:message>{message}</C>",
+      "SvelteShorthandAttribute > Identifier",
+      "module",
+    );
+  });
+
+  it("returns the `let:` scope for the children of a component with `let:`", () => {
+    generateScopeTestCase(
+      "<script>let message;</script><C {message} let:message>{message}</C>",
+      "SvelteElement > SvelteMustacheTag > Identifier",
+      "function",
+    );
+  });
+
+  it("returns the `let:` scope for the attributes of a component with `slot` and `let:`", () => {
+    generateScopeTestCase(
+      '<O><C slot="a" title={x} let:x>{x}</C></O>',
+      "SvelteAttribute Identifier",
+      "function",
+    );
+  });
 });
