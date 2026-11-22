@@ -17,8 +17,6 @@ import { ScriptLetContext } from "./script-let.js";
 import { LetDirectiveCollections } from "./let-directive-collection.js";
 import { parseAttributes } from "../parser/html.js";
 import { sortedLastIndex } from "../utils/index.js";
-import { traverseNodes } from "../traverse.js";
-import type { ESLintExtendedProgram } from "../parser/index.js";
 import {
   isTypeScript,
   type NormalizedParserOptions,
@@ -41,10 +39,15 @@ export class ScriptsSourceCode {
 
   public separateIndexes: number[] = [];
 
+  /** Whether line breaks were put between script blocks on the same line. */
+  public readonly hasInsertedLineBreaks: boolean;
+
   public constructor(
     script: string,
     attrs: Record<string, string | undefined>,
+    hasInsertedLineBreaks = false,
   ) {
+    this.hasInsertedLineBreaks = hasInsertedLineBreaks;
     this.raw = script;
     this.trimmedRaw = script.trimEnd();
     this.attrs = attrs;
@@ -181,12 +184,6 @@ export class Context {
 
   private readonly blocks: Block[] = [];
 
-  /**
-   * `true` if a line break that is not in the original code was put in the script code.
-   * Then the locations from the script parser are wrong and must be computed again.
-   */
-  public readonly scriptLineBreakInserted: boolean = false;
-
   public constructor(code: string, parserOptions: NormalizedParserOptions) {
     this.code = code;
     this.parserOptions = parserOptions;
@@ -199,6 +196,8 @@ export class Context {
     const scriptAttrs: Record<string, string | undefined> = {};
 
     let start = 0;
+    let lastScriptEnd: number | null = null;
+    let hasInsertedLineBreaks = false;
     for (const block of extractBlocks(code)) {
       if (block.tag === "template") {
         if (block.selfClosing) {
@@ -239,9 +238,20 @@ export class Context {
           code.slice(start, block.contentRange[0]) +
           spaces.slice(block.contentRange[0], block.contentRange[1]);
         if (block.tag === "script") {
-          scriptCode +=
-            spaces.slice(start, block.contentRange[0]) +
-            code.slice(...block.contentRange);
+          let before = spaces.slice(start, block.contentRange[0]);
+          if (
+            lastScriptEnd != null &&
+            !/[\n\r\u2028\u2029]/u.test(
+              spaces.slice(lastScriptEnd, block.contentRange[0]),
+            )
+          ) {
+            // Script blocks on the same line would run into each other, so put
+            // a line break between them. The locations are fixed after parsing.
+            before = `\n${before.slice(1)}`;
+            hasInsertedLineBreaks = true;
+          }
+          scriptCode += before + code.slice(...block.contentRange);
+          lastScriptEnd = block.contentRange[1];
           for (const attr of block.attrs) {
             if (Array.isArray(attr.value)) {
               const attrValue = attr.value[0];
@@ -260,26 +270,13 @@ export class Context {
     templateCode += code.slice(start);
     scriptCode += spaces.slice(start);
 
-    // When two scripts are on the same line, the code of the second one is
-    // on the same line as the end of the first one. So a line comment at the
-    // end of the first script would hide the second script.
-    // Put a line break in place of the `<` of the first `</script>`.
-    let prevScriptEnd: number | null = null;
-    for (const block of this.blocks) {
-      if (block.tag !== "script" || block.selfClosing) continue;
-      if (
-        prevScriptEnd != null &&
-        !/[\n\r]/u.test(scriptCode.slice(prevScriptEnd, block.contentRange[0]))
-      ) {
-        scriptCode = `${scriptCode.slice(0, prevScriptEnd)}\n${scriptCode.slice(prevScriptEnd + 1)}`;
-        this.scriptLineBreakInserted = true;
-      }
-      prevScriptEnd = block.contentRange[1];
-    }
-
     this.sourceCode = {
       template: templateCode,
-      scripts: new ScriptsSourceCode(scriptCode, scriptAttrs),
+      scripts: new ScriptsSourceCode(
+        scriptCode,
+        scriptAttrs,
+        hasInsertedLineBreaks,
+      ),
     };
     this.scriptLet = new ScriptLetContext(this);
   }
@@ -385,34 +382,6 @@ export class Context {
           block.startTagRange[1] <= element.startTag.range[1],
       ),
     );
-  }
-
-  /**
-   * If a line break was put in the script code, compute the locations of the script again from the ranges.
-   */
-  public fixScriptLocations(result: ESLintExtendedProgram): void {
-    if (!this.scriptLineBreakInserted) return;
-    const traversed = new Set<unknown>();
-    traverseNodes(result.ast, {
-      visitorKeys: result.visitorKeys,
-      enterNode: (node) => {
-        if (traversed.has(node) || !node.range) return;
-        traversed.add(node);
-        node.loc = this.getConvertLocation({
-          start: node.range[0],
-          end: node.range[1],
-        }).loc;
-      },
-      leaveNode() {
-        // noop
-      },
-    });
-    for (const t of [...result.ast.tokens, ...result.ast.comments]) {
-      t.loc = this.getConvertLocation({
-        start: t.range[0],
-        end: t.range[1],
-      }).loc;
-    }
   }
 
   /**
