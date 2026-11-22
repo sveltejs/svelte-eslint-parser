@@ -62,3 +62,22 @@ describe("Check for AST.", () => {
     });
   }
 });
+
+describe("styleNodeRange", () => {
+  it("should cover exactly the source text of each style node.", () => {
+    const code = "<style>\n/* c */ .a { color: red; }\n</style>";
+    const { services } = parse(code, "test.svelte", {});
+    const styleContext = services.getStyleContext();
+    assert.strictEqual(styleContext.status, "success");
+    const slices: [string, string][] = [];
+    styleContext.sourceAst.walk((node: Node) => {
+      const [start, end] = services.styleNodeRange(node);
+      slices.push([node.type, code.slice(start, end)]);
+    });
+    assert.deepStrictEqual(slices, [
+      ["comment", "/* c */"],
+      ["rule", ".a { color: red; }"],
+      ["decl", "color: red;"],
+    ]);
+  });
+});

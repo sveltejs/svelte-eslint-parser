@@ -138,7 +138,7 @@ export function styleNodeRange(
   }
   return [
     node.source.start !== undefined ? node.source.start.offset : undefined,
-    node.source.end !== undefined ? node.source.end.offset + 1 : undefined,
+    node.source.end !== undefined ? node.source.end.offset : undefined,
   ];
 }
 
