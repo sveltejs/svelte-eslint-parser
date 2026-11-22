@@ -306,13 +306,35 @@ function getSelectorSourceOffsets(
   const raws = rule.raws.selector as { raw: string; scss?: string } | undefined;
   // postcss-scss keeps the source text in `scss` when it changes `raw`.
   const source = raws ? (raws.scss ?? raws.raw) : selector;
-  if (source !== selector && code.startsWith(source, ruleStart)) {
-    const offsets = getOffsetsWithoutRemovedComments(source, selector, isSCSS);
-    if (offsets !== null) {
-      return offsets;
-    }
+  if (source === selector || !code.startsWith(source, ruleStart)) {
+    return Array.from({ length: selector.length + 1 }, (_, index) => index);
   }
-  return Array.from({ length: selector.length + 1 }, (_, index) => index);
+  return (
+    getOffsetsWithoutRemovedComments(source, selector, isSCSS) ??
+    getOffsetsFromLineStarts(source, selector)
+  );
+}
+
+/**
+ * Gets the offset in the source text of each character in `rule.selector` and
+ * of its end, by taking each line start from the source text.
+ * This is only right when no comment is removed before a character on the same line.
+ */
+function getOffsetsFromLineStarts(source: string, selector: string): number[] {
+  const sourceLineStartIndices = getPostCSSLineStartIndices(source);
+  const offsets: number[] = [];
+  let line = 0;
+  let lineStart = 0;
+  for (let index = 0; index <= selector.length; index++) {
+    if (index > 0 && selector[index - 1] === "\n") {
+      line++;
+      lineStart = index;
+    }
+    offsets.push(
+      (sourceLineStartIndices[line] ?? lineStart) + index - lineStart,
+    );
+  }
+  return offsets;
 }
 
 /**
