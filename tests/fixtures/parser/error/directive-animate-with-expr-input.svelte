@@ -17,6 +17,6 @@
 	<li animate:foo.flip>{item}</li>
 {/each}
 
-<!-- Treat it as a compile error, as it will be a run-time error. -->
+<!-- In Svelte 3 and 4, treat it as a compile error, as it will be a run-time error. Svelte 5 supports it. -->
 
 <!-- https://svelte.dev/repl/d761c6514ec94909b76524585d72ed88?version=3.52.0 -->

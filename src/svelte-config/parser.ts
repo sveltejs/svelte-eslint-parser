@@ -65,6 +65,27 @@ function parseSvelteConfigExpression(
     if (runes?.value != null) {
       result.compilerOptions.runes = Boolean(runes.value);
     }
+    const experimental = compilerOptions.getProperty("experimental");
+    if (experimental?.type === EvaluatedType.object) {
+      const experimentalResult: Record<string, unknown> = {};
+      const async = experimental.getProperty("async")?.getStatic();
+      if (typeof async?.value === "boolean") {
+        experimentalResult.async = async.value;
+      }
+      // Functions are not evaluated. Only `true` or a string is read.
+      const customRenderer = experimental
+        .getProperty("customRenderer")
+        ?.getStatic();
+      if (
+        customRenderer?.value === true ||
+        typeof customRenderer?.value === "string"
+      ) {
+        experimentalResult.customRenderer = customRenderer.value;
+      }
+      if (Object.keys(experimentalResult).length) {
+        result.compilerOptions.experimental = experimentalResult as never;
+      }
+    }
   }
   const kit = evaluated.getProperty("kit");
   if (kit?.type === EvaluatedType.object) {
