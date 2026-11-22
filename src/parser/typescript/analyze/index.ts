@@ -23,9 +23,11 @@ import type { NormalizedParserOptions } from "../../parser-options.js";
 import { setParent } from "../set-parent.js";
 import { getGlobalsForSvelte, globalsForRunes } from "../../globals.js";
 import type { SvelteParseContext } from "../../svelte-parse-context.js";
-import { hasRunesSymbol } from "../../svelte-parse-context.js";
 import { withoutProjectParserOptions } from "../../parser-options.js";
-import { appendComponentDefaultExport } from "./component.js";
+import {
+  appendComponentDefaultExport,
+  getInstanceStatements,
+} from "./component.js";
 
 export type AnalyzeTypeScriptContext = {
   slots: Set<SvelteHTMLElement>;
@@ -810,6 +812,7 @@ function* analyzeBindableProps(
  * component can pass any value of the declared type. So assign a value of type
  * `any` to the prop right after its declaration to reset the narrowing.
  * e.g. `export let x: T = undefined;` -> `export let x: T = undefined;x = $_any;`
+ * svelte2tsx does the same in `propTypeAssertToUserDefined()`.
  */
 function analyzeLegacyProps(
   result: TSESParseForESLintResult,
@@ -817,18 +820,20 @@ function analyzeLegacyProps(
   svelteParseContext: SvelteParseContext,
   ctx: VirtualTypeScriptContext,
 ): TransformInfo[] {
-  if (!instanceScriptRange) return [];
-  // In Runes mode, `export` declares component exports, not props.
-  if (svelteParseContext.runes ?? hasRunesSymbol(result.ast as never)) {
+  // In runes mode, `export` declares component exports, not props.
+  if (svelteParseContext.runes === true) {
     return [];
   }
-  const [start, end] = instanceScriptRange;
-  const statements = result.ast.body.filter(
-    (node) => start <= node.range[0] && node.range[1] <= end,
-  );
+  const statements = getInstanceStatements(result, instanceScriptRange);
 
-  const propNames = new Map<TSESTree.Node, string[]>();
-  const declarations = new Map<string, TSESTree.VariableDeclaration>();
+  const propNames = new Map<TSESTree.ProgramStatement, Set<string>>();
+  const localDeclarators = new Map<
+    string,
+    {
+      statement: TSESTree.VariableDeclaration;
+      declarator: TSESTree.VariableDeclarator;
+    }
+  >();
   for (const statement of statements) {
     const declaration =
       statement.type === "ExportNamedDeclaration"
@@ -840,36 +845,33 @@ function analyzeLegacyProps(
     ) {
       continue;
     }
-    const names = declaration.declarations.flatMap((decl) => [
-      ...extractIdentifierNames(decl.id),
-    ]);
-    if (statement.type === "ExportNamedDeclaration") {
-      propNames.set(statement, names);
-    }
-    for (const name of names) {
-      declarations.set(name, declaration);
+    for (const declarator of declaration.declarations) {
+      for (const name of extractIdentifierNames(declarator.id)) {
+        if (statement.type === "ExportNamedDeclaration") {
+          addPropName(statement, name);
+        } else {
+          localDeclarators.set(name, { statement: declaration, declarator });
+        }
+      }
     }
   }
-  // Process for `let x; export { x }`.
+  // Process for `let x; export { x as y }`.
   for (const statement of statements) {
     if (
       statement.type !== "ExportNamedDeclaration" ||
       statement.declaration ||
-      statement.source
+      statement.source ||
+      statement.exportKind === "type"
     ) {
       continue;
     }
     for (const specifier of statement.specifiers) {
       if (specifier.local.type !== "Identifier") continue;
-      const declaration = declarations.get(specifier.local.name);
-      if (!declaration) continue;
-      // Skip `export let x; export { x as y }`
-      if (declaration.parent?.type === "ExportNamedDeclaration") continue;
-      const names = propNames.get(declaration) ?? [];
-      if (!names.includes(specifier.local.name)) {
-        names.push(specifier.local.name);
-      }
-      propNames.set(declaration, names);
+      const local = localDeclarators.get(specifier.local.name);
+      // TypeScript types `let x;`, `let x = null;` and `let x = [];` from
+      // their assignments, so assigning `any` would make them `any`.
+      if (!local || isAutoTypedDeclarator(local.declarator)) continue;
+      addPropName(local.statement, specifier.local.name);
     }
   }
   if (!propNames.size) return [];
@@ -901,7 +903,7 @@ function analyzeLegacyProps(
       ctx.appendOriginal(node.range[1]);
       const separator = ctx.script.trimEnd().endsWith(";") ? "" : ";";
       ctx.appendVirtualScript(
-        `${separator}${names.map((name) => `${name} = ${anyId};`).join("")}`,
+        `${separator}${[...names].map((name) => `${name} = ${anyId};`).join("")}`,
       );
       for (const name of names) {
         ctx.restoreContext.addRestoreStatementProcess((node, result) => {
@@ -921,6 +923,34 @@ function analyzeLegacyProps(
       }
     },
   }));
+
+  /** Add the prop name declared by the given statement. */
+  function addPropName(statement: TSESTree.ProgramStatement, name: string) {
+    let names = propNames.get(statement);
+    if (!names) {
+      names = new Set();
+      propNames.set(statement, names);
+    }
+    names.add(name);
+  }
+
+  /**
+   * Checks whether TypeScript types the given variable from its assignments.
+   * This is close to `isAutoTypedVariable()` in TypeScript. An exported
+   * variable is never auto-typed.
+   */
+  function isAutoTypedDeclarator(declarator: TSESTree.VariableDeclarator) {
+    if (declarator.id.type !== "Identifier" || declarator.id.typeAnnotation) {
+      return false;
+    }
+    const init = declarator.init;
+    return (
+      !init ||
+      (init.type === "Literal" && init.value === null) ||
+      (init.type === "Identifier" && init.name === "undefined") ||
+      (init.type === "ArrayExpression" && !init.elements.length)
+    );
+  }
 
   /** Extract identifier names from the given pattern. */
   function* extractIdentifierNames(node: TSESTree.Node): Iterable<string> {

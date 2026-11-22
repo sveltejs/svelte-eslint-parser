@@ -1,3 +1,5 @@
+<svelte:options runes />
+
 <script lang="ts">
   // Runes mode: `export` declares component exports, not props.
   let { n }: { n: number } = $props();
