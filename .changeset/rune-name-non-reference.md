@@ -2,4 +2,4 @@
 "svelte-eslint-parser": patch
 ---
 
-fix: do not turn on runes mode for a rune name that is not a reference, such as an object key, a member property, a label or the name in a declaration
+fix: decide on runes mode from the rune references that Svelte counts, so a rune name that is not a reference, a declared rune name or a rune name in a TypeScript type does not turn on runes mode

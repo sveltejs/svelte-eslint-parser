@@ -6,7 +6,12 @@ import { compilerVersion, svelteVersion } from "./svelte-version.js";
 import type { SvelteConfig } from "../svelte-config/index.js";
 import { traverseNodes } from "../traverse.js";
 import type { ESLintProgram } from "./index.js";
-import type { SvelteScriptElement } from "../ast/index.js";
+import type { SvelteProgram, SvelteScriptElement } from "../ast/index.js";
+import type * as ESTree from "estree";
+import type { Scope } from "eslint";
+import type { VisitorKeys } from "eslint-visitor-keys";
+
+type ScopeManager = Scope.ScopeManager;
 
 const runeSymbols: string[] = [
   "$state",
@@ -94,134 +99,128 @@ function isRunesAsParseContext(
   return undefined;
 }
 
-export function hasRunesSymbol(ast: ESLintProgram): boolean {
-  const bindingTargets = new Set<unknown>();
-  let hasRuneSymbol = false;
+/**
+ * Gets the identifiers of the rune references that are not declared anywhere.
+ * Svelte turns on runes mode for such a reference.
+ * Call this before the rune names are added to the global scope.
+ */
+export function getRuneReferences(
+  scopeManager: ScopeManager,
+): Set<ESTree.Identifier> {
+  const identifiers = new Set<ESTree.Identifier>();
+  for (const reference of scopeManager.globalScope!.through) {
+    if (
+      runeSymbols.includes(reference.identifier.name) &&
+      // A type reference from `@typescript-eslint/scope-manager`.
+      (reference as { isValueReference?: boolean }).isValueReference !== false
+    ) {
+      identifiers.add(reference.identifier);
+    }
+  }
+  return identifiers;
+}
+
+/**
+ * Checks whether the component has a rune reference that Svelte counts.
+ * `runeReferences` comes from `getRuneReferences`.
+ * `visitorKeys` must include the keys of the TypeScript nodes, such as `typeAnnotation`.
+ */
+export function hasRunesReference(
+  ast: ESLintProgram,
+  runeReferences: Set<ESTree.Identifier>,
+  visitorKeys: VisitorKeys,
+): boolean {
+  if (hasRuneReExport(ast)) {
+    return true;
+  }
+  if (!runeReferences.size) {
+    return false;
+  }
+  // Svelte removes the TypeScript types before it decides on runes mode.
+  const referencesInTypes = new Set<unknown>();
+  let typeOnlyNode: unknown = null;
   traverseNodes(ast, {
-    enterNode(node, parent) {
-      if (hasRuneSymbol) {
-        return;
+    visitorKeys,
+    enterNode(node) {
+      if (typeOnlyNode) {
+        if (runeReferences.has(node as ESTree.Identifier)) {
+          referencesInTypes.add(node);
+        }
+      } else if (isTypeOnlyNode(node)) {
+        typeOnlyNode = node;
       }
-      if (
-        node.type === "Identifier" &&
-        runeSymbols.includes(node.name) &&
-        isReference(node, parent) &&
-        !bindingTargets.has(node)
-      ) {
-        hasRuneSymbol = true;
-      }
-      collectBindingTargets(node, bindingTargets);
     },
-    leaveNode() {
-      // do nothing
+    leaveNode(node) {
+      if (typeOnlyNode === node) {
+        typeOnlyNode = null;
+      }
     },
   });
-
-  return hasRuneSymbol;
-}
-
-/**
- * Checks whether the given identifier is a reference.
- * Svelte only counts references when it decides on runes mode.
- * This follows `is_reference` from the `is-reference` package used by `svelte/compiler`.
- */
-function isReference(node: any, parent: any): boolean {
-  switch (parent?.type) {
-    // `bar` in `foo.bar`
-    case "MemberExpression":
-      return parent.computed || node === parent.object;
-    // `foo` in `class { foo() {} }`
-    case "MethodDefinition":
-      return parent.computed;
-    // `meta` in `import.meta`
-    case "MetaProperty":
-      return parent.meta === node;
-    // `foo` in `class { foo = bar }` and `bar` in `{ bar: foo }`
-    case "PropertyDefinition":
-    case "Property":
-      return parent.computed || node === parent.value;
-    // `bar` in `export { foo as bar }` and `foo` in `import { foo as bar }`
-    case "ExportSpecifier":
-    case "ImportSpecifier":
-      return node === parent.local;
-    // `foo` in `foo: while (...) { break foo; }`
-    case "LabeledStatement":
-    case "BreakStatement":
-    case "ContinueStatement":
-      return false;
-    default:
+  for (const identifier of runeReferences) {
+    if (!referencesInTypes.has(identifier)) {
       return true;
+    }
   }
+  return false;
 }
 
 /**
- * Adds the patterns that the given node declares to `bindingTargets`.
- * Svelte declares these names, so it does not count them as references.
- * Default values and computed keys inside the patterns are not added.
+ * Checks whether a script re-exports a rune name, such as `export { $state } from 'x'`.
+ * The local name of the specifier is not a reference in the scope analysis,
+ * but Svelte counts it because `is_reference` from `is-reference` returns `true` for it.
  */
-function collectBindingTargets(node: any, bindingTargets: Set<unknown>): void {
-  const targets: unknown[] = [];
-  switch (node.type) {
-    case "VariableDeclarator":
-      targets.push(node.id);
-      break;
-    case "FunctionDeclaration":
-    case "FunctionExpression":
-    case "ArrowFunctionExpression":
-      targets.push(node.id, ...node.params);
-      break;
-    // `ClassExpression` is not here, because Svelte does not declare its name.
-    case "ClassDeclaration":
-      targets.push(node.id);
-      break;
-    case "CatchClause":
-      targets.push(node.param);
-      break;
-    case "SvelteEachBlock":
-      targets.push(node.context, node.index);
-      break;
-    case "SvelteSnippetBlock":
-      targets.push(node.id, ...node.params);
-      break;
-    case "SvelteAwaitThenBlock":
-      targets.push(node.value);
-      break;
-    case "SvelteAwaitCatchBlock":
-      targets.push(node.error);
-      break;
-    case "SvelteDirective":
-      if (node.kind === "Let") targets.push(node.expression);
-      break;
-    default:
-      if (bindingTargets.has(node)) {
-        targets.push(...getPatternChildren(node));
+function hasRuneReExport(ast: ESLintProgram): boolean {
+  // The scripts are moved into the `SvelteScriptElement`s at this point.
+  for (const element of (ast as unknown as SvelteProgram).body) {
+    if (element.type !== "SvelteScriptElement") {
+      continue;
+    }
+    for (const statement of element.body) {
+      if (
+        statement.type === "ExportNamedDeclaration" &&
+        statement.source &&
+        !isTypeOnlyNode(statement) &&
+        statement.specifiers.some(
+          (specifier) =>
+            !isTypeOnlyNode(specifier) &&
+            specifier.local.type === "Identifier" &&
+            runeSymbols.includes(specifier.local.name),
+        )
+      ) {
+        return true;
       }
-      break;
+    }
   }
-  for (const target of targets) {
-    if (target) bindingTargets.add(target);
-  }
+  return false;
 }
 
 /**
- * Gets the child patterns of the given pattern that are also declared.
- * Default values and computed keys are not included.
+ * TypeScript nodes that hold a JavaScript expression.
+ * Svelte keeps the expression and removes the type.
  */
-function getPatternChildren(node: any): unknown[] {
-  switch (node.type) {
-    case "ObjectPattern":
-      return node.properties.map((property: any) =>
-        property.type === "Property" ? property.value : property,
-      );
-    case "ArrayPattern":
-      return node.elements;
-    case "RestElement":
-      return [node.argument];
-    case "AssignmentPattern":
-      return [node.left];
-    default:
-      return [];
+const tsNodesWithExpression = new Set<string>([
+  "TSAsExpression",
+  "TSSatisfiesExpression",
+  "TSNonNullExpression",
+  "TSTypeAssertion",
+  "TSInstantiationExpression",
+  "TSParameterProperty",
+  "TSExportAssignment",
+]);
+
+/**
+ * Checks whether the given node is removed with the TypeScript types.
+ * See `remove_typescript_nodes` in `svelte/compiler`.
+ */
+function isTypeOnlyNode(node: any): boolean {
+  if (node.type.startsWith("TS")) {
+    return !tsNodesWithExpression.has(node.type);
   }
+  return (
+    node.declare === true ||
+    node.importKind === "type" ||
+    node.exportKind === "type"
+  );
 }
 
 const functionTypes = new Set([

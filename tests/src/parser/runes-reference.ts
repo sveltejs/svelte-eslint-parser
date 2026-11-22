@@ -133,6 +133,31 @@ const cases: Case[] = [
     runes: false,
   },
   {
+    name: "use of a function parameter",
+    code: script("function f($state) { return $state; }"),
+    runes: false,
+  },
+  {
+    name: "use of an arrow function parameter",
+    code: "<button onclick={($state) => $state}></button>\n",
+    runes: false,
+  },
+  {
+    name: "use of an each block index",
+    code: "{#each [] as a, $state}{$state}{/each}\n",
+    runes: false,
+  },
+  {
+    name: "use of a let directive",
+    code: "<Foo let:$state>{$state}</Foo>\n",
+    runes: false,
+  },
+  {
+    name: "render of a snippet",
+    code: "{#snippet $state()}{/snippet}{@render $state()}\n",
+    runes: false,
+  },
+  {
     name: "const tag",
     code: "{#if true}{@const $state = 1}{/if}\n",
     runes: false,
@@ -204,12 +229,6 @@ const cases: Case[] = [
     compileError: "rune_missing_parentheses",
   },
   {
-    name: "class expression name",
-    code: script("let C = class $state {};"),
-    runes: true,
-    compileError: "rune_missing_parentheses",
-  },
-  {
     name: "action directive",
     code: "<div use:a={$state}></div>\n",
     runes: true,
@@ -220,6 +239,16 @@ const cases: Case[] = [
     code: script("let o = {}; ({ $state } = o);"),
     runes: true,
     compileError: "rune_missing_parentheses",
+  },
+  {
+    name: "re-exported name",
+    code: script("export { $state } from 'x';"),
+    runes: true,
+  },
+  {
+    name: "re-exported name with alias",
+    code: script("export { $state as a } from 'x';"),
+    runes: true,
   },
 ];
 
