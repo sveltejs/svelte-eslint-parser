@@ -340,7 +340,7 @@ export class Context {
         ? "script"
         : element.type === "SvelteStyleElement"
           ? "style"
-          : (element.name as SvelteName).name.toLowerCase();
+          : (element.name as SvelteName).name;
     return this.blocks.find(
       (block) =>
         block.tag === tag &&

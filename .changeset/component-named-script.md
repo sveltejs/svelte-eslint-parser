@@ -2,4 +2,4 @@
 "svelte-eslint-parser": patch
 ---
 
-fix: do not treat components named `Script`, `Style` or `Template` as blocks, and match closing tags such as `</script>` case-sensitively like Svelte
+fix: match `<script>`, `<style>` and `<template>` tags case-sensitively like Svelte, so a component named `Script`, `Style` or `Template` is not parsed as a block
