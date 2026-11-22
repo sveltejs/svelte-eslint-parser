@@ -289,7 +289,7 @@ function parseAsSvelte(
       if (cached !== undefined) {
         return cached;
       }
-      const ast = parseSelector(rule);
+      const ast = parseSelector(rule, ctx);
       selectorASTs.set(rule, ast);
       return ast;
     },
