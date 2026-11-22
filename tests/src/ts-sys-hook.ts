@@ -3786,7 +3786,7 @@ describeSvelte5("generic component used as a type", () => {
   export function clear(): void {}
 </script>
 <p>{items.length}</p>`;
-  for (const { name, consumer, errors } of [
+  for (const { name, consumer, errors, generics, template } of [
     {
       name: "accepts type arguments",
       consumer: `type Row = { id: string; name: string };
@@ -3815,9 +3815,58 @@ generator?.clear();`,
 void generator;`,
       errors: [2344],
     },
-  ]) {
+    {
+      name: "is usable in a component script",
+      consumer: `type Row = { id: string; name: string };
+const rows: Row[] = [];
+let generator = $state<Foo<Row>>();
+const reset = () => generator?.clear();
+void reset;`,
+      template: `<Foo items={rows} />`,
+      errors: [],
+    },
+    {
+      name: "keeps the bare name valid when a constraint reads a later parameter",
+      generics: "T extends U, U extends { id: string }",
+      consumer: `let generator: Foo | undefined;
+const props: import("svelte").ComponentProps<Foo<{ id: "a" }, { id: string }>> = { items: [{ id: "a" }] };
+const bad: import("svelte").ComponentProps<Foo<{ id: "a" }, { id: string }>> = { items: [1] };
+void generator;
+void props;
+void bad;`,
+      errors: [2322],
+    },
+    {
+      name: "keeps the bare name typed when a constraint reads its own parameter",
+      generics: "T extends { id: string; children?: T[] }",
+      consumer: `let generator: Foo | undefined;
+const bad: import("svelte").ComponentProps<Foo> = { items: [1] };
+void generator;
+void bad;`,
+      errors: [2322],
+    },
+    {
+      name: "keeps a default written in the attribute",
+      generics: "T extends { id: string } = { id: string; name: string }",
+      consumer: `const props: import("svelte").ComponentProps<Foo> = { items: [{ id: "a" }] };
+void props;`,
+      errors: [2741],
+    },
+  ] as {
+    name: string;
+    consumer: string;
+    errors: number[];
+    generics?: string;
+    template?: string;
+  }[]) {
     it(name, () => {
-      const diagnostics = realResolutionDiagnostics(component, consumer);
+      const diagnostics = realResolutionDiagnostics(
+        generics == null
+          ? component
+          : component.replace(/generics="[^"]*"/u, `generics="${generics}"`),
+        consumer,
+        { template },
+      );
       assert.deepStrictEqual(
         diagnostics.map((d) => d.code),
         errors,

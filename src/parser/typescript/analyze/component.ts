@@ -18,8 +18,13 @@ export const GENERIC_PROPS_INFERENCE_KEY = "$$genericProps";
 export type InstanceGenerics = {
   text: string;
   names: string[];
-  /** The parameters with a default each, for a type alias. */
-  defaultedText: string;
+  params: {
+    name: string;
+    constraint: string | null;
+    default: string | null;
+    /** Whether the constraint reads a later type parameter. */
+    readsLaterParameter: boolean;
+  }[];
 };
 
 /**
@@ -49,6 +54,7 @@ export function appendComponentDefaultExport(
   const instanceStatements = getInstanceStatements(result, instanceScriptRange);
 
   const names: string[] = [];
+  const typeNames: string[] = [];
   // Lead with a newline so a trailing line comment can't swallow the statement.
   let code = "\n";
 
@@ -157,8 +163,23 @@ export function appendComponentDefaultExport(
     const instantiated = `ReturnType<typeof ${scopeName}<${generics.names.join(", ")}>>`;
     genericPropsMethod = `{ ${GENERIC_PROPS_INFERENCE_KEY}<${generics.text}>(props: Partial<${instantiated}>): ${instantiated} }`;
     // The type side is generic too, so `Foo<Row>` names a specific instance.
+    // A parameter without a default defaults to its top-level placeholder
+    // alias, so a bare `Foo` keeps using the constraints. The constraint text
+    // itself cannot be the default when it reads the parameter or a later one.
+    // With a later one no default other than `any` satisfies the constraint.
+    const aliasParams = generics.params.map((param) => {
+      let defaultType = param.default;
+      if (defaultType == null && param.readsLaterParameter) {
+        defaultType = "any";
+      } else if (defaultType == null) {
+        defaultType = ctx.generateUniqueId(`generic${param.name}`);
+        typeNames.push(defaultType);
+        code += `type ${defaultType} = ${param.name};`;
+      }
+      return `${param.name}${param.constraint == null ? "" : ` extends ${param.constraint}`} = ${defaultType}`;
+    });
     genericInstance = {
-      params: `<${generics.defaultedText}>`,
+      params: `<${aliasParams.join(", ")}>`,
       propsType: instantiated,
     };
   }
@@ -186,11 +207,13 @@ export function appendComponentDefaultExport(
       node.specifiers[0].local.type === "Identifier" &&
       node.specifiers[0].local.name === name,
   );
-  // `type <name> = ...`.
-  registerRemoval(
-    ctx,
-    (node) => node.type === "TSTypeAliasDeclaration" && node.id.name === name,
-  );
+  // `type <name> = ...` and the placeholder aliases for its defaults.
+  for (const nm of [name, ...typeNames]) {
+    registerRemoval(
+      ctx,
+      (node) => node.type === "TSTypeAliasDeclaration" && node.id.name === nm,
+    );
+  }
   // The `declare const <name>` and any props probe const.
   for (const nm of names) {
     registerRemoval(
