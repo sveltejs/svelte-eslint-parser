@@ -91,12 +91,21 @@ export function parseStyleContext(
 /**
  * Parses a PostCSS Rule node's selector and returns its AST.
  */
-export function parseSelector(rule: Rule): SelectorRoot {
+export function parseSelector(rule: Rule, ctx: Context): SelectorRoot {
   const processor = selectorParser();
   const root = processor.astSync(rule.selector);
-  fixSelectorNodeLocation(root, rule);
+  const ruleStart = rule.source?.start?.offset;
+  const ruleEnd = rule.source?.end?.offset;
+  // PostCSS removes some comments from `rule.selector`, so take the line
+  // starts from the source text. Then a comment without line breaks does not
+  // move the next lines.
+  const lineStartIndices =
+    ruleStart !== undefined && ruleEnd !== undefined
+      ? getLineStartIndices(ctx.code.slice(ruleStart, ruleEnd))
+      : null;
+  fixSelectorNodeLocation(root, ctx, ruleStart, lineStartIndices);
   root.walk((node) => {
-    fixSelectorNodeLocation(node, rule);
+    fixSelectorNodeLocation(node, ctx, ruleStart, lineStartIndices);
   });
   return root;
 }
@@ -186,27 +195,51 @@ function fixPostCSSNodeLocation(node: Node, styleElement: SvelteStyleElement) {
 /**
  * Fixes selector AST locations to be relative to the whole file instead of relative to their parent rule.
  */
-function fixSelectorNodeLocation(node: SelectorNode, rule: Rule) {
+function fixSelectorNodeLocation(
+  node: SelectorNode,
+  ctx: Context,
+  ruleStart: number | undefined,
+  lineStartIndices: number[] | null,
+) {
   if (node.source === undefined) {
     return;
   }
-  const ruleLoc = styleNodeLoc(rule);
-
-  if (node.source.start !== undefined && ruleLoc.start !== undefined) {
-    if (node.source.start.line === 1) {
-      node.source.start.column += ruleLoc.start.column;
-    }
-    node.source.start.line += ruleLoc.start.line - 1;
-  } else {
+  if (ruleStart === undefined || lineStartIndices === null) {
     node.source.start = undefined;
-  }
-
-  if (node.source.end !== undefined && ruleLoc.start !== undefined) {
-    if (node.source.end.line === 1) {
-      node.source.end.column += ruleLoc.start.column;
-    }
-    node.source.end.line += ruleLoc.start.line - 1;
-  } else {
     node.source.end = undefined;
+    return;
   }
+  // postcss-selector-parser only ends lines at `\n`, so compute the line and
+  // column again from the offset in the same way as ESLint.
+  if (node.source.start !== undefined) {
+    const loc = ctx.getLocFromIndex(
+      ruleStart +
+        lineStartIndices[node.source.start.line - 1] +
+        node.source.start.column -
+        1,
+    );
+    node.source.start = { line: loc.line, column: loc.column + 1 };
+  }
+  if (node.source.end !== undefined) {
+    // The end column is the column of the last character.
+    const loc = ctx.getLocFromIndex(
+      ruleStart +
+        lineStartIndices[node.source.end.line - 1] +
+        node.source.end.column,
+    );
+    node.source.end = { line: loc.line, column: loc.column };
+  }
+}
+
+/**
+ * Gets the start indices of the lines in the same way as postcss-selector-parser (which splits lines only at `\n`).
+ */
+function getLineStartIndices(code: string): number[] {
+  const lineStartIndices = [0];
+  let index = code.indexOf("\n");
+  while (index >= 0) {
+    lineStartIndices.push(index + 1);
+    index = code.indexOf("\n", index + 1);
+  }
+  return lineStartIndices;
 }
