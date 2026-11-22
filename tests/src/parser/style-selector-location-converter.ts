@@ -178,6 +178,11 @@ describe("Selector locations with comments that PostCSS removes from the selecto
       [".x", ".a\\", ".b"],
     ],
     ["`//` in CSS", "<style>.a:is(url(//x)) .b {}</style>", [".a", ".b"]],
+    [
+      "`//` in `url()` in SCSS",
+      '<style lang="scss">.a:is(url(//x)) /* c */ .b {}</style>',
+      [".a", ".b"],
+    ],
   ] as const) {
     it(`must point to the selector nodes with ${name}`, () => {
       assert.deepStrictEqual(getSelectorTexts(code), expected);

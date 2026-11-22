@@ -286,7 +286,11 @@ function getSelectorSourceOffsets(
       // Skip the comments that are not in the selector.
       for (;;) {
         const commentEnd = getCommentEnd(source, offset, isSCSS);
-        if (commentEnd === -1) {
+        if (
+          commentEnd === -1 ||
+          // postcss-scss does not take `//` in `url()` as a comment.
+          (source.startsWith("//", offset) && selector.startsWith("//", index))
+        ) {
           break;
         }
         if (selector.startsWith(source.slice(offset, commentEnd), index)) {
