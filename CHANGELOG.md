@@ -1,5 +1,11 @@
 # svelte-eslint-parser
 
+## 1.11.0
+
+### Minor Changes
+
+- [#1013](https://github.com/sveltejs/svelte-eslint-parser/pull/1013) [`a5ad365`](https://github.com/sveltejs/svelte-eslint-parser/commit/a5ad365a7337aadad99d733680e3a9c10f9a08f4) Thanks [@baseballyama](https://github.com/baseballyama)! - fix: allow a member name in `transition:`, `in:`, `out:` and `animate:` with Svelte 5
+
 ## 1.10.2
 
 ### Patch Changes
