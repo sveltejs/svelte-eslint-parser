@@ -71,29 +71,6 @@
         {
           "identifier": {
             "type": "Identifier",
-            "name": "fruits",
-            "range": [
-              65,
-              71
-            ],
-            "loc": {
-              "start": {
-                "line": 2,
-                "column": 13
-              },
-              "end": {
-                "line": 2,
-                "column": 19
-              }
-            }
-          },
-          "from": "module",
-          "init": null,
-          "resolved": null
-        },
-        {
-          "identifier": {
-            "type": "Identifier",
             "name": "Table",
             "range": [
               53,
@@ -119,7 +96,31 @@
         {
           "type": "block",
           "variables": [],
-          "references": [],
+          "references": [
+            {
+              "identifier": {
+                "type": "Identifier",
+                "name": "fruits",
+                "range": [
+                  65,
+                  71
+                ],
+                "loc": {
+                  "start": {
+                    "line": 2,
+                    "column": 13
+                  },
+                  "end": {
+                    "line": 2,
+                    "column": 19
+                  }
+                }
+              },
+              "from": "block",
+              "init": null,
+              "resolved": null
+            }
+          ],
           "childScopes": [
             {
               "type": "function",
@@ -1371,7 +1372,31 @@
               "through": []
             }
           ],
-          "through": []
+          "through": [
+            {
+              "identifier": {
+                "type": "Identifier",
+                "name": "fruits",
+                "range": [
+                  65,
+                  71
+                ],
+                "loc": {
+                  "start": {
+                    "line": 2,
+                    "column": 13
+                  },
+                  "end": {
+                    "line": 2,
+                    "column": 19
+                  }
+                }
+              },
+              "from": "block",
+              "init": null,
+              "resolved": null
+            }
+          ]
         }
       ],
       "through": [
@@ -1394,7 +1419,7 @@
               }
             }
           },
-          "from": "module",
+          "from": "block",
           "init": null,
           "resolved": null
         },
@@ -1444,7 +1469,7 @@
           }
         }
       },
-      "from": "module",
+      "from": "block",
       "init": null,
       "resolved": null
     },

@@ -1,10 +1,9 @@
 <script>
 	import C from './C.svelte';
-	let message = 'hi';
 	let row = 1;
 </script>
 
-<C {message} render={row} let:message>
+<C render={row} let:message>
 	{#snippet row()}
 		hi
 	{/snippet}

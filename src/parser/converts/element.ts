@@ -283,6 +283,23 @@ function hasStaticSlotAttribute(
   );
 }
 
+/**
+ * Check if the children have `{#snippet}`.
+ * Svelte hoists the snippets of a component above the component,
+ * so the component's own attributes can read them.
+ */
+function hasSnippetChildren(
+  fragment:
+    | {
+        children?: SvAST.TemplateNode[];
+      }
+    | Compiler.Fragment,
+): boolean {
+  return Boolean(
+    getChildren(fragment)?.some((child) => child.type === "SnippetBlock"),
+  );
+}
+
 /** Check if children needs a scope. */
 function needScopeByChildren(
   fragment:
@@ -504,11 +521,14 @@ function convertSpecialElement(
   } else {
     // Like a component, `<svelte:component>` and `<svelte:self>` evaluate
     // their own attributes in the outer scope, unless they have `slot`.
+    // If they have snippets, keep the attributes in the block,
+    // so that the attributes can read the snippets.
     const attributesInOuterScope =
       (node.type === "SvelteComponent" ||
         node.type === "SvelteSelf" ||
         node.type === "InlineComponent") &&
-      !hasStaticSlotAttribute(attributes);
+      !hasStaticSlotAttribute(attributes) &&
+      !hasSnippetChildren(fragment);
     const outerAttributes = attributesInOuterScope
       ? [...convertAttributes(attributes, element.startTag, ctx)]
       : [];
@@ -803,7 +823,10 @@ function convertComponentElement(
     // Its `let:` names are only visible in the slot content.
     // But if the component has `slot`, its `let:` names come from the
     // parent's slot, so its own attributes can see them.
-    const attributesInOuterScope = !hasStaticSlotAttribute(attributes);
+    // If it has snippets, keep the attributes in the block,
+    // so that the attributes can read the snippets.
+    const attributesInOuterScope =
+      !hasStaticSlotAttribute(attributes) && !hasSnippetChildren(fragment);
     const outerAttributes = attributesInOuterScope
       ? [...convertAttributes(attributes, element.startTag, ctx)]
       : [];
