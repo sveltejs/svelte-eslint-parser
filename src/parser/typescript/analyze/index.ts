@@ -886,7 +886,10 @@ function analyzeRenderScopes(
 ) {
   ctx.appendOriginal(code.script.length);
   const renderFunctionName = ctx.generateUniqueId("render");
-  ctx.appendVirtualScript(`export function ${renderFunctionName}(){`);
+  // Start on a new line. The script may end without a line break, e.g.
+  // `<script lang="ts">let a = 1</script>` at the end of the file, and the
+  // last statement must not continue into the render function.
+  ctx.appendVirtualScript(`\nexport function ${renderFunctionName}(){`);
   analyzeInTemplate();
   ctx.appendOriginal(code.script.length + code.render.length);
   ctx.appendVirtualScript(`}`);
