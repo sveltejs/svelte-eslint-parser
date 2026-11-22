@@ -2,6 +2,7 @@ import assert from "assert";
 import fs from "fs";
 import os from "os";
 import path from "path";
+import { spawnSync } from "child_process";
 import * as tsParser from "@typescript-eslint/parser";
 import type { TSESTree } from "@typescript-eslint/types";
 import { Linter } from "eslint";
@@ -240,6 +241,68 @@ consume(read(result));
       });
     }
   }
+
+  it("uses the TypeScript of the program when a newer one is reachable", () => {
+    // A pnpm monorepo can hoist TypeScript 7 next to ESLint. Its root export
+    // has only `version`, so it cannot be used to reparse the component.
+    const cwd = fs.mkdtempSync(path.join(os.tmpdir(), "svelte-jsdoc-cwd-"));
+    try {
+      const ts7 = path.join(cwd, "node_modules/typescript");
+      fs.mkdirSync(path.join(ts7, "lib"), { recursive: true });
+      fs.writeFileSync(
+        path.join(ts7, "package.json"),
+        JSON.stringify({
+          name: "typescript",
+          version: "7.0.2",
+          exports: {
+            "./package.json": "./package.json",
+            ".": "./lib/version.cjs",
+          },
+        }),
+      );
+      fs.writeFileSync(
+        path.join(ts7, "lib/version.cjs"),
+        'module.exports = { version: "7.0.2" };',
+      );
+      // Run in a child process, since the module lookup from cwd is cached.
+      const child = spawnSync(
+        process.execPath,
+        [
+          "--import",
+          "tsx/esm",
+          "--input-type=module",
+          "-e",
+          `
+          import assert from "node:assert/strict";
+          import * as tsParser from "@typescript-eslint/parser";
+          import { parseForESLint } from ${JSON.stringify(new URL("../../../../src/index.ts", import.meta.url).href)};
+          process.chdir(${JSON.stringify(cwd)});
+          for (const mode of ["project", "projectService"]) {
+            const result = parseForESLint(
+              "<script>/** @param {number} value */\\nfunction identity(value) { return value; }</script>",
+              {
+                parser: tsParser,
+                filePath: ${JSON.stringify(path.join(directory, "Component.svelte"))},
+                tsconfigRootDir: ${JSON.stringify(directory)},
+                extraFileExtensions: [".svelte"],
+                [mode]: mode === "project" ? "./tsconfig.json" : true,
+              },
+            );
+            const param = result.ast.body[0].body[0].params[0];
+            const checker = result.services.program.getTypeChecker();
+            const tsNode = result.services.esTreeNodeToTSNodeMap.get(param);
+            assert.equal(checker.typeToString(checker.getTypeAtLocation(tsNode)), "number");
+          }
+          `,
+        ],
+        { encoding: "utf8", timeout: 60000 },
+      );
+      assert.ifError(child.error);
+      assert.strictEqual(child.status, 0, child.stdout + child.stderr);
+    } finally {
+      fs.rmSync(cwd, { recursive: true, force: true });
+    }
+  });
 
   it("respects language-specific parser selection", () => {
     const result = parseForESLint(`<script>${script}</script>`, {
