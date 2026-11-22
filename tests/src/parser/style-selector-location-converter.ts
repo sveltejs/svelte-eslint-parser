@@ -51,7 +51,11 @@ describe("Check for AST.", () => {
   }
 });
 
-/** Gets the source text at the location of each class and id selector node. */
+/**
+ * Gets the source text at the location of each class and id selector node.
+ * It also checks that the location of each selector node is a real position
+ * in the code, because `getIndexFromLoc()` accepts a column past the end of a line.
+ */
 function getSelectorTexts(code: string): string[] {
   const { services } = parseForESLint(code);
   const styleContext = services.getStyleContext();
@@ -60,8 +64,14 @@ function getSelectorTexts(code: string): string[] {
   const texts: string[] = [];
   styleContext.sourceAst.walkRules((rule: Rule) => {
     services.getStyleSelectorAST(rule).walk((node: SelectorNode) => {
-      if (node.type !== "class" && node.type !== "id") return;
       const loc = services.styleSelectorNodeLoc(node);
+      for (const position of [loc.start, loc.end]) {
+        assert.deepStrictEqual(
+          locs.getLocFromIndex(locs.getIndexFromLoc(position)),
+          position,
+        );
+      }
+      if (node.type !== "class" && node.type !== "id") return;
       texts.push(
         code.slice(
           locs.getIndexFromLoc(loc.start),
@@ -99,6 +109,11 @@ describe("Selector locations with line breaks.", () => {
       ]);
     });
   }
+
+  it("must point to the selector nodes with U+2028", () => {
+    const code = "<style>\n.a,\u2028.b {}\n</style>";
+    assert.deepStrictEqual(getSelectorTexts(code), [".a", ".b"]);
+  });
 });
 
 describe("Selector locations with comments at the end of a line.", () => {
