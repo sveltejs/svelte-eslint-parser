@@ -425,6 +425,16 @@ describeSvelte5("synthetic component default export (runes, Svelte 5)", () => {
     assertComponentExport(code, `{ real: any }`);
   });
 
+  it("translates a `generics` attribute with a `const` type parameter", () => {
+    const code =
+      translate(`<script lang="ts" generics="const T extends readonly string[]">
+  let { items }: { items: T } = $props();
+</script>
+<p>{items.length}</p>`);
+    assert.match(code, /type T\s*=\s*readonly string\[\];/u);
+    assertComponentExport(code, `{ items: T }`);
+  });
+
   it("references `generics` type parameters in the recovered props type", () => {
     const code = translate(`<script lang="ts" generics="T">
   let { items, selected }: { items: T[]; selected: T } = $props();
@@ -1265,6 +1275,23 @@ describeSvelte5(
 
     it("resolves generic component props (type params as their constraint) for importers", () => {
       const genericComponent = `<script lang="ts" generics="T extends string">
+  let { v }: { v: T } = $props();
+</script>
+<p>{v}</p>`;
+      const diagnostics = typeCheckConsumer(
+        genericComponent,
+        `const v: import("svelte").ComponentProps<typeof Foo>["v"] = 123;`,
+      );
+      assert.ok(
+        diagnostics.some((d) => d.code === 2322),
+        `expected TS2322 (number not assignable to string), got: ${diagnostics
+          .map((d) => d.code)
+          .join(", ")}`,
+      );
+    });
+
+    it("resolves props of a generic component with a `const` type parameter for importers", () => {
+      const genericComponent = `<script lang="ts" generics="const T extends string">
   let { v }: { v: T } = $props();
 </script>
 <p>{v}</p>`;

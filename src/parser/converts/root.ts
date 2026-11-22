@@ -399,13 +399,14 @@ function convertGenericsAttribute(script: SvelteScriptElement, ctx: Context) {
     })),
   };
 
-  // Replace tokens
+  // Replace tokens. The type alias for a parameter starts at its name, so a
+  // modifier such as `const` before it keeps the token from here.
   for (const tokensKey of ["tokens", "comments"] as const) {
     for (const token of result.ast[tokensKey]) {
       if (
         params.every(
           (param) =>
-            token.range[1] <= param.range[0] ||
+            token.range[1] <= param.name.range[0] ||
             param.range[1] <= token.range[0],
         )
       ) {
