@@ -123,15 +123,27 @@ export function analyzeTypeScriptInSvelte(
   const rootScopeTransformers: TransformInfo[] = [];
   const renderStart = code.script.length;
   const rootScopeStart = code.script.length + code.render.length;
-  for (const transform of [
-    ...analyzeDollarDerivedScopes(result, context.svelteParseContext),
-    ...analyzeBindableProps(
-      result,
-      // TypeScript does not use JSDoc types in TypeScript code.
-      isJavaScript ? code.script + code.render + code.rootScope : null,
-      context.svelteParseContext,
-    ),
-  ]) {
+  for (const transform of analyzeDollarDerivedScopes(
+    result,
+    context.svelteParseContext,
+  )) {
+    // Only `$derived(...)` in `<script>` is transformed. A declaration tag in
+    // the template only lives while its enclosing blocks are rendered, so its
+    // argument keeps the narrowing of the enclosing `{#if}`, `{:else}`, etc.,
+    // as with svelte2tsx:
+    //   {#if action?.name === "change"}
+    //     {const value = $derived(action.id)}
+    //   {/if}
+    if (transform.node.range[0] < renderStart) {
+      scriptTransformers.push(transform);
+    }
+  }
+  for (const transform of analyzeBindableProps(
+    result,
+    // TypeScript does not use JSDoc types in TypeScript code.
+    isJavaScript ? code.script + code.render + code.rootScope : null,
+    context.svelteParseContext,
+  )) {
     if (transform.node.range[0] < renderStart) {
       scriptTransformers.push(transform);
     } else if (transform.node.range[0] < rootScopeStart) {
