@@ -1,3 +1,5 @@
+enablePrePostScripts: true
+
 # Do not adopt new versions of dependency libraries within the first 24 hours of their release (to reduce the risk of supply chain attacks).
 minimumReleaseAge: 1440
 
@@ -24,3 +26,7 @@ minimumReleaseAgeExclude:
   - esbuild@0.28.1
   # Renovate security update: postcss-selector-parser@7.1.3 || 7.1.6
   - postcss-selector-parser@7.1.3 || 7.1.6
+
+# esbuild works without its postinstall script, which only checks the binary.
+allowBuilds:
+  esbuild: false
