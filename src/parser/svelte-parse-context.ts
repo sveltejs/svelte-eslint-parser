@@ -1,3 +1,4 @@
+import { lt } from "semver";
 import type * as Compiler from "./svelte-ast-types-for-v5.js";
 import type * as SvAST from "./svelte-ast-types.js";
 import type { NormalizedParserOptions } from "./parser-options.js";
@@ -5,6 +6,11 @@ import { compilerVersion, svelteVersion } from "./svelte-version.js";
 import type { SvelteConfig } from "../svelte-config/index.js";
 import { traverseNodes } from "../traverse.js";
 import type { ESLintProgram } from "./index.js";
+import type { SvelteScriptElement } from "../ast/index.js";
+import type * as ESTree from "estree";
+import type { Scope } from "eslint";
+
+type ScopeManager = Scope.ScopeManager;
 
 const runeSymbols: string[] = [
   "$state",
@@ -27,6 +33,7 @@ export type SvelteParseContext = {
    *   - `<svelte:options>` in the Svelte file.
    *   - `svelte.config.js`
    * - Returns `true` if the `runes` symbol is present in the Svelte file.
+   * - Returns `true` if the Svelte file has a top-level `await` (Svelte 5.36+).
    */
   runes?: boolean;
   /** The version of "svelte/compiler". */
@@ -91,21 +98,185 @@ function isRunesAsParseContext(
   return undefined;
 }
 
-export function hasRunesSymbol(ast: ESLintProgram): boolean {
-  let hasRuneSymbol = false;
+/**
+ * Checks whether the component references a rune that is not declared anywhere.
+ * Svelte turns on runes mode for such a reference.
+ * Call this before the rune names are added to the global scope.
+ */
+export function hasRuneReference(scopeManager: ScopeManager): boolean {
+  const topScope =
+    scopeManager.scopes.find((scope) => scope.type === "module") ??
+    scopeManager.globalScope!;
+  return scopeManager.globalScope!.through.some(
+    (reference) =>
+      runeSymbols.includes(reference.identifier.name) &&
+      !isInType(reference.identifier) &&
+      !isStoreSubscription(reference.identifier.name, topScope),
+  );
+}
+
+/**
+ * Checks whether the given node is in a TypeScript type, such as `typeof $state` in `let a: typeof $state`.
+ * Svelte removes the types before it decides on runes mode.
+ */
+function isInType(node: ESTree.Node): boolean {
+  for (let target: any = node; target; target = target.parent) {
+    if (isTypeOnlyNode(target)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+/**
+ * Checks whether Svelte treats the given rune name as a store subscription,
+ * such as `$state` when the component declares `state`.
+ * This follows the synthetic store bindings in `analyze_component` of `svelte/compiler`.
+ */
+function isStoreSubscription(name: string, topScope: Scope.Scope): boolean {
+  // Svelte removes the types, so a type does not declare the name.
+  const def = topScope.set
+    .get(name.slice(1))
+    ?.defs.find(
+      (def) => !isTypeOnlyNode(def.node) && !isTypeOnlyNode(def.parent),
+    );
+  if (!def) {
+    return false;
+  }
+  // `import { derived } from 'svelte/store'` does not make `$derived` a store.
+  if (
+    name === "$derived" &&
+    def.type === "ImportBinding" &&
+    def.parent.source.value === "svelte/store"
+  ) {
+    return false;
+  }
+  // `$state` is still a rune in `let state = $state(0)`.
+  return def.type !== "Variable" || !isRuneCall(def.node.init);
+}
+
+/**
+ * Checks whether the given expression calls a rune, such as `$state(0)`, `$state.raw(0)` and `$inspect(1).with(f)`.
+ * This is a simple version of `get_rune` in `svelte/compiler`. It does not check that the rune exists, such as `$state.foo`.
+ */
+function isRuneCall(node: ESTree.Node | null | undefined): boolean {
+  const expression = skipTypes(node);
+  if (expression?.type !== "CallExpression") {
+    return false;
+  }
+  let callee = skipTypes(expression.callee);
+  while (callee?.type === "MemberExpression" && !callee.computed) {
+    callee = skipTypes(callee.object);
+  }
+  if (callee?.type === "CallExpression") {
+    callee = skipTypes(callee.callee);
+  }
+  return callee?.type === "Identifier" && runeSymbols.includes(callee.name);
+}
+
+/** Skips the TypeScript nodes around the expression, because Svelte removes them. */
+function skipTypes(node: any): any {
+  let expression = node;
+  while (expression && tsNodesWithExpression.has(expression.type)) {
+    expression = expression.expression;
+  }
+  return expression;
+}
+
+/**
+ * TypeScript nodes that hold a JavaScript expression.
+ * Svelte keeps the expression and removes the type.
+ */
+const tsNodesWithExpression = new Set<string>([
+  "TSAsExpression",
+  "TSSatisfiesExpression",
+  "TSNonNullExpression",
+  "TSTypeAssertion",
+  "TSInstantiationExpression",
+  "TSParameterProperty",
+  "TSExportAssignment",
+]);
+
+/**
+ * Checks whether Svelte removes the given node with the TypeScript types.
+ * This is close to `remove_typescript_nodes` in `svelte/compiler`.
+ */
+function isTypeOnlyNode(node: any): boolean {
+  if (!node) {
+    return false;
+  }
+  if (node.type.startsWith("TS")) {
+    return !tsNodesWithExpression.has(node.type);
+  }
+  return (
+    node.declare === true ||
+    node.importKind === "type" ||
+    node.exportKind === "type"
+  );
+}
+
+const functionTypes = new Set([
+  "ArrowFunctionExpression",
+  "FunctionExpression",
+  "FunctionDeclaration",
+]);
+
+/**
+ * Checks whether the component has an `await` that is not inside a function,
+ * in the instance script or in the template.
+ * Since Svelte 5.36, the compiler turns on runes mode for such an `await`.
+ * An `await` in the module script does not count.
+ */
+export function hasTopLevelAwait(ast: ESLintProgram): boolean {
+  if (lt(compilerVersion, "5.36.0")) {
+    return false;
+  }
+  let found = false;
+  let skipped: unknown = null;
+  let functionDepth = 0;
   traverseNodes(ast, {
     enterNode(node) {
-      if (hasRuneSymbol) {
+      if (found || skipped) {
         return;
       }
-      if (node.type === "Identifier" && runeSymbols.includes(node.name)) {
-        hasRuneSymbol = true;
+      if (isModuleScript(node)) {
+        skipped = node;
+        return;
+      }
+      if (functionTypes.has(node.type)) {
+        functionDepth++;
+      } else if (node.type === "AwaitExpression" && functionDepth === 0) {
+        found = true;
       }
     },
-    leaveNode() {
-      // do nothing
+    leaveNode(node) {
+      if (skipped) {
+        if (skipped === node) {
+          skipped = null;
+        }
+        return;
+      }
+      if (functionTypes.has(node.type)) {
+        functionDepth--;
+      }
     },
   });
 
-  return hasRuneSymbol;
+  return found;
+}
+
+/** Checks whether the given node is `<script module>` or `<script context="module">`. */
+function isModuleScript(node: { type: string }): boolean {
+  if (node.type !== "SvelteScriptElement") {
+    return false;
+  }
+  return (node as SvelteScriptElement).startTag.attributes.some(
+    (attr) =>
+      attr.type === "SvelteAttribute" &&
+      (attr.key.name === "module" ||
+        (attr.key.name === "context" &&
+          attr.value.length === 1 &&
+          attr.value[0].type === "SvelteLiteral" &&
+          attr.value[0].value === "module")),
+  );
 }

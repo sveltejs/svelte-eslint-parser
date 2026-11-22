@@ -39,10 +39,15 @@ export class ScriptsSourceCode {
 
   public separateIndexes: number[] = [];
 
+  /** Whether line breaks were put between script blocks on the same line. */
+  public readonly hasInsertedLineBreaks: boolean;
+
   public constructor(
     script: string,
     attrs: Record<string, string | undefined>,
+    hasInsertedLineBreaks = false,
   ) {
+    this.hasInsertedLineBreaks = hasInsertedLineBreaks;
     this.raw = script;
     this.trimmedRaw = script.trimEnd();
     this.attrs = attrs;
@@ -121,11 +126,11 @@ export class ScriptsSourceCode {
   public stripCode(start: number, end: number): void {
     this.raw =
       this.raw.slice(0, start) +
-      this.raw.slice(start, end).replace(/[^\n\r ]/g, " ") +
+      this.raw.slice(start, end).replace(/[^\n\r \u2028\u2029]/g, " ") +
       this.raw.slice(end);
     this.trimmedRaw =
       this.trimmedRaw.slice(0, start) +
-      this.trimmedRaw.slice(start, end).replace(/[^\n\r ]/g, " ") +
+      this.trimmedRaw.slice(start, end).replace(/[^\n\r \u2028\u2029]/g, " ") +
       this.trimmedRaw.slice(end);
   }
 }
@@ -185,12 +190,17 @@ export class Context {
     this.locs = new LinesAndColumns(code);
 
     const spaces = code.replace(/[^\n\r ]/g, " ");
+    // Keep U+2028 and U+2029 in the script code, because the script parser
+    // counts them as line breaks when it computes the locations.
+    const scriptSpaces = code.replace(/[^\n\r \u2028\u2029]/g, " ");
 
     let templateCode = "";
     let scriptCode = "";
     const scriptAttrs: Record<string, string | undefined> = {};
 
     let start = 0;
+    let lastScriptEnd: number | null = null;
+    let hasInsertedLineBreaks = false;
     for (const block of extractBlocks(code)) {
       if (block.tag === "template") {
         if (block.selfClosing) {
@@ -224,16 +234,27 @@ export class Context {
           block.startTagRange[0] + 1 /* skip `<` */ + block.tag.length,
           block.startTagRange[1],
         )}`;
-        scriptCode += spaces.slice(start, block.startTagRange[1]);
+        scriptCode += scriptSpaces.slice(start, block.startTagRange[1]);
         start = block.startTagRange[1];
       } else {
         templateCode +=
           code.slice(start, block.contentRange[0]) +
           spaces.slice(block.contentRange[0], block.contentRange[1]);
         if (block.tag === "script") {
-          scriptCode +=
-            spaces.slice(start, block.contentRange[0]) +
-            code.slice(...block.contentRange);
+          let before = scriptSpaces.slice(start, block.contentRange[0]);
+          if (
+            lastScriptEnd != null &&
+            !/[\n\r\u2028\u2029]/u.test(
+              scriptSpaces.slice(lastScriptEnd, block.contentRange[0]),
+            )
+          ) {
+            // Script blocks on the same line would run into each other, so put
+            // a line break between them. The locations are fixed after parsing.
+            before = `\n${before.slice(1)}`;
+            hasInsertedLineBreaks = true;
+          }
+          scriptCode += before + code.slice(...block.contentRange);
+          lastScriptEnd = block.contentRange[1];
           for (const attr of block.attrs) {
             if (Array.isArray(attr.value)) {
               const attrValue = attr.value[0];
@@ -244,17 +265,21 @@ export class Context {
             }
           }
         } else {
-          scriptCode += spaces.slice(start, block.contentRange[1]);
+          scriptCode += scriptSpaces.slice(start, block.contentRange[1]);
         }
         start = block.contentRange[1];
       }
     }
     templateCode += code.slice(start);
-    scriptCode += spaces.slice(start);
+    scriptCode += scriptSpaces.slice(start);
 
     this.sourceCode = {
       template: templateCode,
-      scripts: new ScriptsSourceCode(scriptCode, scriptAttrs),
+      scripts: new ScriptsSourceCode(
+        scriptCode,
+        scriptAttrs,
+        hasInsertedLineBreaks,
+      ),
     };
     this.scriptLet = new ScriptLetContext(this);
   }
@@ -360,6 +385,29 @@ export class Context {
           block.startTagRange[1] <= element.startTag.range[1],
       ),
     );
+  }
+
+  /**
+   * In the script code, the `</script>` tag and the rest of its line are blanked with spaces.
+   * So a line comment at the end of a script runs over them.
+   * Cut such a comment at the end of the script content.
+   */
+  public fixLineCommentsAtScriptEnd(comments: Comment[]): void {
+    for (const comment of comments) {
+      if (comment.type !== "Line") continue;
+      const block = this.blocks.find(
+        (block): block is Exclude<Block, SelfClosingBlock> =>
+          block.tag === "script" &&
+          !block.selfClosing &&
+          block.contentRange[0] <= comment.range[0] &&
+          comment.range[0] < block.contentRange[1],
+      );
+      if (!block || comment.range[1] <= block.contentRange[1]) continue;
+      const end = block.contentRange[1];
+      comment.range[1] = end;
+      comment.value = this.code.slice(comment.range[0] + 2, end);
+      comment.loc.end = this.getLocFromIndex(end);
+    }
   }
 }
 
@@ -471,7 +519,7 @@ export class LinesAndColumns {
           index++;
         }
         lineStartIndices.push(index + 1);
-      } else if (c === "\n") {
+      } else if (c === "\n" || c === "\u2028" || c === "\u2029") {
         lineStartIndices.push(index + 1);
       }
     }

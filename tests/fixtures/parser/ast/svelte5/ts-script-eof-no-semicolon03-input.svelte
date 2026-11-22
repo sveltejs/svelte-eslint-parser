@@ -1,0 +1,1 @@
+<script lang="ts">let { a } = $props()</script>

@@ -123,15 +123,27 @@ export function analyzeTypeScriptInSvelte(
   const rootScopeTransformers: TransformInfo[] = [];
   const renderStart = code.script.length;
   const rootScopeStart = code.script.length + code.render.length;
-  for (const transform of [
-    ...analyzeDollarDerivedScopes(result, context.svelteParseContext),
-    ...analyzeBindableProps(
-      result,
-      // TypeScript does not use JSDoc types in TypeScript code.
-      isJavaScript ? code.script + code.render + code.rootScope : null,
-      context.svelteParseContext,
-    ),
-  ]) {
+  for (const transform of analyzeDollarDerivedScopes(
+    result,
+    context.svelteParseContext,
+  )) {
+    // Only `$derived(...)` in `<script>` is transformed. A declaration tag in
+    // the template only lives while its enclosing blocks are rendered, so its
+    // argument keeps the narrowing of the enclosing `{#if}`, `{:else}`, etc.,
+    // as with svelte2tsx:
+    //   {#if action?.name === "change"}
+    //     {const value = $derived(action.id)}
+    //   {/if}
+    if (transform.node.range[0] < renderStart) {
+      scriptTransformers.push(transform);
+    }
+  }
+  for (const transform of analyzeBindableProps(
+    result,
+    // TypeScript does not use JSDoc types in TypeScript code.
+    isJavaScript ? code.script + code.render + code.rootScope : null,
+    context.svelteParseContext,
+  )) {
     if (transform.node.range[0] < renderStart) {
       scriptTransformers.push(transform);
     } else if (transform.node.range[0] < rootScopeStart) {
@@ -886,7 +898,10 @@ function analyzeRenderScopes(
 ) {
   ctx.appendOriginal(code.script.length);
   const renderFunctionName = ctx.generateUniqueId("render");
-  ctx.appendVirtualScript(`export function ${renderFunctionName}(){`);
+  // Start on a new line. The script may end without a line break, e.g.
+  // `<script lang="ts">let a = 1</script>` at the end of the file, and the
+  // last statement must not continue into the render function.
+  ctx.appendVirtualScript(`\nexport function ${renderFunctionName}(){`);
   analyzeInTemplate();
   ctx.appendOriginal(code.script.length + code.render.length);
   ctx.appendVirtualScript(`}`);
