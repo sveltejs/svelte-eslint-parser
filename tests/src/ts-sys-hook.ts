@@ -432,7 +432,15 @@ describeSvelte5("synthetic component default export (runes, Svelte 5)", () => {
 </script>
 <p>{items.length}</p>`);
     assert.match(code, /type T\s*=\s*readonly string\[\];/u);
-    assertComponentExport(code, `{ items: T }`);
+    // The modifier stays where TypeScript accepts it.
+    assert.match(
+      code,
+      /function \$_genericPropsScope\d+<const T extends readonly string\[\]>\(\)/u,
+    );
+    assert.match(
+      code,
+      /\$\$genericProps<const T extends readonly string\[\]>\(/u,
+    );
   });
 
   it("references `generics` type parameters in the recovered props type", () => {
