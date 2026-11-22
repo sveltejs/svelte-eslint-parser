@@ -826,55 +826,44 @@ function analyzeLegacyProps(
   }
   const statements = getInstanceStatements(result, instanceScriptRange);
 
-  const propNames = new Map<TSESTree.ProgramStatement, Set<string>>();
-  const localDeclarators = new Map<
-    string,
-    {
-      statement: TSESTree.VariableDeclaration;
-      declarator: TSESTree.VariableDeclarator;
-    }
-  >();
+  // Local names exported by `let x; export { x as y }`.
+  const exportedLocalNames = new Set<string>();
   for (const statement of statements) {
-    const declaration =
-      statement.type === "ExportNamedDeclaration"
-        ? statement.declaration
-        : statement;
+    if (
+      statement.type === "ExportNamedDeclaration" &&
+      !statement.declaration &&
+      !statement.source &&
+      statement.exportKind !== "type"
+    ) {
+      for (const specifier of statement.specifiers) {
+        if (specifier.local.type === "Identifier") {
+          exportedLocalNames.add(specifier.local.name);
+        }
+      }
+    }
+  }
+
+  const props: { statement: TSESTree.ProgramStatement; names: string[] }[] = [];
+  for (const statement of statements) {
+    const exported = statement.type === "ExportNamedDeclaration";
+    const declaration = exported ? statement.declaration : statement;
     if (
       declaration?.type !== "VariableDeclaration" ||
       (declaration.kind !== "let" && declaration.kind !== "var")
     ) {
       continue;
     }
-    for (const declarator of declaration.declarations) {
-      for (const name of extractIdentifierNames(declarator.id)) {
-        if (statement.type === "ExportNamedDeclaration") {
-          addPropName(statement, name);
-        } else {
-          localDeclarators.set(name, { statement: declaration, declarator });
-        }
-      }
-    }
-  }
-  // Process for `let x; export { x as y }`.
-  for (const statement of statements) {
-    if (
-      statement.type !== "ExportNamedDeclaration" ||
-      statement.declaration ||
-      statement.source ||
-      statement.exportKind === "type"
-    ) {
-      continue;
-    }
-    for (const specifier of statement.specifiers) {
-      if (specifier.local.type !== "Identifier") continue;
-      const local = localDeclarators.get(specifier.local.name);
+    const names = declaration.declarations.flatMap((declarator) => {
+      const declared = [...extractIdentifierNames(declarator.id)];
+      if (exported) return declared;
       // TypeScript types `let x;`, `let x = null;` and `let x = [];` from
       // their assignments, so assigning `any` would make them `any`.
-      if (!local || isAutoTypedDeclarator(local.declarator)) continue;
-      addPropName(local.statement, specifier.local.name);
-    }
+      if (isAutoTypedDeclarator(declarator)) return [];
+      return declared.filter((name) => exportedLocalNames.has(name));
+    });
+    if (names.length) props.push({ statement, names });
   }
-  if (!propNames.size) return [];
+  if (!props.length) return [];
 
   const anyId = ctx.generateUniqueId("any");
   ctx.appendVirtualScript(`declare const ${anyId}: any;`);
@@ -892,47 +881,37 @@ function analyzeLegacyProps(
     return true;
   });
 
-  return [...propNames].map(([node, names]) => ({
+  return props.map(({ statement, names }) => ({
     // Use the end of the declaration so that the transforms inside the
     // declaration (e.g. `$derived()`) are not skipped.
     node: {
-      ...node,
-      range: [node.range[1], node.range[1]],
+      ...statement,
+      range: [statement.range[1], statement.range[1]],
     } as TSESTree.Node,
     transform: (ctx) => {
-      ctx.appendOriginal(node.range[1]);
-      const separator = ctx.script.trimEnd().endsWith(";") ? "" : ";";
-      ctx.appendVirtualScript(
-        `${separator}${[...names].map((name) => `${name} = ${anyId};`).join("")}`,
-      );
-      for (const name of names) {
-        ctx.restoreContext.addRestoreStatementProcess((node, result) => {
-          if (
-            node.type !== "ExpressionStatement" ||
-            node.expression.type !== "AssignmentExpression" ||
-            node.expression.left.type !== "Identifier" ||
-            node.expression.left.name !== name ||
-            node.expression.right.type !== "Identifier" ||
-            node.expression.right.name !== anyId
-          ) {
-            return false;
-          }
-          removeVirtualStatement(node, result);
-          return true;
-        });
-      }
+      ctx.appendOriginal(statement.range[1]);
+      const separator = ctx.script.endsWith(";") ? "" : ";";
+      // e.g. `a = b = $_any1;`
+      ctx.appendVirtualScript(`${separator}${names.join(" = ")} = ${anyId};`);
+      ctx.restoreContext.addRestoreStatementProcess((node, result) => {
+        if (
+          node.type !== "ExpressionStatement" ||
+          node.expression.type !== "AssignmentExpression"
+        ) {
+          return false;
+        }
+        let expression: TSESTree.Expression = node.expression;
+        while (expression.type === "AssignmentExpression") {
+          expression = expression.right;
+        }
+        if (expression.type !== "Identifier" || expression.name !== anyId) {
+          return false;
+        }
+        removeVirtualStatement(node, result);
+        return true;
+      });
     },
   }));
-
-  /** Add the prop name declared by the given statement. */
-  function addPropName(statement: TSESTree.ProgramStatement, name: string) {
-    let names = propNames.get(statement);
-    if (!names) {
-      names = new Set();
-      propNames.set(statement, names);
-    }
-    names.add(name);
-  }
 
   /**
    * Checks whether TypeScript types the given variable from its assignments.
