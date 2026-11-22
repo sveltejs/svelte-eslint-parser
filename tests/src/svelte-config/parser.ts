@@ -66,6 +66,96 @@ describe("parseConfig", () => {
         `,
       output: { compilerOptions: {} },
     },
+    {
+      code: `export default {compilerOptions:{experimental:{async:true}}}`,
+      output: { compilerOptions: { experimental: { async: true } } },
+    },
+    {
+      code: `export default {compilerOptions:{experimental:{async:false}}}`,
+      output: { compilerOptions: { experimental: { async: false } } },
+    },
+    {
+      code: `export default {compilerOptions:{experimental:{async:process.env.X === "1"}}}`,
+      output: { compilerOptions: {} },
+    },
+    {
+      code: `export default {compilerOptions:{experimental:{async:1}}}`,
+      output: { compilerOptions: {} },
+    },
+    {
+      code: `export default {compilerOptions:{experimental:{async:"true"}}}`,
+      output: { compilerOptions: {} },
+    },
+    {
+      code: `export default {compilerOptions:{experimental:{customRenderer:true}}}`,
+      output: { compilerOptions: { experimental: { customRenderer: true } } },
+    },
+    {
+      code: `export default {compilerOptions:{experimental:{customRenderer:"my-renderer"}}}`,
+      output: {
+        compilerOptions: { experimental: { customRenderer: "my-renderer" } },
+      },
+    },
+    {
+      code: `export default {compilerOptions:{experimental:{customRenderer:({filename}) => null}}}`,
+      output: { compilerOptions: {} },
+    },
+    {
+      code: `export default {compilerOptions:{experimental:{customRenderer:null}}}`,
+      output: { compilerOptions: {} },
+    },
+    {
+      code: `export default {compilerOptions:{experimental:{customRenderer:false}}}`,
+      output: { compilerOptions: {} },
+    },
+    {
+      code: `export default {compilerOptions:{experimental:{async:true,customRenderer:() => "x"}}}`,
+      output: { compilerOptions: { experimental: { async: true } } },
+    },
+    {
+      code: `
+        const experimental = {async:true,customRenderer:"my-renderer"}
+        export default {compilerOptions:{experimental}}
+        `,
+      output: {
+        compilerOptions: {
+          experimental: { async: true, customRenderer: "my-renderer" },
+        },
+      },
+    },
+    {
+      code: `
+        const experimental = {async:true}
+        export default {compilerOptions:{experimental:experimental}}
+        `,
+      output: { compilerOptions: { experimental: { async: true } } },
+    },
+    {
+      code: `
+        const base = {async:true}
+        export default {compilerOptions:{experimental:{...base}}}
+        `,
+      output: { compilerOptions: { experimental: { async: true } } },
+    },
+    {
+      code: `export default {compilerOptions:{experimental:true}}`,
+      output: { compilerOptions: {} },
+    },
+    {
+      code: `export default {compilerOptions:{experimental:getExperimental()}}`,
+      output: { compilerOptions: {} },
+    },
+    {
+      code: `export default {compilerOptions:{experimental:{}}}`,
+      output: { compilerOptions: {} },
+    },
+    {
+      code: `export default {compilerOptions:{runes:true},kit:{files:{routes:"src/custom"}}}`,
+      output: {
+        compilerOptions: { runes: true },
+        kit: { files: { routes: "src/custom" } },
+      },
+    },
   ];
   for (const { code, output } of testCases) {
     it(code, () => {
