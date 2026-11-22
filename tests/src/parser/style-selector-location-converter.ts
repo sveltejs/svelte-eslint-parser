@@ -66,6 +66,9 @@ function getSelectorTexts(code: string): string[] {
     services.getStyleSelectorAST(rule).walk((node: SelectorNode) => {
       const loc = services.styleSelectorNodeLoc(node);
       for (const position of [loc.start, loc.end]) {
+        // postcss-selector-parser does not give the end of an empty selector.
+        if (position === undefined && node.toString() === "") continue;
+        assert.ok(Number.isInteger(position.column));
         assert.deepStrictEqual(
           locs.getLocFromIndex(locs.getIndexFromLoc(position)),
           position,
@@ -194,6 +197,12 @@ describe("Selector locations with comments that PostCSS removes from the selecto
       '<style lang="scss">.a:is(url(//x)) /* c */ .b {}</style>',
       [".a", ".b"],
     ],
+    [
+      "a slash at the end of a word before a comment in SCSS",
+      '<style lang="scss">.a\\/*/*/*//*c*/\n.b {}</style>',
+      [".a\\/", ".b"],
+    ],
+    ["an empty selector", "<style>{} /* c */ {}</style>", []],
   ] as const) {
     it(`must point to the selector nodes with ${name}`, () => {
       assert.deepStrictEqual(getSelectorTexts(code), expected);
@@ -207,4 +216,23 @@ it("must point to the selector node after SCSS interpolation", () => {
     '<style lang="scss">.a-#{$x} /* c */ .b {}</style>',
   );
   assert.strictEqual(texts[texts.length - 1], ".b");
+});
+
+it("must give the combinator location when a comment is removed before the same comment", () => {
+  const code = "<style>.a /**//**/.b {}</style>";
+  const { services } = parseForESLint(code);
+  const styleContext = services.getStyleContext();
+  const rule = styleContext.sourceAst.first as Rule;
+  const locs = new LinesAndColumns(code);
+  const texts: string[] = [];
+  services.getStyleSelectorAST(rule).walkCombinators((node: SelectorNode) => {
+    const loc = services.styleSelectorNodeLoc(node);
+    texts.push(
+      code.slice(
+        locs.getIndexFromLoc(loc.start),
+        locs.getIndexFromLoc(loc.end),
+      ),
+    );
+  });
+  assert.deepStrictEqual(texts, [" /**//**/"]);
 });

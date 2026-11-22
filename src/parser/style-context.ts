@@ -1,6 +1,10 @@
 import type { Node, Parser, Root, Rule } from "postcss";
 import postcss from "postcss";
 import { parse as SCSSparse } from "postcss-scss";
+// @ts-expect-error -- PostCSS does not have types for its tokenizer.
+import postcssTokenize from "postcss/lib/tokenize";
+// @ts-expect-error -- postcss-scss does not have types for its tokenizer.
+import scssTokenize from "postcss-scss/lib/scss-tokenize";
 import {
   default as selectorParser,
   type Node as SelectorNode,
@@ -100,15 +104,10 @@ export function parseSelector(
   const processor = selectorParser();
   const root = processor.astSync(rule.selector);
   const ruleStart = rule.source?.start?.offset;
-  const ruleEnd = rule.source?.end?.offset;
   const selectorLineStartIndices = getPostCSSLineStartIndices(rule.selector);
   const sourceOffsets =
-    ruleStart !== undefined && ruleEnd !== undefined
-      ? getSelectorSourceOffsets(
-          rule.selector,
-          ctx.code.slice(ruleStart, ruleEnd),
-          isSCSS,
-        )
+    ruleStart !== undefined
+      ? getSelectorSourceOffsets(rule, ctx.code, ruleStart, isSCSS)
       : null;
   fixSelectorNodeLocation(
     root,
@@ -279,82 +278,84 @@ function fixSelectorNodeLocation(
  * Gets the offset in the source text of the given index in `rule.selector`.
  */
 function getSourceOffset(sourceOffsets: number[], index: number): number {
-  if (index < sourceOffsets.length) {
-    return sourceOffsets[index];
-  }
+  const last = sourceOffsets.length - 1;
   // postcss-selector-parser can give a position after the end.
-  return (
-    sourceOffsets[sourceOffsets.length - 1] + 1 + index - sourceOffsets.length
-  );
+  return index <= last
+    ? sourceOffsets[index]
+    : sourceOffsets[last] + index - last;
 }
 
 /**
- * Gets the offset in the source text of each character in `rule.selector`.
+ * Gets the offset from the rule start of each character in `rule.selector`,
+ * and of the end of `rule.selector`.
  * PostCSS removes some comments from `rule.selector`, so they can differ.
  */
 function getSelectorSourceOffsets(
-  selector: string,
-  source: string,
+  rule: Rule,
+  code: string,
+  ruleStart: number,
   isSCSS: boolean,
 ): number[] {
-  const offsets: number[] = [];
-  let offset = 0;
-  let quote: string | null = null;
-  let escaped = false;
-  // The end of a comment that is also in the selector.
-  let keptCommentEnd = 0;
-  for (let index = 0; index < selector.length; index++) {
-    if (!quote && !escaped && offset >= keptCommentEnd) {
-      // Skip the comments that are not in the selector.
-      for (;;) {
-        const commentEnd = getCommentEnd(source, offset, isSCSS);
-        if (
-          commentEnd === -1 ||
-          // postcss-scss does not take `//` in `url()` as a comment.
-          (source.startsWith("//", offset) && selector.startsWith("//", index))
-        ) {
-          break;
-        }
-        if (selector.startsWith(source.slice(offset, commentEnd), index)) {
-          keptCommentEnd = commentEnd;
-          break;
-        }
-        offset = commentEnd;
-      }
+  const selector = rule.selector;
+  const raws = rule.raws.selector as { raw: string; scss?: string } | undefined;
+  // postcss-scss keeps the source text in `scss` when it changes `raw`.
+  const source = raws ? (raws.scss ?? raws.raw) : selector;
+  if (source !== selector && code.startsWith(source, ruleStart)) {
+    const offsets = getOffsetsWithoutRemovedComments(source, selector, isSCSS);
+    if (offsets !== null) {
+      return offsets;
     }
-    offsets.push(offset);
-    const c = source[offset];
-    if (offset < keptCommentEnd) {
-      // Inside a comment.
-    } else if (escaped) {
-      escaped = false;
-    } else if (c === "\\" && source[offset + 1] !== "/") {
-      // PostCSS does not take `\/` as an escape, so `\/*` starts a comment.
-      escaped = true;
-    } else if (quote) {
-      if (c === quote) {
-        quote = null;
-      }
-    } else if (c === '"' || c === "'") {
-      quote = c;
-    }
-    offset++;
   }
+  return Array.from({ length: selector.length + 1 }, (_, index) => index);
+}
+
+/**
+ * Removes comments from the source text of a selector in the same way as
+ * `Parser#raw()` in PostCSS, and gets the offset of each character that is
+ * left and of the end. Returns null if the result is not the given selector.
+ */
+function getOffsetsWithoutRemovedComments(
+  source: string,
+  selector: string,
+  isSCSS: boolean,
+): number[] | null {
+  const tokenizer = (isSCSS ? scssTokenize : postcssTokenize)(
+    { css: source },
+    { ignoreErrors: true },
+  );
+  const tokens: [string, string][] = [];
+  while (!tokenizer.endOfFile()) {
+    tokens.push(tokenizer.nextToken());
+  }
+  const offsets: number[] = [];
+  let value = "";
+  let offset = 0;
+  for (let index = 0; index < tokens.length; index++) {
+    const [type, text] = tokens[index];
+    const isKept =
+      type === "comment"
+        ? !isSafeCommentNeighbor(tokens[index - 1]) &&
+          !isSafeCommentNeighbor(tokens[index + 1]) &&
+          !value.endsWith(",")
+        : type !== "space" || index !== tokens.length - 1;
+    if (isKept) {
+      for (let i = 0; i < text.length; i++) {
+        offsets.push(offset + i);
+      }
+      value += text;
+    }
+    offset += text.length;
+  }
+  if (value !== selector) {
+    return null;
+  }
+  offsets.push(offset);
   return offsets;
 }
 
 /**
- * Gets the end offset of the comment at the given offset, or -1 if there is no comment.
- * `//` comments are only for SCSS.
+ * Checks if PostCSS removes a comment next to the given token from the selector.
  */
-function getCommentEnd(code: string, offset: number, isSCSS: boolean): number {
-  if (code.startsWith("/*", offset)) {
-    const end = code.indexOf("*/", offset + 2);
-    return end === -1 ? code.length : end + 2;
-  }
-  if (isSCSS && code.startsWith("//", offset)) {
-    const end = code.slice(offset).search(/[\n\f\r]/u);
-    return end === -1 ? code.length : offset + end;
-  }
-  return -1;
+function isSafeCommentNeighbor(token: [string, string] | undefined): boolean {
+  return token === undefined || token[0] === "space";
 }
