@@ -553,9 +553,11 @@ export class ScriptLetContext {
   ): void {
     const exprRange = getNodeRange(expression, this.ctx.code);
     const ctxRange = context && getNodeRange(context, this.ctx.code);
-    let source = "Array.from(";
+    // Wrap the expression in parentheses, so that a sequence expression such
+    // as `(a, b)` is passed as one argument.
+    let source = "Array.from((";
     const exprOffset = source.length;
-    source += `${this.ctx.code.slice(...exprRange)}).forEach(${this.getAsyncPrefix()}(`;
+    source += `${this.ctx.code.slice(...exprRange)})).forEach(${this.getAsyncPrefix()}(`;
     const ctxOffset = source.length;
     if (ctxRange) {
       source += this.ctx.code.slice(...ctxRange);
@@ -620,6 +622,7 @@ export class ScriptLetContext {
         tokens.shift(); // Array
         tokens.shift(); // .
         tokens.shift(); // from
+        tokens.shift(); // (
         tokens.shift(); // (
 
         tokens.pop(); // )
