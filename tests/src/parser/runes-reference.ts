@@ -74,6 +74,10 @@ const cases: Record<string, Case[]> = {
       runes: false,
     },
     { code: script("let effect = 1; $effect(() => {});"), runes: false },
+    {
+      code: ts("type state = number; let state = 1; let a = $state;"),
+      runes: false,
+    },
   ],
   "a rune name in a TypeScript type": [
     { code: ts("let o: $state;"), runes: false },
@@ -139,6 +143,10 @@ const cases: Record<string, Case[]> = {
       runes: true,
     },
     {
+      code: script("let inspect = $inspect(1).with(() => {});"),
+      runes: true,
+    },
+    {
       code: script("let props = $props(); let id = $props.id();"),
       runes: true,
     },
@@ -176,6 +184,9 @@ const cases: Record<string, Case[]> = {
       runes: true,
     },
     { code: ts("declare let state: number; let o = $state(1);"), runes: true },
+    { code: ts("let state = $state!(0);"), runes: true },
+    { code: ts("let state = ($state<number>)(0);"), runes: true },
+    { code: ts("let state = ($state.raw as any)(0);"), runes: true },
     {
       code: ts("let state = $state(0) as number; let o = $state(1);"),
       runes: true,

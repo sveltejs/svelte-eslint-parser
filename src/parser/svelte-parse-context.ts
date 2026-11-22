@@ -134,10 +134,13 @@ function isInType(node: ESTree.Node): boolean {
  * This follows the synthetic store bindings in `analyze_component` of `svelte/compiler`.
  */
 function isStoreSubscription(name: string, topScope: Scope.Scope): boolean {
-  const storeName = name.slice(1);
-  const def = topScope.set.get(storeName)?.defs[0];
   // Svelte removes the types, so a type does not declare the name.
-  if (!def || isTypeOnlyNode(def.node) || isTypeOnlyNode(def.parent)) {
+  const def = topScope.set
+    .get(name.slice(1))
+    ?.defs.find(
+      (def) => !isTypeOnlyNode(def.node) && !isTypeOnlyNode(def.parent),
+    );
+  if (!def) {
     return false;
   }
   // `import { derived } from 'svelte/store'` does not make `$derived` a store.
@@ -153,23 +156,31 @@ function isStoreSubscription(name: string, topScope: Scope.Scope): boolean {
 }
 
 /**
- * Checks whether the given expression calls a rune, such as `$state(0)` and `$state.raw(0)`.
- * This is a simple version of `get_rune` in `svelte/compiler`.
+ * Checks whether the given expression calls a rune, such as `$state(0)`, `$state.raw(0)` and `$inspect(1).with(f)`.
+ * This is a simple version of `get_rune` in `svelte/compiler`. It does not check that the rune exists, such as `$state.foo`.
  */
 function isRuneCall(node: ESTree.Node | null | undefined): boolean {
-  let expression: any = node;
-  // Svelte removes the types, so `$state(0) as number` is `$state(0)`.
-  while (expression && tsNodesWithExpression.has(expression.type)) {
-    expression = expression.expression;
-  }
+  const expression = skipTypes(node);
   if (expression?.type !== "CallExpression") {
     return false;
   }
-  let callee = expression.callee;
-  if (callee.type === "MemberExpression" && !callee.computed) {
-    callee = callee.object;
+  let callee = skipTypes(expression.callee);
+  while (callee?.type === "MemberExpression" && !callee.computed) {
+    callee = skipTypes(callee.object);
   }
-  return callee.type === "Identifier" && runeSymbols.includes(callee.name);
+  if (callee?.type === "CallExpression") {
+    callee = skipTypes(callee.callee);
+  }
+  return callee?.type === "Identifier" && runeSymbols.includes(callee.name);
+}
+
+/** Skips the TypeScript nodes around the expression, because Svelte removes them. */
+function skipTypes(node: any): any {
+  let expression = node;
+  while (expression && tsNodesWithExpression.has(expression.type)) {
+    expression = expression.expression;
+  }
+  return expression;
 }
 
 /**
@@ -188,7 +199,7 @@ const tsNodesWithExpression = new Set<string>([
 
 /**
  * Checks whether Svelte removes the given node with the TypeScript types.
- * See `remove_typescript_nodes` in `svelte/compiler`.
+ * This is close to `remove_typescript_nodes` in `svelte/compiler`.
  */
 function isTypeOnlyNode(node: any): boolean {
   if (!node) {
