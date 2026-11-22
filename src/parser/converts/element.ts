@@ -366,15 +366,16 @@ function convertScopedContent(
   const slotted: (Child | SvAST.TemplateNode)[] = [];
   let hasSnippet = false;
   for (const child of getChildren(fragment) ?? []) {
-    if (!attributesInOuterScope || !letParams.length) {
-      scoped.push(child);
-    } else if (child.type === "SnippetBlock") {
-      // svelte/compiler's analysis (`phases/scope.js`) visits the snippet in
-      // the `let:` scope, but the generated code puts it in a block outside
-      // the component, so a snippet body cannot read `let:` names at runtime.
-      // We follow the generated code.
+    if (attributesInOuterScope && child.type === "SnippetBlock") {
+      // The generated code puts the snippet in a block around the component.
+      // So the component's own attributes can read it, and the snippet body
+      // cannot read `let:` names at runtime. svelte/compiler's analysis
+      // (`phases/scope.js`) visits it in the `let:` scope, but we follow the
+      // generated code.
       hasSnippet = true;
       slotted.push(child);
+    } else if (!attributesInOuterScope || !letParams.length) {
+      scoped.push(child);
     } else {
       const slotName = SLOTTABLE_NODE_TYPES.has(child.type)
         ? getStaticSlotName(
@@ -396,12 +397,11 @@ function convertScopedContent(
   if (hasSnippet) {
     ctx.scriptLet.nestBlock(element);
   }
-  if (attributesInOuterScope) {
-    element.startTag.attributes.push(
-      ...convertAttributes(attributes, element.startTag, ctx),
-    );
-  }
-  ctx.scriptLet.nestBlock(element, letParams);
+  const outerAttributes = attributesInOuterScope
+    ? [...convertAttributes(attributes, element.startTag, ctx)]
+    : [];
+  element.startTag.attributes.push(...outerAttributes);
+  ctx.scriptLet.nestBlock(element, letParams, outerAttributes);
   if (!attributesInOuterScope) {
     element.startTag.attributes.push(
       ...convertAttributes(attributes, element.startTag, ctx),
@@ -540,10 +540,9 @@ function convertHTMLElement(
   if (element.startTag.selfClosing && element.name.name.endsWith("-")) {
     // Restore the self-closing block.
     const selfClosingBlock =
-      /^[a-z]-+$/iu.test(element.name.name) &&
-      ctx.findSelfClosingBlock(element);
+      /^[a-z]-+$/u.test(element.name.name) && ctx.findSelfClosingBlock(element);
     if (selfClosingBlock) {
-      element.name.name = selfClosingBlock.originalTag;
+      element.name.name = selfClosingBlock.tag;
     }
   }
 

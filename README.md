@@ -302,7 +302,10 @@ precedence and the hook leaves it untouched. In that case component prop types
 are not available for that component, because plain TypeScript resolution picks
 the module instead of the component. To avoid this name collision, enable the
 `svelte/no-conflicting-module-names` rule from `eslint-plugin-svelte` (v3.22.0
-or later), which reports a `Foo.svelte` and `Foo.svelte.ts` pair.
+or later), which reports a `Foo.svelte` and `Foo.svelte.ts` pair. A real
+`Foo.svelte.d.ts`, which `svelte-package` writes next to each component of a
+library, also takes precedence, so a library component keeps the types its
+package declares.
 
 Component typing currently requires a TypeScript `<script>` and supports
 Svelte 3, 4, and 5. Props come from `$props()` annotations or destructuring

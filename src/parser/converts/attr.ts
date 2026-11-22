@@ -696,7 +696,7 @@ function convertTransitionDirective(
         name,
         directive.key,
         null,
-        buildExpressionTypeChecker(["Identifier"], ctx),
+        buildExpressionTypeChecker(getFunctionNameTypes(), ctx),
       ),
   });
   return directive;
@@ -727,10 +727,20 @@ function convertAnimationDirective(
         name,
         directive.key,
         null,
-        buildExpressionTypeChecker(["Identifier"], ctx),
+        buildExpressionTypeChecker(getFunctionNameTypes(), ctx),
       ),
   });
   return directive;
+}
+
+/**
+ * Get the allowed node types for the name of `transition:`, `in:`, `out:` and `animate:`.
+ * Svelte 5 compiles a member name such as `t.fade`. Svelte 3 and 4 do not resolve it.
+ */
+function getFunctionNameTypes(): ("Identifier" | "MemberExpression")[] {
+  return svelteVersion.gte(5)
+    ? ["Identifier", "MemberExpression"]
+    : ["Identifier"];
 }
 
 /** Convert for Action Directive */
