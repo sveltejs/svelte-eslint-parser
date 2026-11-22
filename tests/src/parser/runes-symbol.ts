@@ -68,6 +68,9 @@ describe("Runes mode detection from rune symbols", () => {
       "let o = ($state.snapshot<number>)(1);",
       "class B {} class A extends B { constructor(override x = $state.snapshot(1)) { super(); } }",
       "export = $state.snapshot(1);",
+      "import type { state } from './x'; let o = $state(1);",
+      "declare let state: number; let o = $state(1);",
+      "let state = $state(0) as number; let o = $state(1);",
     ]) {
       it(script, () => {
         assert.strictEqual(isRunesInSvelte(script), true);

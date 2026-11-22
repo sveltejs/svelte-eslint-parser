@@ -108,16 +108,96 @@ export function getRuneReferences(
   scopeManager: ScopeManager,
 ): Set<ESTree.Identifier> {
   const identifiers = new Set<ESTree.Identifier>();
+  const topScope =
+    scopeManager.scopes.find((scope) => scope.type === "module") ??
+    scopeManager.globalScope!;
   for (const reference of scopeManager.globalScope!.through) {
+    const name = reference.identifier.name;
     if (
-      runeSymbols.includes(reference.identifier.name) &&
+      runeSymbols.includes(name) &&
       // A type reference from `@typescript-eslint/scope-manager`.
-      (reference as { isValueReference?: boolean }).isValueReference !== false
+      (reference as { isValueReference?: boolean }).isValueReference !==
+        false &&
+      !isStoreSubscription(name, topScope)
     ) {
       identifiers.add(reference.identifier);
     }
   }
+  // Svelte does not declare the name of a class expression, so it counts the name as a reference.
+  for (const scope of scopeManager.scopes) {
+    const block = scope.block;
+    if (
+      block.type === "ClassExpression" &&
+      block.id &&
+      runeSymbols.includes(block.id.name)
+    ) {
+      identifiers.add(block.id);
+    }
+  }
   return identifiers;
+}
+
+/**
+ * Checks whether Svelte treats the given rune name as a store subscription,
+ * such as `$state` when the component declares `state`.
+ * This follows the synthetic store bindings in `analyze_component` of `svelte/compiler`.
+ */
+function isStoreSubscription(name: string, topScope: Scope.Scope): boolean {
+  const storeName = name.slice(1);
+  const variable = topScope.set.get(storeName);
+  const def = variable?.defs[0];
+  if (
+    !def ||
+    // Svelte removes the TypeScript types, so they do not declare anything.
+    isTypeOnlyNode(def.node) ||
+    (def.parent && isTypeOnlyNode(def.parent))
+  ) {
+    return false;
+  }
+  // `import { derived } from 'svelte/store'` does not make `$derived` a store.
+  if (
+    name === "$derived" &&
+    def.type === "ImportBinding" &&
+    def.parent.type === "ImportDeclaration" &&
+    def.parent.source.value === "svelte/store"
+  ) {
+    return false;
+  }
+  // `const state = $state(0)` is valid, and `$state` is still a rune.
+  const rune = def.type === "Variable" ? getRune(def.node.init) : null;
+  return rune === null || (storeName !== "props" && rune === "$props");
+}
+
+/**
+ * Gets the rune name of the given call, such as `$state.raw` for `$state.raw(0)`.
+ * This follows `get_rune` in `svelte/compiler`.
+ */
+function getRune(node: ESTree.Node | null | undefined): string | null {
+  let expression: any = node;
+  // Svelte removes the TypeScript types before this check.
+  while (expression && tsNodesWithExpression.has(expression.type)) {
+    expression = expression.expression;
+  }
+  if (expression?.type !== "CallExpression") {
+    return null;
+  }
+  let callee = expression.callee;
+  let keypath = "";
+  while (callee.type === "MemberExpression") {
+    if (callee.computed || callee.property.type !== "Identifier") {
+      return null;
+    }
+    keypath = `.${callee.property.name}${keypath}`;
+    callee = callee.object;
+  }
+  if (callee.type === "CallExpression" && callee.callee.type === "Identifier") {
+    keypath = `()${keypath}`;
+    callee = callee.callee;
+  }
+  if (callee.type !== "Identifier" || !runeSymbols.includes(callee.name)) {
+    return null;
+  }
+  return callee.name + keypath;
 }
 
 /**

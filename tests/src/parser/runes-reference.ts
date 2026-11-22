@@ -167,6 +167,34 @@ const cases: Case[] = [
     code: "{#if true}{const $state = 1}{/if}\n",
     runes: false,
   },
+  // Store subscriptions.
+  {
+    name: "store subscription",
+    code: script("let state = 1; let a = $state;"),
+    runes: false,
+  },
+  {
+    name: "store subscription of a store",
+    code: script(
+      "import { writable } from 'svelte/store'; const state = writable(0); let a = $state;",
+    ),
+    runes: false,
+  },
+  {
+    name: "store subscription in the template",
+    code: "<script>\n\tlet state = 1;\n</script>\n{$state}\n",
+    runes: false,
+  },
+  {
+    name: "store subscription of a variable in the module script",
+    code: "<script module>\n\tlet state = 1;\n</script>\n<script>\n\tlet a = $state;\n</script>\n",
+    runes: false,
+  },
+  {
+    name: "store subscription of a function",
+    code: script("let effect = 1; $effect(() => {});"),
+    runes: false,
+  },
   // References.
   { name: "call", code: script("let a = $state(0);"), runes: true },
   {
@@ -231,6 +259,34 @@ const cases: Case[] = [
   {
     name: "action directive",
     code: "<div use:a={$state}></div>\n",
+    runes: true,
+    compileError: "rune_missing_parentheses",
+  },
+  {
+    name: "rune with a variable that has a rune initializer",
+    code: script("let state = $state(0); let a = $state(1);"),
+    runes: true,
+  },
+  {
+    name: "rune with a variable that has a rune initializer and a member",
+    code: script("let state = $state.raw(0); let a = $state(1);"),
+    runes: true,
+  },
+  {
+    name: "$props with a variable named props",
+    code: script("let props = $props(); let id = $props.id();"),
+    runes: true,
+  },
+  {
+    name: "$derived with derived from svelte/store",
+    code: script(
+      "import { derived } from 'svelte/store'; let d = $derived(1);",
+    ),
+    runes: true,
+  },
+  {
+    name: "class expression name",
+    code: script("let C = class $state {};"),
     runes: true,
     compileError: "rune_missing_parentheses",
   },
