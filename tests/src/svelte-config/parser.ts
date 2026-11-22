@@ -318,12 +318,60 @@ describe("parseConfig", () => {
       code: [
         "const a0 = {}",
         ...Array.from(
-          { length: 25 },
+          { length: 40 },
           (_, i) => `const a${i + 1} = {...a${i}, ...a${i}}`,
         ),
-        "export default {compilerOptions:{runes:true, ...a25}}",
+        "export default {compilerOptions:{runes:true, ...a40}}",
       ].join("\n"),
       output: { compilerOptions: { runes: true } },
+    },
+    {
+      code: [
+        `const a0 = {routes:"src/pages"}`,
+        ...Array.from(
+          { length: 40 },
+          (_, i) => `const a${i + 1} = {...a${i}, ...a${i}}`,
+        ),
+        "export default {kit:{files:a40}}",
+      ].join("\n"),
+      output: { kit: { files: { routes: "src/pages" } } },
+    },
+    {
+      code: `export default {compilerOptions:{runes:false, ...{runes:f()}}}`,
+      output: { compilerOptions: {} },
+    },
+    {
+      code: `export default {compilerOptions:{runes:true, ...{runes:f(), ...{}}}}`,
+      output: { compilerOptions: {} },
+    },
+    {
+      code: `export default {compilerOptions:{runes:false, ...{get runes() { return true }}}}`,
+      output: { compilerOptions: {} },
+    },
+    {
+      code: `export default {kit:{files:{routes:"a", routes:"b"}}}`,
+      output: { kit: { files: { routes: "b" } } },
+    },
+    {
+      code: `
+        const a = {...a}
+        export default {compilerOptions:{...a}}
+        `,
+      output: { compilerOptions: {} },
+    },
+    {
+      code: `
+        const a = {...a}
+        export default {kit:{files:a}}
+        `,
+      output: { kit: {} },
+    },
+    {
+      code: `
+        const a = {a}
+        export default {kit:{files:a, ...{}}}
+        `,
+      output: { kit: {} },
     },
   ];
   for (const { code, output } of testCases) {
