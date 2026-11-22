@@ -1,5 +1,37 @@
 # svelte-eslint-parser
 
+## 1.10.2
+
+### Patch Changes
+
+- [#1028](https://github.com/sveltejs/svelte-eslint-parser/pull/1028) [`dad3108`](https://github.com/sveltejs/svelte-eslint-parser/commit/dad3108298ae733b4883156ae789859d39edb4cb) Thanks [@baseballyama](https://github.com/baseballyama)! - fix: parse `await` inside `{#each}`, `{#snippet}`, `{:then}`, `{:catch}` and `let:` bodies with `experimental.async`
+
+- [#1039](https://github.com/sveltejs/svelte-eslint-parser/pull/1039) [`c325918`](https://github.com/sveltejs/svelte-eslint-parser/commit/c325918dd9ee2d5a597096bfd23086040a1a799d) Thanks [@baseballyama](https://github.com/baseballyama)! - fix: avoid rebuilding TypeScript programs when the experimental ts.sys hook refreshes a component's companion
+
+- [#1011](https://github.com/sveltejs/svelte-eslint-parser/pull/1011) [`50c5187`](https://github.com/sveltejs/svelte-eslint-parser/commit/50c5187e8ce9791e8b979b8627d5aa22f50e0603) Thanks [@baseballyama](https://github.com/baseballyama)! - fix: parse `{@const}` tags whose value is wrapped in parentheses
+
+- [#1030](https://github.com/sveltejs/svelte-eslint-parser/pull/1030) [`f5ef901`](https://github.com/sveltejs/svelte-eslint-parser/commit/f5ef9018745af16a27b1911ec753f611574ab874) Thanks [@officialasishkumar](https://github.com/officialasishkumar)! - fix: keep the narrowing of enclosing blocks in `$derived()` of template declaration tags
+
+- [#1031](https://github.com/sveltejs/svelte-eslint-parser/pull/1031) [`b32e793`](https://github.com/sveltejs/svelte-eslint-parser/commit/b32e793bd305e6e9eb76875173462ded1582bba2) Thanks [@officialasishkumar](https://github.com/officialasishkumar)! - fix: detect the `parser` of `typescript-eslint` when there are multiple candidate `tsconfigRootDir`s, e.g. in a monorepo
+
+- [#1026](https://github.com/sveltejs/svelte-eslint-parser/pull/1026) [`b351fe9`](https://github.com/sveltejs/svelte-eslint-parser/commit/b351fe91675157ebc2039c3445793077a2a7bab1) Thanks [@baseballyama](https://github.com/baseballyama)! - fix: stop a line comment right before `</script>` from covering the `</script>` tag
+
+- [#1048](https://github.com/sveltejs/svelte-eslint-parser/pull/1048) [`bb98f38`](https://github.com/sveltejs/svelte-eslint-parser/commit/bb98f38426278c54f91acb5ad40a6eb14c2ffd4e) Thanks [@baseballyama](https://github.com/baseballyama)! - fix: give the `extends` token in the `generics` attribute the correct location
+
+- [#1025](https://github.com/sveltejs/svelte-eslint-parser/pull/1025) [`e6a1cc2`](https://github.com/sveltejs/svelte-eslint-parser/commit/e6a1cc2355aa1c44cd2ef0dd732e910063f0cd9f) Thanks [@baseballyama](https://github.com/baseballyama)! - fix: decide on runes mode from the rune references that Svelte counts, so a rune name that is not a reference, a declared rune name, a rune name in a TypeScript type or a store subscription does not turn on runes mode
+
+- [#1021](https://github.com/sveltejs/svelte-eslint-parser/pull/1021) [`66232f8`](https://github.com/sveltejs/svelte-eslint-parser/commit/66232f89aab310fe08a9a6d95a7e11bcdc22e5b3) Thanks [@baseballyama](https://github.com/baseballyama)! - fix: turn on runes mode for a top-level `await`, like the Svelte compiler
+
+- [#1024](https://github.com/sveltejs/svelte-eslint-parser/pull/1024) [`8bf1c0a`](https://github.com/sveltejs/svelte-eslint-parser/commit/8bf1c0adbdddb39abc4d8a79bad1ac794dee666b) Thanks [@baseballyama](https://github.com/baseballyama)! - fix: parse `<script>` blocks that are on the same line
+
+- [#1044](https://github.com/sveltejs/svelte-eslint-parser/pull/1044) [`4f53349`](https://github.com/sveltejs/svelte-eslint-parser/commit/4f53349e6debacdb99ac9994e915af455e271478) Thanks [@baseballyama](https://github.com/baseballyama)! - fix: read `compilerOptions.experimental.async` and `compilerOptions.experimental.customRenderer` when statically reading `svelte.config.js`
+
+- [#1014](https://github.com/sveltejs/svelte-eslint-parser/pull/1014) [`ed824fd`](https://github.com/sveltejs/svelte-eslint-parser/commit/ed824fd9f74047a1563918e79fa0b613b25b6e40) Thanks [@baseballyama](https://github.com/baseballyama)! - fix: parse a script with the TypeScript parser when no line break follows its last statement
+
+- [#1037](https://github.com/sveltejs/svelte-eslint-parser/pull/1037) [`18c1563`](https://github.com/sveltejs/svelte-eslint-parser/commit/18c1563b35b57c2edbdacad4381fda932642304a) Thanks [@Stadly](https://github.com/Stadly)! - fix: let a package's shipped `X.svelte.d.ts` win over the experimental ts.sys hook's virtual companion
+
+- [#1017](https://github.com/sveltejs/svelte-eslint-parser/pull/1017) [`bf3078f`](https://github.com/sveltejs/svelte-eslint-parser/commit/bf3078ffe41cf60a8637dcb3b557cfc0e4e5e149) Thanks [@baseballyama](https://github.com/baseballyama)! - fix: end lines at U+2028 and U+2029 in node and style locations, like ESLint does
+
 ## 1.10.1
 
 ### Patch Changes
