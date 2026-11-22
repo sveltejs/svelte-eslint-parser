@@ -19,8 +19,7 @@
   <p>{count}</p>
 {:else}
   {const size = $derived(entry.size)}
-  {@const bytes = $derived(entry.size)}
-  <p>{size} {bytes}</p>
+  <p>{size}</p>
 {/if}
 
 {#each entries as item (item)}
