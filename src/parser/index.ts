@@ -199,6 +199,7 @@ function parseAsSvelte(
       ctx,
     );
   }
+  ctx.fixLineCommentsAtScriptEnd(resultScript.ast.comments);
   ctx.tokens.push(...resultScript.ast.tokens);
   ctx.comments.push(...resultScript.ast.comments);
   sortNodes(ctx.comments);
