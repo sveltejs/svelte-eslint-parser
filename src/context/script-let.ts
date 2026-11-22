@@ -117,6 +117,15 @@ function getNodeRange(
     ).end;
     if (end < commentEnd) {
       end = commentEnd;
+      if (
+        node.trailingComments[node.trailingComments.length - 1].type ===
+          "Line" &&
+        /^[\n\r\u2028\u2029]/u.test(code.slice(end, end + 1))
+      ) {
+        // Include the line break that ends a line comment, so that the code
+        // added after the range is not commented out.
+        end++;
+      }
 
       // Extract the number of parentheses after the node.
       let trailingStart = loc.end;
