@@ -17,8 +17,6 @@ env:
   BREADTH_DAYS: 7
   BREADTH_REPOS: 10
   REPLY_HOURS: 24
-  # Log the signals only, to tune the thresholds on real PRs before acting.
-  DRY_RUN: true
 
 jobs:
   ask:
@@ -102,10 +100,6 @@ jobs:
             }
             // Only the job log shows the reasons. The comment does not.
             core.info(`Signals: ${reasons.join("; ")}`);
-            if (process.env.DRY_RUN === "true") {
-              core.info("Dry run: no comment or label.");
-              return;
-            }
 
             const body = [
               `@${author} Thanks for the PR. Before we review it, could you tell us why you want to work on this and how you checked the fix? A short reply is enough. If there is no reply within ${process.env.REPLY_HOURS} hours, this PR will be closed automatically, and a maintainer may fix the issue in a separate PR. See the [Contributing](https://github.com/sveltejs/svelte-eslint-parser#contributing) section in the README for why.`,
