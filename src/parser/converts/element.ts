@@ -267,37 +267,25 @@ function extractLetDirectives(fragment: {
 }
 
 /**
- * Check if the attributes have a static `slot` attribute.
+ * Get the value of the static `slot` attribute, or `null` if there is none.
  * This is the same check as `determine_slot()` in svelte/compiler.
  */
-function hasStaticSlotAttribute(
-  attributes: ReturnType<typeof extractLetDirectives>["attributes"],
-): boolean {
-  return attributes.some(
-    (attr) =>
-      attr.type === "Attribute" &&
-      attr.name === "slot" &&
-      Array.isArray(attr.value) &&
-      attr.value.length === 1 &&
-      attr.value[0].type === "Text",
-  );
-}
-
-/**
- * Check if the children have `{#snippet}`.
- * Svelte hoists the snippets of a component above the component,
- * so the component's own attributes can read them.
- */
-function hasSnippetChildren(
-  fragment:
-    | {
-        children?: SvAST.TemplateNode[];
-      }
-    | Compiler.Fragment,
-): boolean {
-  return Boolean(
-    getChildren(fragment)?.some((child) => child.type === "SnippetBlock"),
-  );
+function getStaticSlotName(
+  attributes: readonly { type: string }[],
+): string | null {
+  for (const attr of attributes) {
+    if (attr.type !== "Attribute") continue;
+    const { name, value } = attr as SvAST.Attribute | Compiler.Attribute;
+    if (name !== "slot") continue;
+    if (
+      Array.isArray(value) &&
+      value.length === 1 &&
+      value[0].type === "Text"
+    ) {
+      return value[0].data;
+    }
+  }
+  return null;
 }
 
 /** Check if children needs a scope. */
@@ -322,6 +310,113 @@ function needScopeByChildren(
     }
   }
   return false;
+}
+
+const SLOTTABLE_NODE_TYPES = new Set([
+  // Svelte v5
+  "RegularElement",
+  "SvelteElement",
+  "SvelteFragment",
+  "Component",
+  "SvelteComponent",
+  "SvelteSelf",
+  "SlotElement",
+  // Svelte v4
+  "Element",
+  "InlineComponent",
+  "Slot",
+  "SlotTemplate",
+]);
+
+const COMPONENT_NODE_TYPES = new Set([
+  // Svelte v5
+  "Component",
+  "SvelteComponent",
+  "SvelteSelf",
+  // Svelte v4
+  "InlineComponent",
+]);
+
+/**
+ * Convert the attributes and children of a special element or a component
+ * that has `let:` directives or needs a scope for its children.
+ *
+ * A component's own attributes are evaluated in the outer scope, and its
+ * `let:` names are only visible in the slot content.
+ * A child with a static `slot` (other than `default`) gets the scope outside
+ * the component, so it does not see the component's `let:` names.
+ * Each such child is added to `ctx.slottedChildren` to get its own scope.
+ * A `{#snippet}` child is placed in a block around the component, outside
+ * the `let:` scope, like the Svelte 5 output.
+ * If the component itself has a static `slot`, its `let:` names come from the
+ * parent's slot, so they reach its own attributes and all its children.
+ */
+function convertScopedContent(
+  node: { type: string },
+  element: SvelteSpecialElement | SvelteComponentElement,
+  attributes: ReturnType<typeof extractLetDirectives>["attributes"],
+  fragment: { children?: SvAST.TemplateNode[] } | Compiler.Fragment,
+  letParams: ScriptLetBlockParam[],
+  ctx: Context,
+): void {
+  const attributesInOuterScope =
+    COMPONENT_NODE_TYPES.has(node.type) &&
+    getStaticSlotName(attributes) == null;
+  const scoped: (Child | SvAST.TemplateNode)[] = [];
+  const slotted: (Child | SvAST.TemplateNode)[] = [];
+  let hasSnippet = false;
+  for (const child of getChildren(fragment) ?? []) {
+    if (attributesInOuterScope && child.type === "SnippetBlock") {
+      // The generated code puts the snippet in a block around the component.
+      // So the component's own attributes can read it, and the snippet body
+      // cannot read `let:` names at runtime. svelte/compiler's analysis
+      // (`phases/scope.js`) visits it in the `let:` scope, but we follow the
+      // generated code.
+      hasSnippet = true;
+      slotted.push(child);
+    } else if (!attributesInOuterScope || !letParams.length) {
+      scoped.push(child);
+    } else {
+      const slotName = SLOTTABLE_NODE_TYPES.has(child.type)
+        ? getStaticSlotName(
+            (child as { attributes: { type: string }[] }).attributes,
+          )
+        : null;
+      // svelte/compiler v5 also gives a `slot="default"` child a new scope in
+      // its analysis, and its SSR output reads the outer names. But its client
+      // output and Svelte 4 read the `let:` names, so we keep them in scope.
+      if (slotName != null && slotName !== "default") {
+        slotted.push(child);
+        ctx.slottedChildren.add(child);
+      } else {
+        scoped.push(child);
+      }
+    }
+  }
+
+  if (hasSnippet) {
+    ctx.scriptLet.nestBlock(element);
+  }
+  const outerAttributes = attributesInOuterScope
+    ? [...convertAttributes(attributes, element.startTag, ctx)]
+    : [];
+  element.startTag.attributes.push(...outerAttributes);
+  ctx.scriptLet.nestBlock(element, letParams, outerAttributes);
+  if (!attributesInOuterScope) {
+    element.startTag.attributes.push(
+      ...convertAttributes(attributes, element.startTag, ctx),
+    );
+  }
+  sortNodes(element.startTag.attributes);
+  element.children.push(...convertChildren({ nodes: scoped }, element, ctx));
+  ctx.scriptLet.closeScope();
+  if (slotted.length) {
+    element.children.push(...convertChildren({ nodes: slotted }, element, ctx));
+    sortNodes(element.children);
+  }
+  if (hasSnippet) {
+    ctx.scriptLet.closeScope();
+  }
 }
 
 /** Convert for HTML Comment */
@@ -392,7 +487,11 @@ function convertHTMLElement(
     letParams.push(...ctx.letDirCollections.extract().getLetParams());
   }
   const fragment = getFragment(node);
-  if (!letParams.length && !needScopeByChildren(fragment)) {
+  if (
+    !letParams.length &&
+    !needScopeByChildren(fragment) &&
+    !ctx.slottedChildren.has(node)
+  ) {
     element.startTag.attributes.push(
       ...convertAttributes(attributes, element.startTag, ctx),
     );
@@ -512,35 +611,17 @@ function convertSpecialElement(
     letParams.push(...ctx.letDirCollections.extract().getLetParams());
   }
   const fragment = getFragment(node);
-  if (!letParams.length && !needScopeByChildren(fragment)) {
+  if (
+    !letParams.length &&
+    !needScopeByChildren(fragment) &&
+    !ctx.slottedChildren.has(node)
+  ) {
     element.startTag.attributes.push(
       ...convertAttributes(attributes, element.startTag, ctx),
     );
     element.children.push(...convertChildren(fragment, element, ctx));
   } else {
-    // Like a component, `<svelte:component>` and `<svelte:self>` evaluate
-    // their own attributes in the outer scope, unless they have `slot`.
-    // If they have snippets, keep the attributes in the block,
-    // so that the attributes can read the snippets.
-    const attributesInOuterScope =
-      (node.type === "SvelteComponent" ||
-        node.type === "SvelteSelf" ||
-        node.type === "InlineComponent") &&
-      !hasStaticSlotAttribute(attributes) &&
-      !hasSnippetChildren(fragment);
-    const outerAttributes = attributesInOuterScope
-      ? [...convertAttributes(attributes, element.startTag, ctx)]
-      : [];
-    element.startTag.attributes.push(...outerAttributes);
-    ctx.scriptLet.nestBlock(element, letParams, outerAttributes);
-    if (!attributesInOuterScope) {
-      element.startTag.attributes.push(
-        ...convertAttributes(attributes, element.startTag, ctx),
-      );
-    }
-    sortNodes(element.startTag.attributes);
-    element.children.push(...convertChildren(fragment, element, ctx));
-    ctx.scriptLet.closeScope();
+    convertScopedContent(node, element, attributes, fragment, letParams, ctx);
   }
 
   const thisExpression =
@@ -812,33 +893,17 @@ function convertComponentElement(
     letParams.push(...ctx.letDirCollections.extract().getLetParams());
   }
   const fragment = getFragment(node);
-  if (!letParams.length && !needScopeByChildren(fragment)) {
+  if (
+    !letParams.length &&
+    !needScopeByChildren(fragment) &&
+    !ctx.slottedChildren.has(node)
+  ) {
     element.startTag.attributes.push(
       ...convertAttributes(attributes, element.startTag, ctx),
     );
     element.children.push(...convertChildren(fragment, element, ctx));
   } else {
-    // A component's own attributes are evaluated in the outer scope.
-    // Its `let:` names are only visible in the slot content.
-    // But if the component has `slot`, its `let:` names come from the
-    // parent's slot, so its own attributes can see them.
-    // If it has snippets, keep the attributes in the block,
-    // so that the attributes can read the snippets.
-    const attributesInOuterScope =
-      !hasStaticSlotAttribute(attributes) && !hasSnippetChildren(fragment);
-    const outerAttributes = attributesInOuterScope
-      ? [...convertAttributes(attributes, element.startTag, ctx)]
-      : [];
-    element.startTag.attributes.push(...outerAttributes);
-    ctx.scriptLet.nestBlock(element, letParams, outerAttributes);
-    if (!attributesInOuterScope) {
-      element.startTag.attributes.push(
-        ...convertAttributes(attributes, element.startTag, ctx),
-      );
-    }
-    sortNodes(element.startTag.attributes);
-    element.children.push(...convertChildren(fragment, element, ctx));
-    ctx.scriptLet.closeScope();
+    convertScopedContent(node, element, attributes, fragment, letParams, ctx);
   }
 
   extractElementTags(element, ctx, {
