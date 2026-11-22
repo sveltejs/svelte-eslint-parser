@@ -359,7 +359,7 @@ By default, it only targets `*.js` and `*.jsx`, so you need to configure `.svelt
 Contributions are welcome! Please open an issue or submit a PR on GitHub.  
 For internal details, see [internal-mechanism.md](./docs/internal-mechanism.md).
 
-If you want to fix an issue that was filed less than 1 hour ago, please comment on the issue first. For PRs from first-time contributors opened that soon, a bot asks the author why they want to work on it and how they checked the fix, and closes the PR if there is no reply within 24 hours. We do this so that a merged PR here stays a fair signal of the author's experience for anyone who looks at it later.
+We want a merged PR here to stay a fair signal of the author's experience for anyone who looks at it later. Using AI or other tools is fine. What we want to avoid is PRs opened mainly to add a contribution to a profile. So for some PRs from first-time contributors, a bot asks the author why they want to work on it and how they checked the fix. For example, it asks when the PR was opened soon after the issue was filed, or when the author opened PRs to many other repositories in a short time. A short reply is enough. If there is no reply within 24 hours, the PR is closed, and a maintainer may fix the issue in a separate PR. If you want to fix an issue that was filed less than 1 hour ago, please comment on the issue first.
 
 ---
 

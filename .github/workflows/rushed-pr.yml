@@ -1,4 +1,4 @@
-name: Ask first-time contributors about rushed PRs
+name: Ask some first-time contributors before review
 on:
   # Safe because this workflow never checks out or runs code from the PR.
   pull_request_target:
@@ -7,13 +7,18 @@ on:
     - cron: "0 * * * *"
 
 permissions:
+  contents: read
   issues: write
   pull-requests: write
 
 env:
   LABEL: awaiting author reply
   ISSUE_AGE_HOURS: 1
+  BREADTH_DAYS: 7
+  BREADTH_REPOS: 10
   REPLY_HOURS: 24
+  # Log the signals only, to tune the thresholds on real PRs before acting.
+  DRY_RUN: true
 
 jobs:
   ask:
@@ -23,12 +28,20 @@ jobs:
       contains(fromJSON('["FIRST_TIME_CONTRIBUTOR","FIRST_TIMER","NONE"]'), github.event.pull_request.author_association)
     runs-on: ubuntu-latest
     steps:
+      # Only used as one signal. It does not comment or label in silent mode.
+      - id: agentscan
+        uses: MatteoGabriele/agentscan-action@7ad606f1e21df2119da8be99b763f282a670a1c5 # v2.8.0
+        continue-on-error: true
+        with:
+          mode: silent
       - uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        env:
+          AGENTSCAN_CLASSIFICATION: ${{ steps.agentscan.outputs.classification }}
+          AGENTSCAN_COMMUNITY_FLAGGED: ${{ steps.agentscan.outputs.community-flagged }}
         with:
           script: |
             const pr = context.payload.pull_request;
             const author = pr.user.login;
-            const maxAge = Number(process.env.ISSUE_AGE_HOURS) * 3600e3;
             const { repository } = await github.graphql(
               `query ($owner: String!, $repo: String!, $num: Int!) {
                 repository(owner: $owner, name: $repo) {
@@ -41,17 +54,61 @@ jobs:
               }`,
               { owner: context.repo.owner, repo: context.repo.repo, num: pr.number },
             );
-            const rushed = repository.pullRequest.closingIssuesReferences.nodes.filter(
-              (issue) =>
-                issue.author?.login !== author &&
-                !issue.assignees.nodes.some((a) => a.login === author) &&
-                new Date(pr.created_at) - new Date(issue.createdAt) < maxAge,
-            );
-            if (rushed.length === 0) return;
+            const linked = repository.pullRequest.closingIssuesReferences.nodes;
+            // The author filed the issue or a maintainer assigned it to them.
+            if (linked.some((i) => i.author?.login === author || i.assignees.nodes.some((a) => a.login === author))) {
+              core.info("Skipped: the author filed or was assigned a linked issue.");
+              return;
+            }
 
-            const issues = rushed.map((i) => `#${i.number}`).join(", ");
+            const reasons = [];
+
+            const maxAge = Number(process.env.ISSUE_AGE_HOURS) * 3600e3;
+            const rushed = linked.filter((i) => new Date(pr.created_at) - new Date(i.createdAt) < maxAge);
+            if (rushed.length > 0) {
+              reasons.push(`opened less than ${process.env.ISSUE_AGE_HOURS} hour after ${rushed.map((i) => `#${i.number}`).join(", ")}`);
+            }
+
+            // Many PRs to unrelated repositories in a short time.
+            const since = new Date(Date.now() - Number(process.env.BREADTH_DAYS) * 86400e3).toISOString().slice(0, 10);
+            try {
+              const { data } = await github.rest.search.issuesAndPullRequests({
+                q: `type:pr author:${author} created:>=${since}`,
+                per_page: 100,
+              });
+              const ownRepo = `${context.repo.owner}/${context.repo.repo}`.toLowerCase();
+              const repos = new Set(
+                data.items
+                  .map((i) => i.repository_url.split("/repos/")[1].toLowerCase())
+                  .filter((r) => r !== ownRepo && !r.startsWith(`${author.toLowerCase()}/`)),
+              );
+              core.info(`PRs to ${repos.size} other repositories since ${since}.`);
+              if (repos.size >= Number(process.env.BREADTH_REPOS)) {
+                reasons.push(`PRs to ${repos.size} other repositories since ${since}`);
+              }
+            } catch (error) {
+              core.warning(`Search failed: ${error}`);
+            }
+
+            const classification = process.env.AGENTSCAN_CLASSIFICATION;
+            core.info(`AgentScan: ${classification || "no result"}`);
+            if (["automation", "mixed"].includes(classification) || process.env.AGENTSCAN_COMMUNITY_FLAGGED === "true") {
+              reasons.push(`AgentScan result: ${classification}`);
+            }
+
+            if (reasons.length === 0) {
+              core.info("No signals.");
+              return;
+            }
+            // Only the job log shows the reasons. The comment does not.
+            core.info(`Signals: ${reasons.join("; ")}`);
+            if (process.env.DRY_RUN === "true") {
+              core.info("Dry run: no comment or label.");
+              return;
+            }
+
             const body = [
-              `@${author} Thanks for the PR. It was opened less than ${process.env.ISSUE_AGE_HOURS} hour after ${issues} was filed, so before we review it, could you tell us why you want to work on this and how you checked the fix? If there is no reply within ${process.env.REPLY_HOURS} hours, this PR will be closed automatically. See the [Contributing](https://github.com/sveltejs/svelte-eslint-parser#contributing) section in the README for why.`,
+              `@${author} Thanks for the PR. Before we review it, could you tell us why you want to work on this and how you checked the fix? A short reply is enough. If there is no reply within ${process.env.REPLY_HOURS} hours, this PR will be closed automatically, and a maintainer may fix the issue in a separate PR. See the [Contributing](https://github.com/sveltejs/svelte-eslint-parser#contributing) section in the README for why.`,
               "",
               // Hidden in the rendered comment, but visible in the raw text.
               "<!--",
@@ -120,7 +177,7 @@ jobs:
                 await github.rest.issues.createComment({
                   ...context.repo,
                   issue_number: pr.number,
-                  body: `Closing this PR because there was no reply within ${process.env.REPLY_HOURS} hours. If you are still interested, reply here and a maintainer can reopen it.`,
+                  body: `Closing this PR because there was no reply within ${process.env.REPLY_HOURS} hours. A maintainer may fix the issue in a separate PR. If you are still interested, reply here and a maintainer can reopen it.`,
                 });
                 await github.rest.pulls.update({ ...context.repo, pull_number: pr.number, state: "closed" });
               }
