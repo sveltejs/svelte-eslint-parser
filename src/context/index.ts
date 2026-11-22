@@ -39,7 +39,7 @@ export class ScriptsSourceCode {
 
   public separateIndexes: number[] = [];
 
-  /** Whether line breaks were put between script blocks on the same line. */
+  /** Whether line breaks were put at the end tags of script blocks. */
   public readonly hasInsertedLineBreaks: boolean;
 
   public constructor(
@@ -196,8 +196,7 @@ export class Context {
     const scriptAttrs: Record<string, string | undefined> = {};
 
     let start = 0;
-    let lastScriptEnd: number | null = null;
-    let hasInsertedLineBreaks = false;
+    const lineBreakIndexes: number[] = [];
     for (const block of extractBlocks(code)) {
       if (block.tag === "template") {
         if (block.selfClosing) {
@@ -238,20 +237,19 @@ export class Context {
           code.slice(start, block.contentRange[0]) +
           spaces.slice(block.contentRange[0], block.contentRange[1]);
         if (block.tag === "script") {
-          let before = spaces.slice(start, block.contentRange[0]);
+          scriptCode +=
+            spaces.slice(start, block.contentRange[0]) +
+            code.slice(...block.contentRange);
           if (
-            lastScriptEnd != null &&
-            !/[\n\r\u2028\u2029]/u.test(
-              spaces.slice(lastScriptEnd, block.contentRange[0]),
-            )
+            block.contentRange[0] < block.contentRange[1] &&
+            !/[\n\r\u2028\u2029]$/u.test(code.slice(...block.contentRange))
           ) {
-            // Script blocks on the same line would run into each other, so put
-            // a line break between them. The locations are fixed after parsing.
-            before = `\n${before.slice(1)}`;
-            hasInsertedLineBreaks = true;
+            // Without a line break, the script would run into the next script,
+            // and a trailing line comment would cover the end tag. So put a
+            // line break at the `<` of the end tag. The locations are fixed
+            // after parsing.
+            lineBreakIndexes.push(block.contentRange[1]);
           }
-          scriptCode += before + code.slice(...block.contentRange);
-          lastScriptEnd = block.contentRange[1];
           for (const attr of block.attrs) {
             if (Array.isArray(attr.value)) {
               const attrValue = attr.value[0];
@@ -269,6 +267,10 @@ export class Context {
     }
     templateCode += code.slice(start);
     scriptCode += spaces.slice(start);
+    for (const index of lineBreakIndexes) {
+      scriptCode = `${scriptCode.slice(0, index)}\n${scriptCode.slice(index + 1)}`;
+    }
+    const hasInsertedLineBreaks = lineBreakIndexes.length > 0;
 
     this.sourceCode = {
       template: templateCode,
