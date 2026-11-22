@@ -1,0 +1,119 @@
+name: Ask first-time contributors about rushed PRs
+on:
+  # Safe because this workflow never checks out or runs code from the PR.
+  pull_request_target:
+    types: [opened]
+  schedule:
+    - cron: "0 * * * *"
+
+permissions:
+  issues: write
+  pull-requests: write
+
+env:
+  LABEL: "awaiting author reply"
+  ISSUE_AGE_HOURS: 1
+  REPLY_HOURS: 24
+
+jobs:
+  ask:
+    if: >-
+      github.repository == 'sveltejs/svelte-eslint-parser' &&
+      github.event_name == 'pull_request_target' &&
+      contains(fromJSON('["FIRST_TIME_CONTRIBUTOR","FIRST_TIMER","NONE"]'), github.event.pull_request.author_association)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        with:
+          script: |
+            const pr = context.payload.pull_request;
+            const author = pr.user.login;
+            const maxAge = Number(process.env.ISSUE_AGE_HOURS) * 3600e3;
+            const { repository } = await github.graphql(
+              `query ($owner: String!, $repo: String!, $num: Int!) {
+                repository(owner: $owner, name: $repo) {
+                  pullRequest(number: $num) {
+                    closingIssuesReferences(first: 10) {
+                      nodes { number createdAt author { login } assignees(first: 10) { nodes { login } } }
+                    }
+                  }
+                }
+              }`,
+              { owner: context.repo.owner, repo: context.repo.repo, num: pr.number },
+            );
+            const rushed = repository.pullRequest.closingIssuesReferences.nodes.filter(
+              (issue) =>
+                issue.author?.login !== author &&
+                !issue.assignees.nodes.some((a) => a.login === author) &&
+                new Date(pr.created_at) - new Date(issue.createdAt) < maxAge,
+            );
+            if (rushed.length === 0) return;
+
+            const issues = rushed.map((i) => `#${i.number}`).join(", ");
+            await github.rest.issues.createComment({
+              ...context.repo,
+              issue_number: pr.number,
+              body: `@${author} Thanks for the PR. It was opened less than ${process.env.ISSUE_AGE_HOURS} hour after ${issues} was filed, so before we review it, could you tell us why you want to work on this and how you checked the fix? If there is no reply within ${process.env.REPLY_HOURS} hours, this PR will be closed automatically.`,
+            });
+            await github.rest.issues.addLabels({
+              ...context.repo,
+              issue_number: pr.number,
+              labels: [process.env.LABEL],
+            });
+
+  follow-up:
+    if: >-
+      github.repository == 'sveltejs/svelte-eslint-parser' &&
+      github.event_name == 'schedule'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        with:
+          script: |
+            const label = process.env.LABEL;
+            const timeout = Number(process.env.REPLY_HOURS) * 3600e3;
+            const prs = await github.paginate(github.rest.issues.listForRepo, {
+              ...context.repo,
+              state: "open",
+              labels: label,
+              per_page: 100,
+            });
+            for (const pr of prs) {
+              if (!pr.pull_request) continue;
+              const author = pr.user.login;
+              const events = await github.paginate(github.rest.issues.listEvents, {
+                ...context.repo,
+                issue_number: pr.number,
+                per_page: 100,
+              });
+              const labeled = events.filter((e) => e.event === "labeled" && e.label?.name === label).at(-1);
+              if (!labeled) continue;
+              const since = new Date(labeled.created_at);
+
+              const comments = await github.paginate(github.rest.issues.listComments, {
+                ...context.repo,
+                issue_number: pr.number,
+                since: since.toISOString(),
+                per_page: 100,
+              });
+              const reviews = await github.paginate(github.rest.pulls.listReviews, {
+                ...context.repo,
+                pull_number: pr.number,
+                per_page: 100,
+              });
+              const replied =
+                comments.some((c) => c.user.login === author && new Date(c.created_at) > since) ||
+                reviews.some((r) => r.user?.login === author && new Date(r.submitted_at) > since);
+
+              if (replied) {
+                // A maintainer reads the reply and decides.
+                await github.rest.issues.removeLabel({ ...context.repo, issue_number: pr.number, name: label });
+              } else if (Date.now() - since > timeout) {
+                await github.rest.issues.createComment({
+                  ...context.repo,
+                  issue_number: pr.number,
+                  body: `Closing this PR because there was no reply within ${process.env.REPLY_HOURS} hours. If you are still interested, reply here and a maintainer can reopen it.`,
+                });
+                await github.rest.pulls.update({ ...context.repo, pull_number: pr.number, state: "closed" });
+              }
+            }
