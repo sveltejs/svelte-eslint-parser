@@ -384,6 +384,9 @@ function splitSlottedChildren(
           (child as { attributes: { type: string }[] }).attributes,
         )
       : null;
+    // svelte/compiler v5 also gives a `slot="default"` child a new scope in
+    // its analysis, and its SSR output reads the outer names. But its client
+    // output and Svelte 4 read the `let:` names, so we keep them in scope.
     if (slotName != null && slotName !== "default") {
       slotted.push(child);
       ctx.slottedChildren.add(child);
