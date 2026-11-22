@@ -675,40 +675,28 @@ export class ScriptLetContext {
       // `node` may be a function, which has its own scope. So get the each scope
       // from the parent of `node`, which is the virtual `ExpressionStatement`.
       const eachScope = result.getScope((node as any).parent);
-      traverseNodes(node, {
-        visitorKeys: result.visitorKeys,
-        enterNode(n) {
-          if (n.type !== "Identifier") return;
-          const reference = result
-            .getScope(n)
-            .references.find((r) => r.identifier === n);
-          const variable = reference?.resolved;
-          if (
-            !reference ||
-            !variable ||
-            variable.scope !== eachScope ||
-            variable.defs.some((def) => def.type === "Parameter")
-          ) {
-            return;
-          }
-          const index = variable.references.indexOf(reference);
-          if (index >= 0) variable.references.splice(index, 1);
+      const [start, end] = node.range!;
+      for (const variable of eachScope.variables) {
+        if (variable.defs.some((def) => def.type === "Parameter")) continue;
+        const keyReferences = variable.references.filter(
+          (r) =>
+            start <= r.identifier.range![0] && r.identifier.range![1] <= end,
+        );
+        for (const reference of keyReferences) {
+          variable.references.splice(variable.references.indexOf(reference), 1);
           reference.resolved = null;
           addReference(eachScope.through, reference);
           for (let scope = eachScope.upper; scope; scope = scope.upper) {
-            const upperVariable = scope.set.get(n.name);
+            const upperVariable = scope.set.get(variable.name);
             if (upperVariable && canResolve(reference, upperVariable)) {
               reference.resolved = upperVariable;
               addReference(upperVariable.references, reference);
-              return;
+              break;
             }
             addReference(scope.through, reference);
           }
-        },
-        leaveNode() {
-          // noop
-        },
-      });
+        }
+      }
     });
   }
 
