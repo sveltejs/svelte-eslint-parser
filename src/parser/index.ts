@@ -175,6 +175,7 @@ function parseAsSvelte(
             instanceScriptRange: getInstanceScriptRange(
               resultTemplate.svelteAst,
             ),
+            instanceGenerics: ctx.instanceGenerics,
           },
         )
       : parseScriptInSvelte(
