@@ -104,16 +104,16 @@ export function fixErrorLocation(
     return;
   }
   const virtualLocs = new LinesAndColumns(virtualCode);
-  // Some parsers (e.g. @babel/eslint-parser) do not give `index`.
+  // Some parsers (e.g. @babel/eslint-parser) do not give `index`. Without
+  // `index` or `pos`, use the start of the line, since `column` may be 0-based
+  // (e.g. hermes-eslint) or 1-based. The inserted line breaks only split lines,
+  // so the offset at the start of the line holds for the whole line.
   const index =
     typeof e.index === "number"
       ? e.index
       : typeof e.pos === "number"
         ? e.pos
-        : virtualLocs.getIndexFromLoc({
-            line: e.lineNumber,
-            column: e.column,
-          });
+        : virtualLocs.getIndexFromLoc({ line: e.lineNumber, column: 0 });
   if (!Number.isFinite(index) || index < 0 || index > ctx.code.length) {
     return;
   }

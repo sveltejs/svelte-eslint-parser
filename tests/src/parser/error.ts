@@ -49,12 +49,15 @@ describe("Check for the error location of script blocks on the same line.", () =
   const errorIndex = code.indexOf("*");
 
   /** A parser that throws an error with only `lineNumber` and `column`. */
-  function createParser(extra: Record<string, unknown>, locInMessage = false) {
+  function createParser(
+    extra: Record<string, unknown>,
+    { locInMessage = false, index = errorIndex, columnBase = 1 } = {},
+  ) {
     return {
       parse(virtualCode: string) {
-        const lines = virtualCode.slice(0, errorIndex).split("\n");
+        const lines = virtualCode.slice(0, index).split("\n");
         const lineNumber = lines.length;
-        const column = lines[lines.length - 1].length + 1;
+        const column = lines[lines.length - 1].length + columnBase;
         const message = locInMessage
           ? `Unexpected token (${lineNumber}:${column})`
           : "Unexpected token";
@@ -83,10 +86,27 @@ describe("Check for the error location of script blocks on the same line.", () =
     });
   }
 
+  for (const columnBase of [0, 1]) {
+    it(`without \`index\` at the inserted line break, with a ${columnBase}-based column`, () => {
+      // The line break is put here, between the script blocks.
+      const breakIndex = code.indexOf("</script>");
+      try {
+        parseForESLint(code, {
+          parser: createParser({}, { index: breakIndex, columnBase }),
+        });
+      } catch (e: any) {
+        assert.strictEqual(e.lineNumber, 1);
+        assert.strictEqual(e.column, breakIndex + columnBase);
+        return;
+      }
+      assert.fail("Expected error");
+    });
+  }
+
   it("with the location at the end of the message", () => {
     try {
       parseForESLint(code, {
-        parser: createParser({ pos: errorIndex }, true),
+        parser: createParser({ pos: errorIndex }, { locInMessage: true }),
       });
     } catch (e: any) {
       assert.strictEqual(e.lineNumber, 1);
