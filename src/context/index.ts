@@ -198,7 +198,17 @@ export class Context {
 
   private readonly blocks: Block[] = [];
 
-  public constructor(code: string, parserOptions: NormalizedParserOptions) {
+  /**
+   * Ranges of skipped mustache tags that have text like `<script`.
+   * If the scan ran too far over one of them, it may cover real markup.
+   */
+  public readonly skippedRanges: [number, number][];
+
+  public constructor(
+    code: string,
+    parserOptions: NormalizedParserOptions,
+    options: { skipMustaches?: boolean } = {},
+  ) {
     this.code = code;
     this.parserOptions = parserOptions;
     this.locs = new LinesAndColumns(code);
@@ -215,7 +225,11 @@ export class Context {
     let start = 0;
     let lastScriptEnd: number | null = null;
     let hasInsertedLineBreaks = false;
-    for (const block of extractBlocks(code)) {
+    const { blocks, skippedRanges } =
+      (options.skipMustaches !== false && extractBlocks(code, true)) ||
+      extractBlocks(code, false)!;
+    this.skippedRanges = skippedRanges;
+    for (const block of blocks) {
       if (block.tag === "template") {
         if (block.selfClosing) {
           continue;
@@ -451,15 +465,130 @@ function isValidStartTagOpenIndex(
   return />\s*$|^\s*$/m.test(prev);
 }
 
-/** Extract <script> blocks */
-function* extractBlocks(code: string): IterableIterator<Block> {
-  const startTagOpenRe = /<!--[\s\S]*?-->|<(script|style|template)([\s>])/gu;
+const RE_LINE_BREAK = /[\n\r\u2028\u2029]/u;
+
+/**
+ * Find the index after the `}` that closes the mustache tag at `start`.
+ * Returns `null` if it is not closed.
+ * It does not tell a regexp from a division, so it can stop early or run too
+ * far. `parseTemplateWithContext()` falls back when it runs too far.
+ */
+function findMustacheEnd(code: string, start: number): number | null {
+  // `true` for `${` in a template literal, `false` for `{`.
+  const braces: boolean[] = [];
+  let index = start + 1;
+  while (index < code.length) {
+    const c = code[index];
+    let next: number | null = index + 1;
+    if (c === "{") {
+      braces.push(false);
+    } else if (c === "}") {
+      if (!braces.length) return index + 1;
+      if (braces.pop()) next = skipTemplateLiteral(code, index + 1, braces);
+    } else if (c === "'" || c === '"') {
+      next = skipString(code, index);
+    } else if (c === "`") {
+      next = skipTemplateLiteral(code, index + 1, braces);
+    } else if (c === "/" && code[index + 1] === "/") {
+      next = index + 2;
+      while (next < code.length && !RE_LINE_BREAK.test(code[next])) next++;
+    } else if (c === "/" && code[index + 1] === "*") {
+      const commentEnd = code.indexOf("*/", index + 2);
+      next = commentEnd < 0 ? null : commentEnd + 2;
+    }
+    if (next == null) return null;
+    index = next;
+  }
+  return null;
+}
+
+/**
+ * Skip a string literal that starts with the quote at `start`.
+ * Returns the index after the closing quote, or `null` if it is not closed.
+ */
+function skipString(code: string, start: number): number | null {
+  const quote = code[start];
+  let index = start + 1;
+  while (index < code.length) {
+    const c = code[index];
+    if (c === "\\") {
+      index += code.startsWith("\r\n", index + 1) ? 3 : 2;
+    } else if (c === quote) {
+      return index + 1;
+    } else if (c === "\n" || c === "\r") {
+      return null;
+    } else {
+      index++;
+    }
+  }
+  return null;
+}
+
+/**
+ * Skip the rest of a template literal from `start`.
+ * Returns the index after the closing backquote, or the index after `${`.
+ * In the second case, `true` is pushed to `braces`.
+ * Returns `null` if the template literal is not closed.
+ */
+function skipTemplateLiteral(
+  code: string,
+  start: number,
+  braces: boolean[],
+): number | null {
+  let index = start;
+  while (index < code.length) {
+    const c = code[index];
+    if (c === "\\") {
+      index += 2;
+    } else if (c === "`") {
+      return index + 1;
+    } else if (c === "$" && code[index + 1] === "{") {
+      braces.push(true);
+      return index + 2;
+    } else {
+      index++;
+    }
+  }
+  return null;
+}
+
+/**
+ * Extract <script> blocks.
+ * If `skipMustaches` is `true`, mustache tags are skipped, and the ranges of
+ * skipped mustache tags that have text like `<script` are returned too.
+ * Returns `null` if a mustache tag is not closed or has `<!--` in it.
+ */
+function extractBlocks(
+  code: string,
+  skipMustaches: boolean,
+): { blocks: Block[]; skippedRanges: [number, number][] } | null {
+  const blocks: Block[] = [];
+  const skippedRanges: [number, number][] = [];
+  const startTagOpenRe = /<!--[\s\S]*?-->|\{|<(script|style|template)([\s>])/gu;
   const endScriptTagRe = /<\/script>/gu;
   const endStyleTagRe = /<\/style>/gu;
   const endTemplateTagRe = /<\/template>/gu;
   let startTagOpenMatch;
   while ((startTagOpenMatch = startTagOpenRe.exec(code))) {
-    const [, tag, nextChar] = startTagOpenMatch;
+    const [match, tag, nextChar] = startTagOpenMatch;
+    if (match === "{") {
+      // Skip a mustache tag, so that `<script>` in a string is not a block.
+      if (skipMustaches) {
+        const start = startTagOpenMatch.index;
+        const end = findMustacheEnd(code, start);
+        if (end == null) return null;
+        const text = code.slice(start, end);
+        // `startTagOpenRe` would start a comment at `<!--` here.
+        // Leave such a file as before.
+        if (text.includes("<!--")) return null;
+        startTagOpenRe.lastIndex = end;
+        // Only these ranges can change which blocks are extracted.
+        if (/<(?:script|style|template)/u.test(text)) {
+          skippedRanges.push([start, end]);
+        }
+      }
+      continue;
+    }
     if (!tag) {
       continue;
     }
@@ -478,12 +607,12 @@ function* extractBlocks(code: string): IterableIterator<Block> {
       attrs = attrsData.attributes;
       startTagEnd = attrsData.index;
       if (code[startTagEnd] === "/" && code[startTagEnd + 1] === ">") {
-        yield {
+        blocks.push({
           tag: blockTag,
           attrs,
           selfClosing: true,
           startTagRange: [startTagStart, startTagEnd + 2],
-        };
+        });
         continue;
       }
       if (code[startTagEnd] === ">") {
@@ -503,16 +632,17 @@ function* extractBlocks(code: string): IterableIterator<Block> {
     if (endTagMatch) {
       const endTagStart = endTagMatch.index;
       const endTagEnd = endTagRe.lastIndex;
-      yield {
+      blocks.push({
         tag: blockTag,
         attrs,
         startTagRange: [startTagStart, startTagEnd],
         contentRange: [startTagEnd, endTagStart],
         endTagRange: [endTagStart, endTagEnd],
-      };
+      });
       startTagOpenRe.lastIndex = endTagEnd;
     }
   }
+  return { blocks, skippedRanges };
 }
 
 export class LinesAndColumns {

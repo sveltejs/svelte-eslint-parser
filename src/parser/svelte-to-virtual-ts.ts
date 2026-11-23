@@ -1,7 +1,7 @@
 import { Context } from "../context/index.js";
 import { resolveSvelteConfigFromOption } from "../svelte-config/index.js";
 import type { NormalizedParserOptions } from "./parser-options.js";
-import { parseTemplate } from "./template.js";
+import { parseTemplateWithContext } from "./template.js";
 import { analyzeTypeScriptInSvelte } from "./typescript/analyze/index.js";
 import { resolveSvelteParseContextForSvelte } from "./svelte-parse-context.js";
 import { getInstanceScriptRange } from "./compat.js";
@@ -27,10 +27,18 @@ export function svelteToVirtualTypeScript(
       EXPERIMENTAL_useProjectService: undefined,
     };
 
-    const ctx = new Context(content, inner);
+    const firstCtx = new Context(content, inner);
+    // `parseTemplateWithContext()` may fall back to a context that does not
+    // skip mustache tags, so check that one too.
+    if (
+      !firstCtx.isTypeScript() &&
+      (!firstCtx.skippedRanges.length ||
+        !new Context(content, inner, { skipMustaches: false }).isTypeScript())
+    ) {
+      return null;
+    }
+    const { ctx, template } = parseTemplateWithContext(firstCtx);
     if (!ctx.isTypeScript()) return null;
-
-    const template = parseTemplate(ctx.sourceCode.template, ctx, inner);
     const svelteConfig = resolveSvelteConfigFromOption({
       ...parserOptions,
       filePath,
