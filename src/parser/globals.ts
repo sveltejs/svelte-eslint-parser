@@ -11,8 +11,7 @@ export const globalsForRunes = [
   "$host",
 ] as const;
 type Global =
-  | (typeof globalsForSvelte)[number]
-  | (typeof globalsForRunes)[number];
+  (typeof globalsForSvelte)[number] | (typeof globalsForRunes)[number];
 export function getGlobalsForSvelte(
   svelteParseContext: SvelteParseContext,
 ): readonly Global[] {

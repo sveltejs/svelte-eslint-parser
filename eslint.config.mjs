@@ -102,6 +102,8 @@ export default [
         },
       ],
 
+      // Imports in TypeScript files use the `.js` extension of the emitted file.
+      "n/file-extension-in-import": ["error", "always"],
       "@typescript-eslint/no-non-null-assertion": "off",
       "@typescript-eslint/no-use-before-define": "off",
       "@typescript-eslint/no-explicit-any": "off",
@@ -113,6 +115,12 @@ export default [
           allowAsStatement: true,
         },
       ],
+    },
+  },
+  {
+    files: ["tests/fixtures/**/*.ts"],
+    rules: {
+      "n/file-extension-in-import": "off",
     },
   },
   {

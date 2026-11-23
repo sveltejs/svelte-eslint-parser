@@ -4,7 +4,7 @@ import * as scope from "@typescript-eslint/scope-manager";
 const result = parser.parseForESLint("", { lib: ["lib", "esnext", "dom"] });
 const scopeManager =
   result.scopeManager ??
-  scope.analyze(result.ast as any, {
+  scope.analyze(result.ast, {
     lib: ["lib", "esnext", "dom"],
   });
 

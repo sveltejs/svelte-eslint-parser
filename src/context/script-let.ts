@@ -14,6 +14,7 @@ import type {
 import type { ESLintExtendedProgram } from "../parser/index.js";
 import { getWithLoc } from "../parser/converts/common.js";
 import {
+  addReference,
   getScopeFromNode,
   removeAllScopeAndVariableAndReference,
   removeIdentifierVariable,
@@ -55,6 +56,8 @@ export type ScriptLetRestoreCallback = (
 type ScriptLetRestoreCallbackOption = {
   getScope: (node: ESTree.Node) => eslint.Scope.Scope;
   registerNodeToScope: (node: any, scope: eslint.Scope.Scope) => void;
+  /** Make `scopeManager.acquire(node)` return the scope, without changing `scope.block`. */
+  addNodeToScope: (node: any, scope: eslint.Scope.Scope) => void;
   scopeManager: eslint.Scope.ScopeManager;
   visitorKeys?: { [type: string]: string[] };
   addPostProcess: (callback: () => void) => void;
@@ -191,6 +194,23 @@ export class ScriptLetContext {
     this.ctx = ctx;
   }
 
+  /**
+   * Emit a statement that only feeds type checking, such as the write a binding
+   * performs. It leaves no tokens, nodes, or references behind.
+   */
+  public addTypeOnlyStatement(code: string): void {
+    this.appendScriptWithoutOffset(
+      code,
+      this.currentScriptScopeKind,
+      "ExpressionStatement",
+      (node, tokens, comments, result) => {
+        tokens.length = 0;
+        comments.length = 0;
+        removeAllScopeAndVariableAndReference(node, result);
+      },
+    );
+  }
+
   public addExpression<E extends ESTree.Expression>(
     expression: E | SvelteName,
     parent: SvelteNode,
@@ -300,11 +320,10 @@ export class ScriptLetContext {
   ): ScriptLetCallback<ESTree.VariableDeclarator>[] {
     const range =
       declarator.type === "VariableDeclarator"
-        ? // As of Svelte v5-next.65, VariableDeclarator nodes do not have location information.
-          [
-            getNodeRange(declarator.id, this.ctx.code)[0],
-            getNodeRange(declarator.init!, this.ctx.code)[1],
-          ]
+        ? // Do not use the end of `init` or of the declarator.
+          // `init` does not include wrapping parentheses, and the declarator end can include trailing comments.
+          // Take everything up to the closing `}` of the tag.
+          [getNodeRange(declarator.id, this.ctx.code)[0], parent.range[1] - 1]
         : getNodeRange(declarator, this.ctx.code);
     const part = this.ctx.code.slice(...range);
     this.appendScript(
@@ -429,6 +448,10 @@ export class ScriptLetContext {
           eqToken.value = "extends";
           eqToken.range[0] = eqToken.range[0] - 1;
           eqToken.range[1] = eqToken.range[0] + 7;
+          eqToken.loc = {
+            start: this.ctx.getLocFromIndex(eqToken.range[0]),
+            end: this.ctx.getLocFromIndex(eqToken.range[1]),
+          };
           tokens.pop(); // ;
         } else {
           tokens.pop(); // ;
@@ -543,9 +566,11 @@ export class ScriptLetContext {
   ): void {
     const exprRange = getNodeRange(expression, this.ctx.code);
     const ctxRange = context && getNodeRange(context, this.ctx.code);
-    let source = "Array.from(";
+    // Wrap the expression in parentheses, so that a sequence expression such
+    // as `(a, b)` is passed as one argument.
+    let source = "Array.from((";
     const exprOffset = source.length;
-    source += `${this.ctx.code.slice(...exprRange)}).forEach((`;
+    source += `${this.ctx.code.slice(...exprRange)})).forEach(${this.getAsyncPrefix()}(`;
     const ctxOffset = source.length;
     if (ctxRange) {
       source += this.ctx.code.slice(...ctxRange);
@@ -611,6 +636,7 @@ export class ScriptLetContext {
         tokens.shift(); // .
         tokens.shift(); // from
         tokens.shift(); // (
+        tokens.shift(); // (
 
         tokens.pop(); // )
         tokens.pop(); // =>
@@ -653,6 +679,48 @@ export class ScriptLetContext {
     this.pushScope(restore, "});", this.currentScriptScopeKind);
   }
 
+  /**
+   * Add the key expression of an each block.
+   * Call it inside the scope opened by `nestEachBlock()`.
+   */
+  public addEachBlockKey(
+    key: ESTree.Expression,
+    eachBlock: SvelteEachBlock,
+    callback: (key: ESTree.Expression) => void,
+  ): void {
+    this.addExpression(key, eachBlock, null, (node, result) => {
+      callback(node);
+
+      // The key sees the item and the index, but not the declarations of the body,
+      // such as `{@const}`. Resolve such references in the upper scopes.
+      // `node` may be a function, which has its own scope. So get the each scope
+      // from the parent of `node`, which is the virtual `ExpressionStatement`.
+      const eachScope = result.getScope((node as any).parent);
+      const [start, end] = node.range!;
+      for (const variable of eachScope.variables) {
+        if (variable.defs.some((def) => def.type === "Parameter")) continue;
+        const keyReferences = variable.references.filter(
+          (r) =>
+            start <= r.identifier.range![0] && r.identifier.range![1] <= end,
+        );
+        for (const reference of keyReferences) {
+          variable.references.splice(variable.references.indexOf(reference), 1);
+          reference.resolved = null;
+          addReference(eachScope.through, reference);
+          for (let scope = eachScope.upper; scope; scope = scope.upper) {
+            const upperVariable = scope.set.get(variable.name);
+            if (upperVariable && canResolve(reference, upperVariable)) {
+              reference.resolved = upperVariable;
+              addReference(upperVariable.references, reference);
+              break;
+            }
+            addReference(scope.through, reference);
+          }
+        }
+      }
+    });
+  }
+
   public nestSnippetBlock(
     id: ESTree.Identifier,
     closeParentIndex: number,
@@ -685,9 +753,10 @@ export class ScriptLetContext {
     const closeToken = isTypeScript
       ? "return (null as unknown as import('svelte').Snippet)();}"
       : "}";
+    const asyncPrefix = this.getAsyncPrefix();
     const restore = this.appendScript(
-      `function ${part}{`,
-      idRange[0] - 9,
+      `${asyncPrefix}function ${part}{`,
+      idRange[0] - asyncPrefix.length - 9,
       scopeKind,
       "FunctionDeclaration",
       (st, tokens, comments, result) => {
@@ -729,6 +798,9 @@ export class ScriptLetContext {
         // Process for scope
         result.registerNodeToScope(snippetBlock, scope);
 
+        if (asyncPrefix) {
+          tokens.shift(); // async
+        }
         tokens.shift(); // function
         tokens.pop(); // {
         tokens.pop(); // }
@@ -814,6 +886,33 @@ export class ScriptLetContext {
     comments.forEach(relocate);
   }
 
+  /**
+   * Emit a type-only statement that infers a generic component's props from the
+   * given attribute entries, and return the name it binds. The statement only
+   * feeds types, so it leaves no tokens, nodes, or references behind.
+   */
+  public addGenericPropsInference(
+    componentName: string,
+    method: string,
+    entries: string[],
+  ): string {
+    const id = this.generateUniqueId("genericProps");
+    // Reading the method through `infer` keeps it generic, and a component
+    // without it gets a stand-in returning `any` instead of a type error.
+    const callee = `(${componentName} as any as { m: typeof ${componentName} extends { ${method}: infer M } ? M : (props: unknown) => any }).m`;
+    this.appendScriptWithoutOffset(
+      `const ${id} = ${callee}({${entries.join(",")}});`,
+      this.currentScriptScopeKind,
+      "VariableDeclaration",
+      (node, tokens, comments, result) => {
+        tokens.length = 0;
+        comments.length = 0;
+        removeAllScopeAndVariableAndReference(node, result);
+      },
+    );
+    return id;
+  }
+
   public nestBlock(
     block: SvelteNode,
     params?:
@@ -822,6 +921,8 @@ export class ScriptLetContext {
           param: ScriptLetBlockParam;
           preparationScript?: { script: string; nodeType: StatementNodeType }[];
         }),
+    /** The nodes that are converted before the block, in the outer scope. */
+    outerNodes: SvelteNode[] = [],
   ): void {
     let resolvedParams;
     if (typeof params === "function") {
@@ -863,6 +964,9 @@ export class ScriptLetContext {
           // Process for scope
           const scope = result.getScope(blockSt);
           result.registerNodeToScope(block, scope);
+          for (const node of outerNodes) {
+            result.addNodeToScope(node, scope.upper!);
+          }
 
           tokens.length = 0; // clear tokens
 
@@ -909,9 +1013,10 @@ export class ScriptLetContext {
           source += `: (${param.typing})`;
         }
       }
+      const asyncPrefix = this.getAsyncPrefix();
       const restore = this.appendScript(
-        `(${source})=>{`,
-        maps[0].range[0] - 1,
+        `${asyncPrefix}(${source})=>{`,
+        maps[0].range[0] - asyncPrefix.length - 1,
         this.currentScriptScopeKind,
         "ExpressionStatement",
         (st, tokens, comments, result) => {
@@ -940,6 +1045,9 @@ export class ScriptLetContext {
 
           // Process for scope
           result.registerNodeToScope(block, scope);
+          for (const node of outerNodes) {
+            result.addNodeToScope(node, scope.upper!);
+          }
           for (const v of scope.variables) {
             for (const def of v.defs) {
               if (def.node === fn) {
@@ -948,6 +1056,9 @@ export class ScriptLetContext {
             }
           }
 
+          if (asyncPrefix) {
+            tokens.shift(); // async
+          }
           tokens.shift(); // (
           tokens.pop(); // )
           tokens.pop(); // =>
@@ -1065,6 +1176,7 @@ export class ScriptLetContext {
     const callbackOption: ScriptLetRestoreCallbackOption = {
       getScope,
       registerNodeToScope,
+      addNodeToScope,
       scopeManager: result.scopeManager!,
       visitorKeys: result.visitorKeys,
       addPostProcess: (cb) => postprocessList.push(cb),
@@ -1100,12 +1212,35 @@ export class ScriptLetContext {
         }
       });
 
+      addNodeToScope(node, scope);
+    }
+
+    /** Add node to scope, without changing `scope.block` */
+    function addNodeToScope(node: any, scope: eslint.Scope.Scope): void {
       const scopes = nodeToScope.get(node);
       if (scopes) {
-        scopes.push(scope);
+        // Restore callbacks run from the inner scope to the outer scope, but
+        // `scopeManager.acquire()` expects the outer scope first.
+        const innerIndex = scopes.findIndex((s) => isUpperScope(scope, s));
+        if (innerIndex >= 0) {
+          scopes.splice(innerIndex, 0, scope);
+        } else {
+          scopes.push(scope);
+        }
       } else {
         nodeToScope.set(node, [scope]);
       }
+    }
+
+    /** Check if `upper` is an upper scope of `scope`. */
+    function isUpperScope(
+      upper: eslint.Scope.Scope,
+      scope: eslint.Scope.Scope,
+    ): boolean {
+      for (let s = scope.upper; s; s = s.upper) {
+        if (s === upper) return true;
+      }
+      return false;
     }
   }
 
@@ -1308,6 +1443,29 @@ export class ScriptLetContext {
     tokens.splice(tokenIndex);
   }
 
+  /**
+   * Get the prefix that makes a generated wrapper function async.
+   * With Svelte's `experimental.async`, the template can use `await` inside
+   * blocks such as `{#each}` and `{#snippet}`. A JavaScript parser accepts
+   * `await` there only if the wrapper is async. The TypeScript parser accepts
+   * it anyway, and an async snippet function would change the snippet's type,
+   * so TypeScript gets no prefix. Before ES2017 there are no async functions,
+   * and `await` cannot be used anyway, so those versions get no prefix either.
+   */
+  private getAsyncPrefix(): string {
+    if (this.ctx.isTypeScript()) {
+      return "";
+    }
+    const ecmaVersion = this.ctx.parserOptions.ecmaVersion;
+    if (
+      typeof ecmaVersion === "number" &&
+      (ecmaVersion < 8 || (ecmaVersion >= 2015 && ecmaVersion < 2017))
+    ) {
+      return "";
+    }
+    return "async ";
+  }
+
   private generateUniqueId(base: string) {
     return this.unique.generate(
       base,
@@ -1388,6 +1546,26 @@ function getTokenIndex(
   return null;
 }
 
+/**
+ * Checks whether the given reference can resolve to the given variable.
+ * With typescript-eslint, a value reference only resolves to a value variable,
+ * and a type reference only resolves to a type variable.
+ */
+function canResolve(
+  reference: eslint.Scope.Reference,
+  variable: eslint.Scope.Variable,
+): boolean {
+  const ref = reference as Partial<
+    Pick<TSScope["references"][number], "isValueReference" | "isTypeReference">
+  >;
+  const v = variable as Partial<
+    Pick<TSScope["variables"][number], "isValueVariable" | "isTypeVariable">
+  >;
+  if (ref.isValueReference && v.isValueVariable === false) return false;
+  if (ref.isTypeReference && v.isTypeVariable === false) return false;
+  return true;
+}
+
 /** Get the node to scope map from given scope manager  */
 function getNodeToScope(
   scopeManager: eslint.Scope.ScopeManager,
@@ -1417,7 +1595,7 @@ function getNodeToScope(
       return true;
     }
 
-    const scopes = nodeToScope.get(node as any);
+    const scopes = nodeToScope.get(node);
 
     if (!scopes || scopes.length === 0) {
       return null;

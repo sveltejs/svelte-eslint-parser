@@ -204,10 +204,7 @@ export interface AttributeShorthand extends BaseNode {
   expression: ESTree.Identifier;
 }
 export type AttributeOrDirective =
-  | Attribute
-  | Spread
-  | Directive
-  | StyleDirective;
+  Attribute | Spread | Directive | StyleDirective;
 
 interface BaseDirective extends BaseNode {
   name: string;
@@ -232,9 +229,7 @@ export interface StyleDirective extends BaseDirective {
   value: (Text | MustacheTag)[] | true;
 }
 export type Directive =
-  | DirectiveForExpression
-  | TransitionDirective
-  | LetDirective;
+  DirectiveForExpression | TransitionDirective | LetDirective;
 
 export interface Script extends BaseNode {
   type: "Script";

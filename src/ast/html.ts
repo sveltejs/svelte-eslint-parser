@@ -53,9 +53,7 @@ export interface SvelteProgram extends BaseNode {
 
 /** Node of elements like HTML element. */
 export type SvelteElement =
-  | SvelteHTMLElement
-  | SvelteComponentElement
-  | SvelteSpecialElement;
+  SvelteHTMLElement | SvelteComponentElement | SvelteSpecialElement;
 
 type BaseSvelteElement = BaseNode;
 
@@ -446,8 +444,7 @@ export interface SvelteAwaitPendingBlock extends BaseNode {
 }
 /** Node of await then block. e.g. `{:then}`, `{#await ... then ...}` */
 export type SvelteAwaitThenBlock =
-  | SvelteAwaitThenBlockAlone
-  | SvelteAwaitThenBlockAwaitThen;
+  SvelteAwaitThenBlockAlone | SvelteAwaitThenBlockAwaitThen;
 interface BaseSvelteAwaitThenBlock extends BaseNode {
   type: "SvelteAwaitThenBlock";
   awaitThen: boolean;
@@ -461,16 +458,14 @@ export interface SvelteAwaitThenBlockAlone extends BaseSvelteAwaitThenBlock {
   parent: SvelteAwaitBlockAwaitPending;
 }
 /** Node of await then block. e.g. `{#await ... then ...}` */
-export interface SvelteAwaitThenBlockAwaitThen
-  extends BaseSvelteAwaitThenBlock {
+export interface SvelteAwaitThenBlockAwaitThen extends BaseSvelteAwaitThenBlock {
   awaitThen: true;
   parent: SvelteAwaitBlockAwaitThen;
 }
 
 /** Node of await catch block. e.g. `{:catch}`, `{#await ... catch ... }` */
 export type SvelteAwaitCatchBlock =
-  | SvelteAwaitCatchBlockAlone
-  | SvelteAwaitCatchBlockAwaitCatch;
+  SvelteAwaitCatchBlockAlone | SvelteAwaitCatchBlockAwaitCatch;
 interface BaseSvelteAwaitCatchBlock extends BaseNode {
   type: "SvelteAwaitCatchBlock";
   awaitCatch: boolean;
@@ -484,8 +479,7 @@ export interface SvelteAwaitCatchBlockAlone extends BaseSvelteAwaitCatchBlock {
   parent: SvelteAwaitBlockAwaitPending | SvelteAwaitBlockAwaitThen;
 }
 /** Node of await catch block. e.g. `{#await ... catch ... }` */
-export interface SvelteAwaitCatchBlockAwaitCatch
-  extends BaseSvelteAwaitCatchBlock {
+export interface SvelteAwaitCatchBlockAwaitCatch extends BaseSvelteAwaitCatchBlock {
   awaitCatch: true;
   error: ESTree.Pattern | null;
   children: Child[];
@@ -587,16 +581,18 @@ export type SvelteDirectiveKey =
   | SvelteDirectiveKeyForEventHandler
   | SvelteDirectiveKeyForAction
   | SvelteDirectiveKeyForStyleShorthand;
-interface BaseSvelteDirectiveKey<N extends ESTree.Expression | SvelteName>
-  extends BaseNode {
+interface BaseSvelteDirectiveKey<
+  N extends ESTree.Expression | SvelteName,
+> extends BaseNode {
   type: "SvelteDirectiveKey";
   name: N;
   modifiers: string[];
   parent: SvelteDirective | SvelteStyleDirective;
 }
 export type SvelteDirectiveKeyTextName = BaseSvelteDirectiveKey<SvelteName>;
-export type SvelteDirectiveKeyFunctionName =
-  BaseSvelteDirectiveKey<ESTree.Identifier>;
+export type SvelteDirectiveKeyFunctionName = BaseSvelteDirectiveKey<
+  ESTree.Identifier | ESTree.MemberExpression
+>;
 export type SvelteDirectiveKeyForEventHandler =
   BaseSvelteDirectiveKey<SvelteName>;
 export type SvelteDirectiveKeyForAction = BaseSvelteDirectiveKey<
@@ -658,16 +654,14 @@ export interface SvelteTransitionDirective extends BaseSvelteDirective {
 
 /** Node of style directive. e.g. `<input style:color />` */
 export type SvelteStyleDirective =
-  | SvelteStyleDirectiveShorthand
-  | SvelteStyleDirectiveLongform;
+  SvelteStyleDirectiveShorthand | SvelteStyleDirectiveLongform;
 interface BaseSvelteStyleDirective extends BaseNode {
   type: "SvelteStyleDirective";
   key: SvelteDirectiveKeyTextName | SvelteDirectiveKeyForStyleShorthand;
   value: (SvelteLiteral | SvelteMustacheTagText)[];
   parent: SvelteStartTag;
 }
-export interface SvelteStyleDirectiveShorthand
-  extends BaseSvelteStyleDirective {
+export interface SvelteStyleDirectiveShorthand extends BaseSvelteStyleDirective {
   key: SvelteDirectiveKeyForStyleShorthand;
   shorthand: true;
   value: [];

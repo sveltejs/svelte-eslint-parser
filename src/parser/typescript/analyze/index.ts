@@ -24,13 +24,19 @@ import { setParent } from "../set-parent.js";
 import { getGlobalsForSvelte, globalsForRunes } from "../../globals.js";
 import type { SvelteParseContext } from "../../svelte-parse-context.js";
 import { withoutProjectParserOptions } from "../../parser-options.js";
-import { appendComponentDefaultExport } from "./component.js";
+import {
+  appendComponentDefaultExport,
+  getInstanceStatements,
+  type InstanceGenerics,
+} from "./component.js";
 
 export type AnalyzeTypeScriptContext = {
   slots: Set<SvelteHTMLElement>;
   svelteParseContext: SvelteParseContext;
   /** Source range of the instance `<script>` content; the virtual code concatenates both scripts. */
   instanceScriptRange?: [number, number] | null;
+  /** `generics` attribute of the instance `<script>`. */
+  instanceGenerics?: InstanceGenerics | null;
 };
 
 type TransformInfo = {
@@ -108,6 +114,13 @@ export function analyzeTypeScriptInSvelte(
 
   analyzeRuneVariables(result, ctx, context.svelteParseContext);
 
+  const legacyPropsTransformers = analyzeLegacyProps(
+    result,
+    context.instanceScriptRange ?? null,
+    context.svelteParseContext,
+    ctx,
+  );
+
   const isJavaScript =
     !attrs.lang || attrs.lang === "js" || attrs.lang === "javascript";
   if (isJavaScript) {
@@ -118,20 +131,33 @@ export function analyzeTypeScriptInSvelte(
 
   const scriptTransformers: TransformInfo[] = [
     ...analyzeReactiveScopes(result),
+    ...legacyPropsTransformers,
   ];
   const renderTransformers: TransformInfo[] = [];
   const rootScopeTransformers: TransformInfo[] = [];
   const renderStart = code.script.length;
   const rootScopeStart = code.script.length + code.render.length;
-  for (const transform of [
-    ...analyzeDollarDerivedScopes(result, context.svelteParseContext),
-    ...analyzeBindableProps(
-      result,
-      // TypeScript does not use JSDoc types in TypeScript code.
-      isJavaScript ? code.script + code.render + code.rootScope : null,
-      context.svelteParseContext,
-    ),
-  ]) {
+  for (const transform of analyzeDollarDerivedScopes(
+    result,
+    context.svelteParseContext,
+  )) {
+    // Only `$derived(...)` in `<script>` is transformed. A declaration tag in
+    // the template only lives while its enclosing blocks are rendered, so its
+    // argument keeps the narrowing of the enclosing `{#if}`, `{:else}`, etc.,
+    // as with svelte2tsx:
+    //   {#if action?.name === "change"}
+    //     {const value = $derived(action.id)}
+    //   {/if}
+    if (transform.node.range[0] < renderStart) {
+      scriptTransformers.push(transform);
+    }
+  }
+  for (const transform of analyzeBindableProps(
+    result,
+    // TypeScript does not use JSDoc types in TypeScript code.
+    isJavaScript ? code.script + code.render + code.rootScope : null,
+    context.svelteParseContext,
+  )) {
     if (transform.node.range[0] < renderStart) {
       scriptTransformers.push(transform);
     } else if (transform.node.range[0] < rootScopeStart) {
@@ -175,6 +201,7 @@ export function analyzeTypeScriptInSvelte(
     ctx,
     context.svelteParseContext,
     context.instanceScriptRange ?? null,
+    context.instanceGenerics ?? null,
   );
 
   return ctx;
@@ -784,6 +811,166 @@ function* analyzeBindableProps(
 }
 
 /**
+ * Analyze Svelte v4 style props. e.g. `export let x: string | undefined = undefined;`
+ * TypeScript narrows the prop to the type of its default value, but the parent
+ * component can pass any value of the declared type. So assign a value of type
+ * `any` to the prop right after its declaration to reset the narrowing.
+ * e.g. `export let x: T = undefined;` -> `export let x: T = undefined;x = $_any;`
+ * svelte2tsx does the same in `propTypeAssertToUserDefined()`.
+ */
+function analyzeLegacyProps(
+  result: TSESParseForESLintResult,
+  instanceScriptRange: [number, number] | null,
+  svelteParseContext: SvelteParseContext,
+  ctx: VirtualTypeScriptContext,
+): TransformInfo[] {
+  // In runes mode, `export` declares component exports, not props.
+  if (svelteParseContext.runes === true) {
+    return [];
+  }
+  const statements = getInstanceStatements(result, instanceScriptRange);
+
+  // Local names exported by `let x; export { x as y }`.
+  const exportedLocalNames = new Set<string>();
+  for (const statement of statements) {
+    if (
+      statement.type === "ExportNamedDeclaration" &&
+      !statement.declaration &&
+      !statement.source &&
+      statement.exportKind !== "type"
+    ) {
+      for (const specifier of statement.specifiers) {
+        if (specifier.local.type === "Identifier") {
+          exportedLocalNames.add(specifier.local.name);
+        }
+      }
+    }
+  }
+
+  const props: { statement: TSESTree.ProgramStatement; names: string[] }[] = [];
+  for (const statement of statements) {
+    const exported = statement.type === "ExportNamedDeclaration";
+    const declaration = exported ? statement.declaration : statement;
+    if (
+      declaration?.type !== "VariableDeclaration" ||
+      (declaration.kind !== "let" && declaration.kind !== "var")
+    ) {
+      continue;
+    }
+    const names = declaration.declarations.flatMap((declarator) => {
+      const declared = [...extractIdentifierNames(declarator.id)];
+      if (exported) return declared;
+      // TypeScript types `let x;`, `let x = null;` and `let x = [];` from
+      // their assignments, so assigning `any` would make them `any`.
+      if (isAutoTypedDeclarator(declarator)) return [];
+      return declared.filter((name) => exportedLocalNames.has(name));
+    });
+    if (names.length) props.push({ statement, names });
+  }
+  if (!props.length) return [];
+
+  const anyId = ctx.generateUniqueId("any");
+  ctx.appendVirtualScript(`declare const ${anyId}: any;`);
+  ctx.restoreContext.addRestoreStatementProcess((node, result) => {
+    if (
+      node.type !== "VariableDeclaration" ||
+      !node.declare ||
+      node.declarations.length !== 1 ||
+      node.declarations[0].id.type !== "Identifier" ||
+      node.declarations[0].id.name !== anyId
+    ) {
+      return false;
+    }
+    removeVirtualStatement(node, result);
+    return true;
+  });
+
+  return props.map(({ statement, names }) => ({
+    // Use the end of the declaration so that the transforms inside the
+    // declaration (e.g. `$derived()`) are not skipped.
+    node: {
+      ...statement,
+      range: [statement.range[1], statement.range[1]],
+    },
+    transform: (ctx) => {
+      ctx.appendOriginal(statement.range[1]);
+      const separator = ctx.script.endsWith(";") ? "" : ";";
+      // e.g. `a = b = $_any1;`
+      ctx.appendVirtualScript(`${separator}${names.join(" = ")} = ${anyId};`);
+      ctx.restoreContext.addRestoreStatementProcess((node, result) => {
+        if (
+          node.type !== "ExpressionStatement" ||
+          node.expression.type !== "AssignmentExpression"
+        ) {
+          return false;
+        }
+        let expression: TSESTree.Expression = node.expression;
+        while (expression.type === "AssignmentExpression") {
+          expression = expression.right;
+        }
+        if (expression.type !== "Identifier" || expression.name !== anyId) {
+          return false;
+        }
+        removeVirtualStatement(node, result);
+        return true;
+      });
+    },
+  }));
+
+  /**
+   * Checks whether TypeScript types the given variable from its assignments.
+   * This is close to `isAutoTypedVariable()` in TypeScript. An exported
+   * variable is never auto-typed.
+   */
+  function isAutoTypedDeclarator(declarator: TSESTree.VariableDeclarator) {
+    if (declarator.id.type !== "Identifier" || declarator.id.typeAnnotation) {
+      return false;
+    }
+    const init = declarator.init;
+    return (
+      !init ||
+      (init.type === "Literal" && init.value === null) ||
+      (init.type === "Identifier" && init.name === "undefined") ||
+      (init.type === "ArrayExpression" && !init.elements.length)
+    );
+  }
+
+  /** Extract identifier names from the given pattern. */
+  function* extractIdentifierNames(node: TSESTree.Node): Iterable<string> {
+    if (node.type === "Identifier") {
+      yield node.name;
+    } else if (node.type === "ObjectPattern") {
+      for (const prop of node.properties) {
+        yield* extractIdentifierNames(
+          prop.type === "Property" ? prop.value : prop,
+        );
+      }
+    } else if (node.type === "ArrayPattern") {
+      for (const element of node.elements) {
+        if (element) yield* extractIdentifierNames(element);
+      }
+    } else if (node.type === "AssignmentPattern") {
+      yield* extractIdentifierNames(node.left);
+    } else if (node.type === "RestElement") {
+      yield* extractIdentifierNames(node.argument);
+    }
+  }
+
+  /** Remove the given virtual statement and its scope information. */
+  function removeVirtualStatement(
+    node: TSESTree.ProgramStatement,
+    result: TSESParseForESLintResult,
+  ) {
+    const program = result.ast;
+    program.body.splice(program.body.indexOf(node), 1);
+    removeAllScopeAndVariableAndReference(node, {
+      visitorKeys: result.visitorKeys,
+      scopeManager: result.scopeManager as eslint.Scope.ScopeManager,
+    });
+  }
+}
+
+/**
  * Get the static key of the given property as a string.
  * e.g. `a`, `'a'`, `1`, `['a']`, `` [`a`] ``
  */
@@ -886,7 +1073,10 @@ function analyzeRenderScopes(
 ) {
   ctx.appendOriginal(code.script.length);
   const renderFunctionName = ctx.generateUniqueId("render");
-  ctx.appendVirtualScript(`export function ${renderFunctionName}(){`);
+  // Start on a new line. The script may end without a line break, e.g.
+  // `<script lang="ts">let a = 1</script>` at the end of the file, and the
+  // last statement must not continue into the render function.
+  ctx.appendVirtualScript(`\nexport function ${renderFunctionName}(){`);
   analyzeInTemplate();
   ctx.appendOriginal(code.script.length + code.render.length);
   ctx.appendVirtualScript(`}`);
@@ -922,7 +1112,12 @@ function applyTransforms(
   transforms: TransformInfo[],
   ctx: VirtualTypeScriptContext,
 ) {
-  transforms.sort((a, b) => a.node.range[0] - b.node.range[0]);
+  transforms.sort(
+    (a, b) =>
+      a.node.range[0] - b.node.range[0] ||
+      // Apply a zero-width transform before a transform that starts at the same position.
+      a.node.range[1] - b.node.range[1],
+  );
 
   let offset = 0;
   for (const transform of transforms) {

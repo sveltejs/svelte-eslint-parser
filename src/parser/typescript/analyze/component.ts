@@ -8,6 +8,26 @@ import type { SvelteParseContext } from "../../svelte-parse-context.js";
 import { svelteVersion } from "../../svelte-version.js";
 
 /**
+ * Type-only method on a generic component's synthetic value. An importer calls
+ * it with the attributes it passes so TypeScript infers the type arguments,
+ * which a `Component<Props>` signature cannot express.
+ */
+export const GENERIC_PROPS_INFERENCE_KEY = "$$genericProps";
+
+/** The instance script's `generics` attribute and its type parameter names. */
+export type InstanceGenerics = {
+  text: string;
+  names: string[];
+  params: {
+    name: string;
+    constraint: string | null;
+    default: string | null;
+    /** Whether the constraint reads a later type parameter. */
+    readsLaterParameter: boolean;
+  }[];
+};
+
+/**
  * Append a synthetic component `export default` so importers can resolve the
  * component's prop, event, and slot types.
  *
@@ -22,6 +42,7 @@ export function appendComponentDefaultExport(
   ctx: VirtualTypeScriptContext,
   svelteParseContext: SvelteParseContext,
   instanceScriptRange: [number, number] | null,
+  generics: InstanceGenerics | null,
 ): void {
   if (hasDefaultExport(result.ast)) {
     return;
@@ -33,6 +54,7 @@ export function appendComponentDefaultExport(
   const instanceStatements = getInstanceStatements(result, instanceScriptRange);
 
   const names: string[] = [];
+  const typeNames: string[] = [];
   // Lead with a newline so a trailing line comment can't swallow the statement.
   let code = "\n";
 
@@ -112,6 +134,56 @@ export function appendComponentDefaultExport(
     ? "$$Slots"
     : "{ [key: string]: any }";
 
+  let genericPropsMethod: string | null = null;
+  let genericInstance: { params: string; propsType: string } | null = null;
+  if (generics != null && svelteVersion.gte(5)) {
+    // At the top level the generics are placeholder aliases, so local types
+    // such as `interface Props { rows: T[] }` are copied into a generic
+    // function where they see its type parameters instead.
+    const scopeName = ctx.generateUniqueId("genericPropsScope");
+    const declarations = instanceStatements
+      .map((statement) =>
+        statement.type === "ExportNamedDeclaration"
+          ? statement.declaration
+          : statement,
+      )
+      .filter(
+        (node) =>
+          node?.type === "TSInterfaceDeclaration" ||
+          node?.type === "TSTypeAliasDeclaration",
+      )
+      // A declaration may omit its semicolon.
+      .map((node) => `${source.slice(...node.range)};`);
+    code += `function ${scopeName}<${generics.text}>() {${declarations.join("")}return null as any as ${propsType};}`;
+    registerRemoval(
+      ctx,
+      (node) =>
+        node.type === "FunctionDeclaration" && node.id?.name === scopeName,
+    );
+    const instantiated = `ReturnType<typeof ${scopeName}<${generics.names.join(", ")}>>`;
+    genericPropsMethod = `{ ${GENERIC_PROPS_INFERENCE_KEY}<${generics.text}>(props: Partial<${instantiated}>): ${instantiated} }`;
+    // The type side is generic too, so `Foo<Row>` names a specific instance.
+    // A parameter without a default defaults to its top-level placeholder
+    // alias, so a bare `Foo` keeps using the constraints. The constraint text
+    // itself cannot be the default when it reads the parameter or a later one.
+    // With a later one no default other than `any` satisfies the constraint.
+    const aliasParams = generics.params.map((param) => {
+      let defaultType = param.default;
+      if (defaultType == null && param.readsLaterParameter) {
+        defaultType = "any";
+      } else if (defaultType == null) {
+        defaultType = ctx.generateUniqueId(`generic${param.name}`);
+        typeNames.push(defaultType);
+        code += `type ${defaultType} = ${param.name};`;
+      }
+      return `${param.name}${param.constraint == null ? "" : ` extends ${param.constraint}`} = ${defaultType}`;
+    });
+    genericInstance = {
+      params: `<${aliasParams.join(", ")}>`,
+      propsType: instantiated,
+    };
+  }
+
   const name = ctx.generateUniqueId("svelteComponent");
   names.push(name);
   const { valueType, typeType } = componentTypeText(
@@ -119,8 +191,10 @@ export function appendComponentDefaultExport(
     eventsType,
     slotsType,
     getInstanceExportsType(instanceStatements, svelteParseContext),
+    genericPropsMethod,
+    genericInstance?.propsType ?? propsType,
   );
-  code += `declare const ${name}: ${valueType};type ${name} = ${typeType};export { ${name} as default };`;
+  code += `declare const ${name}: ${valueType};type ${name}${genericInstance?.params ?? ""} = ${typeType};export { ${name} as default };`;
   ctx.appendVirtualScript(code);
 
   // `export { <name> as default }`.
@@ -133,11 +207,13 @@ export function appendComponentDefaultExport(
       node.specifiers[0].local.type === "Identifier" &&
       node.specifiers[0].local.name === name,
   );
-  // `type <name> = ...`.
-  registerRemoval(
-    ctx,
-    (node) => node.type === "TSTypeAliasDeclaration" && node.id.name === name,
-  );
+  // `type <name> = ...` and the placeholder aliases for its defaults.
+  for (const nm of [name, ...typeNames]) {
+    registerRemoval(
+      ctx,
+      (node) => node.type === "TSTypeAliasDeclaration" && node.id.name === nm,
+    );
+  }
   // The `declare const <name>` and any props probe const.
   for (const nm of names) {
     registerRemoval(
@@ -160,6 +236,8 @@ function componentTypeText(
   eventsType: string,
   slotsType: string,
   exportsType: string | null,
+  genericPropsMethod: string | null,
+  instancePropsType: string,
 ): { valueType: string; typeType: string } {
   const typeArgs = `<${propsType}, ${eventsType}, ${slotsType}>`;
 
@@ -173,12 +251,18 @@ function componentTypeText(
     // The value is Svelte 5's `Component` so `typeof Foo` matches modern usage;
     // the same-named legacy `SvelteComponent` type keeps `ComponentEvents<Foo>`
     // resolving.
+    const componentType =
+      exportsType == null
+        ? `import('svelte').Component<${propsType}>`
+        : `import('svelte').Component<${propsType}, ${exportsType}>`;
     return {
       valueType:
-        exportsType == null
-          ? `import('svelte').Component<${propsType}>`
-          : `import('svelte').Component<${propsType}, ${exportsType}>`,
-      typeType: withExports(`import('svelte').SvelteComponent${typeArgs}`),
+        genericPropsMethod == null
+          ? componentType
+          : `${componentType} & ${genericPropsMethod}`,
+      typeType: withExports(
+        `import('svelte').SvelteComponent<${instancePropsType}, ${eventsType}, ${slotsType}>`,
+      ),
     };
   }
   const className = svelteVersion.gte(4)
@@ -246,7 +330,7 @@ function exportName(
 }
 
 /** Top-level statements of the instance `<script>`, filtered out of the concatenated body by source range. */
-function getInstanceStatements(
+export function getInstanceStatements(
   result: TSESParseForESLintResult,
   instanceScriptRange: [number, number] | null,
 ): TSESTree.ProgramStatement[] {

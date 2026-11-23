@@ -28,6 +28,7 @@ import type { Context } from "../../context/index.js";
 import type * as SvAST from "../svelte-ast-types.js";
 import type * as Compiler from "../svelte-ast-types-for-v5.js";
 import { getWithLoc, indexOf } from "./common.js";
+import { getComponentPropsType } from "./component-props.js";
 import { convertMustacheTag } from "./mustache.js";
 import { convertTextToLiteral } from "./text.js";
 import { ParseError } from "../../errors.js";
@@ -220,10 +221,7 @@ function convertAttribute(
 function processAttributeValue(
   nodeValue:
     | (
-        | SvAST.Text
-        | SvAST.MustacheTag
-        | Compiler.Text
-        | Compiler.ExpressionTag
+        SvAST.Text | SvAST.MustacheTag | Compiler.Text | Compiler.ExpressionTag
       )[]
     | Compiler.ExpressionTag,
   attribute: SvelteAttribute | SvelteStyleDirectiveLongform,
@@ -300,13 +298,7 @@ function buildAttributeType(
   if (element.type !== "SvelteElement" || element.kind !== "component") {
     return null;
   }
-  const elementName = ctx.elements.get(element)!.name;
-  // Svelte 3/4 ComponentProps takes an instance, while Svelte 5 also accepts
-  // the component function. Extract the legacy constructor instance without
-  // relying on a locally shadowable utility type such as InstanceType.
-  const componentPropsType = svelteVersion.gte(5)
-    ? `import('svelte').ComponentProps<typeof ${elementName}>`
-    : `(typeof ${elementName} extends new (...args: any[]) => (infer C extends import('svelte').SvelteComponent) ? import('svelte').ComponentProps<C> : never)`;
+  const componentPropsType = getComponentPropsType(element, ctx);
   return conditional({
     check: `'${attrName}'`,
     extends: `infer PROP`,
@@ -399,6 +391,13 @@ function convertBindingDirective(
   processDirective(node, directive, ctx, {
     processExpression(expression, shorthand) {
       directive.shorthand = shorthand;
+      if (ctx.isTypeScript() && expression.type === "Identifier") {
+        // TypeScript keeps a `let` narrowed inside closures unless it sees a
+        // write, so the write the binding performs must be visible to it.
+        ctx.scriptLet.addTypeOnlyStatement(
+          `${expression.name} = ${expression.name};`,
+        );
+      }
       return ctx.scriptLet.addExpression(
         expression,
         directive,
@@ -431,9 +430,10 @@ function convertBindingDirective(
 }
 
 /**
- * Function bindings on a component are typed as a setter of the bound prop. The
+ * Function bindings are typed as a setter of the bound value: the bound prop on
+ * a component, or the element or component instance for `bind:this`. The
  * assertion applies to the whole `getter, setter` sequence, so it contextually
- * types only the setter, whose parameter receives the prop value.
+ * types only the setter, whose parameter receives the value.
  */
 function buildFunctionBindingsType(
   node: SvAST.DirectiveForExpression | Compiler.BindDirective,
@@ -443,7 +443,6 @@ function buildFunctionBindingsType(
 ): string | null {
   if (
     element.type !== "SvelteElement" ||
-    element.kind !== "component" ||
     expression.type !== "SequenceExpression" ||
     !isFunctionBindings(ctx, {
       ...expression,
@@ -452,12 +451,38 @@ function buildFunctionBindingsType(
   ) {
     return null;
   }
+  if (node.name === "this") {
+    const instanceType = buildBindThisType(element, ctx);
+    // The binding is reset to `null` when the element or component goes away.
+    return instanceType && `(value: ${instanceType} | null) => void`;
+  }
+  if (element.kind !== "component") {
+    return null;
+  }
   const propType = buildAttributeType(element, node.name, ctx);
   // An undeclared prop resolves to `never`, which would poison the parameter.
   return (
     propType &&
     `(value: [${propType}] extends [never] ? any : (${propType})) => void`
   );
+}
+
+/** Type of the value `bind:this` receives from the element or component. */
+function buildBindThisType(
+  element: SvelteElement,
+  ctx: Context,
+): string | null {
+  // The element's own name node is not converted yet.
+  const name = ctx.elements.get(element)!.name;
+  if (element.kind === "component") {
+    // A Svelte 5 component instance is the object of its exports.
+    return `(typeof ${name} extends import('svelte').Component<any, infer E extends Record<string, any>> ? E : typeof ${name} extends new (...args: any[]) => infer I ? I : any)`;
+  }
+  if (element.kind === "special") {
+    return name === "svelte:element" ? "Element" : null;
+  }
+  const tag = JSON.stringify(name);
+  return `(${tag} extends infer K ? K extends keyof HTMLElementTagNameMap ? HTMLElementTagNameMap[K] : K extends keyof SVGElementTagNameMap ? SVGElementTagNameMap[K] : Element : never)`;
 }
 
 /**
@@ -696,7 +721,7 @@ function convertTransitionDirective(
         name,
         directive.key,
         null,
-        buildExpressionTypeChecker(["Identifier"], ctx),
+        buildExpressionTypeChecker(getFunctionNameTypes(), ctx),
       ),
   });
   return directive;
@@ -727,10 +752,20 @@ function convertAnimationDirective(
         name,
         directive.key,
         null,
-        buildExpressionTypeChecker(["Identifier"], ctx),
+        buildExpressionTypeChecker(getFunctionNameTypes(), ctx),
       ),
   });
   return directive;
+}
+
+/**
+ * Get the allowed node types for the name of `transition:`, `in:`, `out:` and `animate:`.
+ * Svelte 5 compiles a member name such as `t.fade`. Svelte 3 and 4 do not resolve it.
+ */
+function getFunctionNameTypes(): ("Identifier" | "MemberExpression")[] {
+  return svelteVersion.gte(5)
+    ? ["Identifier", "MemberExpression"]
+    : ["Identifier"];
 }
 
 /** Convert for Action Directive */
@@ -859,10 +894,8 @@ function buildLetDirectiveType(
   /** Find parent component element */
   function findParentComponent(node: SvelteElement) {
     let parent:
-      | SvelteElement["parent"]
-      | SvelteElseBlock
-      | SvelteAwaitBlock
-      | null = node.parent;
+      SvelteElement["parent"] | SvelteElseBlock | SvelteAwaitBlock | null =
+      node.parent;
     while (parent && parent.type !== "SvelteElement") {
       parent = parent.parent;
     }
