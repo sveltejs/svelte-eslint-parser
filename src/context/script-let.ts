@@ -1,6 +1,7 @@
 import type * as eslint from "eslint";
 import type * as ESTree from "estree";
 import type { TSESTree } from "@typescript-eslint/types";
+import type { Scope as TSScope } from "@typescript-eslint/scope-manager";
 import type { Context, ScriptsSourceCode } from "./index.js";
 import type {
   Comment,
@@ -19,8 +20,9 @@ import {
   removeAllScopeAndVariableAndReference,
   removeIdentifierVariable,
   removeReference,
+  removeScope,
 } from "../scope/index.js";
-import { traverseNodes } from "../traverse.js";
+import { getKeys, traverseNodes, getNodes } from "../traverse.js";
 import { UniqueIdGenerator } from "./unique.js";
 import { fixLocations } from "./fix-locations.js";
 
@@ -250,10 +252,13 @@ export class ScriptLetContext {
         tokens.pop(); // ;
 
         if (isTS) {
-          removeAllScopeAndVariableAndReference(
-            tsAs!.typeAnnotation as TSESTree.TypeNode,
+          for (const scope of extractTypeNodeScopes(
+            tsAs!.typeAnnotation,
             result,
-          );
+          )) {
+            removeScope(result.scopeManager, scope);
+          }
+          removeTypeNodeReferences(tsAs!, result);
           this.remapNodes(
             [
               {
@@ -1629,4 +1634,72 @@ function getNodeToScope(
   };
 
   return nodeToScope;
+}
+
+/** Extract the type scope of the given node. */
+function extractTypeNodeScopes(
+  node: TSESTree.TypeNode | TSParenthesizedType,
+  result: ScriptLetCallbackOption,
+): Iterable<eslint.Scope.Scope> {
+  const scopes = new Set<eslint.Scope.Scope>();
+  for (const scope of iterateTypeNodeScopes(node)) {
+    scopes.add(scope);
+  }
+
+  return scopes;
+
+  /** Iterate the type scope of the given node. */
+  function* iterateTypeNodeScopes(
+    node: TSESTree.TypeNode | TSParenthesizedType,
+  ): Iterable<eslint.Scope.Scope> {
+    if (node.type === "TSParenthesizedType") {
+      // Skip TSParenthesizedType.
+      yield* iterateTypeNodeScopes(node.typeAnnotation);
+    } else if (node.type === "TSConditionalType") {
+      yield result.getScope(node as any);
+      // `falseType` of `TSConditionalType` is sibling scope.
+      const falseType: TSESTree.TypeNode = node.falseType;
+      yield* iterateTypeNodeScopes(falseType);
+    } else if (
+      node.type === "TSFunctionType" ||
+      node.type === "TSMappedType" ||
+      node.type === "TSConstructorType"
+    ) {
+      yield result.getScope(node as any);
+    } else {
+      const typeNode: Exclude<TSESTree.TypeNode, TSScope["block"]> = node;
+      for (const key of getKeys(typeNode, result.visitorKeys)) {
+        for (const child of getNodes(typeNode, key)) {
+          yield* iterateTypeNodeScopes(child as TSESTree.TypeNode);
+        }
+      }
+    }
+  }
+}
+
+/**
+ * Remove the references in the type annotation of the given `as` expression.
+ * The type annotation is virtual code, so its references must not stay in the scope manager.
+ * The references in the type scopes are removed with those scopes, so this removes the rest.
+ */
+function removeTypeNodeReferences(
+  tsAs: TSAsExpression,
+  result: ScriptLetCallbackOption,
+): void {
+  const identifiers = new Set<ESTree.Node>();
+  traverseNodes(tsAs.typeAnnotation as TSESTree.TypeNode, {
+    visitorKeys: result.visitorKeys,
+    enterNode(node) {
+      if (node.type === "Identifier") identifiers.add(node);
+    },
+    leaveNode() {
+      // noop
+    },
+  });
+  const scope = result.getScope(tsAs as never);
+  for (const reference of [...scope.references]) {
+    if (identifiers.has(reference.identifier)) {
+      removeReference(reference, scope);
+    }
+  }
 }

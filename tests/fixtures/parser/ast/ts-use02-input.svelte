@@ -5,3 +5,4 @@
 </script>
 
 <p use:customAction={items}>hello world</p>
+<p use:missingAction={items}>hello world</p>
