@@ -4183,3 +4183,135 @@ describe("discriminated union props selected by static attributes (legacy compon
     });
   }
 });
+
+describeSvelte5("narrowing inside `{#each}` blocks", () => {
+  const component = `<script lang="ts">
+  let { value }: { value?: string } = $props();
+</script>
+<p>{value}</p>`;
+  const consumer = `type A = { kind: "a"; list: string[] };
+type B = { kind: "b"; count: number };
+let { holder }: { holder: { node: A | B } } = $props();
+const rows = [{ id: "a", name: "b" }];
+let current = $state<A | B>({ kind: "b", count: 0 });
+function reset() {
+  current = { kind: "b", count: 0 };
+}
+let mixed: string | number = $state(1);
+const maybe: (string | null)[] = [];
+void holder;
+void rows;
+void reset;
+void maybe;`;
+  for (const { name, template, errors, compilerOptions } of [
+    {
+      name: "keeps the narrowing of a property path",
+      template: `{#if holder.node.kind === "a"}
+  {#each holder.node.list as entry, i (i)}{holder.node.list[i].toUpperCase()}{entry.toUpperCase()}{/each}
+{/if}`,
+      errors: [],
+    },
+    {
+      name: "keeps the narrowing of a reassigned variable",
+      template: `{#if current.kind === "a"}
+  {#each current.list as entry, i}{current.list[i].toUpperCase()}{entry.toUpperCase()}{/each}
+{/if}`,
+      errors: [],
+    },
+    {
+      name: "types the context and index",
+      template: `{#each rows as row, i (row.id)}{row.name.toUpperCase()}{i.toFixed()}{/each}`,
+      errors: [],
+    },
+    {
+      name: "rejects misuse of the context",
+      template: `{#each rows as row}{row.missing}{/each}`,
+      errors: [2339],
+    },
+    {
+      name: "types the index as a number rather than a literal",
+      template: `{#each rows as row, i}{((one: 1) => one)(i)}{row.id}{/each}`,
+      errors: [2345],
+    },
+    {
+      name: "types a destructured context",
+      template: `{#each rows as { id, name } (id)}{name.toUpperCase()}{/each}`,
+      errors: [],
+    },
+    {
+      name: "types the index without a context",
+      template: `{#each { length: 3 }, i}{i.toFixed()}{/each}`,
+      errors: [],
+    },
+    {
+      name: "types the context from a sequence expression",
+      template: `{#each (reset(), rows) as row}{row.name.toUpperCase()}{/each}`,
+      errors: [],
+    },
+    {
+      name: "keeps a nullable element",
+      template: `{#each maybe as m}{m.length}{/each}`,
+      errors: [18047],
+    },
+    {
+      name: "does not add undefined to the context with noUncheckedIndexedAccess",
+      template: `{#each rows as row}{row.name.toUpperCase()}{/each}`,
+      errors: [],
+      compilerOptions: { noUncheckedIndexedAccess: true },
+    },
+    {
+      name: "does not narrow after the block by an assignment in the body",
+      template: `{#if typeof mixed === "number"}
+  {#each rows as row (row.id)}{(mixed = row.name)}{/each}
+  {((v: string) => v)(mixed)}{((v: number) => v)(mixed)}
+{/if}`,
+      errors: [2345, 2345],
+    },
+  ] as {
+    name: string;
+    template: string;
+    errors: number[];
+    compilerOptions?: ts.CompilerOptions;
+  }[]) {
+    it(name, () => {
+      const diagnostics = realResolutionDiagnostics(component, consumer, {
+        template,
+        compilerOptions,
+      });
+      assert.deepStrictEqual(
+        diagnostics.map((d) => d.code),
+        errors,
+        diagnostics
+          .map((d) => ts.flattenDiagnosticMessageText(d.messageText, " "))
+          .join("\n"),
+      );
+    });
+  }
+
+  it("leaves no trace of the typing arguments in the AST or scopes", () => {
+    const source = `<script lang="ts">
+  const rows = [{ id: "a" }];
+</script>
+{#each rows /* c */ as row, i (row.id)}{row.id}{i}{/each}`;
+    const result = parseComponent(source);
+    const variables = result.scopeManager.scopes.flatMap(
+      (scope) => scope.variables,
+    );
+    const rows = variables.find((v) => v.name === "rows");
+    // The initialization and the `{#each}` expression.
+    assert.strictEqual(rows?.references.length, 2);
+    assert.strictEqual(
+      result.scopeManager.globalScope!.through.some(
+        (r) => r.identifier.name === "Array",
+      ),
+      false,
+    );
+    assert.ok(
+      result.ast.tokens.every((t) => source.slice(...t.range) === t.value),
+    );
+    assert.deepStrictEqual(
+      result.ast.comments.map((c) => source.slice(...c.range)),
+      ["/* c */"],
+    );
+  });
+});
