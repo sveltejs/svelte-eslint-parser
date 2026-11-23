@@ -4171,6 +4171,260 @@ describeSvelte5(
   },
 );
 
+describeSvelte5("props declared as a union of large members", () => {
+  const compilerOptions: ts.CompilerOptions = {
+    paths: {
+      svelte: [svelteTypesPath],
+      "svelte/elements": [
+        path.join(
+          path.dirname(require2.resolve("svelte/package.json")),
+          "elements.d.ts",
+        ),
+      ],
+    },
+  };
+  // Svelte's own `Component` type takes `keyof` of the props too, so the
+  // component ships a declaration, as a package built with `svelte-package`.
+  const realDeclaration = `import type { Component, Snippet } from "svelte";
+import type {
+  HTMLInputAttributes,
+  HTMLTextareaAttributes,
+} from "svelte/elements";
+type User = { name: string };
+type Shared = {
+  items: User[];
+  render: Snippet<[{ item: User; reset: () => void }]>;
+  onpick?: (item: User) => void;
+};
+type Props =
+  | (Shared & {
+      multiline?: false;
+      suffix?: Snippet<[number]>;
+      hint?: Snippet<[number]>;
+      onlimit?: (length: number) => void;
+      selection?: [number, number];
+    } & HTMLInputAttributes)
+  | (Shared & {
+      multiline: true;
+      footer?: Snippet<[string[]]>;
+      hint?: Snippet<[string]>;
+      onresizeend?: (rows: number) => void;
+    } & HTMLTextareaAttributes);
+declare const Foo: Component<Props, {}, "selection">;
+export default Foo;
+`;
+  const consumer = `const users = [{ name: "a" }];`;
+  for (const { name, template, errors } of [
+    {
+      name: "types snippet parameters from a prop every member declares",
+      template: `<Foo items={users}>
+  {#snippet render({ item, reset })}{item.name.toUpperCase()}{reset()}{/snippet}
+</Foo>`,
+      errors: [],
+    },
+    {
+      name: "rejects misuse of a snippet parameter typed from every member",
+      template: `<Foo items={users}>
+  {#snippet render({ item, reset })}{item.missing}{reset(1)}{/snippet}
+</Foo>`,
+      errors: [2339, 2554],
+    },
+    {
+      name: "types snippet parameters from a prop only one member declares",
+      template: `<Foo items={users} render={undefined!}>
+  {#snippet suffix(length)}{length.toFixed(0)}{/snippet}
+  {#snippet footer(lines)}{lines.join("")}{/snippet}
+</Foo>`,
+      errors: [],
+    },
+    {
+      name: "rejects misuse of a snippet parameter typed from one member",
+      template: `<Foo items={users} render={undefined!}>
+  {#snippet suffix(length)}{length.missing}{/snippet}
+  {#snippet footer(lines)}{lines.missing}{/snippet}
+</Foo>`,
+      errors: [2339, 2339],
+    },
+    {
+      name: "types snippet parameters from a prop the members declare differently",
+      template: `<Foo items={users} render={undefined!}>
+  {#snippet hint(value)}{String(value)}{/snippet}
+</Foo>`,
+      errors: [],
+    },
+    {
+      name: "rejects misuse of a snippet parameter the members declare differently",
+      template: `<Foo items={users} render={undefined!}>
+  {#snippet hint(value)}{value.missing}{/snippet}
+</Foo>`,
+      errors: [2339],
+    },
+    {
+      name: "leaves a snippet no member declares as `any`",
+      template: `<Foo items={users} render={undefined!}>
+  {#snippet extra(value)}{value.anything()}{/snippet}
+</Foo>`,
+      errors: [],
+    },
+    {
+      name: "types a callback attribute from a prop every member declares",
+      template: `<Foo items={users} render={undefined!} onpick={(user) => user.name.toUpperCase()} />`,
+      errors: [],
+    },
+    {
+      name: "rejects misuse of a callback parameter typed from every member",
+      template: `<Foo items={users} render={undefined!} onpick={(user) => user.missing} />`,
+      errors: [2339],
+    },
+    {
+      name: "types a callback attribute from a prop only one member declares",
+      template: `<Foo items={users} render={undefined!} onlimit={(length) => length.toFixed(0)} onresizeend={(rows) => rows.toFixed(0)} />`,
+      errors: [],
+    },
+    {
+      name: "rejects misuse of a callback parameter typed from one member",
+      template: `<Foo items={users} render={undefined!} onlimit={(length) => length.missing} onresizeend={(rows) => rows.missing} />`,
+      errors: [2339, 2339],
+    },
+    {
+      name: "leaves a callback attribute no member declares untyped",
+      template: `<Foo items={users} render={undefined!} onmissing={(value) => value} />`,
+      errors: [7006],
+    },
+    {
+      name: "types a function binding setter from a prop one member declares",
+      template: `<Foo items={users} render={undefined!} bind:selection={() => undefined, (next) => next?.[0].toFixed(0)} />`,
+      errors: [],
+    },
+    {
+      name: "rejects misuse of a function binding setter parameter",
+      template: `<Foo items={users} render={undefined!} bind:selection={() => undefined, (next) => next?.missing} />`,
+      errors: [2339],
+    },
+    {
+      name: "takes a prop only from the members the static attributes select",
+      template: `<Foo multiline items={users} render={undefined!} onlimit={(length) => length} onresizeend={(rows) => rows.toFixed(0)}>
+  {#snippet footer(lines)}{lines.join("")}{/snippet}
+</Foo>`,
+      errors: [7006],
+    },
+    {
+      name: "types an event handler from the member the static attributes select",
+      template: `<Foo multiline items={users} render={undefined!} oninput={(event) => event.currentTarget.rows.toFixed(0)} />`,
+      errors: [],
+    },
+    {
+      name: "rejects misuse of an event handler typed by the selected member",
+      template: `<Foo multiline items={users} render={undefined!} oninput={(event) => event.currentTarget.missing} />`,
+      errors: [2339],
+    },
+    {
+      name: "types a snippet from the member the static attributes select",
+      template: `<Foo multiline items={users} render={undefined!}>
+  {#snippet hint(value)}{value.toUpperCase()}{/snippet}
+</Foo>`,
+      errors: [],
+    },
+  ]) {
+    it(name, () => {
+      const diagnostics = realResolutionDiagnostics(`<p></p>`, consumer, {
+        template,
+        realDeclaration,
+        compilerOptions,
+      }).filter((d) => d.code !== 2695);
+      assert.deepStrictEqual(
+        diagnostics.map((d) => d.code).sort((a, b) => a - b),
+        errors,
+        diagnostics
+          .map((d) => ts.flattenDiagnosticMessageText(d.messageText, " "))
+          .join("\n"),
+      );
+    });
+  }
+});
+
+describe("props declared by some members of a union", () => {
+  for (const [style, component] of [
+    [
+      "legacy component",
+      `<script lang="ts">
+  type $$Props =
+    | { mode: "single"; upload: (file: File) => void; onvalue: (value: string) => void }
+    | { mode: "multiple"; upload: (files: File[]) => void; onvalue: (value: string) => void; onlimit: (length: number) => void };
+  export let mode: $$Props["mode"];
+  export let upload: $$Props["upload"];
+</script>
+<p>{mode}{typeof upload}</p>`,
+    ],
+    ...(svelteVersion.gte(5)
+      ? [
+          [
+            "runes component",
+            `<script lang="ts">
+  type Props =
+    | { mode: "single"; upload: (file: File) => void; onvalue: (value: string) => void }
+    | { mode: "multiple"; upload: (files: File[]) => void; onvalue: (value: string) => void; onlimit: (length: number) => void };
+  let props: Props = $props();
+</script>
+<p>{props.mode}</p>`,
+          ],
+        ]
+      : []),
+  ]) {
+    // Svelte 3/4 markup cannot contain TypeScript, so the callbacks are plain JS.
+    for (const { name, template, errors } of [
+      {
+        name: "types a callback from a prop every member declares",
+        template: `<Foo onvalue={(value) => value.toUpperCase()} />`,
+        errors: [],
+      },
+      {
+        name: "rejects misuse of a callback parameter typed from every member",
+        template: `<Foo onvalue={(value) => value.missing} />`,
+        errors: [2339],
+      },
+      {
+        name: "types a callback from a prop only one member declares",
+        template: `<Foo onlimit={(length) => length.toFixed(0)} />`,
+        errors: [],
+      },
+      {
+        name: "rejects misuse of a callback parameter typed from one member",
+        template: `<Foo onlimit={(length) => length.missing} />`,
+        errors: [2339],
+      },
+      {
+        name: "types a callback from a prop only the selected member declares",
+        template: `<Foo mode="multiple" onlimit={(length) => length.toFixed(0)} />`,
+        errors: [],
+      },
+      {
+        name: "leaves a prop the selected member does not declare untyped",
+        template: `<Foo mode="single" onlimit={(length) => length} />`,
+        errors: [7006],
+      },
+      {
+        name: "leaves a callback no member declares untyped",
+        template: `<Foo onmissing={(value) => value} />`,
+        errors: [7006],
+      },
+    ]) {
+      it(`${name} (${style})`, () => {
+        const diagnostics = realResolutionDiagnostics(component, ``, {
+          template,
+        });
+        assert.deepStrictEqual(
+          diagnostics.map((d) => d.code).sort((a, b) => a - b),
+          errors,
+          diagnostics
+            .map((d) => ts.flattenDiagnosticMessageText(d.messageText, " "))
+            .join("\n"),
+        );
+      });
+    }
+  }
+});
+
 describe("discriminated union props selected by static attributes (legacy component)", () => {
   // Svelte 3/4 markup cannot contain TypeScript, so the callbacks are plain JS.
   const component = `<script lang="ts">
