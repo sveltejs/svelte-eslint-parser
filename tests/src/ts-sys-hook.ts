@@ -4073,6 +4073,30 @@ void focus;`,
       template: `<Foo bind:this={() => foo, (next) => next?.missing()} />`,
       errors: [2339],
     },
+    {
+      name: "types the setter of an HTML element binding from the getter",
+      script: `let text = $state("");`,
+      template: `<input bind:value={() => text, (next) => (text = next.trim())} />`,
+      errors: [],
+    },
+    {
+      name: "rejects misuse of an HTML element binding setter parameter",
+      script: `let text = $state(""); let count = $state(0); void count;`,
+      template: `<input bind:value={() => text, (next) => (count = next)} />`,
+      errors: [2322],
+    },
+    {
+      name: "types the setter of a special element binding from the getter",
+      script: `let y = $state(0);`,
+      template: `<svelte:window bind:scrollY={() => y, (next) => (y = next.toFixed().length)} />`,
+      errors: [],
+    },
+    {
+      name: "leaves the setter of a readonly binding with a `null` getter untyped",
+      script: `let width = $state(0); void width;`,
+      template: `<div bind:clientWidth={null, (next) => next.anything()}></div>`,
+      errors: [],
+    },
   ]) {
     it(name, () => {
       const diagnostics = realResolutionDiagnostics(component, script, {
