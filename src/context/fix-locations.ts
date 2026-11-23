@@ -104,16 +104,13 @@ export function fixErrorLocation(
     return;
   }
   const virtualLocs = new LinesAndColumns(virtualCode);
-  // Some parsers (e.g. @babel/eslint-parser) do not give `index`. Without
-  // `index` or `pos`, use the start of the line, since `column` may be 0-based
-  // (e.g. hermes-eslint) or 1-based. The inserted line breaks only split lines,
-  // so the offset at the start of the line holds for the whole line.
+  // Some parsers (e.g. @babel/eslint-parser) do not give `index`.
   const index =
     typeof e.index === "number"
       ? e.index
       : typeof e.pos === "number"
         ? e.pos
-        : virtualLocs.getIndexFromLoc({ line: e.lineNumber, column: 0 });
+        : getIndexInLine(virtualLocs, e.lineNumber, e.column);
   if (!Number.isFinite(index) || index < 0 || index > ctx.code.length) {
     return;
   }
@@ -143,6 +140,21 @@ export function fixErrorLocation(
       writable: true,
     },
   });
+}
+
+/**
+ * Get the index of the given line and column. The column may be 0-based (e.g.
+ * hermes-eslint) or 1-based, and a 1-based column at the end of a line gives
+ * the start of the next line, so keep the index in the given line.
+ */
+function getIndexInLine(
+  locs: LinesAndColumns,
+  line: number,
+  column: number,
+): number {
+  const index = locs.getIndexFromLoc({ line, column });
+  const nextLineStart = locs.getIndexFromLoc({ line: line + 1, column: 0 });
+  return index >= nextLineStart ? nextLineStart - 1 : index;
 }
 
 /**
