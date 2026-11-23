@@ -49,12 +49,7 @@ export type TransitionDirective = AST.TransitionDirective;
 export type UseDirective = AST.UseDirective;
 
 export type Tag =
-  | ExpressionTag
-  | HtmlTag
-  | ConstTag
-  | DeclarationTag
-  | DebugTag
-  | RenderTag;
+  ExpressionTag | HtmlTag | ConstTag | DeclarationTag | DebugTag | RenderTag;
 export type ElementLike =
   | Component
   | TitleElement

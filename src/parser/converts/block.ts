@@ -21,6 +21,7 @@ import type { Context } from "../../context/index.js";
 import { convertChildren } from "./element.js";
 import { getWithLoc, indexOf, lastIndexOf } from "./common.js";
 import { svelteVersion } from "../svelte-version.js";
+import { getComponentPropsType } from "./component-props.js";
 import type * as ESTree from "estree";
 import {
   getAlternateFromIfBlock,
@@ -63,10 +64,7 @@ function startBlockIndex(
 
 function startIndexFromFragment(
   fragment:
-    | Compiler.Fragment
-    | SvAST.ElseBlock
-    | SvAST.ThenBlock
-    | SvAST.CatchBlock,
+    Compiler.Fragment | SvAST.ElseBlock | SvAST.ThenBlock | SvAST.CatchBlock,
   getBeforeEndIndex: () => number,
 ) {
   if ((fragment as { start: number }).start != null) {
@@ -316,7 +314,7 @@ export function convertEachBlock(
   }
 
   if (node.key) {
-    ctx.scriptLet.addExpression(node.key, eachBlock, null, (key) => {
+    ctx.scriptLet.addEachBlockKey(node.key, eachBlock, (key) => {
       eachBlock.key = key;
     });
   }
@@ -390,8 +388,8 @@ export function convertAwaitBlock(
     expression: null as any,
     kind: "await",
     pending: null as any,
-    then: null as any,
-    catch: null as any,
+    then: null,
+    catch: null,
     parent,
     ...ctx.getConvertLocation({ start: nodeStart, end: node.end }),
   } as SvelteAwaitBlock;
@@ -728,8 +726,7 @@ function buildSnippetParamTypes(
   ) {
     return null;
   }
-  const elementName = ctx.elements.get(parent)!.name;
-  const componentPropsType = `import('svelte').ComponentProps<typeof ${elementName}>`;
+  const componentPropsType = getComponentPropsType(parent, ctx);
   const snippetName = node.expression.name;
   // Fall back to `any` for a prop the component does not declare, rather than
   // letting `never` poison every use of the parameter.

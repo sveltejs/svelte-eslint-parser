@@ -103,6 +103,7 @@ function interceptHookWarnings<T>(body: () => T): {
 } {
   const warnings: string[] = [];
   const original = process.stderr.write.bind(process.stderr);
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion -- tsc needs this assertion
   process.stderr.write = ((chunk: unknown, ...rest: unknown[]) => {
     if (typeof chunk === "string" && chunk.includes("ts-sys-hook")) {
       warnings.push(chunk);
@@ -424,13 +425,45 @@ describeSvelte5("synthetic component default export (runes, Svelte 5)", () => {
     assertComponentExport(code, `{ real: any }`);
   });
 
+  it("translates a `generics` attribute with a `const` type parameter", () => {
+    const code =
+      translate(`<script lang="ts" generics="const T extends readonly string[]">
+  let { items }: { items: T } = $props();
+</script>
+<p>{items.length}</p>`);
+    assert.match(code, /type T\s*=\s*readonly string\[\];/u);
+    // The modifier stays where TypeScript accepts it.
+    assert.match(
+      code,
+      /function \$_genericPropsScope\d+<const T extends readonly string\[\]>\(\)/u,
+    );
+    assert.match(
+      code,
+      /\$\$genericProps<const T extends readonly string\[\]>\(/u,
+    );
+    // A type alias does not accept it.
+    assert.match(
+      code,
+      /type \$_svelteComponent\d+<T extends readonly string\[\] = /u,
+    );
+  });
+
   it("references `generics` type parameters in the recovered props type", () => {
     const code = translate(`<script lang="ts" generics="T">
   let { items, selected }: { items: T[]; selected: T } = $props();
 </script>
 <p>{selected}</p>`);
+    const props = `{ items: T[]; selected: T }`;
     assert.match(code, /type T = unknown;/);
-    assertComponentExport(code, `{ items: T[]; selected: T }`);
+    assert.ok(
+      /function \$_genericPropsScope\d+<T>\(\) \{return null as any as \{ items: T\[\]; selected: T \};\}/.test(
+        code,
+      ) &&
+        code.includes(
+          `: import('svelte').Component<${props}> & { $$genericProps<T>(props: Partial<ReturnType<typeof $_genericPropsScope`,
+        ),
+      code,
+    );
   });
 
   it("recovers the props type from a `$props() as Props` cast", () => {
@@ -1269,6 +1302,23 @@ describeSvelte5(
           .join(", ")}`,
       );
     });
+
+    it("resolves props of a generic component with a `const` type parameter for importers", () => {
+      const genericComponent = `<script lang="ts" generics="const T extends string">
+  let { v }: { v: T } = $props();
+</script>
+<p>{v}</p>`;
+      const diagnostics = typeCheckConsumer(
+        genericComponent,
+        `const v: import("svelte").ComponentProps<typeof Foo>["v"] = 123;`,
+      );
+      assert.ok(
+        diagnostics.some((d) => d.code === 2322),
+        `expected TS2322 (number not assignable to string), got: ${diagnostics
+          .map((d) => d.code)
+          .join(", ")}`,
+      );
+    });
   },
 );
 
@@ -1477,8 +1527,16 @@ describeLegacyClass(
  *   ambient module instead: the negative control for the ambient-shadow test.
  * - `realCompanion` writes a real `Foo.svelte.ts` to disk to exercise the
  *   conflict guard.
+ * - `realDeclaration` writes a real `Foo.svelte.d.ts`, as a package built with
+ *   `svelte-package` ships next to its components.
  * - `template` translates the consumer as a Svelte component, exercising the
  *   actual template attribute typing rather than a handwritten props type.
+ * - `componentPath`, `specifier` and `files` place the component elsewhere,
+ *   import it through another specifier and add `package.json` files, to
+ *   resolve it through `imports`/`exports` subpaths.
+ * - `symlinks` maps a link path to the directory it points at, both relative,
+ *   like a workspace package linked into `node_modules`.
+ * - `compilerOptions` are added to the program's options.
  */
 function realResolutionDiagnostics(
   componentSource: string,
@@ -1486,18 +1544,52 @@ function realResolutionDiagnostics(
   {
     patch = true,
     realCompanion,
+    realDeclaration,
     template,
-  }: { patch?: boolean; realCompanion?: string; template?: string } = {},
+    componentPath = "Foo.svelte",
+    specifier = "./Foo.svelte",
+    files = {},
+    symlinks = {},
+    compilerOptions: extraCompilerOptions = {},
+  }: {
+    patch?: boolean;
+    realCompanion?: string;
+    realDeclaration?: string;
+    template?: string;
+    componentPath?: string;
+    specifier?: string;
+    files?: Record<string, string>;
+    symlinks?: Record<string, string>;
+    compilerOptions?: ts.CompilerOptions;
+  } = {},
 ): ts.Diagnostic[] {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "real-resolve-"));
+  // The real path: TypeScript resolves a linked package to it, while a
+  // relative import keeps the path as given, as `/var` on macOS.
+  const dir = fs.realpathSync(
+    fs.mkdtempSync(path.join(os.tmpdir(), "real-resolve-")),
+  );
   try {
-    const sveltePath = path.join(dir, "Foo.svelte");
+    const sveltePath = path.join(dir, componentPath);
+    fs.mkdirSync(path.dirname(sveltePath), { recursive: true });
     fs.writeFileSync(sveltePath, componentSource, "utf-8");
     if (realCompanion !== undefined) {
-      fs.writeFileSync(path.join(dir, "Foo.svelte.ts"), realCompanion, "utf-8");
+      fs.writeFileSync(`${sveltePath}.ts`, realCompanion, "utf-8");
+    }
+    for (const [relativePath, content] of Object.entries(files)) {
+      const filePath = path.join(dir, relativePath);
+      fs.mkdirSync(path.dirname(filePath), { recursive: true });
+      fs.writeFileSync(filePath, content, "utf-8");
+    }
+    for (const [link, target] of Object.entries(symlinks)) {
+      const linkPath = path.join(dir, link);
+      fs.mkdirSync(path.dirname(linkPath), { recursive: true });
+      fs.symlinkSync(path.join(dir, target), linkPath, "dir");
+    }
+    if (realDeclaration !== undefined) {
+      fs.writeFileSync(`${sveltePath}.d.ts`, realDeclaration, "utf-8");
     }
     const barPath = path.join(dir, "Bar.ts");
-    let consumerCode = `import Foo from "./Foo.svelte";\n${consumerBody}\n`;
+    let consumerCode = `import Foo from ${JSON.stringify(specifier)};\n${consumerBody}\n`;
     if (template !== undefined) {
       const translated = svelteToVirtualTypeScript(
         path.join(dir, "Bar.svelte"),
@@ -1519,6 +1611,13 @@ function realResolutionDiagnostics(
         }
       },
       fileExists: (p: string): boolean => fs.existsSync(p),
+      realpath: (p: string): string => {
+        try {
+          return fs.realpathSync.native(p);
+        } catch {
+          return p;
+        }
+      },
     };
     if (patch) {
       _resetTranslationCacheForTesting();
@@ -1537,10 +1636,12 @@ function realResolutionDiagnostics(
       types: [],
       baseUrl: dir,
       paths: { svelte: [svelteTypesPath] },
+      ...extraCompilerOptions,
     };
     const host = ts.createCompilerHost(compilerOptions);
     host.fileExists = (p) => sys.fileExists(p);
     host.readFile = (p) => sys.readFile(p);
+    host.realpath = (p) => sys.realpath(p);
     host.getSourceFile = (fileName, languageVersionOrOptions) => {
       const text = sys.readFile(fileName);
       return text === undefined
@@ -1665,6 +1766,42 @@ describe("ts.sys `X.svelte.ts` companion (unit)", () => {
           /declare const \$_svelteComponent\d+:/,
         );
       });
+    });
+  });
+
+  it("does not claim a companion when a real `X.svelte.d.ts` exists", () => {
+    withTempSvelteFile(TS_SCRIPT, (sveltePath) => {
+      const companion = `${sveltePath}.ts`;
+      const declaration = `${sveltePath}.d.ts`;
+      fs.writeFileSync(
+        declaration,
+        "declare const C: number;\nexport default C;\n",
+        "utf-8",
+      );
+      const sys = {
+        readFile: (p: string): string | undefined => {
+          try {
+            return fs.readFileSync(p, "utf-8");
+          } catch {
+            return undefined;
+          }
+        },
+        fileExists: (p: string) => fs.existsSync(p),
+      };
+      _patchTsSysForTesting(sys);
+      rememberParserOptions(makeParserOptions(sveltePath));
+
+      // Resolution must move on to the declaration the package wrote.
+      assert.strictEqual(sys.fileExists(companion), false);
+      assert.strictEqual(sys.readFile(companion), undefined);
+
+      // Once the declaration is gone, the virtual companion takes over.
+      fs.rmSync(declaration);
+      assert.strictEqual(sys.fileExists(companion), true);
+      assert.match(
+        sys.readFile(companion)!,
+        /declare const \$_svelteComponent\d+:/,
+      );
     });
   });
 });
@@ -1948,6 +2085,462 @@ describe("imported component prop types via real `.svelte` resolution (legacy, e
       `expected TS2322 from the real module's \`real: string\`, got: ${bad
         .map((d) => d.code)
         .join(", ")}`,
+    );
+  });
+
+  it("resolves to a real `X.svelte.d.ts` next to `X.svelte` instead of the companion", () => {
+    // A package built with `svelte-package` ships `Foo.svelte.d.ts`, so its
+    // `shipped` export must resolve, not the synthetic component type.
+    const realDeclaration = `declare const Foo: { shipped: string };\nexport default Foo;\n`;
+    const ok = realResolutionDiagnostics(
+      LEGACY_COMPONENT,
+      `const s: string = Foo.shipped; void s;`,
+      { realDeclaration },
+    );
+    assert.deepStrictEqual(
+      ok.map((d) => d.code),
+      [],
+      `expected the shipped .svelte.d.ts to be used, got: ${ok
+        .map((d) => ts.flattenDiagnosticMessageText(d.messageText, " "))
+        .join("; ")}`,
+    );
+    const bad = realResolutionDiagnostics(
+      LEGACY_COMPONENT,
+      `const n: number = Foo.shipped; void n;`,
+      { realDeclaration },
+    );
+    assert.ok(
+      bad.some((d) => d.code === 2322),
+      `expected TS2322 from the declaration's \`shipped: string\`, got: ${bad
+        .map((d) => d.code)
+        .join(", ")}`,
+    );
+  });
+});
+
+describe("ts.sys `package.json` subpath targets (unit)", () => {
+  beforeEach(() => {
+    _resetTranslationCacheForTesting();
+  });
+
+  /** What TypeScript reads from a `package.json` with this text, through the hook. */
+  function readThroughHook(packageJsonText: string): string {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "ts-sys-hook-"));
+    try {
+      const packageJsonPath = path.join(dir, "package.json");
+      fs.writeFileSync(packageJsonPath, packageJsonText, "utf-8");
+      const sys = { readFile: (p: string) => fs.readFileSync(p, "utf-8") };
+      _patchTsSysForTesting(sys);
+      return sys.readFile(packageJsonPath);
+    } finally {
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
+  }
+
+  /** A `.svelte` target with the fallbacks the hook adds. */
+  function fallback(svelteTarget: string): string[] {
+    return [svelteTarget, `${svelteTarget}.ts`, `${svelteTarget}.d.ts`];
+  }
+
+  function redirect(packageJson: object): unknown {
+    return JSON.parse(readThroughHook(JSON.stringify(packageJson)));
+  }
+
+  it("points a `*.svelte` `exports` target at the companion", () => {
+    assert.deepStrictEqual(
+      redirect({
+        exports: { "./*.js": "./lib/*.js", "./*.svelte": "./lib/*.svelte" },
+      }),
+      {
+        exports: {
+          "./*.js": "./lib/*.js",
+          "./*.svelte": fallback("./lib/*.svelte"),
+        },
+      },
+    );
+  });
+
+  it("adds a `*.svelte` entry next to a bare `*` `imports` pattern", () => {
+    assert.deepStrictEqual(
+      redirect({ imports: { "#components/*": "./src/components/*" } }),
+      {
+        imports: {
+          "#components/*.svelte": fallback("./src/components/*.svelte"),
+          "#components/*": "./src/components/*",
+        },
+      },
+    );
+  });
+
+  it("keeps an authored `*.svelte` entry instead of adding a second one", () => {
+    const authored = fallback("./ui/*.svelte");
+    assert.deepStrictEqual(
+      redirect({
+        imports: { "#c/*": "./src/*", "#c/*.svelte": "./ui/*.svelte" },
+      }),
+      { imports: { "#c/*": "./src/*", "#c/*.svelte": authored } },
+    );
+    assert.deepStrictEqual(
+      redirect({
+        imports: { "#c/*.svelte": "./ui/*.svelte", "#c/*": "./src/*" },
+      }),
+      { imports: { "#c/*.svelte": authored, "#c/*": "./src/*" } },
+    );
+  });
+
+  it("adds no `*.svelte` entry for a target with more than one `*`", () => {
+    const packageJson = { imports: { "#c/*": "./src/*/*" } };
+    assert.deepStrictEqual(redirect(packageJson), packageJson);
+  });
+
+  it("maps every leaf of a conditional target", () => {
+    assert.deepStrictEqual(
+      redirect({
+        imports: { "#c/*": { types: "./src/*", default: "./dist/*" } },
+      }),
+      {
+        imports: {
+          "#c/*.svelte": {
+            types: fallback("./src/*.svelte"),
+            default: fallback("./dist/*.svelte"),
+          },
+          "#c/*": { types: "./src/*", default: "./dist/*" },
+        },
+      },
+    );
+  });
+
+  it("leaves a conditional target alone when a leaf is not a pattern", () => {
+    const packageJson = {
+      imports: { "#c/*": { types: "./types/*.d.ts", default: "./src/*" } },
+    };
+    assert.deepStrictEqual(redirect(packageJson), packageJson);
+  });
+
+  it("rewrites a `.svelte` target under any subpath", () => {
+    assert.deepStrictEqual(
+      redirect({
+        exports: {
+          "./Foo.svelte": "./lib/Foo.svelte",
+          "./Button": "./lib/Button.svelte",
+          "./*": "./lib/*.svelte",
+        },
+      }),
+      {
+        exports: {
+          "./Foo.svelte": fallback("./lib/Foo.svelte"),
+          "./Button": fallback("./lib/Button.svelte"),
+          "./*": fallback("./lib/*.svelte"),
+        },
+      },
+    );
+  });
+
+  it("rewrites the `exports` sugar for the package root", () => {
+    const index = fallback("./index.svelte");
+    assert.deepStrictEqual(redirect({ exports: "./index.svelte" }), {
+      exports: index,
+    });
+    assert.deepStrictEqual(
+      redirect({
+        exports: { svelte: "./index.svelte", default: "./index.svelte" },
+      }),
+      { exports: { svelte: index, default: index } },
+    );
+  });
+
+  it("maps every entry of a fallback array", () => {
+    assert.deepStrictEqual(
+      redirect({
+        exports: { "./*.svelte": ["./lib/*.svelte", "./src/*.svelte"] },
+      }),
+      {
+        exports: {
+          "./*.svelte": [
+            ...fallback("./lib/*.svelte"),
+            ...fallback("./src/*.svelte"),
+          ],
+        },
+      },
+    );
+  });
+
+  it("leaves a fallback array alone when an entry cannot be mapped", () => {
+    const packageJson = { imports: { "#c/*": ["./src/*", "ui/*"] } };
+    assert.deepStrictEqual(redirect(packageJson), packageJson);
+  });
+
+  // TypeScript resolves a bare target as a package import, where it appends
+  // `.ts` itself, and a rewritten one would break the checker's assumption
+  // that a `.ts`-resolved specifier ends with a TypeScript extension.
+  it("leaves bare and parent-relative targets to TypeScript", () => {
+    const packageJson = {
+      imports: {
+        "#ui/*": "ui/components/*",
+        "#ui/Foo.svelte": "ui/components/Foo.svelte",
+        "#shared/*": "../shared/*",
+      },
+    };
+    assert.deepStrictEqual(redirect(packageJson), packageJson);
+  });
+
+  it("leaves a `types` condition for shipped declarations alone", () => {
+    const packageJson = {
+      exports: {
+        "./*.svelte": {
+          types: "./dist/*.svelte.d.ts",
+          svelte: "./dist/*.svelte",
+          default: "./dist/*.svelte",
+        },
+      },
+    };
+    assert.deepStrictEqual(redirect(packageJson), packageJson);
+  });
+
+  it("leaves a `package.json` without `.svelte` subpath targets byte-for-byte untouched", () => {
+    for (const text of [
+      JSON.stringify({ name: "pkg", main: "./index.js" }),
+      JSON.stringify({ exports: "./index.js" }),
+      JSON.stringify({
+        exports: { import: "./index.mjs", require: "./index.cjs" },
+      }),
+      JSON.stringify({ exports: { "#not/an/export/*": "./src/*" } }),
+      JSON.stringify({ imports: { "#a/*": "./src/*.js" } }),
+      JSON.stringify({ imports: { "#a/*": null, "#a/*.svelte": null } }),
+      JSON.stringify({
+        imports: { "#a/*": { browser: null, default: "./src/*" } },
+      }),
+      JSON.stringify({ imports: { "#a/*": "./src/*.js" } }, null, 2),
+      "null",
+      JSON.stringify(["imports"]),
+      "{ not json",
+    ]) {
+      assert.strictEqual(readThroughHook(text), text);
+    }
+  });
+});
+
+describe("imported component prop types via `package.json` subpaths (e2e)", () => {
+  const COMPONENT = `<script lang="ts">
+  export let value: string;
+</script>
+<p>{value}</p>`;
+  const WRONG = `const value: import("svelte").ComponentProps<Foo>["value"] = 123; void value;`;
+  const RIGHT = `const value: import("svelte").ComponentProps<Foo>["value"] = "ok"; void value;`;
+
+  const IMPORTS = {
+    componentPath: "src/components/Foo.svelte",
+    specifier: "#components/Foo.svelte",
+    files: {
+      "package.json": JSON.stringify({
+        name: "app",
+        imports: { "#components/*": "./src/components/*" },
+      }),
+    },
+  };
+  const EXPORTS = {
+    componentPath: "node_modules/ui/lib/Foo.svelte",
+    specifier: "ui/Foo.svelte",
+    files: {
+      "node_modules/ui/package.json": JSON.stringify({
+        name: "ui",
+        exports: { "./*.svelte": "./lib/*.svelte" },
+      }),
+    },
+  };
+  // A bare `imports` target resolves as a package import, which TypeScript
+  // extends with `.ts` on its own; the hook must stay out of its way.
+  const BARE_IMPORTS = {
+    componentPath: "node_modules/ui/components/Foo.svelte",
+    specifier: "#ui/Foo.svelte",
+    files: {
+      "package.json": JSON.stringify({
+        name: "app",
+        imports: { "#ui/*": "ui/components/*" },
+      }),
+      "node_modules/ui/package.json": JSON.stringify({ name: "ui" }),
+    },
+  };
+  // The specifier carries no `.svelte`, so the ambient module never matched it
+  // and the import was a TS2307 before.
+  const PLAIN_SUBPATH = {
+    componentPath: "node_modules/ui/lib/Foo.svelte",
+    specifier: "ui/Button",
+    files: {
+      "node_modules/ui/package.json": JSON.stringify({
+        name: "ui",
+        exports: { "./Button": "./lib/Foo.svelte" },
+      }),
+    },
+  };
+
+  function format(diagnostics: ts.Diagnostic[]): string[] {
+    return diagnostics.map(
+      (d) =>
+        `${d.code}: ${ts.flattenDiagnosticMessageText(d.messageText, " ")}`,
+    );
+  }
+
+  function assertCompanionTypes(
+    name: string,
+    layout: Parameters<typeof realResolutionDiagnostics>[2],
+  ): void {
+    const bad = realResolutionDiagnostics(COMPONENT, WRONG, layout);
+    assert.ok(
+      bad.some((d) => d.code === 2322),
+      `expected TS2322 through ${name}, got: ${format(bad).join("; ")}`,
+    );
+    const good = realResolutionDiagnostics(COMPONENT, RIGHT, layout);
+    assert.deepStrictEqual(format(good), []);
+  }
+
+  for (const [name, layout] of [
+    ["an `imports` subpath", IMPORTS],
+    ["a dependency's `exports` subpath", EXPORTS],
+  ] as const) {
+    it(`resolves ${name} to the companion`, () => {
+      assertCompanionTypes(name, layout);
+    });
+
+    it(`resolves ${name} to the ambient module without the hook`, () => {
+      const ambient = realResolutionDiagnostics(COMPONENT, WRONG, {
+        ...layout,
+        patch: false,
+      });
+      assert.ok(
+        !ambient.some((d) => d.code === 2307),
+        "the ambient `declare module '*.svelte'` should resolve the import",
+      );
+      assert.ok(
+        !ambient.some((d) => d.code === 2322),
+        "the ambient module's props are permissive, so no type error is expected",
+      );
+    });
+  }
+
+  it("leaves a bare `imports` target to TypeScript, which still reaches the companion", () => {
+    assertCompanionTypes("a bare `imports` target", BARE_IMPORTS);
+  });
+
+  it("resolves a `.svelte` target behind a subpath without the extension", () => {
+    assertCompanionTypes("a plain subpath", PLAIN_SUBPATH);
+    const unhooked = realResolutionDiagnostics(COMPONENT, WRONG, {
+      ...PLAIN_SUBPATH,
+      patch: false,
+    });
+    assert.ok(
+      unhooked.some((d) => d.code === 2307),
+      `expected TS2307 without the hook, got: ${format(unhooked).join("; ")}`,
+    );
+  });
+
+  it("keeps a real `X.d.svelte.ts` ahead of the companion with `allowArbitraryExtensions`", () => {
+    const layout = {
+      ...IMPORTS,
+      files: {
+        ...IMPORTS.files,
+        "src/components/Foo.d.svelte.ts": `declare const Foo: { declared: string };\nexport default Foo;\n`,
+      },
+      compilerOptions: { allowArbitraryExtensions: true },
+    };
+    const ok = realResolutionDiagnostics(
+      COMPONENT,
+      `const d: string = Foo.declared; void d;`,
+      layout,
+    );
+    assert.deepStrictEqual(format(ok), []);
+    const bad = realResolutionDiagnostics(
+      COMPONENT,
+      `const d: number = Foo.declared; void d;`,
+      layout,
+    );
+    assert.ok(
+      bad.some((d) => d.code === 2322),
+      `expected TS2322 from the declaration file, got: ${format(bad).join("; ")}`,
+    );
+  });
+
+  it("resolves to a shipped `X.svelte.d.ts` behind a subpath, as for a relative import", () => {
+    // A package built with `svelte-package` ships `Foo.svelte.d.ts`, which
+    // TypeScript does not probe for a `*.svelte` subpath target on its own.
+    const layout = {
+      ...EXPORTS,
+      realDeclaration: `declare const Foo: { shipped: string };\nexport default Foo;\n`,
+    };
+    const ok = realResolutionDiagnostics(
+      COMPONENT,
+      `const s: string = Foo.shipped; void s;`,
+      layout,
+    );
+    assert.deepStrictEqual(format(ok), []);
+    const bad = realResolutionDiagnostics(
+      COMPONENT,
+      `const s: number = Foo.shipped; void s;`,
+      layout,
+    );
+    assert.ok(
+      bad.some((d) => d.code === 2322),
+      `expected TS2322 from the declaration file, got: ${format(bad).join("; ")}`,
+    );
+  });
+
+  it("resolves a workspace package linked into `node_modules` to the real companion path", () => {
+    const component = `<script lang="ts" context="module">
+  export class Store { #value = 0; get value() { return this.#value; } }
+</script>
+<script lang="ts">
+  export let value: string;
+</script>
+<p>{value}</p>`;
+    // Through the link and through the real path, \`Store\` must be one class;
+    // two companion copies make its \`#private\` field incompatible.
+    const diagnostics = realResolutionDiagnostics(
+      component,
+      `import { Store as LinkedStore } from "@org/ui/Foo.svelte";
+import { Store as RealStore } from "./packages/ui/src/Foo.svelte";
+const store: RealStore = new LinkedStore();
+void store;`,
+      {
+        componentPath: "packages/ui/src/Foo.svelte",
+        specifier: "@org/ui/Foo.svelte",
+        files: {
+          "packages/ui/package.json": JSON.stringify({
+            name: "@org/ui",
+            exports: { "./*.svelte": "./src/*.svelte" },
+          }),
+        },
+        symlinks: { "node_modules/@org/ui": "packages/ui" },
+      },
+    );
+    assert.deepStrictEqual(format(diagnostics), []);
+  });
+
+  it("stays a passthrough to a real `X.svelte.ts` behind a subpath (conflict guard)", () => {
+    const realCompanion = `const _c: { real: string } = { real: "" };\nexport default _c;\n`;
+    const ok = withoutHookWarnings(() =>
+      realResolutionDiagnostics(
+        COMPONENT,
+        `const r: string = Foo.real; void r;`,
+        {
+          ...EXPORTS,
+          realCompanion,
+        },
+      ),
+    );
+    assert.deepStrictEqual(format(ok), []);
+    const bad = withoutHookWarnings(() =>
+      realResolutionDiagnostics(
+        COMPONENT,
+        `const n: number = Foo.real; void n;`,
+        {
+          ...EXPORTS,
+          realCompanion,
+        },
+      ),
+    );
+    assert.ok(
+      bad.some((d) => d.code === 2322),
+      `expected TS2322 from the real module's \`real: string\`, got: ${format(bad).join("; ")}`,
     );
   });
 });
@@ -2252,8 +2845,15 @@ describe("public parser API with the experimental hook", () => {
     assert.ifError(child.error);
   });
 
-  for (const mode of ["project", "projectService"]) {
-    it(`refreshes the component and its importers after an edit, saved or not (${mode})`, () => {
+  // `projects` adds a tsconfig that does not hold the component. Its program
+  // must not be built, as that rebuilt every program for each refresh.
+  // `linked` imports the component from a workspace package linked into
+  // `node_modules`, which must refresh the same as a relative import.
+  const refreshCases = ["project", "projects", "projectService"].flatMap(
+    (mode) => [false, true].map((linked) => [mode, linked] as const),
+  );
+  for (const [mode, linked] of refreshCases) {
+    it(`refreshes the component and its importers after an edit, saved or not (${mode}${linked ? ", linked package" : ""})`, () => {
       const child = spawnSync(
         process.execPath,
         [
@@ -2266,12 +2866,25 @@ describe("public parser API with the experimental hook", () => {
       import fs from "node:fs";
       import os from "node:os";
       import path from "node:path";
+      import ts from "typescript";
       import * as tsParser from "@typescript-eslint/parser";
       import * as parser from ${JSON.stringify(new URL("../../src/index.ts", import.meta.url).href)};
-      const dir = fs.mkdtempSync(path.join(os.tmpdir(), "component-refresh-"));
+      // Parentheses, as in a folder copied by Finder or Explorer. typescript-eslint
+      // reads them in a \`project\` path as a glob.
+      const dir = path.join(fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), "component-refresh-"))), "app (copy)");
+      fs.mkdirSync(dir);
       try {
-        const componentPath = path.join(dir, "Foo.svelte");
-        const consumer = 'import Foo from "./Foo.svelte"; import type { ComponentProps } from "svelte"; let count: ComponentProps<Foo>["count"];';
+        const linked = ${JSON.stringify(linked)};
+        const componentDir = linked ? path.join(dir, "packages", "ui", "src") : dir;
+        const componentPath = path.join(componentDir, "Foo.svelte");
+        fs.mkdirSync(componentDir, { recursive: true });
+        if (linked) {
+          fs.writeFileSync(path.join(dir, "packages", "ui", "package.json"), JSON.stringify({ name: "@org/ui", exports: { "./*.svelte": "./src/*.svelte" } }));
+          fs.mkdirSync(path.join(dir, "node_modules", "@org"), { recursive: true });
+          fs.symlinkSync(path.join(dir, "packages", "ui"), path.join(dir, "node_modules", "@org", "ui"), "dir");
+        }
+        const specifier = linked ? "@org/ui/Foo.svelte" : "./Foo.svelte";
+        const consumer = 'import Foo from "' + specifier + '"; import type { ComponentProps } from "svelte"; let count: ComponentProps<Foo>["count"];';
         // The component imports itself, so its own rules read the companion too.
         const component = (type) => '<script lang="ts">import type Foo from "./Foo.svelte"; import type { ComponentProps } from "svelte"; let self: ComponentProps<Foo>["count"]; export let count: ' + type + ';</script>';
         fs.writeFileSync(componentPath, component("number"));
@@ -2283,7 +2896,18 @@ describe("public parser API with the experimental hook", () => {
         // An editor keeps one long-lived process. Keep CI=true from switching
         // typescript-eslint to single-run mode, which assumes files never change.
         const options = { filePath: path.join(dir, "consumer.ts"), extraFileExtensions: [".svelte"], loc: true, range: true, tsconfigRootDir: dir, disallowAutomaticSingleRunInference: true };
-        if (${JSON.stringify(mode)} === "project") options.project = path.join(dir, "tsconfig.json");
+        const otherConfig = path.join(dir, "other", "tsconfig.json");
+        fs.mkdirSync(path.dirname(otherConfig));
+        fs.writeFileSync(otherConfig, JSON.stringify({ include: ["./**/*.ts"] }));
+        fs.writeFileSync(path.join(dir, "other", "x.ts"), "export const x = 1;");
+        let otherConfigReads = 0;
+        const readFile = ts.sys.readFile;
+        ts.sys.readFile = (file, encoding) => {
+          if (path.resolve(file).toLowerCase() === otherConfig.toLowerCase()) otherConfigReads++;
+          return readFile(file, encoding);
+        };
+        if (${JSON.stringify(mode)} === "project") options.project = "./tsconfig.json";
+        else if (${JSON.stringify(mode)} === "projects") options.project = ["./tsconfig.json", "./other/tsconfig.json"];
         else options.projectService = true;
         function countType() {
           const result = tsParser.parseForESLint(consumer, options);
@@ -2299,6 +2923,9 @@ describe("public parser API with the experimental hook", () => {
           return checker.typeToString(checker.getTypeAtLocation(result.services.esTreeNodeToTSNodeMap.get(id)));
         }
         assert.equal(countType(), "number");
+        // An editor lints the component when it opens it. The refresh after the
+        // edit then knows which tsconfig holds the companion.
+        if (${JSON.stringify(mode)} === "projects") assert.equal(selfType(component("number")), "number");
         const edited = component("string");
         fs.writeFileSync(componentPath, edited);
         const future = Date.now() / 1000 + 10;
@@ -2308,8 +2935,9 @@ describe("public parser API with the experimental hook", () => {
         // Like a linted .ts file, an unsaved buffer reaches importers too.
         assert.equal(selfType(component("boolean")), "boolean");
         assert.equal(countType(), "boolean");
+        assert.equal(otherConfigReads, 0);
       } finally {
-        fs.rmSync(dir, { recursive: true, force: true });
+        fs.rmSync(path.dirname(dir), { recursive: true, force: true });
       }
     `,
         ],
@@ -2327,6 +2955,335 @@ describe("public parser API with the experimental hook", () => {
       assert.ifError(child.error);
     });
   }
+
+  it("updates importers in a tsconfig that holds no linted component after an unsaved edit", () => {
+    const child = spawnSync(
+      process.execPath,
+      [
+        "--import",
+        "tsx/esm",
+        "--input-type=module",
+        "-e",
+        `
+      import assert from "node:assert/strict";
+      import fs from "node:fs";
+      import os from "node:os";
+      import path from "node:path";
+      import * as tsParser from "@typescript-eslint/parser";
+      import * as parser from ${JSON.stringify(new URL("../../src/index.ts", import.meta.url).href)};
+      const dir = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), "companion-other-program-")));
+      try {
+        // An upper-case name, so a case-insensitive file system gets the path lower-cased.
+        const componentPath = path.join(dir, "Comp.svelte");
+        const component = (type) => '<script lang="ts">export const count: ' + type + ' = null!;</script>{count}';
+        fs.writeFileSync(componentPath, component("number"));
+        const compilerOptions = { strict: true, module: "ESNext", moduleResolution: "Bundler", types: [], paths: { svelte: [${JSON.stringify(svelteTypesPath)}] } };
+        fs.writeFileSync(path.join(dir, "tsconfig.json"), JSON.stringify({ compilerOptions, include: ["./*.svelte", "./*.ts"] }));
+        fs.writeFileSync(path.join(dir, "main.ts"), 'import { count } from "./Comp.svelte"; export const m = count;');
+        // Only .ts files, so no component parse returns this program.
+        fs.mkdirSync(path.join(dir, "test"));
+        fs.writeFileSync(path.join(dir, "test", "tsconfig.json"), JSON.stringify({ compilerOptions, include: ["./*.ts"] }));
+        const testCode = 'import { count } from "../Comp.svelte"; export const c = count;';
+        fs.writeFileSync(path.join(dir, "test", "a.test.ts"), testCode);
+        const options = { extraFileExtensions: [".svelte"], loc: true, range: true, tsconfigRootDir: dir, disallowAutomaticSingleRunInference: true, project: ["./tsconfig.json", "./test/tsconfig.json"] };
+        function testType() {
+          const result = tsParser.parseForESLint(testCode, { ...options, filePath: path.join(dir, "test", "a.test.ts") });
+          const id = result.ast.body[1].declaration.declarations[0].id;
+          const checker = result.services.program.getTypeChecker();
+          return checker.typeToString(checker.getTypeAtLocation(result.services.esTreeNodeToTSNodeMap.get(id)));
+        }
+        assert.equal(testType(), "number");
+        parser.parseForESLint(component("number"), { ...options, parser: tsParser, filePath: componentPath });
+        for (const type of ["string", "boolean"]) {
+          parser.parseForESLint(component(type), { ...options, parser: tsParser, filePath: componentPath });
+          assert.equal(testType(), type);
+        }
+      } finally {
+        fs.rmSync(dir, { recursive: true, force: true });
+      }
+    `,
+      ],
+      {
+        encoding: "utf8",
+        timeout: 30000,
+        env: {
+          // eslint-disable-next-line no-process-env -- isolate the opt-in hook in a subprocess
+          ...process.env,
+          SVELTE_ESLINT_PARSER_EXPERIMENTAL_TS_SYS_HOOK: "1",
+        },
+      },
+    );
+    assert.strictEqual(child.status, 0, child.stdout + child.stderr);
+    assert.ifError(child.error);
+  });
+
+  it("refreshes a companion when another reader got a different code", () => {
+    const child = spawnSync(
+      process.execPath,
+      [
+        "--import",
+        "tsx/esm",
+        "--input-type=module",
+        "-e",
+        `
+      import assert from "node:assert/strict";
+      import fs from "node:fs";
+      import os from "node:os";
+      import path from "node:path";
+      import * as tsParser from "@typescript-eslint/parser";
+      import * as parser from ${JSON.stringify(new URL("../../src/index.ts", import.meta.url).href)};
+      const dir = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), "companion-readers-")));
+      try {
+        const componentPath = path.join(dir, "Foo.svelte");
+        const consumer = 'import Foo from "./Foo.svelte"; import type { ComponentProps } from "svelte"; let count: ComponentProps<Foo>["count"];';
+        const component = (type) => '<script lang="ts">export let count: ' + type + ';</script>';
+        fs.writeFileSync(componentPath, component("number"));
+        fs.writeFileSync(path.join(dir, "consumer.ts"), consumer);
+        fs.writeFileSync(path.join(dir, "consumer2.ts"), consumer);
+        fs.writeFileSync(path.join(dir, "tsconfig.json"), JSON.stringify({ compilerOptions: {
+          strict: true, module: "ESNext", moduleResolution: "Bundler", types: [],
+          paths: { svelte: [${JSON.stringify(svelteTypesPath)}] },
+        }, include: ["./**/*"] }));
+        const base = { extraFileExtensions: [".svelte"], loc: true, range: true, tsconfigRootDir: dir, disallowAutomaticSingleRunInference: true };
+        const project = { ...base, project: path.join(dir, "tsconfig.json") };
+        const service = { ...base, projectService: true };
+        function countType(file, options) {
+          const result = tsParser.parseForESLint(consumer, { ...options, filePath: path.join(dir, file) });
+          const checker = result.services.program.getTypeChecker();
+          return checker.typeToString(checker.getTypeAtLocation(result.services.esTreeNodeToTSNodeMap.get(result.ast.body[2].declarations[0].id)));
+        }
+        function lint(source) {
+          parser.parseForESLint(source, { ...project, filePath: componentPath, parser: tsParser });
+        }
+        assert.equal(countType("consumer.ts", project), "number");
+        lint(component("number"));
+        fs.writeFileSync(componentPath, component("string"));
+        const future = Date.now() / 1000 + 10;
+        fs.utimesSync(componentPath, future, future);
+        // The project service reads the new code, while the program still has the old one.
+        assert.equal(countType("consumer2.ts", service), "string");
+        lint(component("string"));
+        assert.equal(countType("consumer.ts", project), "string");
+      } finally {
+        fs.rmSync(dir, { recursive: true, force: true });
+      }
+    `,
+      ],
+      {
+        encoding: "utf8",
+        timeout: 30000,
+        env: {
+          // eslint-disable-next-line no-process-env -- isolate the opt-in hook in a subprocess
+          ...process.env,
+          SVELTE_ESLINT_PARSER_EXPERIMENTAL_TS_SYS_HOOK: "1",
+        },
+      },
+    );
+    assert.strictEqual(child.status, 0, child.stdout + child.stderr);
+    assert.ifError(child.error);
+  });
+
+  it("refreshes importers when the component is linted with a relative path", () => {
+    const child = spawnSync(
+      process.execPath,
+      [
+        "--import",
+        "tsx/esm",
+        "--input-type=module",
+        "-e",
+        `
+      import assert from "node:assert/strict";
+      import fs from "node:fs";
+      import os from "node:os";
+      import path from "node:path";
+      import * as tsParser from "@typescript-eslint/parser";
+      import * as parser from ${JSON.stringify(new URL("../../src/index.ts", import.meta.url).href)};
+      const root = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), "companion-relative-")));
+      const cwd = process.cwd();
+      try {
+        // The tsconfig is in a subfolder of \`tsconfigRootDir\`, which a relative path resolves against.
+        const dir = path.join(root, "src");
+        fs.mkdirSync(dir);
+        const consumer = 'import Foo from "./Foo.svelte"; import type { ComponentProps } from "svelte"; let count: ComponentProps<Foo>["count"];';
+        const component = (type) => '<script lang="ts">export let count: ' + type + ';</script>';
+        fs.writeFileSync(path.join(dir, "Foo.svelte"), component("number"));
+        fs.writeFileSync(path.join(dir, "consumer.ts"), consumer);
+        fs.writeFileSync(path.join(dir, "tsconfig.json"), JSON.stringify({ compilerOptions: {
+          strict: true, module: "ESNext", moduleResolution: "Bundler", types: [],
+          paths: { svelte: [${JSON.stringify(svelteTypesPath)}] },
+        }, include: ["./**/*"] }));
+        const options = { extraFileExtensions: [".svelte"], loc: true, range: true, tsconfigRootDir: root, project: "./src/tsconfig.json", disallowAutomaticSingleRunInference: true };
+        process.chdir(root);
+        function countType() {
+          const result = tsParser.parseForESLint(consumer, { ...options, filePath: path.join(dir, "consumer.ts") });
+          const checker = result.services.program.getTypeChecker();
+          return checker.typeToString(checker.getTypeAtLocation(result.services.esTreeNodeToTSNodeMap.get(result.ast.body[2].declarations[0].id)));
+        }
+        function lint(source) {
+          parser.parseForESLint(source, { ...options, filePath: "src/Foo.svelte", parser: tsParser });
+        }
+        assert.equal(countType(), "number");
+        lint(component("number"));
+        for (const type of ["string", "boolean"]) {
+          lint(component(type));
+          assert.equal(countType(), type);
+        }
+      } finally {
+        process.chdir(cwd);
+        fs.rmSync(root, { recursive: true, force: true });
+      }
+    `,
+      ],
+      {
+        encoding: "utf8",
+        timeout: 30000,
+        env: {
+          // eslint-disable-next-line no-process-env -- isolate the opt-in hook in a subprocess
+          ...process.env,
+          SVELTE_ESLINT_PARSER_EXPERIMENTAL_TS_SYS_HOOK: "1",
+        },
+      },
+    );
+    assert.strictEqual(child.status, 0, child.stdout + child.stderr);
+    assert.ifError(child.error);
+  });
+
+  it("does not retry a refresh that found no program for the same code", () => {
+    const child = spawnSync(
+      process.execPath,
+      [
+        "--import",
+        "tsx/esm",
+        "--input-type=module",
+        "-e",
+        `
+      import assert from "node:assert/strict";
+      import fs from "node:fs";
+      import os from "node:os";
+      import path from "node:path";
+      import * as tsParser from "@typescript-eslint/parser";
+      import * as parser from ${JSON.stringify(new URL("../../src/index.ts", import.meta.url).href)};
+      const dir = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), "companion-retry-")));
+      try {
+        const compilerOptions = { strict: true, module: "ESNext", moduleResolution: "Bundler", types: [] };
+        const component = (type) => '<script lang="ts">export const count: ' + type + ' = null!;</script>{count}';
+        const componentPath = path.join(dir, "Foo.svelte");
+        fs.writeFileSync(componentPath, component("number"));
+        fs.writeFileSync(path.join(dir, "tsconfig.json"), JSON.stringify({ compilerOptions, include: ["./*.svelte"] }));
+        // Only the test tsconfig, which the component's \`project\` does not list, imports the component.
+        fs.mkdirSync(path.join(dir, "test"));
+        fs.writeFileSync(path.join(dir, "test", "tsconfig.json"), JSON.stringify({ compilerOptions, include: ["./*.ts"] }));
+        const testCode = 'import { count } from "../Foo.svelte"; export const m = count;';
+        fs.writeFileSync(path.join(dir, "test", "a.ts"), testCode);
+        const base = { extraFileExtensions: [".svelte"], loc: true, range: true, tsconfigRootDir: dir, disallowAutomaticSingleRunInference: true };
+        function testType() {
+          const result = tsParser.parseForESLint(testCode, { ...base, filePath: path.join(dir, "test", "a.ts"), project: ["./test/tsconfig.json"] });
+          const checker = result.services.program.getTypeChecker();
+          return checker.typeToString(checker.getTypeAtLocation(result.services.esTreeNodeToTSNodeMap.get(result.ast.body[1].declaration.declarations[0].id)));
+        }
+        let companionParses = 0;
+        const countingParser = { ...tsParser, parseForESLint(code, options) {
+          if (options.filePath.endsWith(".svelte.ts")) companionParses++;
+          return tsParser.parseForESLint(code, options);
+        } };
+        function lint(source) {
+          const before = companionParses;
+          parser.parseForESLint(source, { ...base, filePath: componentPath, project: ["./tsconfig.json"], parser: countingParser });
+          return companionParses - before;
+        }
+        assert.equal(testType(), "number");
+        lint(component("number"));
+        // The refresh throws, as no tsconfig in \`project\` holds the companion,
+        // but the importer still gets the new code.
+        assert.equal(lint(component("string")), 1);
+        assert.equal(testType(), "string");
+        assert.equal(lint(component("string")), 0);
+      } finally {
+        fs.rmSync(dir, { recursive: true, force: true });
+      }
+    `,
+      ],
+      {
+        encoding: "utf8",
+        timeout: 30000,
+        env: {
+          // eslint-disable-next-line no-process-env -- isolate the opt-in hook in a subprocess
+          ...process.env,
+          SVELTE_ESLINT_PARSER_EXPERIMENTAL_TS_SYS_HOOK: "1",
+        },
+      },
+    );
+    assert.strictEqual(child.status, 0, child.stdout + child.stderr);
+    assert.ifError(child.error);
+  });
+
+  it("does not refresh a companion whose code TypeScript already has", () => {
+    const child = spawnSync(
+      process.execPath,
+      [
+        "--import",
+        "tsx/esm",
+        "--input-type=module",
+        "-e",
+        `
+      import assert from "node:assert/strict";
+      import fs from "node:fs";
+      import os from "node:os";
+      import path from "node:path";
+      import ts from "typescript";
+      import * as tsParser from "@typescript-eslint/parser";
+      import * as parser from ${JSON.stringify(new URL("../../src/index.ts", import.meta.url).href)};
+      const dir = fs.mkdtempSync(path.join(os.tmpdir(), "companion-unchanged-"));
+      try {
+        const parent = '<script lang="ts">import Child from "./Child.svelte";</script><Child count={1} />';
+        const child = '<script lang="ts">let { count }: { count: number } = $props();</script>{count}';
+        fs.writeFileSync(path.join(dir, "Parent.svelte"), parent);
+        fs.writeFileSync(path.join(dir, "Child.svelte"), child);
+        fs.writeFileSync(path.join(dir, "tsconfig.json"), JSON.stringify({ compilerOptions: {
+          strict: true, module: "ESNext", moduleResolution: "Bundler", types: [],
+          paths: { svelte: [${JSON.stringify(svelteTypesPath)}] },
+        }, include: ["./*.svelte"] }));
+        // A tsconfig that does not hold the components, like a test tsconfig.
+        const otherConfig = path.join(dir, "other", "tsconfig.json");
+        fs.mkdirSync(path.dirname(otherConfig));
+        fs.writeFileSync(otherConfig, JSON.stringify({ include: ["./**/*.ts"] }));
+        fs.writeFileSync(path.join(dir, "other", "x.ts"), "export const x = 1;");
+        let otherConfigReads = 0;
+        const readFile = ts.sys.readFile;
+        ts.sys.readFile = (file, encoding) => {
+          if (path.resolve(file).toLowerCase() === otherConfig.toLowerCase()) otherConfigReads++;
+          return readFile(file, encoding);
+        };
+        // Count the refreshes, which parse the companion path.
+        let companionParses = 0;
+        const countingParser = { ...tsParser, parseForESLint(code, options) {
+          if (options.filePath.endsWith(".svelte.ts")) companionParses++;
+          return tsParser.parseForESLint(code, options);
+        } };
+        const options = { extraFileExtensions: [".svelte"], loc: true, range: true, tsconfigRootDir: dir, parser: countingParser, project: ["./tsconfig.json", "./other/tsconfig.json"] };
+        // Parsing the parent makes TypeScript read the child's companion.
+        parser.parseForESLint(parent, { ...options, filePath: path.join(dir, "Parent.svelte") });
+        parser.parseForESLint(child, { ...options, filePath: path.join(dir, "Child.svelte") });
+        assert.equal(companionParses, 0);
+        assert.equal(otherConfigReads, 0);
+      } finally {
+        fs.rmSync(dir, { recursive: true, force: true });
+      }
+    `,
+      ],
+      {
+        encoding: "utf8",
+        timeout: 30000,
+        env: {
+          // eslint-disable-next-line no-process-env -- isolate the opt-in hook in a subprocess
+          ...process.env,
+          SVELTE_ESLINT_PARSER_EXPERIMENTAL_TS_SYS_HOOK: "1",
+        },
+      },
+    );
+    assert.strictEqual(child.status, 0, child.stdout + child.stderr);
+    assert.ifError(child.error);
+  });
 });
 
 describe("virtual companion lifecycle", () => {
@@ -2668,4 +3625,693 @@ describeSvelte5("function bindings on a component", () => {
       );
     });
   }
+});
+
+describeSvelte5(
+  "generic component type arguments inferred from attributes",
+  () => {
+    const inlineComponent = `<script lang="ts" generics="T extends Record<string, unknown>">
+  import type { Snippet } from "svelte";
+  let { rows, row, onselect, selected = $bindable() }: {
+    rows: T[];
+    row?: Snippet<[T]>;
+    onselect?: (item: T) => void;
+    selected?: T;
+  } = $props();
+</script>`;
+    // Local types naming the generics must see the inferred type arguments too.
+    const interfaceComponent = `<script lang="ts" generics="T extends Record<string, unknown>">
+  import type { Snippet } from "svelte";
+  type Row = T
+  export interface Props {
+    rows: Row[];
+    row?: Snippet<[T]>;
+    onselect?: (item: T) => void;
+    selected?: T;
+  }
+  let { rows, row, onselect, selected = $bindable() }: Props = $props();
+</script>`;
+    const consumer = `const users = [{ name: "a", age: 1 }];
+let picked: { name: string; age: number } | undefined;
+void picked;`;
+    for (const { name, template, errors } of [
+      {
+        name: "types snippet parameters with the inferred type argument",
+        template: `<Foo rows={users}>
+  {#snippet row(user)}{user.name.toUpperCase()}{user.age.toFixed(0)}{/snippet}
+</Foo>`,
+        errors: [],
+      },
+      {
+        name: "rejects misuse of a parameter typed by inference",
+        template: `<Foo rows={users}>
+  {#snippet row(user)}{user.missing}{/snippet}
+</Foo>`,
+        errors: [2339],
+      },
+      {
+        name: "types callback attributes with the inferred type argument",
+        template: `<Foo rows={users} onselect={(item) => item.name.toUpperCase()} />`,
+        errors: [],
+      },
+      {
+        name: "types function binding setters with the inferred type argument",
+        template: `<Foo rows={users} bind:selected={() => picked, (next) => (picked = next)} />`,
+        errors: [],
+      },
+      {
+        name: "infers from a spread attribute",
+        template: `<Foo {...{ rows: users }}>
+  {#snippet row(user)}{user.missing}{/snippet}
+</Foo>`,
+        errors: [2339],
+      },
+      {
+        name: "falls back to the constraint without inferable attributes",
+        template: `<Foo rows={undefined!} onselect={() => {}}>
+  {#snippet row(user)}{String(user.anything)}{/snippet}
+</Foo>`,
+        errors: [],
+      },
+    ]) {
+      for (const [style, component] of [
+        ["inline props type", inlineComponent],
+        ["local props interface", interfaceComponent],
+      ]) {
+        it(`${name} (${style})`, () => {
+          const diagnostics = realResolutionDiagnostics(component, consumer, {
+            template,
+          }).filter((d) => d.code !== 2695);
+          assert.deepStrictEqual(
+            diagnostics.map((d) => d.code),
+            errors,
+            diagnostics
+              .map((d) => ts.flattenDiagnosticMessageText(d.messageText, " "))
+              .join("\n"),
+          );
+        });
+      }
+    }
+
+    it("infers from text and boolean attributes as svelte2tsx does", () => {
+      const component = `<script lang="ts" generics="T extends string, B extends boolean = false">
+  import type { Snippet } from "svelte";
+  let { variant, flag, children }: {
+    variant: T;
+    flag?: B;
+    children?: Snippet<[T, B]>;
+  } = $props();
+</script>`;
+      for (const [template, errors] of [
+        [
+          `<Foo variant="primary" flag>
+  {#snippet children(v, f)}{((x: "primary", y: true) => x)(v, f)}{/snippet}
+</Foo>`,
+          [],
+        ],
+        [
+          `<Foo variant="a&amp;b">
+  {#snippet children(v)}{((x: "a&b") => x)(v)}{/snippet}
+</Foo>`,
+          [],
+        ],
+        // Text mixed with an expression is not a literal.
+        [
+          `<Foo variant="a{"b"}">
+  {#snippet children(v)}{((x: "ab") => x)(v)}{/snippet}
+</Foo>`,
+          [2345],
+        ],
+      ] as const) {
+        const diagnostics = realResolutionDiagnostics(component, "", {
+          template,
+        }).filter((d) => d.code !== 2695);
+        assert.deepStrictEqual(
+          diagnostics.map((d) => d.code),
+          errors,
+          diagnostics
+            .map((d) => ts.flattenDiagnosticMessageText(d.messageText, " "))
+            .join("\n"),
+        );
+      }
+    });
+
+    it("infers literal types for a `const` type parameter", () => {
+      const template = `<Foo items={["a", "b"]}>
+  {#snippet children(item)}{((x: "a" | "b") => x)(item)}{/snippet}
+</Foo>`;
+      for (const [modifier, errors] of [
+        ["const ", []],
+        // Without the modifier, `T` is inferred as `string[]`.
+        ["", [2345]],
+      ] as const) {
+        const component = `<script lang="ts" generics="${modifier}T extends readonly string[]">
+  import type { Snippet } from "svelte";
+  let { items, children }: { items: T; children?: Snippet<[T[number]]> } = $props();
+</script>`;
+        const diagnostics = realResolutionDiagnostics(component, "", {
+          template,
+        }).filter((d) => d.code !== 2695);
+        assert.deepStrictEqual(
+          diagnostics.map((d) => d.code),
+          errors,
+          diagnostics
+            .map((d) => ts.flattenDiagnosticMessageText(d.messageText, " "))
+            .join("\n"),
+        );
+      }
+    });
+
+    it("does not pass `bind:this` as a prop", () => {
+      const template = `<Foo rows={users} bind:this={ref} />`;
+      const translated = translate(
+        `<script lang="ts">
+  import Foo from "./Foo.svelte";
+  const users = [{ name: "a" }];
+  let ref: unknown;
+</script>
+${template}`,
+      );
+      const call = /\.m\(\{(.*?)\}\);/.exec(translated)?.[1];
+      assert.strictEqual(call, `"rows":(users)`, translated);
+    });
+
+    it("leaves no trace of the props scope in the generic component's scopes", () => {
+      const result = parseComponent(interfaceComponent);
+      const scopeManager = result.scopeManager;
+      assert.ok(
+        scopeManager.scopes.every(
+          (scope) =>
+            scope.block.type !== "FunctionDeclaration" ||
+            !scope.block.id?.name.startsWith("$_genericPropsScope"),
+        ),
+      );
+      const variables = scopeManager.scopes.flatMap((scope) => scope.variables);
+      for (const name of ["Row", "Props"]) {
+        const declared = variables.filter((v) => v.name === name);
+        assert.strictEqual(declared.length, 1, name);
+        // `Row` is read once by `Props`; `Props` once by the `$props()` binding.
+        assert.strictEqual(declared[0].references.length, 1, name);
+      }
+    });
+
+    it("leaves no trace of the inference statement in the AST or scopes", () => {
+      const source = `<script lang="ts">
+  import Foo from "./Foo.svelte";
+  const users = [{ name: "a" }];
+</script>
+<Foo rows={users} />`;
+      const result = parseComponent(source);
+      const names = result.scopeManager.scopes.flatMap((scope) => [
+        ...scope.variables.map((v) => v.name),
+        ...scope.references.map((r) => r.identifier.name),
+      ]);
+      assert.ok(
+        names.every((n) => !n.startsWith("$_genericProps")),
+        names.join(", "),
+      );
+      const users = result.scopeManager
+        .globalScope!.childScopes.flatMap((s) => s.variables)
+        .concat(result.scopeManager.globalScope!.variables)
+        .find((v) => v.name === "users");
+      // Only the attribute reads `users`; the inference statement adds nothing.
+      assert.strictEqual(users?.references.filter((r) => !r.init).length, 1);
+      assert.ok(
+        result.ast.tokens.every((t) => source.slice(...t.range) === t.value),
+      );
+    });
+  },
+);
+
+describeSvelte5("generic component used as a type", () => {
+  const component = `<script lang="ts" generics="T extends { id: string }">
+  interface Props {
+    items: T[];
+  }
+  let { items }: Props = $props();
+  export function clear(): void {}
+</script>
+<p>{items.length}</p>`;
+  for (const { name, consumer, errors, generics, template } of [
+    {
+      name: "accepts type arguments",
+      consumer: `type Row = { id: string; name: string };
+let generator: Foo<Row> | undefined;
+generator?.clear();
+const props: import("svelte").ComponentProps<Foo<Row>> = { items: [{ id: "a", name: "b" }] };
+void props;`,
+      errors: [],
+    },
+    {
+      name: "types the props with the type arguments",
+      consumer: `type Row = { id: string; name: string };
+const props: import("svelte").ComponentProps<Foo<Row>> = { items: [{ id: "a" }] };
+void props;`,
+      errors: [2741],
+    },
+    {
+      name: "keeps the bare name valid through defaults",
+      consumer: `let generator: Foo | undefined;
+generator?.clear();`,
+      errors: [],
+    },
+    {
+      name: "rejects a type argument violating the constraint",
+      consumer: `let generator: Foo<number> | undefined;
+void generator;`,
+      errors: [2344],
+    },
+    {
+      name: "is usable in a component script",
+      consumer: `type Row = { id: string; name: string };
+const rows: Row[] = [];
+let generator = $state<Foo<Row>>();
+const reset = () => generator?.clear();
+void reset;`,
+      template: `<Foo items={rows} />`,
+      errors: [],
+    },
+    {
+      name: "keeps the bare name valid when a constraint reads a later parameter",
+      generics: "T extends U, U extends { id: string }",
+      consumer: `let generator: Foo | undefined;
+const props: import("svelte").ComponentProps<Foo<{ id: "a" }, { id: string }>> = { items: [{ id: "a" }] };
+const bad: import("svelte").ComponentProps<Foo<{ id: "a" }, { id: string }>> = { items: [1] };
+void generator;
+void props;
+void bad;`,
+      errors: [2322],
+    },
+    {
+      name: "keeps the bare name typed when a constraint reads its own parameter",
+      generics: "T extends { id: string; children?: T[] }",
+      consumer: `let generator: Foo | undefined;
+const bad: import("svelte").ComponentProps<Foo> = { items: [1] };
+void generator;
+void bad;`,
+      errors: [2322],
+    },
+    {
+      name: "keeps a default written in the attribute",
+      generics: "T extends { id: string } = { id: string; name: string }",
+      consumer: `const props: import("svelte").ComponentProps<Foo> = { items: [{ id: "a" }] };
+void props;`,
+      errors: [2741],
+    },
+  ] as {
+    name: string;
+    consumer: string;
+    errors: number[];
+    generics?: string;
+    template?: string;
+  }[]) {
+    it(name, () => {
+      const diagnostics = realResolutionDiagnostics(
+        generics == null
+          ? component
+          : component.replace(/generics="[^"]*"/u, `generics="${generics}"`),
+        consumer,
+        { template },
+      );
+      assert.deepStrictEqual(
+        diagnostics.map((d) => d.code),
+        errors,
+        diagnostics
+          .map((d) => ts.flattenDiagnosticMessageText(d.messageText, " "))
+          .join("\n"),
+      );
+    });
+  }
+});
+
+describe("bindings as writes", () => {
+  const component = `<script lang="ts">
+  export let value = "";
+</script>
+<p>{value}</p>`;
+  for (const { name, script, template } of [
+    {
+      name: "keeps a bound element variable unnarrowed in closures",
+      script: `let el: HTMLDivElement | null = null;
+const focus = () => el?.focus();
+void focus;`,
+      template: `<div bind:this={el}></div>`,
+    },
+    {
+      name: "keeps a bound value variable unnarrowed in closures",
+      script: `let text: string | null = null;
+const shout = () => text?.toUpperCase();
+void shout;`,
+      template: `<input bind:value={text} />`,
+    },
+    {
+      name: "keeps a variable bound inside a block unnarrowed in closures",
+      script: `let el: HTMLDivElement | null = null;
+const show = Math.random() > 0.5;
+const focus = () => el?.focus();
+void focus;`,
+      template: `{#if show}<p></p>{:else}<div bind:this={el}></div>{/if}`,
+    },
+  ]) {
+    it(name, () => {
+      const diagnostics = realResolutionDiagnostics(component, script, {
+        template,
+      });
+      assert.deepStrictEqual(
+        diagnostics.map((d) => d.code),
+        [],
+        diagnostics
+          .map((d) => ts.flattenDiagnosticMessageText(d.messageText, " "))
+          .join("\n"),
+      );
+    });
+  }
+
+  it("leaves no trace of the binding write in the AST or scopes", () => {
+    const source = `<script lang="ts">
+  let el: HTMLDivElement | null = null;
+</script>
+<div bind:this={el}></div>`;
+    const result = parseComponent(source);
+    const el = result.scopeManager.scopes
+      .flatMap((scope) => scope.variables)
+      .find((v) => v.name === "el");
+    // Only the declaration's initialization and the directive itself.
+    assert.deepStrictEqual(
+      el?.references.map((r) => [r.init ?? false, r.isWrite()]),
+      [
+        [true, true],
+        [false, true],
+      ],
+    );
+    assert.ok(
+      result.ast.tokens.every((t) => source.slice(...t.range) === t.value),
+    );
+  });
+});
+
+describeSvelte5("bindings as writes and `bind:this` function bindings", () => {
+  const component = `<script lang="ts">
+  let { value = $bindable("") }: { value?: string } = $props();
+  export function open(): void {}
+</script>
+<p>{value}</p>`;
+  for (const { name, script, template, errors } of [
+    {
+      name: "keeps a bound `$state` variable unnarrowed in closures",
+      script: `let el: HTMLDivElement | null = $state(null);
+const focus = () => el?.focus();
+void focus;`,
+      template: `<div bind:this={el}></div>`,
+      errors: [],
+    },
+    {
+      name: "keeps a bound component instance unnarrowed in closures",
+      script: `let foo: ReturnType<typeof Foo> | null = $state(null);
+const open = () => foo?.open();
+void open;`,
+      template: `<Foo bind:this={foo} />`,
+      errors: [],
+    },
+    {
+      name: "keeps a bound prop variable unnarrowed in closures",
+      script: `let text: string | undefined = $state(undefined);
+const shout = () => text?.toUpperCase();
+void shout;`,
+      template: `<Foo bind:value={text} />`,
+      errors: [],
+    },
+    {
+      name: "keeps a variable bound inside a snippet unnarrowed in closures",
+      script: `let el: HTMLDivElement | null = $state(null);
+const focus = () => el?.focus();
+void focus;`,
+      template: `{#snippet row()}<div bind:this={el}></div>{/snippet}{@render row()}`,
+      errors: [],
+    },
+    {
+      name: "types the `bind:this` setter of an HTML element",
+      script: `let el: HTMLInputElement | null = $state(null);`,
+      template: `<input bind:this={() => el, (next) => (el = next)} />`,
+      errors: [],
+    },
+    {
+      name: "types the `bind:this` setter of an SVG element",
+      script: `let el: SVGSVGElement | null = $state(null);`,
+      template: `<svg bind:this={() => el, (next) => (el = next)}></svg>`,
+      errors: [],
+    },
+    {
+      name: "types the `bind:this` setter of a component",
+      script: `let foo: ReturnType<typeof Foo> | null = $state(null);`,
+      template: `<Foo bind:this={() => foo, (next) => (foo = next)} />`,
+      errors: [],
+    },
+    {
+      name: "rejects misuse of a `bind:this` setter parameter",
+      script: `let foo: ReturnType<typeof Foo> | null = $state(null);`,
+      template: `<Foo bind:this={() => foo, (next) => next?.missing()} />`,
+      errors: [2339],
+    },
+  ]) {
+    it(name, () => {
+      const diagnostics = realResolutionDiagnostics(component, script, {
+        template,
+      }).filter((d) => d.code !== 2695);
+      assert.deepStrictEqual(
+        diagnostics.map((d) => d.code),
+        errors,
+        diagnostics
+          .map((d) => ts.flattenDiagnosticMessageText(d.messageText, " "))
+          .join("\n"),
+      );
+    });
+  }
+});
+
+describeSvelte5(
+  "discriminated union props selected by static attributes",
+  () => {
+    const component = `<script lang="ts">
+  type Props =
+    | { mode: "single"; upload: (file: File) => void }
+    | { mode: "multiple"; upload: (files: File[]) => void };
+  let { mode, upload }: Props = $props();
+</script>
+<p>{mode}{typeof upload}</p>`;
+    for (const { name, consumer, template, errors } of [
+      {
+        name: "types a callback from the selected member",
+        consumer: ``,
+        template: `<Foo mode="single" upload={(file) => file.name.toUpperCase()} />`,
+        errors: [],
+      },
+      {
+        name: "rejects misuse of a parameter typed by the selected member",
+        consumer: ``,
+        template: `<Foo mode="multiple" upload={(files) => files.name} />`,
+        errors: [2339],
+      },
+      {
+        name: "selects a member by a literal expression value",
+        consumer: ``,
+        template: `<Foo mode={"multiple"} upload={(files) => files.name} />`,
+        errors: [2339],
+      },
+      {
+        name: "keeps the union when the discriminant is an expression",
+        consumer: `const mode = "single" as "single" | "multiple";`,
+        template: `<Foo {mode} upload={(file) => file} />`,
+        errors: [7006],
+      },
+      {
+        name: "keeps the declared props when no member matches",
+        consumer: ``,
+        template: `<Foo mode="zip" upload={(file) => file} />`,
+        errors: [7006],
+      },
+    ]) {
+      it(name, () => {
+        const diagnostics = realResolutionDiagnostics(component, consumer, {
+          template,
+        });
+        assert.deepStrictEqual(
+          diagnostics.map((d) => d.code),
+          errors,
+          diagnostics
+            .map((d) => ts.flattenDiagnosticMessageText(d.messageText, " "))
+            .join("\n"),
+        );
+      });
+    }
+  },
+);
+
+describe("discriminated union props selected by static attributes (legacy component)", () => {
+  // Svelte 3/4 markup cannot contain TypeScript, so the callbacks are plain JS.
+  const component = `<script lang="ts">
+  type $$Props =
+    | { mode: "single"; upload: (file: File) => void }
+    | { mode: "multiple"; upload: (files: File[]) => void };
+  export let mode: $$Props["mode"];
+  export let upload: $$Props["upload"];
+</script>
+<p>{mode}{typeof upload}</p>`;
+  for (const { name, template, errors } of [
+    {
+      name: "types a callback from the selected member",
+      template: `<Foo mode="single" upload={(file) => file.size} />`,
+      errors: [],
+    },
+    {
+      name: "rejects misuse of a parameter typed by the selected member",
+      template: `<Foo mode="multiple" upload={(files) => files.name} />`,
+      errors: [2339],
+    },
+  ]) {
+    it(name, () => {
+      const diagnostics = realResolutionDiagnostics(component, ``, {
+        template,
+      });
+      assert.deepStrictEqual(
+        diagnostics.map((d) => d.code),
+        errors,
+        diagnostics
+          .map((d) => ts.flattenDiagnosticMessageText(d.messageText, " "))
+          .join("\n"),
+      );
+    });
+  }
+});
+
+describeSvelte5("narrowing inside `{#each}` blocks", () => {
+  const component = `<script lang="ts">
+  let { value }: { value?: string } = $props();
+</script>
+<p>{value}</p>`;
+  const consumer = `type A = { kind: "a"; list: string[] };
+type B = { kind: "b"; count: number };
+let { holder }: { holder: { node: A | B } } = $props();
+const rows = [{ id: "a", name: "b" }];
+let current = $state<A | B>({ kind: "b", count: 0 });
+function reset() {
+  current = { kind: "b", count: 0 };
+}
+let mixed: string | number = $state(1);
+const maybe: (string | null)[] = [];
+void holder;
+void rows;
+void reset;
+void maybe;`;
+  for (const { name, template, errors, compilerOptions } of [
+    {
+      name: "keeps the narrowing of a property path",
+      template: `{#if holder.node.kind === "a"}
+  {#each holder.node.list as entry, i (i)}{holder.node.list[i].toUpperCase()}{entry.toUpperCase()}{/each}
+{/if}`,
+      errors: [],
+    },
+    {
+      name: "keeps the narrowing of a reassigned variable",
+      template: `{#if current.kind === "a"}
+  {#each current.list as entry, i}{current.list[i].toUpperCase()}{entry.toUpperCase()}{/each}
+{/if}`,
+      errors: [],
+    },
+    {
+      name: "types the context and index",
+      template: `{#each rows as row, i (row.id)}{row.name.toUpperCase()}{i.toFixed()}{/each}`,
+      errors: [],
+    },
+    {
+      name: "rejects misuse of the context",
+      template: `{#each rows as row}{row.missing}{/each}`,
+      errors: [2339],
+    },
+    {
+      name: "types the index as a number rather than a literal",
+      template: `{#each rows as row, i}{((one: 1) => one)(i)}{row.id}{/each}`,
+      errors: [2345],
+    },
+    {
+      name: "types a destructured context",
+      template: `{#each rows as { id, name } (id)}{name.toUpperCase()}{/each}`,
+      errors: [],
+    },
+    {
+      name: "types the index without a context",
+      template: `{#each { length: 3 }, i}{i.toFixed()}{/each}`,
+      errors: [],
+    },
+    {
+      name: "types the context from a sequence expression",
+      template: `{#each (reset(), rows) as row}{row.name.toUpperCase()}{/each}`,
+      errors: [],
+    },
+    {
+      name: "keeps a nullable element",
+      template: `{#each maybe as m}{m.length}{/each}`,
+      errors: [18047],
+    },
+    {
+      name: "does not add undefined to the context with noUncheckedIndexedAccess",
+      template: `{#each rows as row}{row.name.toUpperCase()}{/each}`,
+      errors: [],
+      compilerOptions: { noUncheckedIndexedAccess: true },
+    },
+    {
+      name: "does not narrow after the block by an assignment in the body",
+      template: `{#if typeof mixed === "number"}
+  {#each rows as row (row.id)}{(mixed = row.name)}{/each}
+  {((v: string) => v)(mixed)}{((v: number) => v)(mixed)}
+{/if}`,
+      errors: [2345, 2345],
+    },
+  ] as {
+    name: string;
+    template: string;
+    errors: number[];
+    compilerOptions?: ts.CompilerOptions;
+  }[]) {
+    it(name, () => {
+      const diagnostics = realResolutionDiagnostics(component, consumer, {
+        template,
+        compilerOptions,
+      });
+      assert.deepStrictEqual(
+        diagnostics.map((d) => d.code),
+        errors,
+        diagnostics
+          .map((d) => ts.flattenDiagnosticMessageText(d.messageText, " "))
+          .join("\n"),
+      );
+    });
+  }
+
+  it("leaves no trace of the typing arguments in the AST or scopes", () => {
+    const source = `<script lang="ts">
+  const rows = [{ id: "a" }];
+</script>
+{#each rows /* c */ as row, i (row.id)}{row.id}{i}{/each}`;
+    const result = parseComponent(source);
+    const variables = result.scopeManager.scopes.flatMap(
+      (scope) => scope.variables,
+    );
+    const rows = variables.find((v) => v.name === "rows");
+    // The initialization and the `{#each}` expression.
+    assert.strictEqual(rows?.references.length, 2);
+    assert.strictEqual(
+      result.scopeManager.globalScope!.through.some(
+        (r) => r.identifier.name === "Array",
+      ),
+      false,
+    );
+    assert.ok(
+      result.ast.tokens.every((t) => source.slice(...t.range) === t.value),
+    );
+    assert.deepStrictEqual(
+      result.ast.comments.map((c) => source.slice(...c.range)),
+      ["/* c */"],
+    );
+  });
 });

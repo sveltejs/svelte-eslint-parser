@@ -241,7 +241,7 @@ function restoreExpressions(
     enterNode(node) {
       for (const proc of restoreExpressionProcessesSet) {
         if (proc.target === node.type) {
-          if (proc.restore(node as any, result)) {
+          if (proc.restore(node, result)) {
             restoreExpressionProcessesSet.delete(proc);
           }
           break;

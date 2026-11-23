@@ -29,6 +29,7 @@ import {
   getOptionsFromRoot,
 } from "../compat.js";
 import { sortNodes } from "../sort.js";
+import { traverseNodes } from "../../traverse.js";
 import { withoutProjectParserOptions } from "../parser-options.js";
 import { ParseError } from "../../main.js";
 
@@ -198,10 +199,7 @@ export function convertSvelteRoot(
       ),
     ];
     let element:
-      | SvelteScriptElement
-      | SvelteStyleElement
-      | SvelteElement
-      | undefined;
+      SvelteScriptElement | SvelteStyleElement | SvelteElement | undefined;
     while ((element = elementsBuffer.shift())) {
       tags.push(element.startTag);
       if (element.type === "SvelteElement") {
@@ -369,7 +367,7 @@ function convertGenericsAttribute(script: SvelteScriptElement, ctx: Context) {
   fixLocations(
     result.ast as any,
     result.ast.tokens as any,
-    result.ast.comments as any,
+    result.ast.comments,
     value.range[0] - 14,
     result.visitorKeys as any,
     ctx,
@@ -382,14 +380,33 @@ function convertGenericsAttribute(script: SvelteScriptElement, ctx: Context) {
   const typeParameters = (fnDecl as TSESTree.FunctionExpression)
     .typeParameters!;
   const params = typeParameters.params;
+  ctx.instanceGenerics = {
+    text: genericValueCode,
+    names: params.map((param) => param.name.name),
+    params: params.map((param, index) => ({
+      name: param.name.name,
+      constraint: param.constraint
+        ? ctx.code.slice(...param.constraint.range)
+        : null,
+      default: param.default ? ctx.code.slice(...param.default.range) : null,
+      readsLaterParameter:
+        param.constraint != null &&
+        referencesTypeNames(
+          param.constraint,
+          new Set(params.slice(index + 1).map((p) => p.name.name)),
+          result.visitorKeys,
+        ),
+    })),
+  };
 
-  // Replace tokens
+  // Replace tokens. The type alias for a parameter starts at its name, so a
+  // modifier such as `const` before it keeps the token from here.
   for (const tokensKey of ["tokens", "comments"] as const) {
     for (const token of result.ast[tokensKey]) {
       if (
         params.every(
           (param) =>
-            token.range[1] <= param.range[0] ||
+            token.range[1] <= param.name.range[0] ||
             param.range[1] <= token.range[0],
         )
       ) {
@@ -414,4 +431,29 @@ function convertGenericsAttribute(script: SvelteScriptElement, ctx: Context) {
       },
     );
   }
+}
+
+/** Check whether the type node refers to one of the given type names. */
+function referencesTypeNames(
+  node: TSESTree.TypeNode,
+  names: Set<string>,
+  visitorKeys: TSESParseForESLintResult["visitorKeys"],
+): boolean {
+  let found = false;
+  traverseNodes(node, {
+    visitorKeys,
+    enterNode(n) {
+      if (
+        n.type === "TSTypeReference" &&
+        n.typeName.type === "Identifier" &&
+        names.has(n.typeName.name)
+      ) {
+        found = true;
+      }
+    },
+    leaveNode() {
+      // noop
+    },
+  });
+  return found;
 }

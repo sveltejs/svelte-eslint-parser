@@ -1,0 +1,1 @@
+<script lang="ts">let a = 1</script><style>p { color: red; }</style> // a: number

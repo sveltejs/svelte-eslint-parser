@@ -9,6 +9,7 @@ export function assertResult(
       a: aRoot,
       b: bRoot,
       path: "$",
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion -- tsc needs this assertion
       parent: null as unknown,
     },
   ]);

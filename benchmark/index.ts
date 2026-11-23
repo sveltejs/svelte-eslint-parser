@@ -8,7 +8,7 @@ import { parseForESLint } from "../src/index.js";
 
 const contents = `${fs.readFileSync(
   fileURLToPath(
-    import.meta.resolve("../explorer-v2/src/lib/RulesSettings.svelte"),
+    new URL("../explorer-v2/src/lib/RulesSettings.svelte", import.meta.url),
   ),
   "utf-8",
 )}// comments`;

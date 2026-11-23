@@ -1,3 +1,5 @@
+import path from "path";
+import type * as ts from "typescript";
 import type { ESLintExtendedProgram } from "../index.js";
 import type { NormalizedParserOptions } from "../parser-options.js";
 import {
@@ -16,6 +18,7 @@ import type { TSESParseForESLintResult } from "./types.js";
 import {
   getCompanionToRefresh,
   primeTranslationCache,
+  rememberServedCompanion,
   reloadCompanionInProjectServices,
 } from "../../ts-sys-hook.js";
 import { getJavaScriptParserOptions } from "./javascript.js";
@@ -47,6 +50,8 @@ export function parseTypeScriptInSvelte(
     ...parserOptions,
     disallowAutomaticSingleRunInference: true,
   });
+  // Before the JavaScript parse below, which gives a copy of this program.
+  if (parserOptions.project != null) rememberProgram(result);
   const jsOptions = getJavaScriptParserOptions(result, attrs, parserOptions);
   if (jsOptions) {
     result = parseScriptInSvelte(tsCtx.script, attrs, jsOptions);
@@ -55,6 +60,52 @@ export function parseTypeScriptInSvelte(
   tsCtx.restoreContext.restore(result as unknown as TSESParseForESLintResult);
 
   return result;
+}
+
+// The latest program typescript-eslint gave for each tsconfig, keyed by the
+// tsconfig path. Used to find the programs that hold a companion. This keeps
+// one older program per tsconfig alive until the next parse replaces it.
+const programsByConfig = new Map<string, ts.Program>();
+
+// The characters that make tinyglobby, which typescript-eslint uses to resolve
+// `project`, read a path as a glob.
+const GLOB_CHARS = /[!()*+?@[\]{}]/u;
+
+/**
+ * `project` and `tsconfigRootDir` options for the given tsconfig paths, or
+ * `null` when they cannot be passed. typescript-eslint reads a `project` entry
+ * with glob characters as a glob, so a folder like `app (copy)` would match
+ * nothing. Paths relative to the closest common folder avoid that in most cases.
+ */
+function toProjectOptions(
+  configFilePaths: string[],
+): { project: string[]; tsconfigRootDir: string } | null {
+  if (!configFilePaths.length) return null;
+  const absolutePaths = configFilePaths.map((p) => path.resolve(p));
+  let rootDir = path.dirname(absolutePaths[0]);
+  for (;;) {
+    const prefix = rootDir.endsWith(path.sep) ? rootDir : rootDir + path.sep;
+    if (absolutePaths.every((p) => p.startsWith(prefix))) break;
+    const parent = path.dirname(rootDir);
+    if (parent === rootDir) return null;
+    rootDir = parent;
+  }
+  const project = absolutePaths.map((p) =>
+    path.relative(rootDir, p).split(path.sep).join("/"),
+  );
+  if (project.some((p) => GLOB_CHARS.test(p))) return null;
+  // On Windows, typescript-eslint rejects a `tsconfigRootDir` without a drive
+  // letter, such as a UNC path.
+  if (process.platform === "win32" && !/^[A-Za-z]:/u.test(rootDir)) return null;
+  return { project, tsconfigRootDir: rootDir };
+}
+
+function rememberProgram(result: ESLintExtendedProgram): void {
+  const program = result.services?.program as ts.Program | null | undefined;
+  const configFilePath = program?.getCompilerOptions().configFilePath;
+  if (typeof configFilePath === "string") {
+    programsByConfig.set(configFilePath, program!);
+  }
 }
 
 /**
@@ -70,26 +121,52 @@ function refreshCompanion(
     parserOptions.EXPERIMENTAL_useProjectService != null
   ) {
     const companion = getCompanionToRefresh(filePath);
-    if (companion) reloadCompanionInProjectServices(companion.filePath);
+    if (companion) {
+      reloadCompanionInProjectServices(companion.filePath);
+      rememberServedCompanion(filePath, companion.code);
+    }
     return;
   }
   if (parserOptions.project == null) return;
   const companion = getCompanionToRefresh(filePath);
   if (!companion) return;
   // Parsing the companion path makes typescript-eslint fire the companion's
-  // file watcher, as it does for a linted file.
+  // file watcher in every program that holds it, as it does for a linted file.
+  // The companion is no tsconfig's root file, so typescript-eslint also looks
+  // for it in each tsconfig in `project`. A tsconfig without it gets its folder
+  // watchers fired, which rebuilds every program. So pass only the tsconfigs
+  // whose programs hold the companion.
+  const projects = [...programsByConfig]
+    .filter(([, program]) => program.getSourceFile(companion.filePath))
+    .map(([configFilePath]) => configFilePath);
+  // typescript-eslint resolves a relative `filePath` against `tsconfigRootDir`,
+  // so keep the user's when the path is relative.
+  const narrowed = path.isAbsolute(companion.filePath)
+    ? toProjectOptions(projects)
+    : null;
+  // A program that is not passed still updates the companion when it next
+  // syncs, through the hooked `ts.sys.readFile`.
   try {
-    parseScriptWithoutAnalyzeScope(
+    const result = parseScriptWithoutAnalyzeScope(
       companion.code,
       { lang: "ts" },
       {
         ...parserOptions,
+        ...(narrowed ?? { project: parserOptions.project }),
         filePath: companion.filePath,
         disallowAutomaticSingleRunInference: true,
       },
     );
+    // A program that holds the companion, so later refreshes can skip the
+    // other tsconfigs even when no component in it is linted.
+    rememberProgram(result);
   } catch {
     // The refresh is best effort. Linting the component itself has succeeded.
+  } finally {
+    // typescript-eslint fires the companion's watchers before it looks for a
+    // program, so they are told even when the parse throws. Retrying the same
+    // code would only redo that work on every parse.
+    rememberServedCompanion(filePath, companion.code);
   }
 }
 
