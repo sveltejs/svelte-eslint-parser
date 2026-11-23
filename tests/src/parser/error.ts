@@ -95,6 +95,7 @@ describe("Check for the error location of script blocks on the same line.", () =
           parser: createParser({}, { index: breakIndex, columnBase }),
         });
       } catch (e: any) {
+        assert.strictEqual(e.message, "Unexpected token");
         assert.strictEqual(e.lineNumber, 1);
         assert.strictEqual(e.column, breakIndex + columnBase);
         return;
@@ -107,12 +108,13 @@ describe("Check for the error location of script blocks on the same line.", () =
     // The separator replaces the two line breaks before the last `</script>`,
     // so a line of the virtual code covers two lines here.
     const code2 =
-      "<script module>let q</script><script>class A {\n\n</script>{b}";
+      '<script context="module">let q</script><script>class A {\n\n</script>{b}';
     try {
       parseForESLint(code2, {
         parser: createParser({}, { index: code2.length, columnBase: 0 }),
       });
     } catch (e: any) {
+      assert.strictEqual(e.message, "Unexpected token");
       assert.strictEqual(e.lineNumber, 3);
       assert.strictEqual(e.column, "</script>{b}".length);
       return;
