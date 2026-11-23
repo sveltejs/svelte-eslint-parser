@@ -83,7 +83,7 @@ function parseSvelteConfigExpression(
         experimentalResult.customRenderer = customRenderer.value;
       }
       if (Object.keys(experimentalResult).length) {
-        result.compilerOptions.experimental = experimentalResult as never;
+        result.compilerOptions.experimental = experimentalResult;
       }
     }
   }
@@ -91,7 +91,7 @@ function parseSvelteConfigExpression(
   if (kit?.type === EvaluatedType.object) {
     result.kit = {};
     const files = kit.getProperty("files")?.getStatic();
-    if (files?.value != null) result.kit.files = files.value as never;
+    if (files?.value != null) result.kit.files = files.value;
   }
   return result;
 }
@@ -132,6 +132,12 @@ class EvaluatedObject {
 
   private staticCached: { value: Record<string, unknown> } | null | undefined;
 
+  // Set when this object is the rest of a pattern, such as `rest` in
+  // `const {a, ...rest} = obj`: `base` is `obj`, and `omitted` has `a`.
+  private base: EvaluatedObject | null = null;
+
+  private omitted: ReadonlySet<string> = new Set();
+
   private readonly node: ESTree.ObjectExpression;
 
   private readonly parseExpression: (
@@ -148,6 +154,14 @@ class EvaluatedObject {
     this.parseExpression = parseExpression;
   }
 
+  /** Returns this object without the given properties. */
+  public omit(keys: string[]): EvaluatedObject {
+    const object = new EvaluatedObject(this.node, this.parseExpression);
+    object.base = this.base ?? this;
+    object.omitted = new Set([...this.omitted, ...keys]);
+    return object;
+  }
+
   /** Gets the evaluated value of the property with the given name. */
   public getProperty(key: string): Evaluated | null {
     const value = this.findProperty(key);
@@ -157,6 +171,9 @@ class EvaluatedObject {
   }
 
   private findProperty(key: string): Found {
+    if (this.base) {
+      return this.omitted.has(key) ? ABSENT : this.base.findProperty(key);
+    }
     const hit = this.cached.get(key);
     if (hit !== undefined) return hit;
     // A cyclic lookup gives unknown.
@@ -170,7 +187,7 @@ class EvaluatedObject {
     let unknown = false;
     for (const prop of [...this.node.properties].reverse()) {
       if (prop.type === "Property") {
-        const name = this.getKey(prop);
+        const name = getPropertyKey(prop, this.parseExpression);
         if (name === key) return this.parseExpression(prop.value) ?? UNKNOWN;
         if (name == null) unknown = true;
       } else if (prop.type === "SpreadElement") {
@@ -193,6 +210,13 @@ class EvaluatedObject {
   }
 
   public getStatic(): { value: Record<string, unknown> } | null {
+    if (this.base) {
+      const evaluated = this.base.getStatic();
+      if (!evaluated) return null;
+      const object = { ...evaluated.value };
+      for (const key of this.omitted) delete object[key];
+      return { value: object };
+    }
     if (this.staticCached !== undefined) return this.staticCached;
     // A cyclic object gives unknown.
     this.staticCached = null;
@@ -203,7 +227,7 @@ class EvaluatedObject {
     const object: Record<string, unknown> = {};
     for (const prop of this.node.properties) {
       if (prop.type === "Property") {
-        const name = this.getKey(prop);
+        const name = getPropertyKey(prop, this.parseExpression);
         if (name == null) return null;
         const evaluated = this.parseExpression(prop.value)?.getStatic();
         if (!evaluated) return null;
@@ -216,11 +240,21 @@ class EvaluatedObject {
     }
     return { value: object };
   }
+}
 
-  private getKey(node: ESTree.Property): string | null {
-    if (!node.computed && node.key.type === "Identifier") return node.key.name;
-    const evaluatedKey = this.parseExpression(node.key)?.getStatic();
-    if (evaluatedKey) return String(evaluatedKey.value);
+function getPropertyKey(
+  node: ESTree.Property,
+  parseExpression: (
+    node: ESTree.Expression | ESTree.Pattern | ESTree.PrivateIdentifier,
+  ) => Evaluated | null,
+): string | null {
+  if (!node.computed && node.key.type === "Identifier") return node.key.name;
+  const evaluatedKey = parseExpression(node.key)?.getStatic();
+  if (!evaluatedKey) return null;
+  try {
+    return String(evaluatedKey.value);
+  } catch {
+    // For example, an object without a prototype.
     return null;
   }
 }
@@ -230,6 +264,7 @@ function evaluateExpression(
   scopeManager: Scope.ScopeManager,
 ): Evaluated | null {
   const tracked = new Map<ESTree.Identifier, Scope.Definition[]>();
+  const resolving = new Set<ESTree.Identifier>();
   // One object per node, so its cached values are shared.
   const objects = new Map<ESTree.ObjectExpression, EvaluatedObject>();
   return parseExpression(node);
@@ -265,9 +300,27 @@ function evaluateExpression(
     const def = defs[0];
     if (def.type !== "Variable") return null;
     if (def.parent.kind !== "const" || !def.node.init) return null;
-    const evaluated = parseExpression(def.node.init);
+    // A variable that refers to itself gives unknown.
+    if (resolving.has(def.name)) return null;
+    resolving.add(def.name);
+    try {
+      return resolveVariable(def.name, def.node.id, def.node.init);
+    } finally {
+      resolving.delete(def.name);
+    }
+  }
+
+  function resolveVariable(
+    name: ESTree.Identifier,
+    id: ESTree.Pattern,
+    init: ESTree.Expression,
+  ): Evaluated | null {
+    const evaluated = parseExpression(init);
     if (!evaluated) return null;
-    const assigns = parsePatternAssign(def.name, def.node.id);
+    const assigns = parsePatternAssign(name, id, (prop) =>
+      getPropertyKey(prop, parseExpression),
+    );
+    if (!assigns) return null;
     let result = evaluated;
     while (assigns.length) {
       const assign = assigns.shift()!;
@@ -285,6 +338,9 @@ function evaluateExpression(
           if (!next) return null;
           result = next;
         }
+      } else if (assign.type === "rest") {
+        if (result.type !== EvaluatedType.object) return null;
+        result = result.omit(assign.omitted);
       }
     }
     return result;
@@ -315,67 +371,74 @@ function evaluateExpression(
   }
 }
 
+type PatternAssign =
+  | { type: "member"; name: string }
+  | { type: "assignment"; node: ESTree.AssignmentPattern }
+  | { type: "rest"; omitted: string[] };
+
 /**
- * Returns the assignment path.
+ * Returns the assignment path, or `null` if it is unknown.
  * For example,
  * `let {a: {target}} = {}`
  *   -> `[{type: "member", name: 'a'}, {type: "member", name: 'target'}]`.
  * `let {a: {target} = foo} = {}`
  *   -> `[{type: "member", name: 'a'}, {type: "assignment"}, {type: "member", name: 'target'}]`.
+ * `let {a, ...target} = {}`
+ *   -> `[{type: "rest", omitted: ['a']}]`.
  */
 function parsePatternAssign(
   node: ESTree.Pattern,
   root: ESTree.Pattern,
-): (
-  | { type: "member"; name: string }
-  | { type: "assignment"; node: ESTree.AssignmentPattern }
-)[] {
-  return parse(root) || [];
+  getKey: (node: ESTree.Property) => string | null,
+): PatternAssign[] | null {
+  return parse(root) ?? null;
 
-  function parse(
-    target: ESTree.Pattern,
-  ):
-    | (
-        | { type: "member"; name: string }
-        | { type: "assignment"; node: ESTree.AssignmentPattern }
-      )[]
-    | null {
+  /** Returns `undefined` if `target` does not contain `node`. */
+  function parse(target: ESTree.Pattern): PatternAssign[] | null | undefined {
     if (node === target) {
       return [];
     }
     if (target.type === "Identifier") {
-      return null;
+      return undefined;
     }
     if (target.type === "AssignmentPattern") {
       const left = parse(target.left);
-      if (!left) return null;
+      if (left == null) return left;
       return [{ type: "assignment", node: target }, ...left];
     }
     if (target.type === "ObjectPattern") {
+      const omitted: string[] = [];
+      let unknownKey = false;
       for (const prop of target.properties) {
         if (prop.type === "Property") {
-          const name =
-            !prop.computed && prop.key.type === "Identifier"
-              ? prop.key.name
-              : prop.key.type === "Literal"
-                ? String(prop.key.value)
-                : null;
-          if (!name) continue;
+          const name = getKey(prop);
+          if (name == null) unknownKey = true;
+          else omitted.push(name);
           const value = parse(prop.value);
-          if (!value) return null;
+          if (value === undefined) continue;
+          if (!value || name == null) return null;
           return [{ type: "member", name }, ...value];
         }
+        const value = parse(prop.argument);
+        if (value === undefined) continue;
+        if (!value || unknownKey) return null;
+        return [{ type: "rest", omitted }, ...value];
       }
-      return null;
+      return undefined;
     }
     if (target.type === "ArrayPattern") {
       for (const [index, element] of target.elements.entries()) {
         if (!element) continue;
         const value = parse(element);
-        if (!value) return null;
+        if (value === undefined) continue;
+        // An array rest gives an array, which is not evaluated.
+        if (!value || element.type === "RestElement") return null;
         return [{ type: "member", name: String(index) }, ...value];
       }
-      return null;
+      return undefined;
+    }
+    if (target.type === "RestElement") {
+      return parse(target.argument);
     }
     return null;
   }

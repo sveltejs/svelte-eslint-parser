@@ -110,6 +110,7 @@ describe("component export restore invariance", () => {
     it(name, () => {
       assertAnalysisRestores(
         `<script lang="ts">${script}</script>`,
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion -- tsc needs this assertion
         generateParserOptions({
           project: null,
           filePath: "Component.svelte",

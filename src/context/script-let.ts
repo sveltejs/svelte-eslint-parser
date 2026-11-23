@@ -196,6 +196,23 @@ export class ScriptLetContext {
     this.ctx = ctx;
   }
 
+  /**
+   * Emit a statement that only feeds type checking, such as the write a binding
+   * performs. It leaves no tokens, nodes, or references behind.
+   */
+  public addTypeOnlyStatement(code: string): void {
+    this.appendScriptWithoutOffset(
+      code,
+      this.currentScriptScopeKind,
+      "ExpressionStatement",
+      (node, tokens, comments, result) => {
+        tokens.length = 0;
+        comments.length = 0;
+        removeAllScopeAndVariableAndReference(node, result);
+      },
+    );
+  }
+
   public addExpression<E extends ESTree.Expression>(
     expression: E | SvelteName,
     parent: SvelteNode,
@@ -241,6 +258,7 @@ export class ScriptLetContext {
           )) {
             removeScope(result.scopeManager, scope);
           }
+          removeTypeNodeReferences(tsAs!, result);
           this.remapNodes(
             [
               {
@@ -551,11 +569,21 @@ export class ScriptLetContext {
       index: ESTree.Identifier | null,
     ) => void,
   ): void {
+    // TypeScript drops the narrowing of a property path such as `item.list`,
+    // or of a reassigned variable, inside a callback, but keeps it inside an
+    // immediately invoked function. So for TypeScript, the body runs in a
+    // function invoked with an element, which also types the context and
+    // index. The `&&` tells TypeScript the body may not run, so assignments in
+    // the body do not narrow the code after the block.
+    const isTS = this.ctx.isTypeScript();
     const exprRange = getNodeRange(expression, this.ctx.code);
+    const exprText = this.ctx.code.slice(...exprRange);
     const ctxRange = context && getNodeRange(context, this.ctx.code);
-    let source = "Array.from(";
+    // Wrap the expression in parentheses, so that a sequence expression such
+    // as `(a, b)` is passed as one argument.
+    let source = "Array.from((";
     const exprOffset = source.length;
-    source += `${this.ctx.code.slice(...exprRange)}).forEach(${this.getAsyncPrefix()}(`;
+    source += `${exprText}))${isTS ? "&&" : ".forEach"}(${this.getAsyncPrefix()}(`;
     const ctxOffset = source.length;
     if (ctxRange) {
       source += this.ctx.code.slice(...ctxRange);
@@ -576,10 +604,23 @@ export class ScriptLetContext {
       "ExpressionStatement",
       (st, tokens, comments, result) => {
         const expSt = st as ESTree.ExpressionStatement;
-        const call = expSt.expression as ESTree.CallExpression;
-        const fn = call.arguments[0] as ESTree.ArrowFunctionExpression;
-        const callArrayFrom = (call.callee as ESTree.MemberExpression)
-          .object as ESTree.CallExpression;
+        let callArrayFrom: ESTree.CallExpression,
+          fn: ESTree.ArrowFunctionExpression;
+        if (isTS) {
+          const logical = expSt.expression as ESTree.LogicalExpression;
+          callArrayFrom = logical.left as ESTree.CallExpression;
+          const invoke = logical.right as ESTree.CallExpression;
+          fn = invoke.callee as ESTree.ArrowFunctionExpression;
+          // The arguments only type the parameters.
+          for (const arg of invoke.arguments) {
+            removeAllScopeAndVariableAndReference(arg, result);
+          }
+        } else {
+          const call = expSt.expression as ESTree.CallExpression;
+          callArrayFrom = (call.callee as ESTree.MemberExpression)
+            .object as ESTree.CallExpression;
+          fn = call.arguments[0] as ESTree.ArrowFunctionExpression;
+        }
         const expr = callArrayFrom.arguments[0] as ESTree.Expression;
         const ctx = fn.params[0];
         const idx = (fn.params[1] ?? null) as ESTree.Identifier | null;
@@ -621,13 +662,7 @@ export class ScriptLetContext {
         tokens.shift(); // .
         tokens.shift(); // from
         tokens.shift(); // (
-
-        tokens.pop(); // )
-        tokens.pop(); // =>
-        tokens.pop(); // {
-        tokens.pop(); // }
-        tokens.pop(); // )
-        tokens.pop(); // ;
+        tokens.shift(); // (
 
         const map: {
           offset: number;
@@ -654,13 +689,33 @@ export class ScriptLetContext {
             newNode: idx!,
           });
         }
+        if (isTS) {
+          // Drop the comments of the typing arguments, which come after the
+          // opening text.
+          const openEnd = exprRange[0] - exprOffset + source.length;
+          for (let index = comments.length - 1; index >= 0; index--) {
+            if (openEnd <= comments[index].range[0]) {
+              comments.splice(index, 1);
+            }
+          }
+        }
+        // This also drops the tokens after the last node.
         this.remapNodes(map, tokens, comments, result.visitorKeys);
 
         // Disconnect the tree structure.
         expSt.expression = null as never;
       },
     );
-    this.pushScope(restore, "});", this.currentScriptScopeKind);
+    this.pushScope(
+      restore,
+      isTS
+        ? // The element comes from what `Array.from` returns, as with
+          // `forEach`. Indexing would add `undefined` under
+          // `noUncheckedIndexedAccess`, and `!` would remove `null`.
+          `})((<A extends readonly unknown[]>(array: A): A[number] => null!)(Array.from((${exprText})))${indexRange ? ",0" : ""});`
+        : "});",
+      this.currentScriptScopeKind,
+    );
   }
 
   /**
@@ -868,6 +923,33 @@ export class ScriptLetContext {
       }
     }
     comments.forEach(relocate);
+  }
+
+  /**
+   * Emit a type-only statement that infers a generic component's props from the
+   * given attribute entries, and return the name it binds. The statement only
+   * feeds types, so it leaves no tokens, nodes, or references behind.
+   */
+  public addGenericPropsInference(
+    componentName: string,
+    method: string,
+    entries: string[],
+  ): string {
+    const id = this.generateUniqueId("genericProps");
+    // Reading the method through `infer` keeps it generic, and a component
+    // without it gets a stand-in returning `any` instead of a type error.
+    const callee = `(${componentName} as any as { m: typeof ${componentName} extends { ${method}: infer M } ? M : (props: unknown) => any }).m`;
+    this.appendScriptWithoutOffset(
+      `const ${id} = ${callee}({${entries.join(",")}});`,
+      this.currentScriptScopeKind,
+      "VariableDeclaration",
+      (node, tokens, comments, result) => {
+        tokens.length = 0;
+        comments.length = 0;
+        removeAllScopeAndVariableAndReference(node, result);
+      },
+    );
+    return id;
   }
 
   public nestBlock(
@@ -1433,8 +1515,9 @@ export class ScriptLetContext {
 }
 
 function getTypeParameterRanges(code: string, param: TSESTree.TSTypeParameter) {
+  // Start at the name: a modifier such as `const` is not valid in a type alias.
   const idRange: [number, number] = [
-    param.range[0],
+    param.name.range[0],
     param.constraint || param.default ? param.name.range[1] : param.range[1],
   ];
   let constraintRange: [number, number] | null = null;
@@ -1552,7 +1635,7 @@ function getNodeToScope(
       return true;
     }
 
-    const scopes = nodeToScope.get(node as any);
+    const scopes = nodeToScope.get(node);
 
     if (!scopes || scopes.length === 0) {
       return null;
@@ -1625,6 +1708,33 @@ function extractTypeNodeScopes(
           yield* iterateTypeNodeScopes(child as TSESTree.TypeNode);
         }
       }
+    }
+  }
+}
+
+/**
+ * Remove the references in the type annotation of the given `as` expression.
+ * The type annotation is virtual code, so its references must not stay in the scope manager.
+ * The references in the type scopes are removed with those scopes, so this removes the rest.
+ */
+function removeTypeNodeReferences(
+  tsAs: TSAsExpression,
+  result: ScriptLetCallbackOption,
+): void {
+  const identifiers = new Set<ESTree.Node>();
+  traverseNodes(tsAs.typeAnnotation as TSESTree.TypeNode, {
+    visitorKeys: result.visitorKeys,
+    enterNode(node) {
+      if (node.type === "Identifier") identifiers.add(node);
+    },
+    leaveNode() {
+      // noop
+    },
+  });
+  const scope = result.getScope(tsAs as never);
+  for (const reference of [...scope.references]) {
+    if (identifiers.has(reference.identifier)) {
+      removeReference(reference, scope);
     }
   }
 }

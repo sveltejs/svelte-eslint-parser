@@ -35,8 +35,10 @@
 			class="github-button"
 			href="https://github.com/sveltejs/svelte-eslint-parser"
 			data-show-count="true"
-			aria-label="Star sveltejs/svelte-eslint-parser on GitHub">Star</a
+			aria-label="Star sveltejs/svelte-eslint-parser on GitHub"
 		>
+			Star
+		</a>
 		<a href="https://www.npmjs.com/package/svelte-eslint-parser">
 			<img src="https://img.shields.io/npm/v/svelte-eslint-parser.svg" alt="npm" />
 		</a>

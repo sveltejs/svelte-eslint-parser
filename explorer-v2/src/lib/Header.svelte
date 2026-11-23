@@ -18,16 +18,20 @@
 	<a
 		class="menu"
 		class:active={isActive(page.url.pathname, `/playground`)}
-		href={resolve('/playground')}>Playgroud</a
+		href={resolve('/playground')}
 	>
-	<a class="menu" class:active={isActive(page.url.pathname, `/scope`)} href={resolve('/scope')}
-		>Scope</a
-	>
+		Playgroud
+	</a>
+	<a class="menu" class:active={isActive(page.url.pathname, `/scope`)} href={resolve('/scope')}>
+		Scope
+	</a>
 	<a
 		class="menu"
 		class:active={isActive(page.url.pathname, `/virtual-script-code`)}
-		href={resolve('/virtual-script-code')}>Virtual Script Code</a
+		href={resolve('/virtual-script-code')}
 	>
+		Virtual Script Code
+	</a>
 	<div class="debug">
 		page.url.pathname: {page.url.pathname}
 	</div>

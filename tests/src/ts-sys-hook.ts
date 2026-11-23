@@ -103,6 +103,7 @@ function interceptHookWarnings<T>(body: () => T): {
 } {
   const warnings: string[] = [];
   const original = process.stderr.write.bind(process.stderr);
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion -- tsc needs this assertion
   process.stderr.write = ((chunk: unknown, ...rest: unknown[]) => {
     if (typeof chunk === "string" && chunk.includes("ts-sys-hook")) {
       warnings.push(chunk);
@@ -424,13 +425,45 @@ describeSvelte5("synthetic component default export (runes, Svelte 5)", () => {
     assertComponentExport(code, `{ real: any }`);
   });
 
+  it("translates a `generics` attribute with a `const` type parameter", () => {
+    const code =
+      translate(`<script lang="ts" generics="const T extends readonly string[]">
+  let { items }: { items: T } = $props();
+</script>
+<p>{items.length}</p>`);
+    assert.match(code, /type T\s*=\s*readonly string\[\];/u);
+    // The modifier stays where TypeScript accepts it.
+    assert.match(
+      code,
+      /function \$_genericPropsScope\d+<const T extends readonly string\[\]>\(\)/u,
+    );
+    assert.match(
+      code,
+      /\$\$genericProps<const T extends readonly string\[\]>\(/u,
+    );
+    // A type alias does not accept it.
+    assert.match(
+      code,
+      /type \$_svelteComponent\d+<T extends readonly string\[\] = /u,
+    );
+  });
+
   it("references `generics` type parameters in the recovered props type", () => {
     const code = translate(`<script lang="ts" generics="T">
   let { items, selected }: { items: T[]; selected: T } = $props();
 </script>
 <p>{selected}</p>`);
+    const props = `{ items: T[]; selected: T }`;
     assert.match(code, /type T = unknown;/);
-    assertComponentExport(code, `{ items: T[]; selected: T }`);
+    assert.ok(
+      /function \$_genericPropsScope\d+<T>\(\) \{return null as any as \{ items: T\[\]; selected: T \};\}/.test(
+        code,
+      ) &&
+        code.includes(
+          `: import('svelte').Component<${props}> & { $$genericProps<T>(props: Partial<ReturnType<typeof $_genericPropsScope`,
+        ),
+      code,
+    );
   });
 
   it("recovers the props type from a `$props() as Props` cast", () => {
@@ -1255,6 +1288,23 @@ describeSvelte5(
 
     it("resolves generic component props (type params as their constraint) for importers", () => {
       const genericComponent = `<script lang="ts" generics="T extends string">
+  let { v }: { v: T } = $props();
+</script>
+<p>{v}</p>`;
+      const diagnostics = typeCheckConsumer(
+        genericComponent,
+        `const v: import("svelte").ComponentProps<typeof Foo>["v"] = 123;`,
+      );
+      assert.ok(
+        diagnostics.some((d) => d.code === 2322),
+        `expected TS2322 (number not assignable to string), got: ${diagnostics
+          .map((d) => d.code)
+          .join(", ")}`,
+      );
+    });
+
+    it("resolves props of a generic component with a `const` type parameter for importers", () => {
+      const genericComponent = `<script lang="ts" generics="const T extends string">
   let { v }: { v: T } = $props();
 </script>
 <p>{v}</p>`;
@@ -3575,4 +3625,693 @@ describeSvelte5("function bindings on a component", () => {
       );
     });
   }
+});
+
+describeSvelte5(
+  "generic component type arguments inferred from attributes",
+  () => {
+    const inlineComponent = `<script lang="ts" generics="T extends Record<string, unknown>">
+  import type { Snippet } from "svelte";
+  let { rows, row, onselect, selected = $bindable() }: {
+    rows: T[];
+    row?: Snippet<[T]>;
+    onselect?: (item: T) => void;
+    selected?: T;
+  } = $props();
+</script>`;
+    // Local types naming the generics must see the inferred type arguments too.
+    const interfaceComponent = `<script lang="ts" generics="T extends Record<string, unknown>">
+  import type { Snippet } from "svelte";
+  type Row = T
+  export interface Props {
+    rows: Row[];
+    row?: Snippet<[T]>;
+    onselect?: (item: T) => void;
+    selected?: T;
+  }
+  let { rows, row, onselect, selected = $bindable() }: Props = $props();
+</script>`;
+    const consumer = `const users = [{ name: "a", age: 1 }];
+let picked: { name: string; age: number } | undefined;
+void picked;`;
+    for (const { name, template, errors } of [
+      {
+        name: "types snippet parameters with the inferred type argument",
+        template: `<Foo rows={users}>
+  {#snippet row(user)}{user.name.toUpperCase()}{user.age.toFixed(0)}{/snippet}
+</Foo>`,
+        errors: [],
+      },
+      {
+        name: "rejects misuse of a parameter typed by inference",
+        template: `<Foo rows={users}>
+  {#snippet row(user)}{user.missing}{/snippet}
+</Foo>`,
+        errors: [2339],
+      },
+      {
+        name: "types callback attributes with the inferred type argument",
+        template: `<Foo rows={users} onselect={(item) => item.name.toUpperCase()} />`,
+        errors: [],
+      },
+      {
+        name: "types function binding setters with the inferred type argument",
+        template: `<Foo rows={users} bind:selected={() => picked, (next) => (picked = next)} />`,
+        errors: [],
+      },
+      {
+        name: "infers from a spread attribute",
+        template: `<Foo {...{ rows: users }}>
+  {#snippet row(user)}{user.missing}{/snippet}
+</Foo>`,
+        errors: [2339],
+      },
+      {
+        name: "falls back to the constraint without inferable attributes",
+        template: `<Foo rows={undefined!} onselect={() => {}}>
+  {#snippet row(user)}{String(user.anything)}{/snippet}
+</Foo>`,
+        errors: [],
+      },
+    ]) {
+      for (const [style, component] of [
+        ["inline props type", inlineComponent],
+        ["local props interface", interfaceComponent],
+      ]) {
+        it(`${name} (${style})`, () => {
+          const diagnostics = realResolutionDiagnostics(component, consumer, {
+            template,
+          }).filter((d) => d.code !== 2695);
+          assert.deepStrictEqual(
+            diagnostics.map((d) => d.code),
+            errors,
+            diagnostics
+              .map((d) => ts.flattenDiagnosticMessageText(d.messageText, " "))
+              .join("\n"),
+          );
+        });
+      }
+    }
+
+    it("infers from text and boolean attributes as svelte2tsx does", () => {
+      const component = `<script lang="ts" generics="T extends string, B extends boolean = false">
+  import type { Snippet } from "svelte";
+  let { variant, flag, children }: {
+    variant: T;
+    flag?: B;
+    children?: Snippet<[T, B]>;
+  } = $props();
+</script>`;
+      for (const [template, errors] of [
+        [
+          `<Foo variant="primary" flag>
+  {#snippet children(v, f)}{((x: "primary", y: true) => x)(v, f)}{/snippet}
+</Foo>`,
+          [],
+        ],
+        [
+          `<Foo variant="a&amp;b">
+  {#snippet children(v)}{((x: "a&b") => x)(v)}{/snippet}
+</Foo>`,
+          [],
+        ],
+        // Text mixed with an expression is not a literal.
+        [
+          `<Foo variant="a{"b"}">
+  {#snippet children(v)}{((x: "ab") => x)(v)}{/snippet}
+</Foo>`,
+          [2345],
+        ],
+      ] as const) {
+        const diagnostics = realResolutionDiagnostics(component, "", {
+          template,
+        }).filter((d) => d.code !== 2695);
+        assert.deepStrictEqual(
+          diagnostics.map((d) => d.code),
+          errors,
+          diagnostics
+            .map((d) => ts.flattenDiagnosticMessageText(d.messageText, " "))
+            .join("\n"),
+        );
+      }
+    });
+
+    it("infers literal types for a `const` type parameter", () => {
+      const template = `<Foo items={["a", "b"]}>
+  {#snippet children(item)}{((x: "a" | "b") => x)(item)}{/snippet}
+</Foo>`;
+      for (const [modifier, errors] of [
+        ["const ", []],
+        // Without the modifier, `T` is inferred as `string[]`.
+        ["", [2345]],
+      ] as const) {
+        const component = `<script lang="ts" generics="${modifier}T extends readonly string[]">
+  import type { Snippet } from "svelte";
+  let { items, children }: { items: T; children?: Snippet<[T[number]]> } = $props();
+</script>`;
+        const diagnostics = realResolutionDiagnostics(component, "", {
+          template,
+        }).filter((d) => d.code !== 2695);
+        assert.deepStrictEqual(
+          diagnostics.map((d) => d.code),
+          errors,
+          diagnostics
+            .map((d) => ts.flattenDiagnosticMessageText(d.messageText, " "))
+            .join("\n"),
+        );
+      }
+    });
+
+    it("does not pass `bind:this` as a prop", () => {
+      const template = `<Foo rows={users} bind:this={ref} />`;
+      const translated = translate(
+        `<script lang="ts">
+  import Foo from "./Foo.svelte";
+  const users = [{ name: "a" }];
+  let ref: unknown;
+</script>
+${template}`,
+      );
+      const call = /\.m\(\{(.*?)\}\);/.exec(translated)?.[1];
+      assert.strictEqual(call, `"rows":(users)`, translated);
+    });
+
+    it("leaves no trace of the props scope in the generic component's scopes", () => {
+      const result = parseComponent(interfaceComponent);
+      const scopeManager = result.scopeManager;
+      assert.ok(
+        scopeManager.scopes.every(
+          (scope) =>
+            scope.block.type !== "FunctionDeclaration" ||
+            !scope.block.id?.name.startsWith("$_genericPropsScope"),
+        ),
+      );
+      const variables = scopeManager.scopes.flatMap((scope) => scope.variables);
+      for (const name of ["Row", "Props"]) {
+        const declared = variables.filter((v) => v.name === name);
+        assert.strictEqual(declared.length, 1, name);
+        // `Row` is read once by `Props`; `Props` once by the `$props()` binding.
+        assert.strictEqual(declared[0].references.length, 1, name);
+      }
+    });
+
+    it("leaves no trace of the inference statement in the AST or scopes", () => {
+      const source = `<script lang="ts">
+  import Foo from "./Foo.svelte";
+  const users = [{ name: "a" }];
+</script>
+<Foo rows={users} />`;
+      const result = parseComponent(source);
+      const names = result.scopeManager.scopes.flatMap((scope) => [
+        ...scope.variables.map((v) => v.name),
+        ...scope.references.map((r) => r.identifier.name),
+      ]);
+      assert.ok(
+        names.every((n) => !n.startsWith("$_genericProps")),
+        names.join(", "),
+      );
+      const users = result.scopeManager
+        .globalScope!.childScopes.flatMap((s) => s.variables)
+        .concat(result.scopeManager.globalScope!.variables)
+        .find((v) => v.name === "users");
+      // Only the attribute reads `users`; the inference statement adds nothing.
+      assert.strictEqual(users?.references.filter((r) => !r.init).length, 1);
+      assert.ok(
+        result.ast.tokens.every((t) => source.slice(...t.range) === t.value),
+      );
+    });
+  },
+);
+
+describeSvelte5("generic component used as a type", () => {
+  const component = `<script lang="ts" generics="T extends { id: string }">
+  interface Props {
+    items: T[];
+  }
+  let { items }: Props = $props();
+  export function clear(): void {}
+</script>
+<p>{items.length}</p>`;
+  for (const { name, consumer, errors, generics, template } of [
+    {
+      name: "accepts type arguments",
+      consumer: `type Row = { id: string; name: string };
+let generator: Foo<Row> | undefined;
+generator?.clear();
+const props: import("svelte").ComponentProps<Foo<Row>> = { items: [{ id: "a", name: "b" }] };
+void props;`,
+      errors: [],
+    },
+    {
+      name: "types the props with the type arguments",
+      consumer: `type Row = { id: string; name: string };
+const props: import("svelte").ComponentProps<Foo<Row>> = { items: [{ id: "a" }] };
+void props;`,
+      errors: [2741],
+    },
+    {
+      name: "keeps the bare name valid through defaults",
+      consumer: `let generator: Foo | undefined;
+generator?.clear();`,
+      errors: [],
+    },
+    {
+      name: "rejects a type argument violating the constraint",
+      consumer: `let generator: Foo<number> | undefined;
+void generator;`,
+      errors: [2344],
+    },
+    {
+      name: "is usable in a component script",
+      consumer: `type Row = { id: string; name: string };
+const rows: Row[] = [];
+let generator = $state<Foo<Row>>();
+const reset = () => generator?.clear();
+void reset;`,
+      template: `<Foo items={rows} />`,
+      errors: [],
+    },
+    {
+      name: "keeps the bare name valid when a constraint reads a later parameter",
+      generics: "T extends U, U extends { id: string }",
+      consumer: `let generator: Foo | undefined;
+const props: import("svelte").ComponentProps<Foo<{ id: "a" }, { id: string }>> = { items: [{ id: "a" }] };
+const bad: import("svelte").ComponentProps<Foo<{ id: "a" }, { id: string }>> = { items: [1] };
+void generator;
+void props;
+void bad;`,
+      errors: [2322],
+    },
+    {
+      name: "keeps the bare name typed when a constraint reads its own parameter",
+      generics: "T extends { id: string; children?: T[] }",
+      consumer: `let generator: Foo | undefined;
+const bad: import("svelte").ComponentProps<Foo> = { items: [1] };
+void generator;
+void bad;`,
+      errors: [2322],
+    },
+    {
+      name: "keeps a default written in the attribute",
+      generics: "T extends { id: string } = { id: string; name: string }",
+      consumer: `const props: import("svelte").ComponentProps<Foo> = { items: [{ id: "a" }] };
+void props;`,
+      errors: [2741],
+    },
+  ] as {
+    name: string;
+    consumer: string;
+    errors: number[];
+    generics?: string;
+    template?: string;
+  }[]) {
+    it(name, () => {
+      const diagnostics = realResolutionDiagnostics(
+        generics == null
+          ? component
+          : component.replace(/generics="[^"]*"/u, `generics="${generics}"`),
+        consumer,
+        { template },
+      );
+      assert.deepStrictEqual(
+        diagnostics.map((d) => d.code),
+        errors,
+        diagnostics
+          .map((d) => ts.flattenDiagnosticMessageText(d.messageText, " "))
+          .join("\n"),
+      );
+    });
+  }
+});
+
+describe("bindings as writes", () => {
+  const component = `<script lang="ts">
+  export let value = "";
+</script>
+<p>{value}</p>`;
+  for (const { name, script, template } of [
+    {
+      name: "keeps a bound element variable unnarrowed in closures",
+      script: `let el: HTMLDivElement | null = null;
+const focus = () => el?.focus();
+void focus;`,
+      template: `<div bind:this={el}></div>`,
+    },
+    {
+      name: "keeps a bound value variable unnarrowed in closures",
+      script: `let text: string | null = null;
+const shout = () => text?.toUpperCase();
+void shout;`,
+      template: `<input bind:value={text} />`,
+    },
+    {
+      name: "keeps a variable bound inside a block unnarrowed in closures",
+      script: `let el: HTMLDivElement | null = null;
+const show = Math.random() > 0.5;
+const focus = () => el?.focus();
+void focus;`,
+      template: `{#if show}<p></p>{:else}<div bind:this={el}></div>{/if}`,
+    },
+  ]) {
+    it(name, () => {
+      const diagnostics = realResolutionDiagnostics(component, script, {
+        template,
+      });
+      assert.deepStrictEqual(
+        diagnostics.map((d) => d.code),
+        [],
+        diagnostics
+          .map((d) => ts.flattenDiagnosticMessageText(d.messageText, " "))
+          .join("\n"),
+      );
+    });
+  }
+
+  it("leaves no trace of the binding write in the AST or scopes", () => {
+    const source = `<script lang="ts">
+  let el: HTMLDivElement | null = null;
+</script>
+<div bind:this={el}></div>`;
+    const result = parseComponent(source);
+    const el = result.scopeManager.scopes
+      .flatMap((scope) => scope.variables)
+      .find((v) => v.name === "el");
+    // Only the declaration's initialization and the directive itself.
+    assert.deepStrictEqual(
+      el?.references.map((r) => [r.init ?? false, r.isWrite()]),
+      [
+        [true, true],
+        [false, true],
+      ],
+    );
+    assert.ok(
+      result.ast.tokens.every((t) => source.slice(...t.range) === t.value),
+    );
+  });
+});
+
+describeSvelte5("bindings as writes and `bind:this` function bindings", () => {
+  const component = `<script lang="ts">
+  let { value = $bindable("") }: { value?: string } = $props();
+  export function open(): void {}
+</script>
+<p>{value}</p>`;
+  for (const { name, script, template, errors } of [
+    {
+      name: "keeps a bound `$state` variable unnarrowed in closures",
+      script: `let el: HTMLDivElement | null = $state(null);
+const focus = () => el?.focus();
+void focus;`,
+      template: `<div bind:this={el}></div>`,
+      errors: [],
+    },
+    {
+      name: "keeps a bound component instance unnarrowed in closures",
+      script: `let foo: ReturnType<typeof Foo> | null = $state(null);
+const open = () => foo?.open();
+void open;`,
+      template: `<Foo bind:this={foo} />`,
+      errors: [],
+    },
+    {
+      name: "keeps a bound prop variable unnarrowed in closures",
+      script: `let text: string | undefined = $state(undefined);
+const shout = () => text?.toUpperCase();
+void shout;`,
+      template: `<Foo bind:value={text} />`,
+      errors: [],
+    },
+    {
+      name: "keeps a variable bound inside a snippet unnarrowed in closures",
+      script: `let el: HTMLDivElement | null = $state(null);
+const focus = () => el?.focus();
+void focus;`,
+      template: `{#snippet row()}<div bind:this={el}></div>{/snippet}{@render row()}`,
+      errors: [],
+    },
+    {
+      name: "types the `bind:this` setter of an HTML element",
+      script: `let el: HTMLInputElement | null = $state(null);`,
+      template: `<input bind:this={() => el, (next) => (el = next)} />`,
+      errors: [],
+    },
+    {
+      name: "types the `bind:this` setter of an SVG element",
+      script: `let el: SVGSVGElement | null = $state(null);`,
+      template: `<svg bind:this={() => el, (next) => (el = next)}></svg>`,
+      errors: [],
+    },
+    {
+      name: "types the `bind:this` setter of a component",
+      script: `let foo: ReturnType<typeof Foo> | null = $state(null);`,
+      template: `<Foo bind:this={() => foo, (next) => (foo = next)} />`,
+      errors: [],
+    },
+    {
+      name: "rejects misuse of a `bind:this` setter parameter",
+      script: `let foo: ReturnType<typeof Foo> | null = $state(null);`,
+      template: `<Foo bind:this={() => foo, (next) => next?.missing()} />`,
+      errors: [2339],
+    },
+  ]) {
+    it(name, () => {
+      const diagnostics = realResolutionDiagnostics(component, script, {
+        template,
+      }).filter((d) => d.code !== 2695);
+      assert.deepStrictEqual(
+        diagnostics.map((d) => d.code),
+        errors,
+        diagnostics
+          .map((d) => ts.flattenDiagnosticMessageText(d.messageText, " "))
+          .join("\n"),
+      );
+    });
+  }
+});
+
+describeSvelte5(
+  "discriminated union props selected by static attributes",
+  () => {
+    const component = `<script lang="ts">
+  type Props =
+    | { mode: "single"; upload: (file: File) => void }
+    | { mode: "multiple"; upload: (files: File[]) => void };
+  let { mode, upload }: Props = $props();
+</script>
+<p>{mode}{typeof upload}</p>`;
+    for (const { name, consumer, template, errors } of [
+      {
+        name: "types a callback from the selected member",
+        consumer: ``,
+        template: `<Foo mode="single" upload={(file) => file.name.toUpperCase()} />`,
+        errors: [],
+      },
+      {
+        name: "rejects misuse of a parameter typed by the selected member",
+        consumer: ``,
+        template: `<Foo mode="multiple" upload={(files) => files.name} />`,
+        errors: [2339],
+      },
+      {
+        name: "selects a member by a literal expression value",
+        consumer: ``,
+        template: `<Foo mode={"multiple"} upload={(files) => files.name} />`,
+        errors: [2339],
+      },
+      {
+        name: "keeps the union when the discriminant is an expression",
+        consumer: `const mode = "single" as "single" | "multiple";`,
+        template: `<Foo {mode} upload={(file) => file} />`,
+        errors: [7006],
+      },
+      {
+        name: "keeps the declared props when no member matches",
+        consumer: ``,
+        template: `<Foo mode="zip" upload={(file) => file} />`,
+        errors: [7006],
+      },
+    ]) {
+      it(name, () => {
+        const diagnostics = realResolutionDiagnostics(component, consumer, {
+          template,
+        });
+        assert.deepStrictEqual(
+          diagnostics.map((d) => d.code),
+          errors,
+          diagnostics
+            .map((d) => ts.flattenDiagnosticMessageText(d.messageText, " "))
+            .join("\n"),
+        );
+      });
+    }
+  },
+);
+
+describe("discriminated union props selected by static attributes (legacy component)", () => {
+  // Svelte 3/4 markup cannot contain TypeScript, so the callbacks are plain JS.
+  const component = `<script lang="ts">
+  type $$Props =
+    | { mode: "single"; upload: (file: File) => void }
+    | { mode: "multiple"; upload: (files: File[]) => void };
+  export let mode: $$Props["mode"];
+  export let upload: $$Props["upload"];
+</script>
+<p>{mode}{typeof upload}</p>`;
+  for (const { name, template, errors } of [
+    {
+      name: "types a callback from the selected member",
+      template: `<Foo mode="single" upload={(file) => file.size} />`,
+      errors: [],
+    },
+    {
+      name: "rejects misuse of a parameter typed by the selected member",
+      template: `<Foo mode="multiple" upload={(files) => files.name} />`,
+      errors: [2339],
+    },
+  ]) {
+    it(name, () => {
+      const diagnostics = realResolutionDiagnostics(component, ``, {
+        template,
+      });
+      assert.deepStrictEqual(
+        diagnostics.map((d) => d.code),
+        errors,
+        diagnostics
+          .map((d) => ts.flattenDiagnosticMessageText(d.messageText, " "))
+          .join("\n"),
+      );
+    });
+  }
+});
+
+describeSvelte5("narrowing inside `{#each}` blocks", () => {
+  const component = `<script lang="ts">
+  let { value }: { value?: string } = $props();
+</script>
+<p>{value}</p>`;
+  const consumer = `type A = { kind: "a"; list: string[] };
+type B = { kind: "b"; count: number };
+let { holder }: { holder: { node: A | B } } = $props();
+const rows = [{ id: "a", name: "b" }];
+let current = $state<A | B>({ kind: "b", count: 0 });
+function reset() {
+  current = { kind: "b", count: 0 };
+}
+let mixed: string | number = $state(1);
+const maybe: (string | null)[] = [];
+void holder;
+void rows;
+void reset;
+void maybe;`;
+  for (const { name, template, errors, compilerOptions } of [
+    {
+      name: "keeps the narrowing of a property path",
+      template: `{#if holder.node.kind === "a"}
+  {#each holder.node.list as entry, i (i)}{holder.node.list[i].toUpperCase()}{entry.toUpperCase()}{/each}
+{/if}`,
+      errors: [],
+    },
+    {
+      name: "keeps the narrowing of a reassigned variable",
+      template: `{#if current.kind === "a"}
+  {#each current.list as entry, i}{current.list[i].toUpperCase()}{entry.toUpperCase()}{/each}
+{/if}`,
+      errors: [],
+    },
+    {
+      name: "types the context and index",
+      template: `{#each rows as row, i (row.id)}{row.name.toUpperCase()}{i.toFixed()}{/each}`,
+      errors: [],
+    },
+    {
+      name: "rejects misuse of the context",
+      template: `{#each rows as row}{row.missing}{/each}`,
+      errors: [2339],
+    },
+    {
+      name: "types the index as a number rather than a literal",
+      template: `{#each rows as row, i}{((one: 1) => one)(i)}{row.id}{/each}`,
+      errors: [2345],
+    },
+    {
+      name: "types a destructured context",
+      template: `{#each rows as { id, name } (id)}{name.toUpperCase()}{/each}`,
+      errors: [],
+    },
+    {
+      name: "types the index without a context",
+      template: `{#each { length: 3 }, i}{i.toFixed()}{/each}`,
+      errors: [],
+    },
+    {
+      name: "types the context from a sequence expression",
+      template: `{#each (reset(), rows) as row}{row.name.toUpperCase()}{/each}`,
+      errors: [],
+    },
+    {
+      name: "keeps a nullable element",
+      template: `{#each maybe as m}{m.length}{/each}`,
+      errors: [18047],
+    },
+    {
+      name: "does not add undefined to the context with noUncheckedIndexedAccess",
+      template: `{#each rows as row}{row.name.toUpperCase()}{/each}`,
+      errors: [],
+      compilerOptions: { noUncheckedIndexedAccess: true },
+    },
+    {
+      name: "does not narrow after the block by an assignment in the body",
+      template: `{#if typeof mixed === "number"}
+  {#each rows as row (row.id)}{(mixed = row.name)}{/each}
+  {((v: string) => v)(mixed)}{((v: number) => v)(mixed)}
+{/if}`,
+      errors: [2345, 2345],
+    },
+  ] as {
+    name: string;
+    template: string;
+    errors: number[];
+    compilerOptions?: ts.CompilerOptions;
+  }[]) {
+    it(name, () => {
+      const diagnostics = realResolutionDiagnostics(component, consumer, {
+        template,
+        compilerOptions,
+      });
+      assert.deepStrictEqual(
+        diagnostics.map((d) => d.code),
+        errors,
+        diagnostics
+          .map((d) => ts.flattenDiagnosticMessageText(d.messageText, " "))
+          .join("\n"),
+      );
+    });
+  }
+
+  it("leaves no trace of the typing arguments in the AST or scopes", () => {
+    const source = `<script lang="ts">
+  const rows = [{ id: "a" }];
+</script>
+{#each rows /* c */ as row, i (row.id)}{row.id}{i}{/each}`;
+    const result = parseComponent(source);
+    const variables = result.scopeManager.scopes.flatMap(
+      (scope) => scope.variables,
+    );
+    const rows = variables.find((v) => v.name === "rows");
+    // The initialization and the `{#each}` expression.
+    assert.strictEqual(rows?.references.length, 2);
+    assert.strictEqual(
+      result.scopeManager.globalScope!.through.some(
+        (r) => r.identifier.name === "Array",
+      ),
+      false,
+    );
+    assert.ok(
+      result.ast.tokens.every((t) => source.slice(...t.range) === t.value),
+    );
+    assert.deepStrictEqual(
+      result.ast.comments.map((c) => source.slice(...c.range)),
+      ["/* c */"],
+    );
+  });
 });

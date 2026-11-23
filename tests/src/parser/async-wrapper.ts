@@ -2,7 +2,6 @@ import assert from "assert";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
-import type { TSESTree } from "@typescript-eslint/types";
 import { parseForESLint } from "../../../src/index.js";
 import { traverseNodes } from "../../../src/traverse.js";
 import { svelteVersion } from "../../../src/parser/svelte-version.js";
@@ -31,7 +30,7 @@ const blocks: Record<string, (body: string) => string> = {
 /** Parse the template with the given parser options. */
 function parseTemplate(template: string, options: object) {
   const code = `<script>let xs = [1]; let p = Promise.resolve(1);</script>\n${template}`;
-  return parseForESLint(code, options as never);
+  return parseForESLint(code, options);
 }
 
 describe("Wrappers of template blocks in the virtual script", () => {
@@ -75,9 +74,7 @@ describe("Wrappers of template blocks in the virtual script", () => {
         visitorKeys: result.visitorKeys,
         enterNode(node) {
           if (node.type !== "SvelteSnippetBlock") return;
-          const tsNode = result.services.esTreeNodeToTSNodeMap!.get(
-            node.id as TSESTree.Identifier,
-          );
+          const tsNode = result.services.esTreeNodeToTSNodeMap!.get(node.id);
           const [signature] = checker
             .getTypeAtLocation(tsNode)
             .getCallSignatures();
