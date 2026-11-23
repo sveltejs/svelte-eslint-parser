@@ -293,7 +293,7 @@ export class ScriptLetContext {
     return this.addExpressionFromRange(range, parent, typing, ...callbacks);
   }
 
-  public addExpressionFromRange<E extends ESTree.Expression>(
+  private addExpressionFromRange<E extends ESTree.Expression>(
     range: [number, number],
     parent: SvelteNode,
     typing?: string | null,
