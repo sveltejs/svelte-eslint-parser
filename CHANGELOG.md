@@ -1,5 +1,51 @@
 # svelte-eslint-parser
 
+## 1.12.0
+
+### Minor Changes
+
+- [#971](https://github.com/sveltejs/svelte-eslint-parser/pull/971) [`a3e8905`](https://github.com/sveltejs/svelte-eslint-parser/commit/a3e8905abe25d7263c53f4a8e601ec7a665a52bb) Thanks [@baseballyama](https://github.com/baseballyama)! - Treat a binding to a variable (such as `bind:this={el}` or `bind:value={text}`) as a write of it for type checking, so TypeScript no longer keeps the variable narrowed to its initial value (e.g. `null`) inside closures, and type the setter of a `bind:this` function binding with the element or component instance type instead of implicit `any`.
+
+- [#973](https://github.com/sveltejs/svelte-eslint-parser/pull/973) [`646ce26`](https://github.com/sveltejs/svelte-eslint-parser/commit/646ce26ff7c92d7b9329dffba22ff46203569935) Thanks [@baseballyama](https://github.com/baseballyama)! - Select the matching members of a component's discriminated union props by the attributes whose values are fixed in the markup (e.g. `mode="single"`), so other attributes such as `upload={(file) => …}` are typed from that member instead of an unusable union that left callback parameters as implicit `any`.
+
+- [#974](https://github.com/sveltejs/svelte-eslint-parser/pull/974) [`cade11c`](https://github.com/sveltejs/svelte-eslint-parser/commit/cade11c96a06321ab63048cbb8e341dd4a769044) Thanks [@baseballyama](https://github.com/baseballyama)! - Keep TypeScript's narrowing of property paths such as `item.list`, and of reassigned variables, inside `{#each}` blocks (e.g. under `{#if item.kind === "a"}`), so they no longer fall back to the unnarrowed type inside the block.
+
+- [#970](https://github.com/sveltejs/svelte-eslint-parser/pull/970) [`2cfe2db`](https://github.com/sveltejs/svelte-eslint-parser/commit/2cfe2dba8e7e992297e1d76c20bc6a808028fcfa) Thanks [@baseballyama](https://github.com/baseballyama)! - Infer a Svelte 5 generic component's type arguments from the attributes passed to it, so snippet parameters, callback attributes, and function binding setters get the inferred types (e.g. `row` in `<Table rows={users}>{#snippet row(user)}…{/snippet}</Table>` is typed from `users`) instead of the `generics` constraint.
+
+- [#972](https://github.com/sveltejs/svelte-eslint-parser/pull/972) [`b140352`](https://github.com/sveltejs/svelte-eslint-parser/commit/b140352463043d69ccf2a59fb1ebfb8d4b03c5a2) Thanks [@baseballyama](https://github.com/baseballyama)! - Make a Svelte 5 `generics` component a generic type too, so `Foo<Row>` (e.g. in `let instance = $state<Foo<Row>>()`) names its instance with those type arguments instead of failing to resolve; a bare `Foo` keeps working through defaults taken from the constraints.
+
+### Patch Changes
+
+- [#1016](https://github.com/sveltejs/svelte-eslint-parser/pull/1016) [`0812923`](https://github.com/sveltejs/svelte-eslint-parser/commit/081292300b65f6e05cbd397b52264b2158d1accc) Thanks [@baseballyama](https://github.com/baseballyama)! - fix: resolve a component's own attributes in the outer scope, not in its `let:` scope
+
+- [#1015](https://github.com/sveltejs/svelte-eslint-parser/pull/1015) [`a5bacf9`](https://github.com/sveltejs/svelte-eslint-parser/commit/a5bacf93aa79e950511182b6fe43035663ca7513) Thanks [@baseballyama](https://github.com/baseballyama)! - fix: match `<script>`, `<style>` and `<template>` tags case-sensitively like Svelte, so a component named `Script`, `Style` or `Template` is not parsed as a block
+
+- [#1075](https://github.com/sveltejs/svelte-eslint-parser/pull/1075) [`d710872`](https://github.com/sveltejs/svelte-eslint-parser/commit/d7108721e43bb73af4429c967af250f99770aa7e) Thanks [@baseballyama](https://github.com/baseballyama)! - fix: parse a sequence expression such as `(a, b)` as the whole `{#each}` expression
+
+- [#1012](https://github.com/sveltejs/svelte-eslint-parser/pull/1012) [`1375088`](https://github.com/sveltejs/svelte-eslint-parser/commit/13750884095649572523b52c9f144967db214dcb) Thanks [@baseballyama](https://github.com/baseballyama)! - fix: do not resolve an each block key to a declaration in its body
+
+- [#1069](https://github.com/sveltejs/svelte-eslint-parser/pull/1069) [`5bde947`](https://github.com/sveltejs/svelte-eslint-parser/commit/5bde947eef7079a32f67bc8a153661522008f426) Thanks [@baseballyama](https://github.com/baseballyama)! - fix: parse a `generics` attribute with a `const` type parameter
+
+- [#1000](https://github.com/sveltejs/svelte-eslint-parser/pull/1000) [`c30cf6d`](https://github.com/sveltejs/svelte-eslint-parser/commit/c30cf6d7f347d1efa0ef4694e111a8669f9030d8) Thanks [@joshuabremer](https://github.com/joshuabremer)! - fix: load the TypeScript that typescript-eslint uses instead of the newest reachable copy, so a hoisted TypeScript 7 in a pnpm monorepo no longer breaks JS components
+
+- [#996](https://github.com/sveltejs/svelte-eslint-parser/pull/996) [`97a08ab`](https://github.com/sveltejs/svelte-eslint-parser/commit/97a08abb24df6972fca18df75e0a04d32f0c7e99) Thanks [@baseballyama](https://github.com/baseballyama)! - fix: remove leftover scope references from the type of `use:` directive parameters, which crashed some rules (e.g. `sonarjs/no-unused-collection`) with `lang="ts"`
+
+- [#997](https://github.com/sveltejs/svelte-eslint-parser/pull/997) [`bfced4b`](https://github.com/sveltejs/svelte-eslint-parser/commit/bfced4b01013e6c2fba5799903c35a313482d0bd) Thanks [@baseballyama](https://github.com/baseballyama)! - fix: do not narrow Svelte v4 `export let` props to the type of their default value (e.g. no more false positives from `@typescript-eslint/no-unnecessary-condition` for `href ?? fallback`)
+
+- [#1018](https://github.com/sveltejs/svelte-eslint-parser/pull/1018) [`04bd3b6`](https://github.com/sveltejs/svelte-eslint-parser/commit/04bd3b6834db617d3490f69515ff7146a31cb7b6) Thanks [@baseballyama](https://github.com/baseballyama)! - fix: keep a component's `let:` names out of children with a named `slot`
+
+- [#1049](https://github.com/sveltejs/svelte-eslint-parser/pull/1049) [`17bb73f`](https://github.com/sveltejs/svelte-eslint-parser/commit/17bb73f2bd1306aab4cb6f79311c7790c3b61509) Thanks [@baseballyama](https://github.com/baseballyama)! - fix: end `styleNodeRange()` at the end of the style node instead of one character after it, and end `styleNodeLoc()` of the root at the end of the style code
+
+- [#1054](https://github.com/sveltejs/svelte-eslint-parser/pull/1054) [`d7d3f1d`](https://github.com/sveltejs/svelte-eslint-parser/commit/d7d3f1d5b7bda4d683d8c59a96b375c80e3169f9) Thanks [@baseballyama](https://github.com/baseballyama)! - fix: give the right style selector locations when PostCSS removes comments from the selector
+
+- [#1052](https://github.com/sveltejs/svelte-eslint-parser/pull/1052) [`c73d227`](https://github.com/sveltejs/svelte-eslint-parser/commit/c73d227c635e2346a3bcc7247e64f73470b3090e) Thanks [@baseballyama](https://github.com/baseballyama)! - fix: give the right style selector locations after CR, U+2028 and U+2029 line breaks and for selector nodes that start with a line break
+
+- [#1064](https://github.com/sveltejs/svelte-eslint-parser/pull/1064) [`5c34f23`](https://github.com/sveltejs/svelte-eslint-parser/commit/5c34f23a477ea6f6e34510944aba7e7a7a110c87) Thanks [@baseballyama](https://github.com/baseballyama)! - fix: read a destructured name in `svelte.config.js` that is not the first in its pattern
+
+- [#1051](https://github.com/sveltejs/svelte-eslint-parser/pull/1051) [`fd2db41`](https://github.com/sveltejs/svelte-eslint-parser/commit/fd2db413adf41a0ff562b35f1b8e94fb445665ba) Thanks [@baseballyama](https://github.com/baseballyama)! - fix: keep reading a `svelte.config.js` value past a spread that does not set it
+
+- [#998](https://github.com/sveltejs/svelte-eslint-parser/pull/998) [`157dfa1`](https://github.com/sveltejs/svelte-eslint-parser/commit/157dfa1b5436d1b58c1d841eb3e25ef27e182c6f) Thanks [@that-richan](https://github.com/that-richan)! - fix: resolve `.svelte` imports through `package.json` `imports` and `exports` subpaths to the component's prop types under the experimental `ts.sys` hook
+
 ## 1.11.0
 
 ### Minor Changes
