@@ -200,11 +200,14 @@ export class ScriptLetContext {
    * Emit a statement that only feeds type checking, such as the write a binding
    * performs. It leaves no tokens, nodes, or references behind.
    */
-  public addTypeOnlyStatement(code: string): void {
+  public addTypeOnlyStatement(
+    code: string,
+    nodeType: StatementNodeType = "ExpressionStatement",
+  ): void {
     this.appendScriptWithoutOffset(
       code,
       this.currentScriptScopeKind,
-      "ExpressionStatement",
+      nodeType,
       (node, tokens, comments, result) => {
         tokens.length = 0;
         comments.length = 0;
@@ -1505,7 +1508,7 @@ export class ScriptLetContext {
     return "async ";
   }
 
-  private generateUniqueId(base: string) {
+  public generateUniqueId(base: string): string {
     return this.unique.generate(
       base,
       this.ctx.code,

@@ -457,7 +457,7 @@ function buildFunctionBindingsType(
     return instanceType && `(value: ${instanceType} | null) => void`;
   }
   if (element.kind !== "component") {
-    return null;
+    return buildGetterReturnType(expression.expressions[0], ctx);
   }
   const propType = buildAttributeType(element, node.name, ctx);
   // An undeclared prop resolves to `never`, which would poison the parameter.
@@ -465,6 +465,27 @@ function buildFunctionBindingsType(
     propType &&
     `(value: [${propType}] extends [never] ? any : (${propType})) => void`
   );
+}
+
+/**
+ * Type of the value the getter returns. Elements have no prop to read the type
+ * from, so the setter receives what the getter gives, as in svelte2tsx.
+ */
+function buildGetterReturnType(
+  getter: ESTree.Expression,
+  ctx: Context,
+): string | null {
+  if (!ctx.isTypeScript()) {
+    return null;
+  }
+  const loc = getWithLoc(getter);
+  const id = ctx.scriptLet.generateUniqueId("getter");
+  ctx.scriptLet.addTypeOnlyStatement(
+    `const ${id} = (${ctx.code.slice(loc.start, loc.end)});`,
+    "VariableDeclaration",
+  );
+  // A `null` getter (for a readonly binding) leaves the parameter untyped.
+  return `(value: typeof ${id} extends () => infer R ? R : any) => void`;
 }
 
 /** Type of the value `bind:this` receives from the element or component. */
