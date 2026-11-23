@@ -1481,8 +1481,9 @@ export class ScriptLetContext {
 }
 
 function getTypeParameterRanges(code: string, param: TSESTree.TSTypeParameter) {
+  // Start at the name: a modifier such as `const` is not valid in a type alias.
   const idRange: [number, number] = [
-    param.range[0],
+    param.name.range[0],
     param.constraint || param.default ? param.name.range[1] : param.range[1],
   ];
   let constraintRange: [number, number] | null = null;
