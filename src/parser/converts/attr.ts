@@ -300,18 +300,19 @@ function buildAttributeType(
   }
   const componentPropsType = getComponentPropsType(element, ctx);
   // Look the prop up in each member of a union separately: `keyof` of the whole
-  // union intersects the key sets of its members, which TypeScript gives up on
-  // as too complex (TS2590) for unions of large props such as HTML attributes.
+  // union keeps only the keys every member has, so it drops a prop only some
+  // members declare, and TypeScript gives up on it as too complex (TS2590) for
+  // unions of large props such as HTML attributes.
   return conditional({
     check: componentPropsType,
-    extends: `infer PROPS`,
+    extends: `infer MEMBER`,
     true: conditional({
-      check: `PROPS`,
+      check: `MEMBER`,
       extends: `unknown`,
       true: conditional({
         check: `'${attrName}'`,
-        extends: `keyof PROPS`,
-        true: `PROPS['${attrName}']`,
+        extends: `keyof MEMBER`,
+        true: `MEMBER['${attrName}']`,
         false: `never`,
       }),
       false: `never`,

@@ -729,11 +729,12 @@ function buildSnippetParamTypes(
   const componentPropsType = getComponentPropsType(parent, ctx);
   const snippetName = node.expression.name;
   // Look the prop up in each member of a union separately: `keyof` of the whole
-  // union intersects the key sets of its members, which TypeScript gives up on
-  // as too complex (TS2590) for unions of large props such as HTML attributes.
+  // union keeps only the keys every member has, so it drops a prop only some
+  // members declare, and TypeScript gives up on it as too complex (TS2590) for
+  // unions of large props such as HTML attributes.
   // Fall back to `any` for a prop the component does not declare, rather than
   // letting `never` poison every use of the parameter.
-  const snippetType = `(${componentPropsType} extends infer PROPS?(PROPS extends unknown?'${snippetName}' extends keyof PROPS?NonNullable<PROPS['${snippetName}']>:never:never) extends infer SNIPPET?[SNIPPET] extends [never]?any:SNIPPET:never:never)`;
+  const snippetType = `(${componentPropsType} extends infer MEMBER?(MEMBER extends unknown?'${snippetName}' extends keyof MEMBER?NonNullable<MEMBER['${snippetName}']>:never:never) extends infer SNIPPET?[SNIPPET] extends [never]?any:SNIPPET:never:never)`;
   const types: { param: ESTree.Pattern; type: string }[] = [];
   node.parameters.forEach((param, index) => {
     // A default value or rest element cannot take a positional annotation.
