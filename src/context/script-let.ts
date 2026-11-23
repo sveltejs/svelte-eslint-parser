@@ -258,6 +258,7 @@ export class ScriptLetContext {
           )) {
             removeScope(result.scopeManager, scope);
           }
+          removeTypeNodeReferences(tsAs!, result);
           this.remapNodes(
             [
               {
@@ -1672,6 +1673,33 @@ function extractTypeNodeScopes(
           yield* iterateTypeNodeScopes(child as TSESTree.TypeNode);
         }
       }
+    }
+  }
+}
+
+/**
+ * Remove the references in the type annotation of the given `as` expression.
+ * The type annotation is virtual code, so its references must not stay in the scope manager.
+ * The references in the type scopes are removed with those scopes, so this removes the rest.
+ */
+function removeTypeNodeReferences(
+  tsAs: TSAsExpression,
+  result: ScriptLetCallbackOption,
+): void {
+  const identifiers = new Set<ESTree.Node>();
+  traverseNodes(tsAs.typeAnnotation as TSESTree.TypeNode, {
+    visitorKeys: result.visitorKeys,
+    enterNode(node) {
+      if (node.type === "Identifier") identifiers.add(node);
+    },
+    leaveNode() {
+      // noop
+    },
+  });
+  const scope = result.getScope(tsAs as never);
+  for (const reference of [...scope.references]) {
+    if (identifiers.has(reference.identifier)) {
+      removeReference(reference, scope);
     }
   }
 }
