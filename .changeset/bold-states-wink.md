@@ -2,4 +2,4 @@
 "svelte-eslint-parser": patch
 ---
 
-fix: skip HTML comments in <style> before PostCSS parsing
+fix: ignore `<!--` and `-->` between top-level rules in `<style>`, as CSS does

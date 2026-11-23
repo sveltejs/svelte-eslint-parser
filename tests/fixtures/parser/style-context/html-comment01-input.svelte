@@ -1,17 +1,17 @@
-<div class="a">a</div>
+<div class="a b c d">a</div>
 
 <style>
-  <!-- a comment -->
+  <!--
   .a {
-    <!-- inside block -->
     color: red;
   }
-  <!-- b -->.b,
-  .c<!-- c --> {
-    color: blue;
+  -->
+  @import "x.css";<!-- .b { color: blue; } -->
+  .c::after {
+    content: "<!-- -->";
   }
-  .d::after {
-    content: "<!-- not a comment -->";
+  /* <!-- --> */
+  <!-- this text is part of a selector --> .d {
+    color: green;
   }
-  /* <!-- inside css comment --> */
 </style>
