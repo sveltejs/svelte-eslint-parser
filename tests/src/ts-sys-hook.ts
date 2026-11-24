@@ -3595,8 +3595,13 @@ describeSvelte5("function bindings on a component", () => {
 </script>`;
   for (const { name, template, errors } of [
     {
-      name: "types the setter parameter from the bound prop",
+      name: "types the setter parameter from the getter",
       template: `<Foo bind:value={() => current, (next) => (current = next.trim())} />`,
+      errors: [],
+    },
+    {
+      name: "types the setter parameter from a getter narrower than the prop",
+      template: `<Foo bind:value={() => mode, (next) => (mode = next)} />`,
       errors: [],
     },
     {
@@ -3605,15 +3610,20 @@ describeSvelte5("function bindings on a component", () => {
       errors: [2322],
     },
     {
-      name: "leaves a prop the component does not declare untyped",
-      template: `<Foo value="" bind:other={() => current, (next) => next.anything()} />`,
+      name: "types the setter parameter from the bound prop for a null getter",
+      template: `<Foo bind:value={null, (next) => (count = next)} />`,
+      errors: [2322],
+    },
+    {
+      name: "leaves a prop the component does not declare untyped for a null getter",
+      template: `<Foo value="" bind:other={null, (next) => next.anything()} />`,
       errors: [],
     },
   ]) {
     it(name, () => {
       const diagnostics = realResolutionDiagnostics(
         component,
-        "let current = ''; let count = 0; void count;",
+        "let current = ''; let count = 0; void count; let mode: 'a' | 'b' = 'a'; void mode;",
         { template },
       ).filter((d) => d.code !== UNUSED_COMMA_LEFT_SIDE);
       assert.deepStrictEqual(
@@ -4293,12 +4303,12 @@ export default Foo;
     },
     {
       name: "types a function binding setter from a prop one member declares",
-      template: `<Foo items={users} render={undefined!} bind:selection={() => undefined, (next) => next?.[0].toFixed(0)} />`,
+      template: `<Foo items={users} render={undefined!} bind:selection={null, (next) => next?.[0].toFixed(0)} />`,
       errors: [],
     },
     {
       name: "rejects misuse of a function binding setter parameter",
-      template: `<Foo items={users} render={undefined!} bind:selection={() => undefined, (next) => next?.missing} />`,
+      template: `<Foo items={users} render={undefined!} bind:selection={null, (next) => next?.missing} />`,
       errors: [2339],
     },
     {

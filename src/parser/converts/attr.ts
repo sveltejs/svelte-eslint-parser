@@ -439,8 +439,8 @@ function convertBindingDirective(
 }
 
 /**
- * Function bindings are typed as a setter of the bound value: the bound prop on
- * a component, or the element or component instance for `bind:this`. The
+ * Function bindings are typed as a setter of the bound value: what the getter
+ * returns, or the element or component instance for `bind:this`. The
  * assertion applies to the whole `getter, setter` sequence, so it contextually
  * types only the setter, whose parameter receives the value.
  */
@@ -466,22 +466,25 @@ function buildFunctionBindingsType(
     return instanceType && `(value: ${instanceType} | null) => void`;
   }
   if (element.kind !== "component") {
-    return buildGetterReturnType(expression.expressions[0], ctx);
+    return buildGetterReturnType(expression.expressions[0], "any", ctx);
   }
   const propType = buildAttributeType(element, node.name, ctx);
   // An undeclared prop resolves to `never`, which would poison the parameter.
-  return (
-    propType &&
-    `(value: [${propType}] extends [never] ? any : (${propType})) => void`
-  );
+  const valueType = propType
+    ? `([${propType}] extends [never] ? any : (${propType}))`
+    : "any";
+  return buildGetterReturnType(expression.expressions[0], valueType, ctx);
 }
 
 /**
- * Type of the value the getter returns. Elements have no prop to read the type
- * from, so the setter receives what the getter gives, as in svelte2tsx.
+ * Type of the value the getter returns, as svelte2tsx types the setter with
+ * `__sveltets_2_get_set_binding`. On a component, svelte2tsx then checks that
+ * value against the bound prop, and a `null` getter (for a readonly binding)
+ * infers it from the prop instead.
  */
 function buildGetterReturnType(
   getter: ESTree.Expression,
+  nullGetterType: string,
   ctx: Context,
 ): string | null {
   if (!ctx.isTypeScript()) {
@@ -493,8 +496,7 @@ function buildGetterReturnType(
     `const ${id} = (${ctx.code.slice(loc.start, loc.end)});`,
     "VariableDeclaration",
   );
-  // A `null` getter (for a readonly binding) leaves the parameter untyped.
-  return `(value: typeof ${id} extends () => infer R ? R : any) => void`;
+  return `(value: typeof ${id} extends () => infer R ? R : ${nullGetterType}) => void`;
 }
 
 /** Type of the value `bind:this` receives from the element or component. */
