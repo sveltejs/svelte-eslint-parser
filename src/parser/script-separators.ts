@@ -73,3 +73,24 @@ export function removeInsertedSemicolons(
   }
   tokens.length = length;
 }
+
+/**
+ * An error at a semicolon put between `<script>` blocks means that the
+ * previous script ends in the middle of a statement, as in `let a =`. Report
+ * it as such, since the parser's message would name the semicolon, which is
+ * not in the source code.
+ */
+export function fixInsertedSemicolonError(
+  error: unknown,
+  indexes: readonly number[],
+): void {
+  const e = error as { index?: unknown; pos?: unknown; message?: unknown };
+  if (!e || typeof e.message !== "string") {
+    return;
+  }
+  // Some parsers (e.g. @babel/eslint-parser) give `pos` instead of `index`.
+  const index = typeof e.index === "number" ? e.index : e.pos;
+  if (typeof index === "number" && indexes.includes(index)) {
+    e.message = "The script is unterminated";
+  }
+}
