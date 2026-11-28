@@ -94,10 +94,7 @@ function getRequireFromCwd(): NodeJS.Require | null {
 
 /** Checks if given path is linter path */
 function isLinterPath(p: string): boolean {
-  return (
-    // ESLint 6 and above
-    p.includes(`eslint${path.sep}lib${path.sep}linter${path.sep}linter.js`) ||
-    // ESLint 5
-    p.includes(`eslint${path.sep}lib${path.sep}linter.js`)
+  return p.includes(
+    `eslint${path.sep}lib${path.sep}linter${path.sep}linter.js`,
   );
 }

@@ -44,6 +44,8 @@ ESLint plugin for internationalization (i18n) in Svelte applications, offering h
 npm install --save-dev eslint svelte-eslint-parser
 ```
 
+This parser requires ESLint v10. When you use TypeScript, it also requires `@typescript-eslint/parser` v8.56.0 or later.
+
 ---
 
 ## Usage

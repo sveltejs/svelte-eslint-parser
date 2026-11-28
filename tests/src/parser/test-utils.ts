@@ -3,7 +3,6 @@ import fs from "fs";
 import semver from "semver";
 import type { Linter, Scope as ESLintScope } from "eslint";
 import { LinesAndColumns } from "../../../src/context/index.js";
-import type { Scope, ScopeManager, Variable } from "eslint-scope";
 import type * as TSESScopes from "@typescript-eslint/scope-manager";
 import type { SvelteNode } from "../../../src/ast/index.js";
 import type { StyleContext } from "../../../src/index.js";
@@ -365,7 +364,7 @@ export function astToJson(node: any): string {
 }
 
 export function scopeToJSON(
-  scopeManager: ScopeManager | TSESScopes.ScopeManager,
+  scopeManager: ESLintScope.ScopeManager | TSESScopes.ScopeManager,
   option?: { skipGlobalScope?: boolean },
 ): string {
   const globalScope = scopeManager.globalScope!;
@@ -491,7 +490,7 @@ export function selectorAstToJson(ast: any): string {
   }
 }
 
-function normalizeScope(scope: Scope | TSESScopes.Scope): any {
+function normalizeScope(scope: ESLintScope.Scope | TSESScopes.Scope): any {
   let variables = scope.variables as TSESScopes.Variable[];
   if (scope.type === "global") {
     // Exclude well-known variables as they do not need to be tested.
@@ -506,7 +505,7 @@ function normalizeScope(scope: Scope | TSESScopes.Scope): any {
   };
 }
 
-function normalizeVar(v: Variable | TSESScopes.Variable) {
+function normalizeVar(v: ESLintScope.Variable | TSESScopes.Variable) {
   return {
     name: v.name,
     identifiers: v.identifiers,

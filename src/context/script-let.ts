@@ -507,8 +507,8 @@ export class ScriptLetContext {
         const scope = result.getScope(decl as any);
         for (const variable of scope.variables) {
           for (const def of variable.defs) {
-            if (def.node === decl) {
-              def.node = param;
+            if (def.node === (decl as unknown)) {
+              def.node = param as never;
             }
           }
         }
@@ -704,7 +704,7 @@ export class ScriptLetContext {
         for (const v of scope.variables) {
           for (const def of v.defs) {
             if (def.node === fn) {
-              def.node = eachBlock;
+              def.node = eachBlock as never;
             }
           }
         }
@@ -1160,7 +1160,7 @@ export class ScriptLetContext {
           for (const v of scope.variables) {
             for (const def of v.defs) {
               if (def.node === fn) {
-                def.node = block;
+                def.node = block as never;
               }
             }
           }
@@ -1803,7 +1803,7 @@ function removeTypeNodeReferences(
   });
   const scope = result.getScope(tsAs as never);
   for (const reference of [...scope.references]) {
-    if (identifiers.has(reference.identifier)) {
+    if (identifiers.has(reference.identifier as ESTree.Identifier)) {
       removeReference(reference, scope);
     }
   }
