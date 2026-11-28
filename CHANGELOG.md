@@ -1,5 +1,21 @@
 # svelte-eslint-parser
 
+## 2.0.0-next.0
+
+### Major Changes
+
+- [#1108](https://github.com/sveltejs/svelte-eslint-parser/pull/1108) [`b545b6d`](https://github.com/sveltejs/svelte-eslint-parser/commit/b545b6d6b1c10d706f7f0f3fb350abc986e120db) Thanks [@baseballyama](https://github.com/baseballyama)! - feat!: drop support for old Node.js versions. The supported range is now `^22.13.0 || ^24.0.0 || >=26.0.0`.
+
+- [#1111](https://github.com/sveltejs/svelte-eslint-parser/pull/1111) [`907453f`](https://github.com/sveltejs/svelte-eslint-parser/commit/907453f808bd40ae98b712114d87b488b5607a04) Thanks [@baseballyama](https://github.com/baseballyama)! - feat!: remove the deprecated `declaration` property of `SvelteConstTag`. Use `declarations` instead.
+
+- [#1112](https://github.com/sveltejs/svelte-eslint-parser/pull/1112) [`42e7372`](https://github.com/sveltejs/svelte-eslint-parser/commit/42e73729eabb32868cc5c4e4009e89bd02335410) Thanks [@baseballyama](https://github.com/baseballyama)! - feat!: require ESLint 10. `eslint` is now a peer dependency (`^10.0.0`), and `espree`, `eslint-scope` and `eslint-visitor-keys` are updated to 11, 9 and 5.
+
+- [#1109](https://github.com/sveltejs/svelte-eslint-parser/pull/1109) [`8b3fff7`](https://github.com/sveltejs/svelte-eslint-parser/commit/8b3fff7cf623de082eee435a3e803fb24f5b5777) Thanks [@baseballyama](https://github.com/baseballyama)! - feat!: declare `@typescript-eslint/parser` (`^8.56.0`) and `typescript` (`>=4.8.4 <6.1.0`) as optional peer dependencies
+
+### Patch Changes
+
+- [#1122](https://github.com/sveltejs/svelte-eslint-parser/pull/1122) [`493500f`](https://github.com/sveltejs/svelte-eslint-parser/commit/493500fa7d2ea59346f8179452909fce9ba4bae1) Thanks [@baseballyama](https://github.com/baseballyama)! - chore: raise the minimum versions of `postcss` (`^8.5.34`), `postcss-selector-parser` (`^7.2.1`) and `semver` (`^7.8.6`)
+
 ## 1.13.0
 
 ### Minor Changes
