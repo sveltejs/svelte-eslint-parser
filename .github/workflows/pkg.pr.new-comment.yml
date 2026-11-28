@@ -12,7 +12,7 @@ permissions:
 
 jobs:
   build:
-    if: github.repository == 'sveltejs/svelte-eslint-parser'
+    if: github.repository == 'sveltejs/svelte-eslint-parser' && github.event.workflow_run.conclusion == 'success'
     name: Update comment
     runs-on: ubuntu-latest
     steps:
