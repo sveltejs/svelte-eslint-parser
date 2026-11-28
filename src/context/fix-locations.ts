@@ -143,18 +143,16 @@ export function fixErrorLocation(
 }
 
 /**
- * Get the index of the given line and column. The column may be 0-based (e.g.
- * hermes-eslint) or 1-based, and a 1-based column at the end of a line gives
- * the start of the next line, so keep the index in the given line.
+ * Get the index of the given line and column. ESLint takes `column` as 1-based,
+ * but some parsers (e.g. hermes-eslint) give a 0-based one. Read it as 1-based,
+ * which gives the index or the one before it, and keep it in the given line.
  */
 function getIndexInLine(
   locs: LinesAndColumns,
   line: number,
   column: number,
 ): number {
-  const index = locs.getIndexFromLoc({ line, column });
-  const nextLineStart = locs.getIndexFromLoc({ line: line + 1, column: 0 });
-  return index >= nextLineStart ? nextLineStart - 1 : index;
+  return locs.getIndexFromLoc({ line, column: Math.max(column - 1, 0) });
 }
 
 /**

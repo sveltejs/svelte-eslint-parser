@@ -2,4 +2,4 @@
 "svelte-eslint-parser": patch
 ---
 
-fix: report the right line for a parse error at the line break between same-line `<script>` blocks when the parser gives only a 1-based `column`
+fix: report the right location for a parse error from a parser that gives only `lineNumber` and a 1-based `column` when `<script>` blocks are on the same line
