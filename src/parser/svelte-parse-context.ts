@@ -110,7 +110,7 @@ export function hasRuneReference(scopeManager: ScopeManager): boolean {
   return scopeManager.globalScope!.through.some(
     (reference) =>
       runeSymbols.includes(reference.identifier.name) &&
-      !isInType(reference.identifier) &&
+      !isInType(reference.identifier as ESTree.Identifier) &&
       !isStoreSubscription(reference.identifier.name, topScope),
   );
 }

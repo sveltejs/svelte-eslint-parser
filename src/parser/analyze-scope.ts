@@ -94,9 +94,9 @@ export function analyzeReactiveScope(
           type: "ComputedVariable" as "Variable",
           node: node as any,
           parent: parent as any,
-          name: reference.identifier,
+          name: reference.identifier as ESTree.Identifier,
         },
-        (a, b) => a.node.range[0] - b.node.range[0],
+        (a, b) => a.node.range![0] - b.node.range![0],
       );
       addVariable(referenceScope.variables, variable);
       referenceScope.set.set(name, variable);
@@ -371,7 +371,7 @@ export function analyzeSnippetsScope(
       if (!variable) continue;
       const defIds = variable.defs.map((d) => d.name);
       const refs = variable.references.filter(
-        (id) => !defIds.includes(id.identifier),
+        (id) => !defIds.includes(id.identifier as ESTree.Identifier),
       );
 
       if (refs.length <= 0) {
@@ -435,10 +435,10 @@ function addVirtualReference(
     scope as eslintScope.Scope,
     (readWrite.write ? 0x1 : 0) | (readWrite.read ? 0x2 : 0),
     null,
-    false,
+    null,
     false,
     // for backwards compatibility
-    null as any,
+    null as never,
   );
   (reference as any).svelteVirtualReference = true;
   reference.from = scope;
