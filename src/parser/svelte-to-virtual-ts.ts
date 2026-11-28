@@ -51,6 +51,7 @@ export function svelteToVirtualTypeScript(
         svelteParseContext,
         instanceScriptRange: getInstanceScriptRange(template.svelteAst),
         instanceGenerics: ctx.instanceGenerics,
+        insertedSemicolonIndexes: scripts.insertedSemicolonIndexes,
       },
     );
     return tsCtx.script;
