@@ -30,6 +30,9 @@ export function parseTemplate(
     };
     const svelteAst = parse(code, options) as never as
       Compiler.Root | SvAST.AstLegacy;
+    if ("comments" in svelteAst) {
+      ctx.scriptLet.setTemplateComments(svelteAst.comments);
+    }
     const ast = convertSvelteRoot(svelteAst, ctx);
 
     return {

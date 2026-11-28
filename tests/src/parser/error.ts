@@ -131,4 +131,33 @@ describe("Check for the error location of script blocks on the same line.", () =
     }
     assert.fail("Expected error");
   });
+
+  it("with the location at the end of the first line of the message", () => {
+    // Like hermes-eslint: a 0-based column, and a code frame after the location.
+    const parser = {
+      parse(virtualCode: string) {
+        const lines = virtualCode.slice(0, errorIndex).split("\n");
+        const lineNumber = lines.length;
+        const column = lines[lines.length - 1].length;
+        throw Object.assign(
+          new SyntaxError(
+            `Unexpected token (${lineNumber}:${column})\nlet a = 1 +* 2\n           ^`,
+          ),
+          { lineNumber, column },
+        );
+      },
+    };
+    try {
+      parseForESLint(code, { parser });
+    } catch (e: any) {
+      assert.strictEqual(e.lineNumber, 1);
+      assert.strictEqual(e.column, errorIndex);
+      assert.strictEqual(
+        e.message,
+        `Unexpected token (1:${errorIndex})\nlet a = 1 +* 2\n           ^`,
+      );
+      return;
+    }
+    assert.fail("Expected error");
+  });
 });

@@ -74,9 +74,12 @@ export function parseStyleContext(
     default:
       return { status: "unknown-lang", sourceLang };
   }
-  const styleCode = ctx.code.slice(
-    styleElement.startTag.range[1],
-    styleElement.endTag.range[0],
+  const styleCode = blankTopLevelCDOAndCDC(
+    ctx.code.slice(
+      styleElement.startTag.range[1],
+      styleElement.endTag.range[0],
+    ),
+    sourceLang === "scss",
   );
   try {
     sourceAst = parseFn(styleCode, {
@@ -190,6 +193,89 @@ export function styleSelectorNodeLoc(
         : undefined,
     end: node.source?.end,
   };
+}
+
+/**
+ * Replaces `<!--` and `-->` between top-level rules with spaces, so that
+ * PostCSS can parse the style source. In CSS these are single tokens (CDO and
+ * CDC) that are ignored at the top level of a stylesheet, and the text between
+ * them is normal CSS. Svelte's own CSS parser skips them in the same places.
+ * See https://drafts.csswg.org/css-syntax-3/#consume-stylesheet-contents
+ */
+function blankTopLevelCDOAndCDC(code: string, isSCSS: boolean): string {
+  if (!code.includes("<!--") && !code.includes("-->")) {
+    return code;
+  }
+  const len = code.length;
+  const ranges: [number, number][] = [];
+  let depth = 0;
+  let atRuleStart = true;
+  let index = 0;
+  while (index < len) {
+    const c = code[index];
+    if (/\s/u.test(c)) {
+      index++;
+    } else if (code.startsWith("/*", index)) {
+      const end = code.indexOf("*/", index + 2);
+      index = end === -1 ? len : end + 2;
+    } else if (isSCSS && code.startsWith("//", index)) {
+      while (index < len && !/[\n\f\r]/u.test(code[index])) {
+        index++;
+      }
+    } else if (
+      depth === 0 &&
+      atRuleStart &&
+      (code.startsWith("<!--", index) || code.startsWith("-->", index))
+    ) {
+      const end = index + (c === "<" ? 4 : 3);
+      ranges.push([index, end]);
+      index = end;
+    } else {
+      atRuleStart = false;
+      if (c === '"' || c === "'") {
+        index++;
+        while (index < len && code[index] !== c) {
+          index += code[index] === "\\" ? 2 : 1;
+        }
+        index++;
+      } else if (c === "\\") {
+        index += 2;
+      } else if (isUnquotedURLStart(code, index)) {
+        // e.g. `url(http://example.com)`. `//` is not a comment here.
+        const end = code.indexOf(")", index);
+        index = end === -1 ? len : end + 1;
+      } else {
+        if (c === "{") {
+          depth++;
+        } else if (c === "}" || c === ";") {
+          if (c === "}" && depth > 0) depth--;
+          atRuleStart = depth === 0;
+        }
+        index++;
+      }
+    }
+  }
+  if (ranges.length === 0) {
+    return code;
+  }
+  let result = "";
+  let last = 0;
+  for (const [start, end] of ranges) {
+    result += code.slice(last, start) + " ".repeat(end - start);
+    last = end;
+  }
+  return result + code.slice(last);
+}
+
+const RE_UNQUOTED_URL_START = /url\(\s*(?![\s"'])/iuy;
+
+/** Checks whether an unquoted `url(...)` starts at the given index. */
+function isUnquotedURLStart(code: string, index: number): boolean {
+  if (index > 0 && /[\w-]/u.test(code[index - 1])) {
+    return false;
+  }
+  RE_UNQUOTED_URL_START.lastIndex = index;
+  return RE_UNQUOTED_URL_START.test(code);
 }
 
 /**

@@ -52,7 +52,11 @@ import {
 import { getGlobalsForSvelte, getGlobalsForSvelteScript } from "./globals.js";
 import type { NormalizedParserOptions } from "./parser-options.js";
 import { isTypeScript, normalizeParserOptions } from "./parser-options.js";
-import { getFragmentFromRoot, getInstanceScriptRange } from "./compat.js";
+import {
+  getFragmentFromRoot,
+  getInstanceFromRoot,
+  getInstanceScriptRange,
+} from "./compat.js";
 import {
   hasRuneReference,
   hasTopLevelAwait,
@@ -230,6 +234,7 @@ function parseAsSvelte(
   const scriptElements = ast.body.filter(
     (b): b is SvelteScriptElement => b.type === "SvelteScriptElement",
   );
+  const instance = getInstanceFromRoot(resultTemplate.svelteAst);
   for (let index = 0; index < scriptElements.length; index++) {
     const body = scriptElements[index];
     let statement = statements[0];
@@ -245,16 +250,7 @@ function parseAsSvelte(
       statements.shift();
       statement = statements[0];
     }
-    if (
-      !body.startTag.attributes.some(
-        (attr) =>
-          attr.type === "SvelteAttribute" &&
-          attr.key.name === "context" &&
-          attr.value.length === 1 &&
-          attr.value[0].type === "SvelteLiteral" &&
-          attr.value[0].value === "module",
-      )
-    ) {
+    if (body.range[0] === instance?.start) {
       analyzePropsScope(body, resultScript.scopeManager!, svelteParseContext);
     }
   }

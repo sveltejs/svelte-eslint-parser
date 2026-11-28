@@ -1,7 +1,6 @@
 import type * as ESTree from "estree";
 import type { SvelteRenderTag } from "../../ast/index.js";
 import type { Context } from "../../context/index.js";
-import { getWithLoc } from "./common.js";
 import type * as Compiler from "../svelte-ast-types-for-v5.js";
 
 /** Convert for RenderTag */
@@ -16,9 +15,8 @@ export function convertRenderTag(
     parent,
     ...ctx.getConvertLocation(node),
   };
-  const callRange = getWithLoc(node.expression);
-  ctx.scriptLet.addExpressionFromRange(
-    [callRange.start, callRange.end],
+  ctx.scriptLet.addExpression(
+    node.expression,
     mustache,
     null,
     (

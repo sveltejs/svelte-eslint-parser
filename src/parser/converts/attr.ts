@@ -299,13 +299,22 @@ function buildAttributeType(
     return null;
   }
   const componentPropsType = getComponentPropsType(element, ctx);
+  // Look the prop up in each member of a union separately: `keyof` of the whole
+  // union keeps only the keys every member has, so it drops a prop only some
+  // members declare, and TypeScript gives up on it as too complex (TS2590) for
+  // unions of large props such as HTML attributes.
   return conditional({
-    check: `'${attrName}'`,
-    extends: `infer PROP`,
+    check: componentPropsType,
+    extends: `infer MEMBER`,
     true: conditional({
-      check: `PROP`,
-      extends: `keyof ${componentPropsType}`,
-      true: `${componentPropsType}[PROP]`,
+      check: `MEMBER`,
+      extends: `unknown`,
+      true: conditional({
+        check: `'${attrName}'`,
+        extends: `keyof MEMBER`,
+        true: `MEMBER['${attrName}']`,
+        false: `never`,
+      }),
       false: `never`,
     }),
     false: `never`,
@@ -430,8 +439,8 @@ function convertBindingDirective(
 }
 
 /**
- * Function bindings are typed as a setter of the bound value: the bound prop on
- * a component, or the element or component instance for `bind:this`. The
+ * Function bindings are typed as a setter of the bound value: what the getter
+ * returns, or the element or component instance for `bind:this`. The
  * assertion applies to the whole `getter, setter` sequence, so it contextually
  * types only the setter, whose parameter receives the value.
  */
@@ -457,14 +466,39 @@ function buildFunctionBindingsType(
     return instanceType && `(value: ${instanceType} | null) => void`;
   }
   if (element.kind !== "component") {
-    return null;
+    return buildBoundValueType(expression.expressions[0], "any", ctx);
   }
   const propType = buildAttributeType(element, node.name, ctx);
   // An undeclared prop resolves to `never`, which would poison the parameter.
-  return (
-    propType &&
-    `(value: [${propType}] extends [never] ? any : (${propType})) => void`
+  const contextualType = propType
+    ? `[${propType}] extends [never] ? any : (${propType})`
+    : "any";
+  return buildBoundValueType(expression.expressions[0], contextualType, ctx);
+}
+
+/**
+ * svelte2tsx compiles a function binding to
+ * `__sveltets_2_get_set_binding(get, set)`, which returns `T` and gives `T` to
+ * the setter, in a place whose contextual type is the bound prop. `T` is
+ * inferred the same way here, so it is what the getter returns, with literal
+ * types kept when the prop has them, or the prop's type for a `null` getter
+ * (for a readonly binding).
+ */
+function buildBoundValueType(
+  getter: ESTree.Expression,
+  contextualType: string,
+  ctx: Context,
+): string | null {
+  if (!ctx.isTypeScript()) {
+    return null;
+  }
+  const loc = getWithLoc(getter);
+  const id = ctx.scriptLet.generateUniqueId("boundValue");
+  ctx.scriptLet.addTypeOnlyStatement(
+    `const ${id} = (<T,>(get: (() => T) | null | undefined, set: (value: T) => void): T => null!)((${ctx.code.slice(loc.start, loc.end)}), (_) => {}) satisfies (${contextualType});`,
+    "VariableDeclaration",
   );
+  return `(value: typeof ${id}) => void`;
 }
 
 /** Type of the value `bind:this` receives from the element or component. */

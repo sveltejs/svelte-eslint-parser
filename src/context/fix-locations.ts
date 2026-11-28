@@ -118,11 +118,16 @@ export function fixErrorLocation(
   const loc = ctx.getLocFromIndex(index);
   const lineNumber = e.lineNumber + loc.line - virtualLoc.line;
   const column = e.column + loc.column - virtualLoc.column;
-  // Some parsers (e.g. @babel/eslint-parser) put the location at the end of
-  // the message, like `Unexpected token (2:27)`.
+  // Some parsers put the location at the end of the first line of the message,
+  // like `Unexpected token (2:27)` (e.g. @babel/eslint-parser), or
+  // `';' expected (2:27)` followed by a code frame (e.g. hermes-eslint).
   const locSuffix = ` (${e.lineNumber}:${e.column})`;
-  if (typeof e.message === "string" && e.message.endsWith(locSuffix)) {
-    e.message = `${e.message.slice(0, -locSuffix.length)} (${lineNumber}:${column})`;
+  if (typeof e.message === "string") {
+    const firstLineEnd = e.message.indexOf("\n");
+    const end = firstLineEnd === -1 ? e.message.length : firstLineEnd;
+    if (e.message.slice(0, end).endsWith(locSuffix)) {
+      e.message = `${e.message.slice(0, end - locSuffix.length)} (${lineNumber}:${column})${e.message.slice(end)}`;
+    }
   }
   // Define own properties, since some parsers (e.g. typescript-eslint) only
   // have getters for them.

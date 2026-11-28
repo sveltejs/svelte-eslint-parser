@@ -1,0 +1,203 @@
+{
+  "status": "success",
+  "sourceLang": "scss",
+  "sourceAst": {
+    "raws": {
+      "semicolon": false,
+      "after": "\n     \n"
+    },
+    "type": "root",
+    "nodes": [
+      {
+        "raws": {
+          "before": "\n  ",
+          "inline": true,
+          "left": " ",
+          "right": "",
+          "text": "legacy <!-- start"
+        },
+        "type": "comment",
+        "text": "legacy <!-- start",
+        "source": {
+          "end": {
+            "line": 4,
+            "column": 22,
+            "offset": 68
+          },
+          "inputId": 0,
+          "start": {
+            "line": 4,
+            "column": 3,
+            "offset": 48
+          }
+        }
+      },
+      {
+        "raws": {
+          "before": "\n  ",
+          "between": " ",
+          "semicolon": true,
+          "after": "\n  "
+        },
+        "type": "rule",
+        "nodes": [
+          {
+            "raws": {
+              "before": "\n    ",
+              "between": ": "
+            },
+            "type": "decl",
+            "prop": "color",
+            "value": "red",
+            "source": {
+              "end": {
+                "line": 6,
+                "column": 15,
+                "offset": 91
+              },
+              "inputId": 0,
+              "start": {
+                "line": 6,
+                "column": 5,
+                "offset": 80
+              }
+            }
+          }
+        ],
+        "selector": ".a",
+        "source": {
+          "end": {
+            "line": 7,
+            "column": 3,
+            "offset": 95
+          },
+          "inputId": 0,
+          "start": {
+            "line": 5,
+            "column": 3,
+            "offset": 71
+          }
+        },
+        "lastEach": 1,
+        "indexes": {}
+      },
+      {
+        "raws": {
+          "before": "\n  ",
+          "inline": true,
+          "left": " ",
+          "right": "",
+          "text": "end -->"
+        },
+        "type": "comment",
+        "text": "end -->",
+        "source": {
+          "end": {
+            "line": 8,
+            "column": 12,
+            "offset": 108
+          },
+          "inputId": 0,
+          "start": {
+            "line": 8,
+            "column": 3,
+            "offset": 98
+          }
+        }
+      },
+      {
+        "raws": {
+          "before": "\n  ",
+          "between": "",
+          "afterName": " "
+        },
+        "type": "atrule",
+        "name": "import",
+        "params": "url(http://example.com/x.css)",
+        "source": {
+          "end": {
+            "line": 9,
+            "column": 40,
+            "offset": 149
+          },
+          "inputId": 0,
+          "start": {
+            "line": 9,
+            "column": 3,
+            "offset": 111
+          }
+        }
+      },
+      {
+        "raws": {
+          "before": "\n      \n  ",
+          "between": " ",
+          "semicolon": true,
+          "after": "\n  "
+        },
+        "type": "rule",
+        "nodes": [
+          {
+            "raws": {
+              "before": "\n    ",
+              "between": ": "
+            },
+            "type": "decl",
+            "prop": "color",
+            "value": "blue",
+            "source": {
+              "end": {
+                "line": 12,
+                "column": 16,
+                "offset": 180
+              },
+              "inputId": 0,
+              "start": {
+                "line": 12,
+                "column": 5,
+                "offset": 168
+              }
+            }
+          }
+        ],
+        "selector": ".b",
+        "source": {
+          "end": {
+            "line": 13,
+            "column": 3,
+            "offset": 184
+          },
+          "inputId": 0,
+          "start": {
+            "line": 11,
+            "column": 3,
+            "offset": 159
+          }
+        },
+        "lastEach": 1,
+        "indexes": {}
+      }
+    ],
+    "source": {
+      "end": {
+        "line": 15,
+        "column": 1,
+        "offset": 191
+      },
+      "inputId": 0,
+      "start": {
+        "line": 3,
+        "column": 20,
+        "offset": 45
+      }
+    },
+    "lastEach": 1,
+    "indexes": {},
+    "inputs": [
+      {
+        "hasBOM": false,
+        "css": "\n  // legacy <!-- start\n  .a {\n    color: red;\n  }\n  // end -->\n  @import url(http://example.com/x.css);\n      \n  .b {\n    color: blue;\n  }\n     \n"
+      }
+    ]
+  }
+}

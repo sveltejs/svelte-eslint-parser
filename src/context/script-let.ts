@@ -26,6 +26,15 @@ import { getKeys, traverseNodes, getNodes } from "../traverse.js";
 import { UniqueIdGenerator } from "./unique.js";
 import { fixLocations } from "./fix-locations.js";
 
+/** A comment that the Svelte compiler found in the template. */
+type TemplateComment = { type: string; start: number; end: number };
+
+/** The comments of the template, by their start and by their end. */
+type TemplateComments = {
+  byStart: Map<number, TemplateComment>;
+  byEnd: Map<number, TemplateComment>;
+};
+
 type TSAsExpression = {
   type: "TSAsExpression";
   expression: ESTree.Expression;
@@ -66,6 +75,16 @@ type ScriptLetRestoreCallbackOption = {
 };
 
 /**
+ * Get the end of a comment. For a line comment, include the line break after
+ * it, so that the code added after the range is not commented out.
+ */
+function getCommentEnd(type: string, end: number, code: string): number {
+  return type === "Line" && /^[\n\r\u2028\u2029]/u.test(code[end] ?? "")
+    ? end + 1
+    : end;
+}
+
+/**
  * Get node range
  */
 function getNodeRange(
@@ -83,6 +102,7 @@ function getNodeRange(
         trailingComments?: Comment[];
       },
   code: string,
+  templateComments: TemplateComments,
 ): [number, number] {
   const loc =
     "range" in node
@@ -112,11 +132,10 @@ function getNodeRange(
     }
   }
   if (node.trailingComments) {
-    const commentEnd = getWithLoc(
-      node.trailingComments[node.trailingComments.length - 1],
-    ).end;
+    const lastComment = node.trailingComments[node.trailingComments.length - 1];
+    const commentEnd = getWithLoc(lastComment).end;
     if (end < commentEnd) {
-      end = commentEnd;
+      end = getCommentEnd(lastComment.type, commentEnd, code);
 
       // Extract the number of parentheses after the node.
       let trailingStart = loc.end;
@@ -130,21 +149,49 @@ function getNodeRange(
     }
   }
 
+  // Svelte may not attach the comments around the expression to it
+  // (sveltejs/svelte#19388). Skip names in a start tag, such as `bind:value`.
+  if (code[loc.start - 1] !== "<" && code[loc.start - 1] !== ":") {
+    for (let index = start - 1, parenCount = 0; index >= 0; index--) {
+      if (code[index] === "(") {
+        parenCount++;
+      } else if (code[index].trim()) {
+        const comment = templateComments.byEnd.get(index + 1);
+        if (!comment) break;
+        start = comment.start;
+        index = start;
+        openingParenCount += parenCount;
+        parenCount = 0;
+      }
+    }
+    for (let index = end, parenCount = 0; index < code.length; index++) {
+      if (code[index] === ")") {
+        parenCount++;
+      } else if (code[index].trim()) {
+        const comment = templateComments.byStart.get(index);
+        if (!comment) break;
+        end = getCommentEnd(comment.type, comment.end, code);
+        index = end - 1;
+        closingParenCount += parenCount;
+        parenCount = 0;
+      }
+    }
+  }
+
   // Adjust the range so that the parentheses match up.
-  if (openingParenCount < closingParenCount) {
-    for (; openingParenCount < closingParenCount && start >= 0; start--) {
-      const c = code[start].trim();
-      if (c) continue;
-      if (c !== "(") break;
-      openingParenCount++;
-    }
-  } else if (openingParenCount > closingParenCount) {
-    for (; openingParenCount > closingParenCount && end < code.length; end++) {
-      const c = code[end].trim();
-      if (c) continue;
-      if (c !== ")") break;
-      closingParenCount++;
-    }
+  while (openingParenCount < closingParenCount) {
+    let index = start - 1;
+    while (index >= 0 && !code[index].trim()) index--;
+    if (code[index] !== "(") break;
+    start = index;
+    openingParenCount++;
+  }
+  while (openingParenCount > closingParenCount) {
+    let index = end;
+    while (index < code.length && !code[index].trim()) index++;
+    if (code[index] !== ")") break;
+    end = index + 1;
+    closingParenCount++;
   }
 
   return [start, end];
@@ -191,20 +238,43 @@ export class ScriptLetContext {
 
   private currentScriptScopeKind: "render" | "snippet" = "render";
 
+  private readonly templateComments: TemplateComments = {
+    byStart: new Map(),
+    byEnd: new Map(),
+  };
+
   public constructor(ctx: Context) {
     this.script = ctx.sourceCode.scripts;
     this.ctx = ctx;
+  }
+
+  /** Set the comments that the Svelte compiler found in the template. */
+  public setTemplateComments(comments: readonly TemplateComment[]): void {
+    for (const comment of comments) {
+      this.templateComments.byStart.set(comment.start, comment);
+      this.templateComments.byEnd.set(comment.end, comment);
+    }
+  }
+
+  /** Get the range of a node, with its comments and parentheses. */
+  private getNodeRange(
+    node: Parameters<typeof getNodeRange>[0],
+  ): [number, number] {
+    return getNodeRange(node, this.ctx.code, this.templateComments);
   }
 
   /**
    * Emit a statement that only feeds type checking, such as the write a binding
    * performs. It leaves no tokens, nodes, or references behind.
    */
-  public addTypeOnlyStatement(code: string): void {
+  public addTypeOnlyStatement(
+    code: string,
+    nodeType: StatementNodeType = "ExpressionStatement",
+  ): void {
     this.appendScriptWithoutOffset(
       code,
       this.currentScriptScopeKind,
-      "ExpressionStatement",
+      nodeType,
       (node, tokens, comments, result) => {
         tokens.length = 0;
         comments.length = 0;
@@ -219,11 +289,11 @@ export class ScriptLetContext {
     typing?: string | null,
     ...callbacks: ScriptLetCallback<E>[]
   ): ScriptLetCallback<E>[] {
-    const range = getNodeRange(expression, this.ctx.code);
+    const range = this.getNodeRange(expression);
     return this.addExpressionFromRange(range, parent, typing, ...callbacks);
   }
 
-  public addExpressionFromRange<E extends ESTree.Expression>(
+  private addExpressionFromRange<E extends ESTree.Expression>(
     range: [number, number],
     parent: SvelteNode,
     typing?: string | null,
@@ -287,7 +357,7 @@ export class ScriptLetContext {
     parent: SvelteNode,
     ...callbacks: ScriptLetCallback<ObjectShorthandProperty>[]
   ): void {
-    const range = getNodeRange(identifier, this.ctx.code);
+    const range = this.getNodeRange(identifier);
     const part = this.ctx.code.slice(...range);
     this.appendScript(
       `({${part}});`,
@@ -328,8 +398,8 @@ export class ScriptLetContext {
         ? // Do not use the end of `init` or of the declarator.
           // `init` does not include wrapping parentheses, and the declarator end can include trailing comments.
           // Take everything up to the closing `}` of the tag.
-          [getNodeRange(declarator.id, this.ctx.code)[0], parent.range[1] - 1]
-        : getNodeRange(declarator, this.ctx.code);
+          [this.getNodeRange(declarator.id)[0], parent.range[1] - 1]
+        : this.getNodeRange(declarator);
     const part = this.ctx.code.slice(...range);
     this.appendScript(
       `const ${part};`,
@@ -370,7 +440,7 @@ export class ScriptLetContext {
     parent: SvelteNode,
     ...callbacks: ScriptLetCallback<D>[]
   ): ScriptLetCallback<D>[] {
-    const range = getNodeRange(declaration, this.ctx.code);
+    const range = this.getNodeRange(declaration);
     const part = this.ctx.code.slice(...range);
     this.appendScript(
       `${part};`,
@@ -513,7 +583,7 @@ export class ScriptLetContext {
     ifBlock: SvelteIfBlock,
     callback: ScriptLetCallback<ESTree.Expression>,
   ): { beginElse: () => void } {
-    const range = getNodeRange(expression, this.ctx.code);
+    const range = this.getNodeRange(expression);
     const part = this.ctx.code.slice(...range);
     const restore = this.appendScript(
       `if(${part}){`,
@@ -576,9 +646,9 @@ export class ScriptLetContext {
     // index. The `&&` tells TypeScript the body may not run, so assignments in
     // the body do not narrow the code after the block.
     const isTS = this.ctx.isTypeScript();
-    const exprRange = getNodeRange(expression, this.ctx.code);
+    const exprRange = this.getNodeRange(expression);
     const exprText = this.ctx.code.slice(...exprRange);
-    const ctxRange = context && getNodeRange(context, this.ctx.code);
+    const ctxRange = context && this.getNodeRange(context);
     // Wrap the expression in parentheses, so that a sequence expression such
     // as `(a, b)` is passed as one argument.
     let source = "Array.from((";
@@ -770,7 +840,7 @@ export class ScriptLetContext {
     callback: (id: ESTree.Identifier, params: ESTree.Pattern[]) => void,
   ): void {
     const scopeKind = kind || this.currentScriptScopeKind;
-    const idRange = getNodeRange(id, this.ctx.code);
+    const idRange = this.getNodeRange(id);
     // Type annotations are spliced in after the parameters they type. Each one
     // shifts what follows it, so record where it lands in the virtual code.
     const insertions: { start: number; end: number }[] = [];
@@ -1019,7 +1089,7 @@ export class ScriptLetContext {
         .map((d) => {
           return {
             ...d,
-            range: getNodeRange(d.node, this.ctx.code),
+            range: this.getNodeRange(d.node),
           };
         })
         .sort((a, b) => {
@@ -1505,7 +1575,7 @@ export class ScriptLetContext {
     return "async ";
   }
 
-  private generateUniqueId(base: string) {
+  public generateUniqueId(base: string): string {
     return this.unique.generate(
       base,
       this.ctx.code,
