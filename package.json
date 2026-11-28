@@ -50,10 +50,18 @@
     "version:ci": "IN_VERSION_CI_SCRIPT=true pnpm run build:meta && changeset version"
   },
   "peerDependencies": {
-    "svelte": "^3.37.0 || ^4.0.0 || ^5.0.0"
+    "@typescript-eslint/parser": "^8.74.0",
+    "svelte": "^3.37.0 || ^4.0.0 || ^5.0.0",
+    "typescript": ">=4.8.4 <6.1.0"
   },
   "peerDependenciesMeta": {
+    "@typescript-eslint/parser": {
+      "optional": true
+    },
     "svelte": {
+      "optional": true
+    },
+    "typescript": {
       "optional": true
     }
   },
@@ -79,10 +87,10 @@
     "@types/estree": "^1.0.9",
     "@types/node": "^26.0.0",
     "@types/semver": "^7.7.1",
-    "@typescript-eslint/parser": "^8.56.0",
-    "@typescript-eslint/scope-manager": "^8.56.0",
-    "@typescript-eslint/types": "^8.56.0",
-    "@typescript-eslint/visitor-keys": "^8.56.0",
+    "@typescript-eslint/parser": "^8.74.0",
+    "@typescript-eslint/scope-manager": "^8.74.0",
+    "@typescript-eslint/types": "^8.74.0",
+    "@typescript-eslint/visitor-keys": "^8.74.0",
     "benchmark": "^2.1.4",
     "c8": "^12.0.0",
     "esbuild": "^0.28.0",
@@ -109,7 +117,7 @@
     "svelte2tsx": "^0.7.45",
     "tsx": "^4.20.5",
     "typescript": "~6.0.3",
-    "typescript-eslint": "^8.56.0",
+    "typescript-eslint": "^8.74.0",
     "typescript-eslint-parser-for-extra-files": "^0.9.0"
   },
   "publishConfig": {
