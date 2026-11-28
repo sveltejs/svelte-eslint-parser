@@ -25,6 +25,10 @@ export function svelteToVirtualTypeScript(
       project: null,
       projectService: undefined,
       EXPERIMENTAL_useProjectService: undefined,
+      // Without a project the root dir is unused, but typescript-estree still
+      // infers one and throws when several `eslint.config.js` files registered
+      // candidates (e.g. with the fallback options used before the first parse).
+      tsconfigRootDir: parserOptions.tsconfigRootDir ?? process.cwd(),
     };
 
     const ctx = new Context(content, inner);
