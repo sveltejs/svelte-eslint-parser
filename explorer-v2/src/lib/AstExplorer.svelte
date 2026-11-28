@@ -6,10 +6,10 @@
 	import * as svelteEslintParser from 'svelte-eslint-parser';
 	import { processJsonValue } from './scripts/json';
 
-	let options = {
+	let options = $state({
 		showLocations: false
-	};
-	let svelteValue = `<script>
+	});
+	let svelteValue = $state(`<script>
     let a = 1;
     let b = 2;
 <\/script>
@@ -17,18 +17,19 @@
 <input type="number" bind:value={a}>
 <input type="number" bind:value={b}>
 
-<p>{a} + {b} = {a + b}</p>`;
-	let astJson = {};
+<p>{a} + {b} = {a + b}</p>`);
+	let astJson = $state.raw({});
 	let modeEditor = '';
-	let time = '';
+	let time = $state('');
 
-	let jsonEditor, sourceEditor;
+	let jsonEditor = $state();
+	let sourceEditor = $state();
 
-	$: hasLangTs = /lang\s*=\s*(?:"ts"|ts|'ts'|"typescript"|typescript|'typescript')/u.test(
-		svelteValue
+	const hasLangTs = $derived(
+		/lang\s*=\s*(?:"ts"|ts|'ts'|"typescript"|typescript|'typescript')/u.test(svelteValue)
 	);
 
-	let tsParser = undefined;
+	let tsParser = $state.raw(undefined);
 	function setTSParser(parser) {
 		if (typeof window !== 'undefined') {
 			if (!window.process) {
@@ -40,15 +41,15 @@
 		}
 		tsParser = parser;
 	}
-	$: {
+	$effect(() => {
 		if (hasLangTs && !tsParser) {
 			import('@typescript-eslint/parser').then(setTSParser);
 		}
-	}
+	});
 
-	$: {
+	$effect(() => {
 		refresh(options, svelteValue, tsParser);
-	}
+	});
 
 	function refresh(options, svelteValue, tsParser) {
 		let ast;
@@ -203,16 +204,16 @@
 			bind:this={sourceEditor}
 			bind:code={svelteValue}
 			language="svelte"
-			on:focusEditorText={() => handleFocus('source')}
-			on:changeCursorPosition={(e) => handleCursor(e.detail, 'source')}
+			onfocuseditortext={() => handleFocus('source')}
+			onchangecursorposition={(e) => handleCursor(e, 'source')}
 		/>
 		<MonacoEditor
 			bind:this={jsonEditor}
 			code={astJson.json}
 			language="json"
 			readOnly
-			on:focusEditorText={() => handleFocus('json')}
-			on:changeCursorPosition={(e) => handleCursor(e.detail, 'json')}
+			onfocuseditortext={() => handleFocus('json')}
+			onchangecursorposition={(e) => handleCursor(e, 'json')}
 		/>
 	</div>
 </div>

@@ -24,16 +24,18 @@
 
 <p>{a} + {b} + {c} = {a + b + c}</p>`;
 
-	const state = deserializeState(
+	const initialState = deserializeState(
 		(typeof window !== 'undefined' && window.location.hash.slice(1)) || ''
 	);
-	let code = state.code || DEFAULT_CODE;
-	let rules = state.rules || Object.assign({}, DEFAULT_RULES_CONFIG);
-	let messages = [];
-	let time = '';
+	let code = $state(initialState.code || DEFAULT_CODE);
+	let rules = $state.raw(initialState.rules || Object.assign({}, DEFAULT_RULES_CONFIG));
+	let messages = $state.raw([]);
+	let time = $state('');
 
-	$: hasLangTs = /lang\s*=\s*(?:"ts"|ts|'ts'|"typescript"|typescript|'typescript')/u.test(code);
-	let tsParser = undefined;
+	const hasLangTs = $derived(
+		/lang\s*=\s*(?:"ts"|ts|'ts'|"typescript"|typescript|'typescript')/u.test(code)
+	);
+	let tsParser = $state.raw(undefined);
 	function setTSParser(parser) {
 		if (typeof window !== 'undefined') {
 			if (!window.process) {
@@ -45,25 +47,23 @@
 		}
 		tsParser = parser;
 	}
-	$: {
+	$effect(() => {
 		if (hasLangTs && !tsParser) {
 			import('@typescript-eslint/parser').then(setTSParser);
 		}
-	}
+	});
 
-	$: serializedString = (() => {
+	const serializedString = $derived.by(() => {
 		const serializeCode = DEFAULT_CODE === code ? undefined : code;
 		const serializeRules = equalsRules(DEFAULT_RULES_CONFIG, rules) ? undefined : rules;
 		return serializeState({
 			code: serializeCode,
 			rules: serializeRules
 		});
-	})();
-	$: {
-		if (typeof window !== 'undefined') {
-			window.location.replace(`#${serializedString}`);
-		}
-	}
+	});
+	$effect(() => {
+		window.location.replace(`#${serializedString}`);
+	});
 	onMount(() => {
 		if (typeof window !== 'undefined') {
 			window.addEventListener('hashchange', onUrlHashChange);
@@ -74,17 +74,17 @@
 			window.removeEventListener('hashchange', onUrlHashChange);
 		}
 	});
-	function onLintedResult(evt) {
-		messages = evt.detail.messages;
-		time = `${evt.detail.time}ms`;
+	function onLintedResult(result) {
+		messages = result.messages;
+		time = `${result.time}ms`;
 	}
 	function onUrlHashChange() {
 		const newSerializedString =
 			(typeof window !== 'undefined' && window.location.hash.slice(1)) || '';
 		if (newSerializedString !== serializedString) {
-			const state = deserializeState(newSerializedString);
-			code = state.code || DEFAULT_CODE;
-			rules = state.rules || Object.assign({}, DEFAULT_RULES_CONFIG);
+			const newState = deserializeState(newSerializedString);
+			code = newState.code || DEFAULT_CODE;
+			rules = newState.rules || Object.assign({}, DEFAULT_RULES_CONFIG);
 		}
 	}
 
@@ -110,7 +110,7 @@
 		<span style:margin-left="16px">{time}</span>
 	</div>
 	<div class="playground-content">
-		<RulesSettings bind:rules class="rules-settings" />
+		<RulesSettings bind:rules />
 		<div class="editor-content">
 			<ESLintEditor
 				{linter}
@@ -130,8 +130,7 @@
 					},
 					rules
 				}}
-				class="eslint-playground"
-				on:result={onLintedResult}
+				onresult={onLintedResult}
 			/>
 			<div class="messages">
 				<ol>

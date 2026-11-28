@@ -2,8 +2,14 @@ export const DARK_THEME_NAME = 'github-dark';
 export const LIGHT_THEME_NAME = 'github-light';
 
 import { browser } from '$app/environment';
+import EditorWorker from 'monaco-editor/editor/editor.worker.js?worker';
+import CssWorker from 'monaco-editor/languages/features/css/css.worker.js?worker';
+import HtmlWorker from 'monaco-editor/languages/features/html/html.worker.js?worker';
+import JsonWorker from 'monaco-editor/languages/features/json/json.worker.js?worker';
+import TsWorker from 'monaco-editor/languages/features/typescript/ts.worker.js?worker';
 
 let editorLoaded = null;
+let enhancedLanguagesSetup = null;
 
 export async function loadMonacoEditor() {
 	if (!browser) {
@@ -12,48 +18,33 @@ export async function loadMonacoEditor() {
 			// Never resolve, since Monaco editor cannot be loaded in the server environment.
 		});
 	}
-	let rawMonaco = await (editorLoaded || (editorLoaded = loadMonacoFromEsmCdn()));
-	const monaco = 'm' in rawMonaco ? rawMonaco.m || rawMonaco : rawMonaco;
-	setupEnhancedLanguages(monaco);
+	// Bundle monaco-editor with Vite. CDN builds (jsDelivr `+esm`, esm.sh) cannot load its language modules and workers.
+	globalThis.MonacoEnvironment ??= { getWorker };
+	const monaco = await (editorLoaded ||= import('monaco-editor'));
+	enhancedLanguagesSetup ||= setupEnhancedLanguages(monaco);
 	await new Promise((resolve) => setTimeout(resolve, 1000));
 	return monaco;
 }
 
-/** Load the Monaco editor from the ESM CDN. */
-async function loadMonacoFromEsmCdn() {
-	let error = new Error();
-	const urlList = [
-		{
-			script: 'https://cdn.jsdelivr.net/npm/monaco-editor/+esm',
-			style: 'https://cdn.jsdelivr.net/npm/monaco-editor/min/vs/editor/editor.main.css'
-		}
-	];
-
-	/* global MONACO_EDITOR_VERSION -- Define monaco-editor version */
-	if (typeof MONACO_EDITOR_VERSION !== 'undefined') {
-		urlList.unshift({
-			script: `https://cdn.jsdelivr.net/npm/monaco-editor@${MONACO_EDITOR_VERSION}/+esm`,
-			style: `https://cdn.jsdelivr.net/npm/monaco-editor@${MONACO_EDITOR_VERSION}/min/vs/editor/editor.main.css`
-		});
+/** Create the web worker for the given label. */
+function getWorker(_moduleId, label) {
+	switch (label) {
+		case 'json':
+			return new JsonWorker();
+		case 'css':
+		case 'scss':
+		case 'less':
+			return new CssWorker();
+		case 'html':
+		case 'handlebars':
+		case 'razor':
+			return new HtmlWorker();
+		case 'typescript':
+		case 'javascript':
+			return new TsWorker();
+		default:
+			return new EditorWorker();
 	}
-	for (const url of urlList) {
-		try {
-			const result = await importFromCDN(url.script);
-
-			if (typeof document !== 'undefined') {
-				const link = document.createElement('link');
-				link.rel = 'stylesheet';
-				link.href = url.style;
-				document.head.append(link);
-			}
-			return result;
-		} catch (e) {
-			// eslint-disable-next-line no-console -- OK
-			console.warn(`Failed to retrieve resource from ${url}`);
-			error = e;
-		}
-	}
-	throw error;
 }
 
 /**

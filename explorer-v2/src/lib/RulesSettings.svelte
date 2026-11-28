@@ -1,17 +1,18 @@
 <script>
 	import { categories } from './scripts/rules.js';
-	import { resolve } from '$app/paths';
 
-	export let rules = {};
-	let categoryState = Object.fromEntries(
-		categories.map((c) => {
-			return [
-				c.title,
-				{
-					close: true
-				}
-			];
-		})
+	let { rules = $bindable({}) } = $props();
+	let categoryState = $state.raw(
+		Object.fromEntries(
+			categories.map((c) => {
+				return [
+					c.title,
+					{
+						close: true
+					}
+				];
+			})
+		)
 	);
 	function onAllClick(category, e) {
 		const newRules = Object.assign({}, rules);
@@ -46,7 +47,7 @@
 					<button
 						class="category-button"
 						class:category-button--close={categoryState[category.title].close}
-						on:click={() => {
+						onclick={() => {
 							categoryState = Object.fromEntries(
 								categories.map((c) => {
 									const close = categoryState[c.title].close;
@@ -72,7 +73,7 @@
 								checked={category.rules.every((rule) => isErrorState(rules, rule.ruleId))}
 								indeterminate={!category.rules.every((rule) => isErrorState(rules, rule.ruleId)) &&
 									!category.rules.every((rule) => !isErrorState(rules, rule.ruleId))}
-								on:input={(e) => onAllClick(category, e)}
+								oninput={(e) => onAllClick(category, e)}
 							/>
 							{category.title}
 						</label>
@@ -86,12 +87,13 @@
 										<input
 											type="checkbox"
 											checked={isErrorState(rules, rule.ruleId)}
-											on:input={(e) => onClick(rule.ruleId, e)}
+											oninput={(e) => onClick(rule.ruleId, e)}
 										/>
 										{rule.ruleId}
 									</label>
+									<!-- eslint-disable svelte/no-navigation-without-resolve -- outside url -->
 									<a
-										href={resolve(rule.url)}
+										href={rule.url}
 										target="_blank"
 										rel="noopener noreferrer"
 										aria-label="open in new tab"
@@ -116,6 +118,7 @@
 											/>
 										</svg>
 									</a>
+									<!-- eslint-enable svelte/no-navigation-without-resolve -->
 								</li>
 							{/each}
 						</ul>

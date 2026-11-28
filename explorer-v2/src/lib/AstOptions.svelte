@@ -1,5 +1,5 @@
 <script>
-	export let options = {};
+	let { options = $bindable({}) } = $props();
 	function updateShowLocations(newValue) {
 		options = {
 			...options,
@@ -12,7 +12,7 @@
 	<input
 		type="checkbox"
 		checked={options.showLocations}
-		on:change={(e) => updateShowLocations(e.target.checked)}
+		onchange={(e) => updateShowLocations(e.target.checked)}
 	/>Locations
 </label>
 

@@ -1,9 +1,5 @@
 {
-	"compilerOptions": {
-		"baseUrl": ".",
-		"paths": {
-			"#lib/*": ["src/lib/*"]
-		}
-	},
-	"include": ["src/**/*.d.ts", "src/**/*.js", "src/**/*.svelte"]
+	"extends": "$app/tsconfig",
+	"include": ["src", "*"],
+	"exclude": ["src/service-worker"]
 }

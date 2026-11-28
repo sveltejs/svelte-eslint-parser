@@ -3,67 +3,78 @@
 </script>
 
 <script>
-	import { onDestroy, onMount, createEventDispatcher } from 'svelte';
-	import { DARK_THEME_NAME } from './scripts/monaco-loader';
+	import { onDestroy, onMount, tick } from 'svelte';
+	import { DARK_THEME_NAME, loadMonacoEditor } from './scripts/monaco-loader';
 
-	const dispatch = createEventDispatcher();
+	let {
+		code = $bindable(''),
+		rightCode = '',
+		language = 'javascript',
+		readOnly = false,
+		diffEditor = false,
+		markers = [],
+		rightMarkers = [],
+		provideCodeActions = null,
+		editorOptions = {},
+		waiting = null,
+		onchangecursorposition,
+		onfocuseditortext
+	} = $props();
 
-	import { loadMonacoEditor } from './scripts/monaco-loader';
-	export let code = '';
-	export let rightCode = '';
-	export let language = 'javascript';
-	export let readOnly = false;
-	export let diffEditor = false;
-	export let markers = [];
-	export let rightMarkers = [];
-	export let provideCodeActions = null;
-	export let editorOptions = {};
-
-	export let waiting = null;
-	let rootElement,
-		editor,
-		setLeftValue,
-		setRightValue,
-		setLeftMarkers,
-		setRightMarkers,
-		getLeftEditor,
-		codeActionProviderDisposable;
+	let rootElement = $state();
+	let editor, getLeftEditor;
+	let setLeftValue = $state();
+	let setRightValue = $state();
+	let setLeftMarkers = $state();
+	let setRightMarkers = $state();
 	const loadingMonaco = loadMonacoEditor();
 	const starting = appStarting;
 
-	$: loading = Promise.all([waiting, loadingMonaco, starting]);
-	$: {
+	const loading = $derived(Promise.all([waiting, loadingMonaco, starting]));
+	$effect(() => {
 		if (setLeftValue) {
 			setLeftValue(code);
 		}
-	}
-	$: {
+	});
+	$effect(() => {
 		if (setRightValue) {
 			setRightValue(rightCode);
 		}
-	}
-	$: {
+	});
+	$effect(() => {
 		if (setLeftMarkers) {
 			setLeftMarkers(markers);
 		}
-	}
-	$: {
+	});
+	$effect(() => {
 		if (setRightMarkers) {
 			setRightMarkers(rightMarkers);
 		}
-	}
-	$: {
-		disposeCodeActionProvider();
-		if (provideCodeActions) {
-			loadingMonaco.then((monaco) => setupCodeActionProvider(monaco, provideCodeActions));
+	});
+	$effect(() => {
+		const provide = provideCodeActions;
+		if (!provide) {
+			return undefined;
 		}
-	}
+		let disposed = false;
+		let disposable = null;
+		loadingMonaco.then((monaco) => {
+			if (!disposed) {
+				disposable = setupCodeActionProvider(monaco, provide);
+			}
+		});
+		return () => {
+			disposed = true;
+			disposable?.dispose();
+		};
+	});
 
-	let started = false;
+	let started = $state(false);
 	onMount(async () => {
 		started = true;
 		await loading;
 		const monaco = await loadingMonaco;
+		await tick();
 		const options = {
 			value: code,
 			readOnly,
@@ -129,10 +140,10 @@
 				code = value;
 			});
 			editor.onDidChangeCursorPosition((evt) => {
-				dispatch('changeCursorPosition', evt);
+				onchangecursorposition?.(evt);
 			});
 			editor.onDidFocusEditorText((evt) => {
-				dispatch('focusEditorText', evt);
+				onfocuseditortext?.(evt);
 			});
 			setLeftValue = (code) => {
 				const value = editor.getValue();
@@ -155,7 +166,6 @@
 		}
 	});
 	onDestroy(() => {
-		disposeCodeActionProvider();
 		dispose(editor);
 		// rootElement.innerHTML = ""
 		editor = null;
@@ -188,22 +198,19 @@
 		if (x == null) {
 			return;
 		}
-		if (x.getOriginalEditor) {
-			dispose(x.getOriginalEditor());
-		}
-		if (x.getModifiedEditor) {
-			dispose(x.getModifiedEditor());
-		}
-		if (x.getModel) {
-			dispose(x.getModel());
-		}
-		if (x.dispose) {
-			x.dispose();
+		// Dispose the editor before its models. A diff editor throws if its models are disposed first.
+		const model = x.getModel?.();
+		x.dispose?.();
+		if (model?.original || model?.modified) {
+			model.original?.dispose();
+			model.modified?.dispose();
+		} else {
+			model?.dispose?.();
 		}
 	}
 
 	function setupCodeActionProvider(monaco, provideCodeActions) {
-		codeActionProviderDisposable = monaco.languages.registerCodeActionProvider(language, {
+		return monaco.languages.registerCodeActionProvider(language, {
 			provideCodeActions(model, range, context) {
 				const editor = getLeftEditor?.();
 				if (editor?.getModel().url !== model.url) {
@@ -217,11 +224,6 @@
 				return provideCodeActions(model, range, context);
 			}
 		});
-	}
-	function disposeCodeActionProvider() {
-		if (codeActionProviderDisposable) {
-			codeActionProviderDisposable.dispose();
-		}
 	}
 
 	function loadingTypewriter(node) {

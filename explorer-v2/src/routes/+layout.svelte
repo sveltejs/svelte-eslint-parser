@@ -1,6 +1,8 @@
 <script>
 	import Header from '#lib/Header.svelte';
 	import '../app.css';
+
+	let { children } = $props();
 	if (typeof window !== 'undefined') {
 		window.process = {
 			cwd: () => '/'
@@ -11,7 +13,7 @@
 <Header />
 
 <main class="main">
-	<slot />
+	{@render children()}
 </main>
 
 <style>

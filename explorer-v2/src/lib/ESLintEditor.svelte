@@ -2,29 +2,27 @@
 	import { builtinRules } from 'eslint/use-at-your-own-risk';
 	import MonacoEditor from './MonacoEditor.svelte';
 	import { loadMonacoEditor } from './scripts/monaco-loader';
-	import { createEventDispatcher, onMount } from 'svelte';
+	import { untrack } from 'svelte';
 	import { SvelteMap } from 'svelte/reactivity';
 
-	const dispatch = createEventDispatcher();
+	let {
+		linter = null,
+		code = $bindable(''),
+		config = {},
+		options = {},
+		fix = true,
+		ontime,
+		onresult
+	} = $props();
 
-	export let linter = null;
-	export let code = '';
-	export let config = {};
-	export let options = {};
-	export let fix = true;
-
-	let fixedValue = code;
-	let leftMarkers = [];
-	let rightMarkers = [];
+	let fixedValue = $state(untrack(() => code));
+	let leftMarkers = $state.raw([]);
+	let rightMarkers = $state.raw([]);
 
 	let messageMap = new SvelteMap();
 
-	$: showApplyFix = fix && fixedValue !== code;
-	$: {
-		lint(linter, code, config, options);
-	}
-
-	onMount(() => {
+	const showApplyFix = $derived(fix && fixedValue !== code);
+	$effect(() => {
 		lint(linter, code, config, options);
 	});
 
@@ -44,12 +42,12 @@
 		const messages = linter.verify(code, config, options);
 		const time = Date.now() - start;
 
-		dispatch('time', time);
+		ontime?.(time);
 
 		const fixResult = linter.verifyAndFix(code, config, options);
 		fixedValue = fixResult.output;
 
-		dispatch('result', {
+		onresult?.({
 			messages,
 			time,
 			output: fixResult.output,
@@ -196,7 +194,7 @@
 <div class="eslint-editor">
 	<MonacoEditor
 		bind:code
-		bind:rightCode={fixedValue}
+		rightCode={fixedValue}
 		language="svelte"
 		diffEditor={fix}
 		markers={leftMarkers}
@@ -205,7 +203,7 @@
 	/>
 	<div class="eslint-editor__tools">
 		{#if showApplyFix}
-			<button on:click={applyFix}>Apply Fix</button>
+			<button onclick={applyFix}>Apply Fix</button>
 		{/if}
 	</div>
 </div>
