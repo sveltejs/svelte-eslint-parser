@@ -203,7 +203,17 @@ export class Context {
 
   private readonly blocks: Block[] = [];
 
-  public constructor(code: string, parserOptions: NormalizedParserOptions) {
+  /**
+   * Ranges of skipped mustache tags that have text like `<script`.
+   * If the scan ran too far over one of them, it may cover real markup.
+   */
+  public readonly skippedRanges: [number, number][];
+
+  public constructor(
+    code: string,
+    parserOptions: NormalizedParserOptions,
+    options: { skipMustaches?: boolean } = {},
+  ) {
     this.code = code;
     this.parserOptions = parserOptions;
     this.locs = new LinesAndColumns(code);
@@ -221,7 +231,11 @@ export class Context {
     let lastScriptEnd: number | null = null;
     let hasInsertedLineBreaks = false;
     const insertedSemicolonIndexes: number[] = [];
-    for (const block of extractBlocks(code)) {
+    const { blocks, skippedRanges } =
+      (options.skipMustaches !== false && extractBlocks(code, true)) ||
+      extractBlocks(code, false)!;
+    this.skippedRanges = skippedRanges;
+    for (const block of blocks) {
       if (block.tag === "template") {
         if (block.selfClosing) {
           continue;
@@ -466,15 +480,230 @@ function isValidStartTagOpenIndex(
   return />\s*$|^\s*$/m.test(prev);
 }
 
-/** Extract <script> blocks */
-function* extractBlocks(code: string): IterableIterator<Block> {
-  const startTagOpenRe = /<!--[\s\S]*?-->|<(script|style|template)([\s>])/gu;
+const RE_LINE_BREAK = /[\n\r\u2028\u2029]/u;
+
+// `/` after a `{`, `:`, `@` or `#` tag such as `{#if` or `{:else if` can start
+// a regexp, but `/` right after `{` is a closing tag such as `{/if}`.
+const RE_TAG_START = /\s*[#:@][a-z]+(?:\s+if\b)?/uy;
+const RE_WORD = /[\w$]+/uy;
+// A `/` after one of these characters or keywords starts a regexp.
+const REGEXP_PREFIX_CHARS = "(,=:[!&|?{;+-*/%<>~^";
+const REGEXP_PREFIX_KEYWORDS = new Set([
+  "await",
+  "case",
+  "delete",
+  "do",
+  "else",
+  "in",
+  "instanceof",
+  "new",
+  "of",
+  "return",
+  "throw",
+  "typeof",
+  "void",
+  "yield",
+]);
+
+/**
+ * Find the index after the `}` that closes the mustache tag at `start`.
+ * Returns `null` if it is not closed.
+ * It guesses whether a `/` starts a regexp from the token before it, so it
+ * can be wrong, for example with `if (a) /{/`. Then it can stop early or run
+ * too far. `parseTemplateWithContext()` falls back when it runs too far.
+ */
+function findMustacheEnd(code: string, start: number): number | null {
+  // `true` for `${` in a template literal, `false` for `{`.
+  const braces: boolean[] = [];
+  let index = start + 1;
+  let regexpAllowed = false;
+  RE_TAG_START.lastIndex = index;
+  const tag = RE_TAG_START.exec(code);
+  if (tag) {
+    index += tag[0].length;
+    regexpAllowed = true;
+  }
+  let afterDot = false;
+  // A `/` before this index is a division. This keeps the scan linear.
+  let divisionEnd = 0;
+  while (index < code.length) {
+    const c = code[index];
+    let next: number | null = index + 1;
+    if (/\s/u.test(c)) {
+      index = next;
+      continue;
+    }
+    if (c === "/" && code[index + 1] === "/") {
+      next = index + 2;
+      while (next < code.length && !RE_LINE_BREAK.test(code[next])) next++;
+      index = next;
+      continue;
+    }
+    if (c === "/" && code[index + 1] === "*") {
+      const commentEnd = code.indexOf("*/", index + 2);
+      if (commentEnd < 0) return null;
+      index = commentEnd + 2;
+      continue;
+    }
+    // Whether a `/` after this token starts a regexp.
+    let allowed = false;
+    if (c === "{") {
+      braces.push(false);
+      allowed = true;
+    } else if (c === "}") {
+      if (!braces.length) return index + 1;
+      if (braces.pop()) {
+        next = skipTemplateLiteral(code, index + 1, braces);
+        // A regexp can start after `${`.
+        allowed = next != null && code[next - 1] === "{";
+      }
+    } else if (c === "'" || c === '"') {
+      next = skipString(code, index);
+    } else if (c === "`") {
+      next = skipTemplateLiteral(code, index + 1, braces);
+      allowed = next != null && code[next - 1] === "{";
+    } else if (c === "/" && regexpAllowed && index >= divisionEnd) {
+      const end = skipRegExp(code, index);
+      if (end < 0) {
+        // There is no closing `/` on the line, so take it as a division, and
+        // the rest of the line too.
+        divisionEnd = -end;
+        allowed = true;
+      } else {
+        next = end;
+      }
+    } else if (/[\w$]/u.test(c)) {
+      RE_WORD.lastIndex = index;
+      RE_WORD.test(code);
+      next = RE_WORD.lastIndex;
+      allowed =
+        !afterDot && REGEXP_PREFIX_KEYWORDS.has(code.slice(index, next));
+    } else {
+      allowed = REGEXP_PREFIX_CHARS.includes(c);
+    }
+    if (next == null) return null;
+    afterDot = c === ".";
+    regexpAllowed = allowed;
+    index = next;
+  }
+  return null;
+}
+
+/**
+ * Skip a regexp literal that starts with the `/` at `start`.
+ * Returns the index after the closing `/`. If it is not closed on the line,
+ * returns the index of the end of the line, negated.
+ */
+function skipRegExp(code: string, start: number): number {
+  let inClass = false;
+  let index = start + 1;
+  while (index < code.length) {
+    const c = code[index];
+    if (RE_LINE_BREAK.test(c)) return -index;
+    if (c === "\\") {
+      index++;
+      if (index < code.length && RE_LINE_BREAK.test(code[index])) {
+        return -index;
+      }
+    } else if (c === "[") {
+      inClass = true;
+    } else if (c === "]") {
+      inClass = false;
+    } else if (c === "/" && !inClass) {
+      return index + 1;
+    }
+    index++;
+  }
+  return -code.length;
+}
+
+/**
+ * Skip a string literal that starts with the quote at `start`.
+ * Returns the index after the closing quote, or `null` if it is not closed.
+ */
+function skipString(code: string, start: number): number | null {
+  const quote = code[start];
+  let index = start + 1;
+  while (index < code.length) {
+    const c = code[index];
+    if (c === "\\") {
+      index += code.startsWith("\r\n", index + 1) ? 3 : 2;
+    } else if (c === quote) {
+      return index + 1;
+    } else if (c === "\n" || c === "\r") {
+      return null;
+    } else {
+      index++;
+    }
+  }
+  return null;
+}
+
+/**
+ * Skip the rest of a template literal from `start`.
+ * Returns the index after the closing backquote, or the index after `${`.
+ * In the second case, `true` is pushed to `braces`.
+ * Returns `null` if the template literal is not closed.
+ */
+function skipTemplateLiteral(
+  code: string,
+  start: number,
+  braces: boolean[],
+): number | null {
+  let index = start;
+  while (index < code.length) {
+    const c = code[index];
+    if (c === "\\") {
+      index += 2;
+    } else if (c === "`") {
+      return index + 1;
+    } else if (c === "$" && code[index + 1] === "{") {
+      braces.push(true);
+      return index + 2;
+    } else {
+      index++;
+    }
+  }
+  return null;
+}
+
+/**
+ * Extract <script> blocks.
+ * If `skipMustaches` is `true`, mustache tags are skipped, and the ranges of
+ * skipped mustache tags that have text like `<script` are returned too.
+ * Returns `null` if a mustache tag is not closed or has `<!--` in it.
+ */
+function extractBlocks(
+  code: string,
+  skipMustaches: boolean,
+): { blocks: Block[]; skippedRanges: [number, number][] } | null {
+  const blocks: Block[] = [];
+  const skippedRanges: [number, number][] = [];
+  const startTagOpenRe = /<!--[\s\S]*?-->|\{|<(script|style|template)([\s>])/gu;
   const endScriptTagRe = /<\/script>/gu;
   const endStyleTagRe = /<\/style>/gu;
   const endTemplateTagRe = /<\/template>/gu;
   let startTagOpenMatch;
   while ((startTagOpenMatch = startTagOpenRe.exec(code))) {
-    const [, tag, nextChar] = startTagOpenMatch;
+    const [match, tag, nextChar] = startTagOpenMatch;
+    if (match === "{") {
+      // Skip a mustache tag, so that `<script>` in a string is not a block.
+      if (skipMustaches) {
+        const start = startTagOpenMatch.index;
+        const end = findMustacheEnd(code, start);
+        if (end == null) return null;
+        const text = code.slice(start, end);
+        // `startTagOpenRe` would start a comment at `<!--` here.
+        // Leave such a file as before.
+        if (text.includes("<!--")) return null;
+        startTagOpenRe.lastIndex = end;
+        // Only these ranges can change which blocks are extracted.
+        if (/<(?:script|style|template)/u.test(text)) {
+          skippedRanges.push([start, end]);
+        }
+      }
+      continue;
+    }
     if (!tag) {
       continue;
     }
@@ -493,12 +722,12 @@ function* extractBlocks(code: string): IterableIterator<Block> {
       attrs = attrsData.attributes;
       startTagEnd = attrsData.index;
       if (code[startTagEnd] === "/" && code[startTagEnd + 1] === ">") {
-        yield {
+        blocks.push({
           tag: blockTag,
           attrs,
           selfClosing: true,
           startTagRange: [startTagStart, startTagEnd + 2],
-        };
+        });
         continue;
       }
       if (code[startTagEnd] === ">") {
@@ -518,16 +747,17 @@ function* extractBlocks(code: string): IterableIterator<Block> {
     if (endTagMatch) {
       const endTagStart = endTagMatch.index;
       const endTagEnd = endTagRe.lastIndex;
-      yield {
+      blocks.push({
         tag: blockTag,
         attrs,
         startTagRange: [startTagStart, startTagEnd],
         contentRange: [startTagEnd, endTagStart],
         endTagRange: [endTagStart, endTagEnd],
-      };
+      });
       startTagOpenRe.lastIndex = endTagEnd;
     }
   }
+  return { blocks, skippedRanges };
 }
 
 export class LinesAndColumns {

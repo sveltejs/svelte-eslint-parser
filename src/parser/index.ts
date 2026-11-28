@@ -28,7 +28,7 @@ import {
 import type * as SvAST from "./svelte-ast-types.js";
 import type * as Compiler from "./svelte-ast-types-for-v5.js";
 import { sortNodes } from "./sort.js";
-import { parseTemplate } from "./template.js";
+import { parseTemplateWithContext } from "./template.js";
 import {
   analyzePropsScope,
   analyzeReactiveScope,
@@ -156,11 +156,8 @@ function parseAsSvelte(
   svelteConfig: SvelteConfig | null,
   parserOptions: NormalizedParserOptions,
 ): ParseResult {
-  const ctx = new Context(code, parserOptions);
-  const resultTemplate = parseTemplate(
-    ctx.sourceCode.template,
-    ctx,
-    parserOptions,
+  const { ctx, template: resultTemplate } = parseTemplateWithContext(
+    new Context(code, parserOptions),
   );
 
   const svelteParseContext = resolveSvelteParseContextForSvelte(
