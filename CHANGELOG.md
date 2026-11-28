@@ -1,5 +1,41 @@
 # svelte-eslint-parser
 
+## 1.13.0
+
+### Minor Changes
+
+- [#1097](https://github.com/sveltejs/svelte-eslint-parser/pull/1097) [`4f48416`](https://github.com/sveltejs/svelte-eslint-parser/commit/4f484161ea970b844b7909ea5874bd478ab2c47a) Thanks [@that-richan](https://github.com/that-richan)! - Type the setter of a function binding on a component (such as `<Select bind:value={() => mode, (v) => (mode = v)}>`) with the getter's return type, as svelte2tsx does, instead of the bound prop's type. A `null` getter still takes the prop's type.
+
+- [#1098](https://github.com/sveltejs/svelte-eslint-parser/pull/1098) [`da105ab`](https://github.com/sveltejs/svelte-eslint-parser/commit/da105abb7b9476752b49f85aae1fab1463a3df4e) Thanks [@GBra-4-669](https://github.com/GBra-4-669)! - fix: allow a chained name in `transition:`, `in:`, `out:`, `animate:` and `use:` with Svelte 5
+
+- [#1084](https://github.com/sveltejs/svelte-eslint-parser/pull/1084) [`42323df`](https://github.com/sveltejs/svelte-eslint-parser/commit/42323dfa2f1d47a6fe0ccc9dd89422aacc278d11) Thanks [@baseballyama](https://github.com/baseballyama)! - Type the setter of a function binding on an HTML or special element (such as `<input bind:value={() => text, (v) => (text = v)}>`) with the getter's return type instead of implicit `any`.
+
+### Patch Changes
+
+- [#1032](https://github.com/sveltejs/svelte-eslint-parser/pull/1032) [`a6aa72b`](https://github.com/sveltejs/svelte-eslint-parser/commit/a6aa72bcf92e96b301851a579bb5899813e09716) Thanks [@nikolas-sapa](https://github.com/nikolas-sapa)! - fix: ignore `<!--` and `-->` between top-level rules in `<style>`, as CSS does
+
+- [#1086](https://github.com/sveltejs/svelte-eslint-parser/pull/1086) [`1d5a2fb`](https://github.com/sveltejs/svelte-eslint-parser/commit/1d5a2fb20a5d9465615dd2d9754028bc8627e6a8) Thanks [@baseballyama](https://github.com/baseballyama)! - fix: report the right location for a parse error from a parser that gives only `lineNumber` and a 1-based `column` when `<script>` blocks are on the same line
+
+- [#1088](https://github.com/sveltejs/svelte-eslint-parser/pull/1088) [`e954739`](https://github.com/sveltejs/svelte-eslint-parser/commit/e9547399c6d74ab1294bf5656583c9b0757cfa8f) Thanks [@baseballyama](https://github.com/baseballyama)! - fix: update the location in the first line of a parse error message that has a code frame after it, for same-line `<script>` blocks
+
+- [#1089](https://github.com/sveltejs/svelte-eslint-parser/pull/1089) [`9bde6b5`](https://github.com/sveltejs/svelte-eslint-parser/commit/9bde6b5b8899e357a78027da301f0643c8586ed8) Thanks [@baseballyama](https://github.com/baseballyama)! - fix: keep comments around a template expression that Svelte does not attach to it, such as `/* a */` in `{/* a */ (value)}` and `/* b */` in `{fn(value) /* b */}`, and parse `{(/* a */ (value)) /* b */}`
+
+- [#1104](https://github.com/sveltejs/svelte-eslint-parser/pull/1104) [`4bcfd21`](https://github.com/sveltejs/svelte-eslint-parser/commit/4bcfd215760015025be5099fd5134e8c2ac8d847) Thanks [@baseballyama](https://github.com/baseballyama)! - fix: detect a parser that wraps `@typescript-eslint/parser` on Windows when the cwd has no drive letter, such as a UNC path
+
+- [#1090](https://github.com/sveltejs/svelte-eslint-parser/pull/1090) [`51ea313`](https://github.com/sveltejs/svelte-eslint-parser/commit/51ea31328a6c10a3076a3ac89b453a04a53d99b2) Thanks [@that-richan](https://github.com/that-richan)! - fix: look a component prop up in each member of a props union, so snippet parameters and attributes are typed for unions of large props such as HTML attributes and for props only some members declare
+
+- [#1092](https://github.com/sveltejs/svelte-eslint-parser/pull/1092) [`ea3a0f1`](https://github.com/sveltejs/svelte-eslint-parser/commit/ea3a0f12f107f47ba69f71fcce7367ac94b100ac) Thanks [@baseballyama](https://github.com/baseballyama)! - fix: keep comments in `{@render}` tags, such as `/* a */` in `{@render foo() /* a */}`, as comments
+
+- [#1102](https://github.com/sveltejs/svelte-eslint-parser/pull/1102) [`c942d9c`](https://github.com/sveltejs/svelte-eslint-parser/commit/c942d9c3b78a9285f78fe3f24a7acfbfae2d6b2e) Thanks [@officialasishkumar](https://github.com/officialasishkumar)! - fix: parse a `<script>` that starts with `(`, `[` or a template literal after another `<script>` whose last statement has no semicolon
+
+- [#995](https://github.com/sveltejs/svelte-eslint-parser/pull/995) [`88aa3bd`](https://github.com/sveltejs/svelte-eslint-parser/commit/88aa3bd34d68250166e6fe3d928e8ce9ffb96813) Thanks [@baseballyama](https://github.com/baseballyama)! - fix: do not treat exports in Svelte 5 `<script module>` as props
+
+- [#1096](https://github.com/sveltejs/svelte-eslint-parser/pull/1096) [`93a946e`](https://github.com/sveltejs/svelte-eslint-parser/commit/93a946e642ee52e826a50b9a728461ca05de882a) Thanks [@baseballyama](https://github.com/baseballyama)! - fix: ignore `<script>` and `<style>` inside mustache tags such as `{@html ...}`
+
+- [#1074](https://github.com/sveltejs/svelte-eslint-parser/pull/1074) [`05db71e`](https://github.com/sveltejs/svelte-eslint-parser/commit/05db71e179f3e3728a5507944339a807e14b6d05) Thanks [@baseballyama](https://github.com/baseballyama)! - fix: parse template expressions that end with a line comment, such as `{value // note` followed by `}` on the next line, and parenthesized expressions with a trailing comment, such as `{(value) /* note */}`
+
+- [#1101](https://github.com/sveltejs/svelte-eslint-parser/pull/1101) [`04aa88e`](https://github.com/sveltejs/svelte-eslint-parser/commit/04aa88ed3f09b3c5250ef30503459b075881466a) Thanks [@baseballyama](https://github.com/baseballyama)! - fix: translate imported components under the ts.sys hook when several `eslint.config.js` files registered tsconfigRootDir candidates, instead of falling back to the ambient `*.svelte` module
+
 ## 1.12.0
 
 ### Minor Changes
