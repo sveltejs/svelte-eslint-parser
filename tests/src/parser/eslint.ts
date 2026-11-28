@@ -1,12 +1,9 @@
 import { Linter } from "eslint";
 import assert from "assert";
-import semver from "semver";
 import globals from "globals";
 import * as parser from "../../../src/index.js";
 import { generateParserOptions } from "./test-utils.js";
-import { Module } from "module";
 
-const require = Module.createRequire(import.meta.url);
 //------------------------------------------------------------------------------
 // Tests
 //------------------------------------------------------------------------------
@@ -222,22 +219,18 @@ describe("eslint custom parser", () => {
         output: null,
         messages: [],
       },
-      ...(semver.satisfies(require("eslint/package.json").version, ">=8.0.0")
-        ? [
-            {
-              // test for ecmaVersion latest
-              code: `
+      {
+        // test for ecmaVersion latest
+        code: `
                 <script>
                 import { count } from './stores.js';
                 </script>
                 <h1>The count is {$count}</h1>
                 `,
-              output: null,
-              parserOptions: { ecmaVersion: "latest" },
-              messages: [],
-            },
-          ]
-        : []),
+        output: null,
+        parserOptions: { ecmaVersion: "latest" },
+        messages: [],
+      },
     ];
 
     for (const { code, output, messages, parserOptions } of tests) {
