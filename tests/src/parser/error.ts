@@ -49,12 +49,15 @@ describe("Check for the error location of script blocks on the same line.", () =
   const errorIndex = code.indexOf("*");
 
   /** A parser that throws an error with only `lineNumber` and `column`. */
-  function createParser(extra: Record<string, unknown>, locInMessage = false) {
+  function createParser(
+    extra: Record<string, unknown>,
+    { locInMessage = false, index = errorIndex, columnBase = 1 } = {},
+  ) {
     return {
       parse(virtualCode: string) {
-        const lines = virtualCode.slice(0, errorIndex).split("\n");
+        const lines = virtualCode.slice(0, index).split("\n");
         const lineNumber = lines.length;
-        const column = lines[lines.length - 1].length + 1;
+        const column = lines[lines.length - 1].length + columnBase;
         const message = locInMessage
           ? `Unexpected token (${lineNumber}:${column})`
           : "Unexpected token";
@@ -83,10 +86,42 @@ describe("Check for the error location of script blocks on the same line.", () =
     });
   }
 
+  // The separator put after the last script replaces the two line breaks
+  // before the last `</script>`, so a line of the virtual code covers two lines.
+  const code2 =
+    '<script context="module">let q</script><script>let a =\n\n</script>{b}';
+  for (const [name, input, index] of [
+    // The line break is put here, between the script blocks.
+    ["at the inserted line break", code, code.indexOf("</script>")],
+    ["at the end of the code", code, code.length],
+    ["at the separator after the last script", code2, code2.indexOf("\n") + 1],
+    ["after the separator after the last script", code2, code2.length],
+  ] as const) {
+    for (const columnBase of [0, 1]) {
+      it(`without \`index\` ${name}, with a ${columnBase}-based column`, () => {
+        const lines = input.slice(0, index).split("\n");
+        try {
+          parseForESLint(input, {
+            parser: createParser({}, { index, columnBase }),
+          });
+        } catch (e: any) {
+          assert.strictEqual(e.message, "Unexpected token");
+          assert.strictEqual(e.lineNumber, lines.length);
+          assert.strictEqual(
+            e.column,
+            lines[lines.length - 1].length + columnBase,
+          );
+          return;
+        }
+        assert.fail("Expected error");
+      });
+    }
+  }
+
   it("with the location at the end of the message", () => {
     try {
       parseForESLint(code, {
-        parser: createParser({ pos: errorIndex }, true),
+        parser: createParser({ pos: errorIndex }, { locInMessage: true }),
       });
     } catch (e: any) {
       assert.strictEqual(e.lineNumber, 1);

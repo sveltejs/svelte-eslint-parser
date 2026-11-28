@@ -110,10 +110,7 @@ export function fixErrorLocation(
       ? e.index
       : typeof e.pos === "number"
         ? e.pos
-        : virtualLocs.getIndexFromLoc({
-            line: e.lineNumber,
-            column: e.column,
-          });
+        : getIndexInLine(virtualLocs, e.lineNumber, e.column);
   if (!Number.isFinite(index) || index < 0 || index > ctx.code.length) {
     return;
   }
@@ -148,6 +145,19 @@ export function fixErrorLocation(
       writable: true,
     },
   });
+}
+
+/**
+ * Get the index of the given line and column. ESLint takes `column` as 1-based,
+ * but some parsers (e.g. hermes-eslint) give a 0-based one. Read it as 1-based,
+ * which gives the index or the one before it, and keep it in the given line.
+ */
+function getIndexInLine(
+  locs: LinesAndColumns,
+  line: number,
+  column: number,
+): number {
+  return locs.getIndexFromLoc({ line, column: Math.max(column - 1, 0) });
 }
 
 /**
