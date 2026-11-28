@@ -66,7 +66,7 @@ export function isTSESLintParserObject(
       // Without it, typescript-eslint infers `tsconfigRootDir` from the
       // `eslint.config.*` files that use its configs, and throws when there are
       // several of them, e.g. in a monorepo.
-      tsconfigRootDir: process.cwd(),
+      tsconfigRootDir: getDefaultTsconfigRootDir(),
     });
     const services = result.services;
     return Boolean(
@@ -77,4 +77,17 @@ export function isTSESLintParserObject(
   } catch {
     return false;
   }
+}
+
+/**
+ * `process.cwd()`, which typescript-estree also uses when no candidate is
+ * registered. On Windows, typescript-eslint rejects a `tsconfigRootDir` without
+ * a drive letter, such as a UNC path, so leave it to the inference there.
+ */
+export function getDefaultTsconfigRootDir(): string | undefined {
+  const cwd = process.cwd();
+  if (process.platform === "win32" && !/^[A-Za-z]:/u.test(cwd)) {
+    return undefined;
+  }
+  return cwd;
 }

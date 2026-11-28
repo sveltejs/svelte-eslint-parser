@@ -52,4 +52,25 @@ describe("Detection of @typescript-eslint/parser", () => {
       });
     }
   });
+
+  describe("on Windows when the cwd has no drive letter", () => {
+    // e.g. a UNC path such as `\\wsl.localhost\Ubuntu\app`, which
+    // typescript-eslint rejects as a `tsconfigRootDir`.
+    const platform = Object.getOwnPropertyDescriptor(process, "platform")!;
+    const cwd = Object.getOwnPropertyDescriptor(process, "cwd")!;
+    before(() => {
+      Object.defineProperty(process, "platform", { value: "win32" });
+      const dir = path.join(os.tmpdir(), "app");
+      Object.defineProperty(process, "cwd", { value: () => dir });
+    });
+    after(() => {
+      Object.defineProperty(process, "platform", platform);
+      Object.defineProperty(process, "cwd", cwd);
+    });
+
+    it("detects a parser that wraps @typescript-eslint/parser", () => {
+      const parser = { parseForESLint: tsParser.parseForESLint };
+      assert.strictEqual(isTSESLintParserObject(parser), true);
+    });
+  });
 });
