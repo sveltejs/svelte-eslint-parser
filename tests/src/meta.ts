@@ -1,3 +1,4 @@
+import { describe, it } from "node:test";
 import assert from "assert";
 import * as parser from "../../src/index.js";
 import pkg from "../../package.json" with { type: "json" };

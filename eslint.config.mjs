@@ -131,6 +131,19 @@ export default [
       "jsdoc/require-jsdoc": "off",
     },
   },
+  {
+    files: ["tests/**/*.ts"],
+    rules: {
+      "@typescript-eslint/no-floating-promises": [
+        "error",
+        {
+          allowForKnownSafeCalls: [
+            { from: "package", package: "node:test", name: ["describe", "it"] },
+          ],
+        },
+      ],
+    },
+  },
 
   ...myPlugin
     .config({

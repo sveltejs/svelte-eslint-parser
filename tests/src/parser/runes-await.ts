@@ -1,3 +1,4 @@
+import { describe, it } from "node:test";
 import assert from "assert";
 import semver from "semver";
 import { compile, VERSION } from "svelte/compiler";

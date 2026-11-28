@@ -16,6 +16,8 @@ import {
   styleContextToJson,
 } from "../tests/src/parser/test-utils.js";
 import { extractSelectorLocations } from "../tests/src/parser/style-selector-location-converter-utils.js";
+import { PARSE_ATTRIBUTES_CASES } from "../tests/src/parser/html-test-cases.js";
+import { parseAttributes } from "../src/parser/html.js";
 import type ts from "typescript";
 import type ESTree from "estree";
 import globals from "globals";
@@ -267,6 +269,23 @@ for (const {
     "utf8",
   );
 }
+
+fs.writeFileSync(
+  path.resolve(
+    dirname,
+    "../tests/fixtures/parser/html/parse-attributes-output.json",
+  ),
+  `${JSON.stringify(
+    PARSE_ATTRIBUTES_CASES.map(({ input, index = 0 }) => ({
+      input,
+      index,
+      result: parseAttributes(input, index),
+    })),
+    null,
+    2,
+  )}\n`,
+  "utf8",
+);
 
 function buildTypes(
   input: string,

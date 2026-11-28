@@ -1,3 +1,4 @@
+import { describe, it } from "node:test";
 import { Context } from "../../../../src/context/index.js";
 import type { NormalizedParserOptions } from "../../../../src/parser/parser-options.js";
 import { parseScriptInSvelte } from "../../../../src/parser/script.js";

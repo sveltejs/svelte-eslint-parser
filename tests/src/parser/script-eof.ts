@@ -1,3 +1,4 @@
+import { describe, it } from "node:test";
 import assert from "assert";
 import * as tsParser from "@typescript-eslint/parser";
 import { parseForESLint } from "../../../src/index.js";
