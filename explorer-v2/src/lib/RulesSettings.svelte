@@ -15,7 +15,7 @@
 		)
 	);
 	function onAllClick(category, e) {
-		const newRules = Object.assign({}, rules);
+		const newRules = { ...rules };
 		for (const rule of category.rules) {
 			if (e.target.checked) {
 				newRules[rule.ruleId] = 'error';
@@ -26,7 +26,7 @@
 		rules = newRules;
 	}
 	function onClick(ruleId, e) {
-		const newRules = Object.assign({}, rules);
+		const newRules = { ...rules };
 		if (e.target.checked) {
 			newRules[ruleId] = 'error';
 		} else {

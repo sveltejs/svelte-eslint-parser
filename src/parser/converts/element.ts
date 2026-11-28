@@ -1088,8 +1088,7 @@ export function extractElementTags<
   const startTagEnd =
     ctx.code.indexOf(
       ">",
-      element.startTag.attributes[element.startTag.attributes.length - 1]
-        ?.range[1] ?? openTokenRange.end,
+      element.startTag.attributes.at(-1)?.range[1] ?? openTokenRange.end,
     ) + 1;
   element.startTag.range[1] = startTagEnd;
   element.startTag.loc.end = ctx.getLocFromIndex(startTagEnd);

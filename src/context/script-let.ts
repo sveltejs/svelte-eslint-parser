@@ -1085,18 +1085,16 @@ export class ScriptLetContext {
       );
       this.pushScope(restore, "}", this.currentScriptScopeKind);
     } else {
-      const sortedParams = [...resolvedParams]
-        .map((d) => {
-          return {
-            ...d,
-            range: this.getNodeRange(d.node),
-          };
-        })
-        .sort((a, b) => {
-          const [pA] = a.range;
-          const [pB] = b.range;
-          return pA - pB;
-        });
+      const sortedParams = Array.from(resolvedParams, (d) => {
+        return {
+          ...d,
+          range: this.getNodeRange(d.node),
+        };
+      }).sort((a, b) => {
+        const [pA] = a.range;
+        const [pB] = b.range;
+        return pA - pB;
+      });
 
       const maps: {
         index: number;

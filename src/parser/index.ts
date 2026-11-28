@@ -310,7 +310,7 @@ function parseAsSvelte(
         (runeReferenced || hasTopLevelAwait(resultScript.ast)),
     },
   });
-  resultScript.visitorKeys = Object.assign({}, KEYS, resultScript.visitorKeys);
+  resultScript.visitorKeys = { ...KEYS, ...resultScript.visitorKeys };
 
   return resultScript as any;
 }
@@ -339,7 +339,7 @@ function parseAsScript(
     isSvelteScript: true,
     svelteParseContext,
   });
-  resultScript.visitorKeys = Object.assign({}, KEYS, resultScript.visitorKeys);
+  resultScript.visitorKeys = { ...KEYS, ...resultScript.visitorKeys };
   return resultScript as any;
 }
 

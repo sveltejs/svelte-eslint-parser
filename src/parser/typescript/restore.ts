@@ -64,7 +64,7 @@ export class RestoreContext {
   }
 
   public addVirtualFragmentRange(start: number, end: number): void {
-    const peek = this.virtualFragments[this.virtualFragments.length - 1];
+    const peek = this.virtualFragments.at(-1);
     if (peek && peek.end === start) {
       peek.end = end;
       return;

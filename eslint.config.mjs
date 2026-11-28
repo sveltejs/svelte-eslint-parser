@@ -1,5 +1,6 @@
 import * as myPlugin from "@ota-meshi/eslint-plugin";
 import globals from "globals";
+import e18e from "@e18e/eslint-plugin";
 
 export default [
   {
@@ -35,6 +36,23 @@ export default [
     yaml: true,
     prettier: true,
   }),
+  e18e.configs.recommended,
+  {
+    rules: {
+      // These need Node.js 20, but we still support Node.js 18.
+      "e18e/prefer-array-to-reversed": "off",
+      "e18e/prefer-array-to-sorted": "off",
+      "e18e/prefer-array-to-spliced": "off",
+      // Too many hits for now. Enable it in a follow-up.
+      "e18e/prefer-static-regex": "off",
+      "e18e/ban-dependencies": [
+        "error",
+        {
+          allowed: ["semver", "rimraf", "eslint-plugin-eslint-comments"],
+        },
+      ],
+    },
+  },
   {
     languageOptions: {
       sourceType: "module",

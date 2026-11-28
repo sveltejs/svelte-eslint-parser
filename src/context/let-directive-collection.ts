@@ -37,7 +37,7 @@ export class LetDirectiveCollections {
   }
 
   public getCollection(): LetDirectiveCollection {
-    return this.stack[this.stack.length - 1];
+    return this.stack.at(-1)!;
   }
 
   public extract(): LetDirectiveCollection {
