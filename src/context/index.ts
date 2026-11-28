@@ -23,6 +23,11 @@ import {
   type NormalizedParserOptions,
 } from "../parser/parser-options.js";
 
+const RE_TAG_END_OR_BLANK_LINE = />\s*$|^\s*$/m;
+const RE_WHITESPACE = /\s/u;
+const RE_WORD_CHAR = /[\w$]/u;
+const RE_SCRIPT_STYLE_TEMPLATE_TAG = /<(?:script|style|template)/u;
+
 export class ScriptsSourceCode {
   private raw: string;
 
@@ -278,7 +283,7 @@ export class Context {
           let before = scriptSpaces.slice(start, block.contentRange[0]);
           if (
             lastScriptEnd != null &&
-            !/[\n\r\u2028\u2029]/u.test(
+            !RE_LINE_BREAK.test(
               scriptSpaces.slice(lastScriptEnd, block.contentRange[0]),
             )
           ) {
@@ -477,7 +482,7 @@ function isValidStartTagOpenIndex(
   startTagOpenIndex: number,
 ): boolean {
   const prev = code.slice(0, startTagOpenIndex);
-  return />\s*$|^\s*$/m.test(prev);
+  return RE_TAG_END_OR_BLANK_LINE.test(prev);
 }
 
 const RE_LINE_BREAK = /[\n\r\u2028\u2029]/u;
@@ -529,7 +534,7 @@ function findMustacheEnd(code: string, start: number): number | null {
   while (index < code.length) {
     const c = code[index];
     let next: number | null = index + 1;
-    if (/\s/u.test(c)) {
+    if (RE_WHITESPACE.test(c)) {
       index = next;
       continue;
     }
@@ -572,7 +577,7 @@ function findMustacheEnd(code: string, start: number): number | null {
       } else {
         next = end;
       }
-    } else if (/[\w$]/u.test(c)) {
+    } else if (RE_WORD_CHAR.test(c)) {
       RE_WORD.lastIndex = index;
       RE_WORD.test(code);
       next = RE_WORD.lastIndex;
@@ -698,7 +703,7 @@ function extractBlocks(
         if (text.includes("<!--")) return null;
         startTagOpenRe.lastIndex = end;
         // Only these ranges can change which blocks are extracted.
-        if (/<(?:script|style|template)/u.test(text)) {
+        if (RE_SCRIPT_STYLE_TEMPLATE_TAG.test(text)) {
           skippedRanges.push([start, end]);
         }
       }

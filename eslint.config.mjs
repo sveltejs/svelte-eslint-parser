@@ -39,8 +39,6 @@ export default [
   e18e.configs.recommended,
   {
     rules: {
-      // Too many hits for now. Enable it in a follow-up.
-      "e18e/prefer-static-regex": "off",
       "e18e/ban-dependencies": [
         "error",
         {
@@ -195,6 +193,13 @@ export default [
 
       "no-shadow": "off",
       camelcase: "off",
+    },
+  },
+  {
+    // Hoisting regexes only pays off in the parser itself.
+    files: ["tests/**", "tools/**", "explorer-v2/**"],
+    rules: {
+      "e18e/prefer-static-regex": "off",
     },
   },
   {

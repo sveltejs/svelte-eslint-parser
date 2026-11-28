@@ -58,6 +58,8 @@ import type { Child } from "../compat.js";
 import { getChildren, getFragment } from "../compat.js";
 import { prepareGenericComponentProps } from "./component-props.js";
 
+const RE_SINGLE_LETTER_DASHES = /^[a-z]-+$/u;
+
 /** Convert for Fragment or Element or ... */
 export function* convertChildren(
   fragment:
@@ -541,7 +543,8 @@ function convertHTMLElement(
   if (element.startTag.selfClosing && element.name.name.endsWith("-")) {
     // Restore the self-closing block.
     const selfClosingBlock =
-      /^[a-z]-+$/u.test(element.name.name) && ctx.findSelfClosingBlock(element);
+      RE_SINGLE_LETTER_DASHES.test(element.name.name) &&
+      ctx.findSelfClosingBlock(element);
     if (selfClosingBlock) {
       element.name.name = selfClosingBlock.tag;
     }

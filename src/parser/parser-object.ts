@@ -1,5 +1,7 @@
 import type { ESLintExtendedProgram, ESLintProgram } from "./index.js";
 import type * as tsESLintParser from "@typescript-eslint/parser";
+
+const RE_DRIVE_LETTER = /^[A-Za-z]:/u;
 type TSESLintParser = typeof tsESLintParser;
 /**
  * The type of basic ESLint custom parser.
@@ -86,7 +88,7 @@ export function isTSESLintParserObject(
  */
 export function getDefaultTsconfigRootDir(): string | undefined {
   const cwd = process.cwd();
-  if (process.platform === "win32" && !/^[A-Za-z]:/u.test(cwd)) {
+  if (process.platform === "win32" && !RE_DRIVE_LETTER.test(cwd)) {
     return undefined;
   }
   return cwd;

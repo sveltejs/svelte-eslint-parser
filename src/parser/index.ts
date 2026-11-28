@@ -73,6 +73,8 @@ import { resolveSvelteConfigFromOption } from "../svelte-config/index.js";
 import { getESLintScope } from "./eslint-scope.js";
 import { rememberParserOptions } from "../ts-sys-hook.js";
 
+const RE_NON_WORD_CHAR = /^[^\w$]$/iu;
+
 export {
   StyleContext,
   StyleContextNoStyleElement,
@@ -404,6 +406,6 @@ function extractTokens(ctx: Context) {
    * Checks if the given char is punctuator
    */
   function isPunctuator(c: string) {
-    return /^[^\w$]$/iu.test(c);
+    return RE_NON_WORD_CHAR.test(c);
   }
 }
