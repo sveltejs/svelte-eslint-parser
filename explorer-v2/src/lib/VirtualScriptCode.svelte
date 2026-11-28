@@ -6,8 +6,8 @@
 	import { deserializeState, serializeState } from './scripts/state';
 	import { onDestroy, onMount } from 'svelte';
 
-	let tsParser = undefined;
-	let loaded = false;
+	let tsParser = $state.raw(undefined);
+	let loaded = $state(false);
 	import('@typescript-eslint/parser')
 		.then((parser) => {
 			if (typeof window !== 'undefined') {
@@ -39,31 +39,28 @@
     {ee}
 {/each}
 `;
-	const state = deserializeState(
+	const initialState = deserializeState(
 		(typeof window !== 'undefined' && window.location.hash.slice(1)) || ''
 	);
-	let code = state.code || DEFAULT_CODE;
-	let virtualScriptCode = '';
-	let time = '';
+	let code = $state(initialState.code || DEFAULT_CODE);
+	let virtualScriptCode = $state('');
+	let time = $state('');
 
-	let vscriptEditor, sourceEditor;
-	$: {
+	$effect(() => {
 		if (loaded) {
 			refresh(code);
 		}
-	}
+	});
 
-	$: serializedString = (() => {
+	const serializedString = $derived.by(() => {
 		const serializeCode = DEFAULT_CODE === code ? undefined : code;
 		return serializeState({
 			code: serializeCode
 		});
-	})();
-	$: {
-		if (typeof window !== 'undefined') {
-			window.location.replace(`#${serializedString}`);
-		}
-	}
+	});
+	$effect(() => {
+		window.location.replace(`#${serializedString}`);
+	});
 	onMount(() => {
 		if (typeof window !== 'undefined') {
 			window.addEventListener('hashchange', onUrlHashChange);
@@ -78,8 +75,8 @@
 		const newSerializedString =
 			(typeof window !== 'undefined' && window.location.hash.slice(1)) || '';
 		if (newSerializedString !== serializedString) {
-			const state = deserializeState(newSerializedString);
-			code = state.code || DEFAULT_CODE;
+			const newState = deserializeState(newSerializedString);
+			code = newState.code || DEFAULT_CODE;
 		}
 	}
 	function refresh(svelteCodeValue) {
@@ -101,9 +98,8 @@
 <div class="ast-explorer-root">
 	<div class="ast-tools">{time}</div>
 	<div class="ast-explorer">
-		<MonacoEditor bind:this={sourceEditor} bind:code language="svelte" />
+		<MonacoEditor bind:code language="svelte" />
 		<MonacoEditor
-			bind:this={vscriptEditor}
 			code={virtualScriptCode}
 			language="typescript"
 			readOnly

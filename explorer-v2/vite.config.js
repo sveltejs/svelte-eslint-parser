@@ -1,14 +1,7 @@
 import staticAdapter from '@sveltejs/adapter-static';
 import { sveltekit } from '@sveltejs/kit/vite';
 import { resolve } from 'path';
-import { readFileSync } from 'fs';
-import { findPackageJSON } from 'module';
 import eslint4b, { requireESLintUseAtYourOwnRisk4b } from 'vite-plugin-eslint4b';
-
-// monaco-editor's `exports` does not expose `./package.json`, so locate it without going through `exports`.
-const { version: MONACO_EDITOR_VERSION } = JSON.parse(
-	readFileSync(findPackageJSON('monaco-editor', import.meta.url), 'utf8')
-);
 
 /** @type {import('vite').UserConfig} */
 const config = {
@@ -24,7 +17,12 @@ const config = {
 				pages: 'build',
 				assets: 'build',
 				fallback: null
-			})
+			}),
+
+			compilerOptions: {
+				// Force Svelte 5 runes mode. Svelte 4 syntax is a compile error.
+				runes: true
+			}
 		}),
 		eslint4b(),
 		requireESLintUseAtYourOwnRisk4b()
@@ -46,9 +44,6 @@ const config = {
 			'fast-glob': resolve('./build-system/shim/fast-glob.js'),
 			tslib: resolve('./node_modules/tslib/tslib.es6.js')
 		}
-	},
-	define: {
-		MONACO_EDITOR_VERSION: JSON.stringify(MONACO_EDITOR_VERSION)
 	}
 };
 
