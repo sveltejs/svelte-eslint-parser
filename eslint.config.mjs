@@ -39,10 +39,6 @@ export default [
   e18e.configs.recommended,
   {
     rules: {
-      // These need Node.js 20, but we still support Node.js 18.
-      "e18e/prefer-array-to-reversed": "off",
-      "e18e/prefer-array-to-sorted": "off",
-      "e18e/prefer-array-to-spliced": "off",
       // Too many hits for now. Enable it in a follow-up.
       "e18e/prefer-static-regex": "off",
       "e18e/ban-dependencies": [

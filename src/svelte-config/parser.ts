@@ -185,7 +185,7 @@ class EvaluatedObject {
 
   private scanProperty(key: string): Found {
     let unknown = false;
-    for (const prop of [...this.node.properties].reverse()) {
+    for (const prop of this.node.properties.toReversed()) {
       if (prop.type === "Property") {
         const name = getPropertyKey(prop, this.parseExpression);
         if (name === key) return this.parseExpression(prop.value) ?? UNKNOWN;
