@@ -843,8 +843,7 @@ function convertActionDirective(
     processExpression: buildProcessExpressionForExpression(
       directive,
       ctx,
-      // A type query cannot contain an optional chain, so a chained name gets no type query.
-      node.name.includes("?.") ? null : `Parameters<typeof ${node.name}>[1]`,
+      getActionParameterTyping(node.name),
     ),
     processName: (name) =>
       ctx.scriptLet.addExpression(
@@ -855,6 +854,18 @@ function convertActionDirective(
       ),
   });
   return directive;
+}
+
+/**
+ * Get the type of the parameter of `use:`.
+ * A type query cannot contain `?.`, so `use:a?.b` uses `typeof a.b`. TypeScript still resolves
+ * the type when `a` may be `undefined`. `?.[` has no such form, so it gets no type.
+ */
+function getActionParameterTyping(name: string): string | null {
+  if (name.includes("?.[")) {
+    return null;
+  }
+  return `Parameters<typeof ${name.replace(/\?\./gu, ".")}>[1]`;
 }
 
 /** Convert for Let Directive */
