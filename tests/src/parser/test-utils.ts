@@ -637,7 +637,7 @@ const nodeToKeys: SvelteKeysType = {
   SvelteLiteral: [],
   SvelteMustacheTag: ["expression"],
   SvelteDebugTag: ["identifiers"],
-  SvelteConstTag: ["declaration"],
+  SvelteConstTag: ["declarations"],
   SvelteRenderTag: ["expression"],
   SvelteIfBlock: ["elseif", "expression", "children", "else"],
   SvelteElseBlock: ["elseif", "children"],
