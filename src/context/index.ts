@@ -467,39 +467,139 @@ function isValidStartTagOpenIndex(
 
 const RE_LINE_BREAK = /[\n\r\u2028\u2029]/u;
 
+// `/` after a `{`, `:`, `@` or `#` tag such as `{#if` or `{:else if` can start
+// a regexp, but `/` right after `{` is a closing tag such as `{/if}`.
+const RE_TAG_START = /\s*[#:@][a-z]+(?:\s+if\b)?/uy;
+const RE_WORD = /[\w$]+/uy;
+// A `/` after one of these characters or keywords starts a regexp.
+const REGEXP_PREFIX_CHARS = "(,=:[!&|?{;+-*/%<>~^";
+const REGEXP_PREFIX_KEYWORDS = new Set([
+  "await",
+  "case",
+  "delete",
+  "do",
+  "else",
+  "in",
+  "instanceof",
+  "new",
+  "of",
+  "return",
+  "throw",
+  "typeof",
+  "void",
+  "yield",
+]);
+
 /**
  * Find the index after the `}` that closes the mustache tag at `start`.
  * Returns `null` if it is not closed.
- * It does not tell a regexp from a division, so it can stop early or run too
- * far. `parseTemplateWithContext()` falls back when it runs too far.
+ * It guesses whether a `/` starts a regexp from the token before it, so it
+ * can be wrong, for example with `if (a) /{/`. Then it can stop early or run
+ * too far. `parseTemplateWithContext()` falls back when it runs too far.
  */
 function findMustacheEnd(code: string, start: number): number | null {
   // `true` for `${` in a template literal, `false` for `{`.
   const braces: boolean[] = [];
   let index = start + 1;
+  let regexpAllowed = false;
+  RE_TAG_START.lastIndex = index;
+  const tag = RE_TAG_START.exec(code);
+  if (tag) {
+    index += tag[0].length;
+    regexpAllowed = true;
+  }
+  let afterDot = false;
+  // A `/` before this index is a division. This keeps the scan linear.
+  let divisionEnd = 0;
   while (index < code.length) {
     const c = code[index];
     let next: number | null = index + 1;
+    if (/\s/u.test(c)) {
+      index = next;
+      continue;
+    }
+    if (c === "/" && code[index + 1] === "/") {
+      next = index + 2;
+      while (next < code.length && !RE_LINE_BREAK.test(code[next])) next++;
+      index = next;
+      continue;
+    }
+    if (c === "/" && code[index + 1] === "*") {
+      const commentEnd = code.indexOf("*/", index + 2);
+      if (commentEnd < 0) return null;
+      index = commentEnd + 2;
+      continue;
+    }
+    // Whether a `/` after this token starts a regexp.
+    let allowed = false;
     if (c === "{") {
       braces.push(false);
+      allowed = true;
     } else if (c === "}") {
       if (!braces.length) return index + 1;
-      if (braces.pop()) next = skipTemplateLiteral(code, index + 1, braces);
+      if (braces.pop()) {
+        next = skipTemplateLiteral(code, index + 1, braces);
+        // A regexp can start after `${`.
+        allowed = next != null && code[next - 1] === "{";
+      }
     } else if (c === "'" || c === '"') {
       next = skipString(code, index);
     } else if (c === "`") {
       next = skipTemplateLiteral(code, index + 1, braces);
-    } else if (c === "/" && code[index + 1] === "/") {
-      next = index + 2;
-      while (next < code.length && !RE_LINE_BREAK.test(code[next])) next++;
-    } else if (c === "/" && code[index + 1] === "*") {
-      const commentEnd = code.indexOf("*/", index + 2);
-      next = commentEnd < 0 ? null : commentEnd + 2;
+      allowed = next != null && code[next - 1] === "{";
+    } else if (c === "/" && regexpAllowed && index >= divisionEnd) {
+      const end = skipRegExp(code, index);
+      if (end < 0) {
+        // There is no closing `/` on the line, so take it as a division, and
+        // the rest of the line too.
+        divisionEnd = -end;
+        allowed = true;
+      } else {
+        next = end;
+      }
+    } else if (/[\w$]/u.test(c)) {
+      RE_WORD.lastIndex = index;
+      RE_WORD.test(code);
+      next = RE_WORD.lastIndex;
+      allowed =
+        !afterDot && REGEXP_PREFIX_KEYWORDS.has(code.slice(index, next));
+    } else {
+      allowed = REGEXP_PREFIX_CHARS.includes(c);
     }
     if (next == null) return null;
+    afterDot = c === ".";
+    regexpAllowed = allowed;
     index = next;
   }
   return null;
+}
+
+/**
+ * Skip a regexp literal that starts with the `/` at `start`.
+ * Returns the index after the closing `/`. If it is not closed on the line,
+ * returns the index of the end of the line, negated.
+ */
+function skipRegExp(code: string, start: number): number {
+  let inClass = false;
+  let index = start + 1;
+  while (index < code.length) {
+    const c = code[index];
+    if (RE_LINE_BREAK.test(c)) return -index;
+    if (c === "\\") {
+      index++;
+      if (index < code.length && RE_LINE_BREAK.test(code[index])) {
+        return -index;
+      }
+    } else if (c === "[") {
+      inClass = true;
+    } else if (c === "]") {
+      inClass = false;
+    } else if (c === "/" && !inClass) {
+      return index + 1;
+    }
+    index++;
+  }
+  return -code.length;
 }
 
 /**

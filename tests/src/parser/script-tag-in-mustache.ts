@@ -8,7 +8,8 @@ import { astToJson } from "./test-utils.js";
 
 const LEAK = "<script>let leaked = 1</script>";
 const SCRIPT = "<script>\n  let v = 1;\n</script>";
-// A regexp with `{` breaks the brace count, so the scan runs too far.
+// A regexp after `)` is taken as a division. Then `{` in it breaks the brace
+// count, so the scan runs too far.
 const OVERRUN = "{(() => { if (v) /[{]/.test(''); return 1; })()}";
 
 /** Check that the real script is the only script block */
@@ -41,6 +42,19 @@ function assertVariables(
 function variableNames(result: ReturnType<typeof parseForESLint>) {
   return result.scopeManager.scopes.flatMap((scope) =>
     scope.variables.map((variable) => variable.name),
+  );
+}
+
+/** Check that there is one style block, with its `lang` attribute */
+function assertStyle(result: ReturnType<typeof parseForESLint>) {
+  const styles = result.ast.body.filter(
+    (node) => node.type === "SvelteStyleElement",
+  );
+  assert.strictEqual(styles.length, 1);
+  assert.ok(
+    styles[0].startTag.attributes.some(
+      (attr) => attr.type === "SvelteAttribute" && attr.key.name === "lang",
+    ),
   );
 }
 
@@ -119,6 +133,46 @@ describe("Script tags inside mustache tags", () => {
         template: `<p>{/* } ${LEAK} */ v}</p>`,
         svelte5: true,
       },
+      {
+        name: "regexp with slashes",
+        template: `<p>{String(v).replace(/\\//g, '')}</p>{'${LEAK}'}`,
+      },
+      {
+        name: "regexp with a quote",
+        template: `<p>{String(v).match(/'/)}</p>{'${LEAK}'}`,
+      },
+      {
+        name: "regexp with braces",
+        template: `<p>{0 || /[{]/.test(String(v))}</p>{'${LEAK}'}`,
+      },
+      {
+        name: "regexp with a slash in a class",
+        template: `<p>{String(v).match(/[/']/)}</p>{'${LEAK}'}`,
+      },
+      {
+        name: "regexp after a keyword",
+        template: `<p>{typeof /'/}</p>{'${LEAK}'}`,
+      },
+      {
+        name: "regexp after a block tag",
+        template: `{#if v}x{:else if /[{]/.test('')}y{/if}{#if /'/.test(String(v))}z{/if}{'${LEAK}'}`,
+      },
+      {
+        name: "regexp after `{@html`",
+        template: `{@html /\`/.source}{'${LEAK}'}`,
+      },
+      {
+        name: "regexp in a template literal",
+        template: `<p>{\`\${/{/.source}\`}</p>{'${LEAK}'}`,
+      },
+      {
+        name: "division",
+        template: `<p>{v / 2 + '}'}</p>{'${LEAK}'}`,
+      },
+      {
+        name: "division and a slash in a string",
+        template: `<p>{[v].map((x) => x / 2).join('/')}</p>{'${LEAK}'}`,
+      },
     ];
     for (const { name, template, svelte5 } of cases) {
       // Svelte 3 and 4 do not support these comments in the template.
@@ -148,14 +202,15 @@ describe("Script tags inside mustache tags", () => {
   describe("are parsed as before when the scan is confused", () => {
     // An unclosed mustache tag turns off skipping in the whole file.
     it("gives up at a quote in a regexp, and leaks a script before it", () => {
-      const code = `${SCRIPT}\n<p>{@html '${LEAK}'}</p>\n<p>{String(v).match(/'/)}</p>\n`;
+      // A regexp right after `{` is taken as a division, because `{/` in text is a closing tag.
+      const code = `${SCRIPT}\n<p>{@html '${LEAK}'}</p>\n<p title={/'/.source}></p>\n`;
       const names = variableNames(parseForESLint(code, {}));
       assert.ok(names.includes("leaked"));
       assert.ok(names.includes("v"));
     });
 
     it("gives up at a quote in a regexp, and throws", () => {
-      const code = `<script>let v = /}/;</script>\n<!-- c -->\n<div title={'<script>'}></div>\n{0 || /'/.test(v)}\n{'<script>let leak=1</script>'}\n{a.replace(/}/g, '')}\n`;
+      const code = `<script>let v = /}/;</script>\n<!-- c -->\n<div title={'<script>'}></div>\n<p title={/'/.source}></p>\n{'<script>let leak=1</script>'}\n{a.replace(/}/g, '')}\n`;
       assert.throws(() => parseForESLint(code, {}));
     });
 
@@ -184,32 +239,32 @@ describe("Script tags inside mustache tags", () => {
       const cases: { name: string; code: string; variables: string[] }[] = [
         {
           name: "script after an attribute",
-          code: "<div title={a.replace(/\\{/g, '')}></div><script>\n  let a = 1; const r = /}/;\n</script>\n<p>{a}</p>\n",
-          variables: ["a", "r"],
+          code: "<div title={/[{]/.source}></div><script>\n  let a = 1;\n  if (a) /}/.test('');\n</script>\n<p>{a}</p>\n",
+          variables: ["a"],
         },
         {
           name: "script with a string",
-          code: "<p>{v.match(/'/)}</p><script>let v = '}';</script>\n",
+          code: "<p title={/'/.source}></p><script>let v = '}';</script>\n",
           variables: ["v"],
         },
         {
           name: "script after an element",
-          code: "<p>{0 || /\\{/.test(v)}</p><script>\n  let v = 1;\n  const re = /\\}/;\n</script>\n",
-          variables: ["v", "re"],
+          code: "<p>{(() => { if (v) /[{]/.test(''); })()}</p><script>\n  let v = 1;\n  if (v) /}/.test('');\n</script>\n",
+          variables: ["v"],
         },
         {
           name: "script after text",
-          code: "<h1>Hi</h1>\n{0 || /\\{/.test(v)}<script>\n  let v = 1;\n  const re = /}/;\n</script>\n",
-          variables: ["v", "re"],
+          code: "<h1>Hi</h1>\n{(() => { if (v) /[{]/.test(''); })()}<script>\n  let v = 1;\n  if (v) /}/.test('');\n</script>\n",
+          variables: ["v"],
         },
         {
           name: "module script",
-          code: '<p>{0 || /\\{/.test(v)}</p><script context="module">export const re = /}/;</script>\n<script>let v = 1;</script>\n',
+          code: '<p>{(() => { if (v) /[{]/.test(""); })()}</p><script context="module">export const re = 1; if (re) /}/.test("");</script>\n<script>let v = 1;</script>\n',
           variables: ["v", "re"],
         },
         {
           name: "options",
-          code: "<p>{0 || /\\{/.test(v)}</p><script>let v = 1;</script><svelte:options customElement={{tag: 'my-el', extend: (c) => class extends c { static re = /}/ }}} />\n",
+          code: "<p>{(() => { if (v) /[{]/.test(''); })()}</p><script>let v = 1;</script><svelte:options customElement={{tag: 'my-el', extend: (c) => { if (c) /}/.test(''); return c; }}} />\n",
           variables: ["v"],
         },
       ];
@@ -220,17 +275,18 @@ describe("Script tags inside mustache tags", () => {
       }
 
       it("style after an element", () => {
-        const code = `<p>{0 || /\\{/.test(v)}</p><style>\n  p::after { content: "}"; }\n</style>\n${SCRIPT}\n`;
+        // The scan ends at the escaped `}` in the selector.
+        const code = `<p>{(() => { if (v) /[{]/.test(''); })()}</p><style lang="scss">\n  .a\\} { color: red; }\n</style>\n${SCRIPT}\n`;
         const result = parseForESLint(code, {});
         assertScript(result);
-        assert.strictEqual(countNodes(result, "SvelteStyleElement"), 1);
+        assertStyle(result);
       });
 
       it("style after an attribute", () => {
-        const code = `${SCRIPT}\n<div title={String(v).replace(/\\{/g, '')}></div><style>p { color: red; }</style>\n`;
+        const code = `${SCRIPT}\n<div title={/[{]/.source}></div><style lang="scss">\n  .a\\} { color: red; }\n</style>\n`;
         const result = parseForESLint(code, {});
         assertScript(result);
-        assert.strictEqual(countNodes(result, "SvelteStyleElement"), 1);
+        assertStyle(result);
       });
     });
 
@@ -245,7 +301,7 @@ describe("Script tags inside mustache tags", () => {
         '<div a={"<!--"} c="\n<script>let x = 1;</script>-->"></div>\n',
         '<textarea>{"<!--"}\n<script>let x = 1;</script>\n--></textarea>\n',
         '<div>x<style>\na{ content: "<!--" }\n<script>let x = 1;</script> -->\n</style></div>\n',
-        '<div a={f(/`/)} b="<!--`}" c="\n<script>let x = 1;</script>-->"></div>\n',
+        '<div a={/`/.source} b="<!--`}" c="\n<script>let x = 1;</script>-->"></div>\n',
       ];
       for (const code of cases) {
         it(code, () => {
@@ -288,9 +344,9 @@ describe("Script tags inside mustache tags", () => {
     });
 
     describe("hidden pug template", () => {
-      // The scan runs from `{/\{/` to the `}` after the pug template.
+      // The scan runs from `{/[{]/` to the `}` after the pug template.
       const hidden =
-        '<input title={/\\{/.source} />\n<template lang="pug">p #{n}</template><br/>}';
+        '<input title={/[{]/.source}>\n<template lang="pug">p #{n}</template>\n<br>}';
       const wrappers: { name: string; wrap: string }[] = [
         { name: "element", wrap: "<div>X</div>" },
         { name: "if block", wrap: "{#if true}X{/if}" },
@@ -360,6 +416,15 @@ describe("Script tags inside mustache tags", () => {
   it("stays linear for unclosed mustache tags", () => {
     const start = performance.now();
     assert.throws(() => parseForESLint("<p>{a</p>\n".repeat(16000), {}));
+    // A quadratic scan would take seconds.
+    assert.ok(performance.now() - start < 1000);
+  });
+
+  it("stays linear for regexps that are not closed", () => {
+    const start = performance.now();
+    assert.throws(() =>
+      parseForESLint(`<p>{${"(/[".repeat(16000)}}</p>\n`, {}),
+    );
     // A quadratic scan would take seconds.
     assert.ok(performance.now() - start < 1000);
   });
