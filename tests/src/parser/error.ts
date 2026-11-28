@@ -58,7 +58,7 @@ describe("Check for the error location of script blocks on the same line.", () =
       parse(virtualCode: string) {
         const lines = virtualCode.slice(0, index).split("\n");
         const lineNumber = lines.length;
-        const column = lines[lines.length - 1].length + columnBase;
+        const column = lines.at(-1)!.length + columnBase;
         const message = locInMessage
           ? `Unexpected token (${lineNumber}:${column})`
           : "Unexpected token";
@@ -108,10 +108,7 @@ describe("Check for the error location of script blocks on the same line.", () =
         } catch (e: any) {
           assert.strictEqual(e.message, "Unexpected token");
           assert.strictEqual(e.lineNumber, lines.length);
-          assert.strictEqual(
-            e.column,
-            lines[lines.length - 1].length + columnBase,
-          );
+          assert.strictEqual(e.column, lines.at(-1)!.length + columnBase);
           return;
         }
         assert.fail("Expected error");
@@ -139,7 +136,7 @@ describe("Check for the error location of script blocks on the same line.", () =
       parse(virtualCode: string) {
         const lines = virtualCode.slice(0, errorIndex).split("\n");
         const lineNumber = lines.length;
-        const column = lines[lines.length - 1].length;
+        const column = lines.at(-1)!.length;
         throw Object.assign(
           new SyntaxError(
             `Unexpected token (${lineNumber}:${column})\nlet a = 1 +* 2\n           ^`,

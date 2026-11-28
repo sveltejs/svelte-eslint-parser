@@ -216,7 +216,7 @@ it("must point to the selector node after SCSS interpolation", () => {
   const texts = getSelectorTexts(
     '<style lang="scss">.a-#{$x} /* c */ .b {}</style>',
   );
-  assert.strictEqual(texts[texts.length - 1], ".b");
+  assert.strictEqual(texts.at(-1), ".b");
 });
 
 it("must give the combinator location when a comment is removed before the same comment", () => {

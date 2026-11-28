@@ -94,7 +94,7 @@ export function trimChildren(
 ): (SvAST.TemplateNode | Child)[] {
   if (
     !startsWithWhitespace(children[0]) &&
-    !endsWithWhitespace(children[children.length - 1])
+    !endsWithWhitespace(children.at(-1))
   ) {
     return children;
   }
@@ -107,10 +107,10 @@ export function trimChildren(
   if (startsWithWhitespace(first)) {
     nodes[0] = { ...first, data: first.data.trimStart() };
   }
-  while (isWhitespace(nodes[nodes.length - 1])) {
+  while (isWhitespace(nodes.at(-1))) {
     nodes.pop();
   }
-  const last = nodes[nodes.length - 1];
+  const last = nodes.at(-1);
   if (endsWithWhitespace(last)) {
     nodes[nodes.length - 1] = { ...last, data: last.data.trimEnd() };
   }

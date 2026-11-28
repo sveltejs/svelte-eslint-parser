@@ -3922,10 +3922,12 @@ ${template}`,
         names.every((n) => !n.startsWith("$_genericProps")),
         names.join(", "),
       );
-      const users = result.scopeManager
-        .globalScope!.childScopes.flatMap((s) => s.variables)
-        .concat(result.scopeManager.globalScope!.variables)
-        .find((v) => v.name === "users");
+      const users = [
+        ...result.scopeManager.globalScope!.childScopes.flatMap(
+          (s) => s.variables,
+        ),
+        ...result.scopeManager.globalScope!.variables,
+      ].find((v) => v.name === "users");
       // Only the attribute reads `users`; the inference statement adds nothing.
       assert.strictEqual(users?.references.filter((r) => !r.init).length, 1);
       assert.ok(

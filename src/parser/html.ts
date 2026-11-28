@@ -269,9 +269,7 @@ function parseAttributeMustache(state: State):
       }
       state.advance();
     }
-    if (valueEnd == null) {
-      valueEnd = state.index;
-    }
+    valueEnd ??= state.index;
 
     return {
       type: "Line",
@@ -294,9 +292,7 @@ function parseAttributeMustache(state: State):
       }
       state.advance();
     }
-    if (valueEnd == null) {
-      valueEnd = state.index;
-    }
+    valueEnd ??= state.index;
 
     return {
       type: "Block",

@@ -543,9 +543,10 @@ function getInstanceExportsType(
   if (!members.size) {
     return null;
   }
-  return `{ ${[...members]
-    .map(([exported, local]) => `${propKey(exported)}: typeof ${local}`)
-    .join("; ")} }`;
+  return `{ ${Array.from(
+    members,
+    ([exported, local]) => `${propKey(exported)}: typeof ${local}`,
+  ).join("; ")} }`;
 }
 
 /** Quote non-identifier keys so reserved-word prop names like `class` are emitted safely. */

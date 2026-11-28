@@ -303,7 +303,7 @@ function buildTypes(
         if (node.type === "SvelteScriptElement" && node.body.length) {
           scriptLineRange.push([
             node.startTag.loc.end.line - 1,
-            node.body[node.body.length - 1].loc!.end.line - 1,
+            node.body.at(-1)!.loc!.end.line - 1,
           ]);
         }
         if (node.type === "SvelteDirective" && node.expression) {
@@ -316,7 +316,7 @@ function buildTypes(
         if (node.type === "SvelteGenericsDirective") {
           const endLine = Math.min(
             node.loc.end.line - 1,
-            node.params[node.params.length - 1].loc.end.line,
+            node.params.at(-1)!.loc.end.line,
           );
           if (node.params[0].loc.start.line !== endLine)
             scriptLineRange.push([

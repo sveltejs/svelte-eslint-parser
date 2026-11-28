@@ -1,5 +1,6 @@
 import * as myPlugin from "@ota-meshi/eslint-plugin";
 import globals from "globals";
+import e18e from "@e18e/eslint-plugin";
 
 export default [
   {
@@ -35,6 +36,19 @@ export default [
     yaml: true,
     prettier: true,
   }),
+  e18e.configs.recommended,
+  {
+    rules: {
+      // Too many hits for now. Enable it in a follow-up.
+      "e18e/prefer-static-regex": "off",
+      "e18e/ban-dependencies": [
+        "error",
+        {
+          allowed: ["semver", "rimraf", "eslint-plugin-eslint-comments"],
+        },
+      ],
+    },
+  },
   {
     languageOptions: {
       sourceType: "module",

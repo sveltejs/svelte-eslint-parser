@@ -148,7 +148,7 @@ export function hasTypeInfo(
       //   e.g., (a, b, 1)  → true (last is literal)
       //         (a, b, c)  → false (last has no type info)
       if (node.expressions.length === 0) return false;
-      return isTypeInfoInternal(node.expressions[node.expressions.length - 1]);
+      return isTypeInfoInternal(node.expressions.at(-1)!);
     }
 
     // Handle destructuring and identifier patterns

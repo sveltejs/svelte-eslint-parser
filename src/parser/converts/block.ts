@@ -89,9 +89,7 @@ function endIndexFromFragment(
     return (fragment as { end: number }).end;
   }
   const children = getChildren(fragment);
-  return children.length
-    ? children[children.length - 1].end
-    : getBeforeEndIndex();
+  return children.length ? children.at(-1)!.end : getBeforeEndIndex();
 }
 
 function endIndexFromBlock(
@@ -660,9 +658,9 @@ export function convertSnippetBlock(
 
   let beforeClosingParen: ESTree.Node;
   if (node.parameters.length > 0) {
-    const lastParam = node.parameters[
-      node.parameters.length - 1
-    ] as ESTree.Pattern & { typeAnnotation?: ESTree.Node };
+    const lastParam = node.parameters.at(-1) as ESTree.Pattern & {
+      typeAnnotation?: ESTree.Node;
+    };
     beforeClosingParen = lastParam.typeAnnotation ?? lastParam;
   } else {
     beforeClosingParen = node.expression;

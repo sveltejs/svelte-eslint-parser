@@ -28,7 +28,7 @@
 		(typeof window !== 'undefined' && window.location.hash.slice(1)) || ''
 	);
 	let code = $state(initialState.code || DEFAULT_CODE);
-	let rules = $state.raw(initialState.rules || Object.assign({}, DEFAULT_RULES_CONFIG));
+	let rules = $state.raw(initialState.rules || { ...DEFAULT_RULES_CONFIG });
 	let messages = $state.raw([]);
 	let time = $state('');
 
@@ -84,7 +84,7 @@
 		if (newSerializedString !== serializedString) {
 			const newState = deserializeState(newSerializedString);
 			code = newState.code || DEFAULT_CODE;
-			rules = newState.rules || Object.assign({}, DEFAULT_RULES_CONFIG);
+			rules = newState.rules || { ...DEFAULT_RULES_CONFIG };
 		}
 	}
 
