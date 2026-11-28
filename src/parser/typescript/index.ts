@@ -23,6 +23,8 @@ import {
 } from "../../ts-sys-hook.js";
 import { getJavaScriptParserOptions } from "./javascript.js";
 
+const RE_DRIVE_LETTER = /^[A-Za-z]:/u;
+
 /**
  * Parse for TypeScript in <script>
  */
@@ -96,7 +98,8 @@ function toProjectOptions(
   if (project.some((p) => GLOB_CHARS.test(p))) return null;
   // On Windows, typescript-eslint rejects a `tsconfigRootDir` without a drive
   // letter, such as a UNC path.
-  if (process.platform === "win32" && !/^[A-Za-z]:/u.test(rootDir)) return null;
+  if (process.platform === "win32" && !RE_DRIVE_LETTER.test(rootDir))
+    return null;
   return { project, tsconfigRootDir: rootDir };
 }
 

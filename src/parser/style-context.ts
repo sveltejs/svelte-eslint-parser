@@ -14,6 +14,10 @@ import {
 import type { Context } from "../context/index.js";
 import type { SourceLocation, SvelteStyleElement } from "../ast/index.js";
 
+const RE_WHITESPACE = /\s/u;
+const RE_NEWLINE = /[\n\f\r]/u;
+const RE_IDENT_CHAR = /[\w-]/u;
+
 export type StyleContext =
   | StyleContextNoStyleElement
   | StyleContextParseError
@@ -213,13 +217,13 @@ function blankTopLevelCDOAndCDC(code: string, isSCSS: boolean): string {
   let index = 0;
   while (index < len) {
     const c = code[index];
-    if (/\s/u.test(c)) {
+    if (RE_WHITESPACE.test(c)) {
       index++;
     } else if (code.startsWith("/*", index)) {
       const end = code.indexOf("*/", index + 2);
       index = end === -1 ? len : end + 2;
     } else if (isSCSS && code.startsWith("//", index)) {
-      while (index < len && !/[\n\f\r]/u.test(code[index])) {
+      while (index < len && !RE_NEWLINE.test(code[index])) {
         index++;
       }
     } else if (
@@ -271,7 +275,7 @@ const RE_UNQUOTED_URL_START = /url\(\s*(?![\s"'])/iuy;
 
 /** Checks whether an unquoted `url(...)` starts at the given index. */
 function isUnquotedURLStart(code: string, index: number): boolean {
-  if (index > 0 && /[\w-]/u.test(code[index - 1])) {
+  if (index > 0 && RE_IDENT_CHAR.test(code[index - 1])) {
     return false;
   }
   RE_UNQUOTED_URL_START.lastIndex = index;

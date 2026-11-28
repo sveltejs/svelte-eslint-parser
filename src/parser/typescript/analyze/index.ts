@@ -31,6 +31,9 @@ import {
   type InstanceGenerics,
 } from "./component.js";
 
+const RE_LEADING_WHITESPACE = /^\s*/u;
+const RE_JSDOC_TYPE_TAG = /(?:^|[\s*])@type\s*\{/u;
+
 export type AnalyzeTypeScriptContext = {
   slots: Set<SvelteHTMLElement>;
   svelteParseContext: SvelteParseContext;
@@ -96,7 +99,7 @@ export function analyzeTypeScriptInSvelte(
   const ctx = new VirtualTypeScriptContext(
     code.script + code.render + code.rootScope,
   );
-  ctx.appendOriginal(/^\s*/u.exec(code.script)![0].length);
+  ctx.appendOriginal(RE_LEADING_WHITESPACE.exec(code.script)![0].length);
 
   const parsed = parseScriptWithoutAnalyzeScope(
     code.script + code.render + code.rootScope,
@@ -224,7 +227,7 @@ export function analyzeTypeScript(
   svelteParseContext: SvelteParseContext,
 ): VirtualTypeScriptContext {
   const ctx = new VirtualTypeScriptContext(code);
-  ctx.appendOriginal(/^\s*/u.exec(code)![0].length);
+  ctx.appendOriginal(RE_LEADING_WHITESPACE.exec(code)![0].length);
 
   const result = parseScriptWithoutAnalyzeScope(
     code,
@@ -1021,7 +1024,7 @@ function hasJSDocTypeComment(
     if (
       comment.type === "Block" &&
       comment.value.startsWith("*") &&
-      /(?:^|[\s*])@type\s*\{/u.test(comment.value)
+      RE_JSDOC_TYPE_TAG.test(comment.value)
     ) {
       return true;
     }

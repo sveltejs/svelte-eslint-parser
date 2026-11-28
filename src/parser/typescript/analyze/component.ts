@@ -7,6 +7,8 @@ import { setParent } from "../set-parent.js";
 import type { SvelteParseContext } from "../../svelte-parse-context.js";
 import { svelteVersion } from "../../svelte-version.js";
 
+const RE_IDENTIFIER = /^[$A-Z_a-z][\w$]*$/u;
+
 /**
  * Type-only method on a generic component's synthetic value. An importer calls
  * it with the attributes it passes so TypeScript infers the type arguments,
@@ -551,7 +553,7 @@ function getInstanceExportsType(
 
 /** Quote non-identifier keys so reserved-word prop names like `class` are emitted safely. */
 function propKey(name: string): string {
-  return /^[$A-Z_a-z][\w$]*$/u.test(name) ? name : JSON.stringify(name);
+  return RE_IDENTIFIER.test(name) ? name : JSON.stringify(name);
 }
 
 /** Unresolved prop globals in either the instance script or template open the props. */

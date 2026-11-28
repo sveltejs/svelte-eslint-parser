@@ -26,6 +26,8 @@ import { getKeys, traverseNodes, getNodes } from "../traverse.js";
 import { UniqueIdGenerator } from "./unique.js";
 import { fixLocations } from "./fix-locations.js";
 
+const RE_STARTS_WITH_LINE_TERMINATOR = /^[\n\r\u2028\u2029]/u;
+
 /** A comment that the Svelte compiler found in the template. */
 type TemplateComment = { type: string; start: number; end: number };
 
@@ -79,7 +81,7 @@ type ScriptLetRestoreCallbackOption = {
  * it, so that the code added after the range is not commented out.
  */
 function getCommentEnd(type: string, end: number, code: string): number {
-  return type === "Line" && /^[\n\r\u2028\u2029]/u.test(code[end] ?? "")
+  return type === "Line" && RE_STARTS_WITH_LINE_TERMINATOR.test(code[end] ?? "")
     ? end + 1
     : end;
 }
