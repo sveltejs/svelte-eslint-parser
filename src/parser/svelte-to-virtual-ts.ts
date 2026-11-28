@@ -5,6 +5,7 @@ import { parseTemplateWithContext } from "./template.js";
 import { analyzeTypeScriptInSvelte } from "./typescript/analyze/index.js";
 import { resolveSvelteParseContextForSvelte } from "./svelte-parse-context.js";
 import { getInstanceScriptRange } from "./compat.js";
+import { getDefaultTsconfigRootDir } from "./parser-object.js";
 
 /**
  * Translate a Svelte component to the virtual TypeScript shim. Returns
@@ -71,17 +72,4 @@ export function svelteToVirtualTypeScript(
   } catch {
     return null;
   }
-}
-
-/**
- * `process.cwd()`, which typescript-estree also uses when no candidate is
- * registered. On Windows, typescript-eslint rejects a `tsconfigRootDir` without
- * a drive letter, such as a UNC path, so leave it to the inference there.
- */
-function getDefaultTsconfigRootDir(): string | undefined {
-  const cwd = process.cwd();
-  if (process.platform === "win32" && !/^[A-Za-z]:/u.test(cwd)) {
-    return undefined;
-  }
-  return cwd;
 }
