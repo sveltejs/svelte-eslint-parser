@@ -466,37 +466,39 @@ function buildFunctionBindingsType(
     return instanceType && `(value: ${instanceType} | null) => void`;
   }
   if (element.kind !== "component") {
-    return buildGetterReturnType(expression.expressions[0], "any", ctx);
+    return buildBoundValueType(expression.expressions[0], "any", ctx);
   }
   const propType = buildAttributeType(element, node.name, ctx);
   // An undeclared prop resolves to `never`, which would poison the parameter.
-  const valueType = propType
-    ? `([${propType}] extends [never] ? any : (${propType}))`
+  const contextualType = propType
+    ? `[${propType}] extends [never] ? any : (${propType})`
     : "any";
-  return buildGetterReturnType(expression.expressions[0], valueType, ctx);
+  return buildBoundValueType(expression.expressions[0], contextualType, ctx);
 }
 
 /**
- * Type of the value the getter returns, as svelte2tsx types the setter with
- * `__sveltets_2_get_set_binding`. On a component, svelte2tsx then checks that
- * value against the bound prop, and a `null` getter (for a readonly binding)
- * infers it from the prop instead.
+ * svelte2tsx compiles a function binding to
+ * `__sveltets_2_get_set_binding(get, set)`, which returns `T` and gives `T` to
+ * the setter, in a place whose contextual type is the bound prop. `T` is
+ * inferred the same way here, so it is what the getter returns, with literal
+ * types kept when the prop has them, or the prop's type for a `null` getter
+ * (for a readonly binding).
  */
-function buildGetterReturnType(
+function buildBoundValueType(
   getter: ESTree.Expression,
-  nullGetterType: string,
+  contextualType: string,
   ctx: Context,
 ): string | null {
   if (!ctx.isTypeScript()) {
     return null;
   }
   const loc = getWithLoc(getter);
-  const id = ctx.scriptLet.generateUniqueId("getter");
+  const id = ctx.scriptLet.generateUniqueId("boundValue");
   ctx.scriptLet.addTypeOnlyStatement(
-    `const ${id} = (${ctx.code.slice(loc.start, loc.end)});`,
+    `const ${id} = (<T,>(get: (() => T) | null | undefined, set: (value: T) => void): T => null!)((${ctx.code.slice(loc.start, loc.end)}), (_) => {}) satisfies (${contextualType});`,
     "VariableDeclaration",
   );
-  return `(value: typeof ${id} extends () => infer R ? R : ${nullGetterType}) => void`;
+  return `(value: typeof ${id}) => void`;
 }
 
 /** Type of the value `bind:this` receives from the element or component. */

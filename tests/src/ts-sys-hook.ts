@@ -3591,7 +3591,11 @@ describeSvelte5("function bindings on a component", () => {
   // The getter on the left of a function binding is only evaluated by Svelte.
   const UNUSED_COMMA_LEFT_SIDE = 2695;
   const component = `<script lang="ts">
-  let { value = $bindable() }: { value: string } = $props();
+  let {
+    value = $bindable(),
+    choice = $bindable(),
+    pair = $bindable(),
+  }: { value: string; choice?: "x" | "y"; pair?: [number, number] } = $props();
 </script>`;
   for (const { name, template, errors } of [
     {
@@ -3602,6 +3606,16 @@ describeSvelte5("function bindings on a component", () => {
     {
       name: "types the setter parameter from a getter narrower than the prop",
       template: `<Foo bind:value={() => mode, (next) => (mode = next)} />`,
+      errors: [],
+    },
+    {
+      name: "keeps a literal type the getter returns when the prop has it",
+      template: `<Foo bind:choice={() => "x", (next) => (choice = next)} />`,
+      errors: [],
+    },
+    {
+      name: "keeps a tuple type the getter returns when the prop has it",
+      template: `<Foo bind:pair={() => [1, 2], (next) => (pair = next)} />`,
       errors: [],
     },
     {
@@ -3623,7 +3637,7 @@ describeSvelte5("function bindings on a component", () => {
     it(name, () => {
       const diagnostics = realResolutionDiagnostics(
         component,
-        "let current = ''; let count = 0; void count; let mode: 'a' | 'b' = 'a'; void mode;",
+        "let current = ''; let count = 0; void count; let mode: 'a' | 'b' = 'a'; void mode; let choice: 'x' | 'y' = 'x'; void choice; let pair: [number, number] = [0, 0]; void pair;",
         { template },
       ).filter((d) => d.code !== UNUSED_COMMA_LEFT_SIDE);
       assert.deepStrictEqual(
