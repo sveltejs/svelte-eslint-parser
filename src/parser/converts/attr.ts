@@ -439,8 +439,8 @@ function convertBindingDirective(
 }
 
 /**
- * Function bindings are typed as a setter of the bound value: the bound prop on
- * a component, or the element or component instance for `bind:this`. The
+ * Function bindings are typed as a setter of the bound value: what the getter
+ * returns, or the element or component instance for `bind:this`. The
  * assertion applies to the whole `getter, setter` sequence, so it contextually
  * types only the setter, whose parameter receives the value.
  */
@@ -466,35 +466,39 @@ function buildFunctionBindingsType(
     return instanceType && `(value: ${instanceType} | null) => void`;
   }
   if (element.kind !== "component") {
-    return buildGetterReturnType(expression.expressions[0], ctx);
+    return buildBoundValueType(expression.expressions[0], "any", ctx);
   }
   const propType = buildAttributeType(element, node.name, ctx);
   // An undeclared prop resolves to `never`, which would poison the parameter.
-  return (
-    propType &&
-    `(value: [${propType}] extends [never] ? any : (${propType})) => void`
-  );
+  const contextualType = propType
+    ? `[${propType}] extends [never] ? any : (${propType})`
+    : "any";
+  return buildBoundValueType(expression.expressions[0], contextualType, ctx);
 }
 
 /**
- * Type of the value the getter returns. Elements have no prop to read the type
- * from, so the setter receives what the getter gives, as in svelte2tsx.
+ * svelte2tsx compiles a function binding to
+ * `__sveltets_2_get_set_binding(get, set)`, which returns `T` and gives `T` to
+ * the setter, in a place whose contextual type is the bound prop. `T` is
+ * inferred the same way here, so it is what the getter returns, with literal
+ * types kept when the prop has them, or the prop's type for a `null` getter
+ * (for a readonly binding).
  */
-function buildGetterReturnType(
+function buildBoundValueType(
   getter: ESTree.Expression,
+  contextualType: string,
   ctx: Context,
 ): string | null {
   if (!ctx.isTypeScript()) {
     return null;
   }
   const loc = getWithLoc(getter);
-  const id = ctx.scriptLet.generateUniqueId("getter");
+  const id = ctx.scriptLet.generateUniqueId("boundValue");
   ctx.scriptLet.addTypeOnlyStatement(
-    `const ${id} = (${ctx.code.slice(loc.start, loc.end)});`,
+    `const ${id} = (<T,>(get: (() => T) | null | undefined, set: (value: T) => void): T => null!)((${ctx.code.slice(loc.start, loc.end)}), (_) => {}) satisfies (${contextualType});`,
     "VariableDeclaration",
   );
-  // A `null` getter (for a readonly binding) leaves the parameter untyped.
-  return `(value: typeof ${id} extends () => infer R ? R : any) => void`;
+  return `(value: typeof ${id}) => void`;
 }
 
 /** Type of the value `bind:this` receives from the element or component. */
