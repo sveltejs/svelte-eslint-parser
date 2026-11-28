@@ -1,3 +1,4 @@
+import { describe, it } from "node:test";
 import assert from "assert";
 import * as tsParser from "@typescript-eslint/parser";
 import { parseForESLint } from "../../../src/index.js";
@@ -177,7 +178,7 @@ describe("Script tags inside mustache tags", () => {
     for (const { name, template, svelte5 } of cases) {
       // Svelte 3 and 4 do not support these comments in the template.
       const skip = svelte5 && !svelteVersion.gte(5);
-      (skip ? it.skip : it)(name, () => {
+      it(name, { skip }, () => {
         // Stray `}` and `-->` come after the script.
         const code = `<div></div>\n${template}\n${SCRIPT}\n<p>}}}</p>\n<!-- } -->\n`;
         assertScript(parseForESLint(code, {}));

@@ -1,3 +1,4 @@
+import { describe, it } from "node:test";
 import { Linter } from "eslint";
 import assert from "assert";
 import * as parser from "../../../src/index.js";
@@ -179,8 +180,9 @@ describe("context.getScope with component `let:` directives", () => {
     );
   });
 
-  (svelteVersion.gte(5) ? it : it.skip)(
+  it(
     "finds the `let:` name in the default slot next to a snippet",
+    { skip: !svelteVersion.gte(5) },
     () => {
       assert.deepStrictEqual(
         getDefTypesFromScope(

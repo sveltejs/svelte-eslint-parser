@@ -1,3 +1,4 @@
+import { describe, it } from "node:test";
 import { Linter } from "eslint";
 import assert from "assert";
 import globals from "globals";

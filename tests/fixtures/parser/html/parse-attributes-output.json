@@ -1,0 +1,540 @@
+[
+  {
+    "input": "attr=\"value\"",
+    "index": 0,
+    "result": {
+      "attributes": [
+        {
+          "type": "Attribute",
+          "name": "attr",
+          "name_loc": null,
+          "value": [
+            {
+              "type": "Text",
+              "data": "value",
+              "raw": "value",
+              "start": 6,
+              "end": 11
+            }
+          ],
+          "start": 0,
+          "end": 12
+        }
+      ],
+      "index": 12
+    }
+  },
+  {
+    "input": "<script lang=\"ts\">",
+    "index": 7,
+    "result": {
+      "attributes": [
+        {
+          "type": "Attribute",
+          "name": "lang",
+          "name_loc": null,
+          "value": [
+            {
+              "type": "Text",
+              "data": "ts",
+              "raw": "ts",
+              "start": 14,
+              "end": 16
+            }
+          ],
+          "start": 8,
+          "end": 17
+        }
+      ],
+      "index": 17
+    }
+  },
+  {
+    "input": "<script lang='ts'>",
+    "index": 7,
+    "result": {
+      "attributes": [
+        {
+          "type": "Attribute",
+          "name": "lang",
+          "name_loc": null,
+          "value": [
+            {
+              "type": "Text",
+              "data": "ts",
+              "raw": "ts",
+              "start": 14,
+              "end": 16
+            }
+          ],
+          "start": 8,
+          "end": 17
+        }
+      ],
+      "index": 17
+    }
+  },
+  {
+    "input": "<script lang=ts>",
+    "index": 7,
+    "result": {
+      "attributes": [
+        {
+          "type": "Attribute",
+          "name": "lang",
+          "name_loc": null,
+          "value": [
+            {
+              "type": "Text",
+              "data": "ts",
+              "raw": "ts",
+              "start": 13,
+              "end": 15
+            }
+          ],
+          "start": 8,
+          "end": 15
+        }
+      ],
+      "index": 15
+    }
+  },
+  {
+    "input": "<style global>",
+    "index": 6,
+    "result": {
+      "attributes": [
+        {
+          "type": "Attribute",
+          "name": "global",
+          "name_loc": null,
+          "value": true,
+          "start": 7,
+          "end": 13
+        }
+      ],
+      "index": 13
+    }
+  },
+  {
+    "input": "<style global/>",
+    "index": 6,
+    "result": {
+      "attributes": [
+        {
+          "type": "Attribute",
+          "name": "global",
+          "name_loc": null,
+          "value": true,
+          "start": 7,
+          "end": 13
+        }
+      ],
+      "index": 13
+    }
+  },
+  {
+    "input": "",
+    "index": 0,
+    "result": {
+      "attributes": [],
+      "index": 0
+    }
+  },
+  {
+    "input": "attr  =  \"value\"",
+    "index": 0,
+    "result": {
+      "attributes": [
+        {
+          "type": "Attribute",
+          "name": "attr",
+          "name_loc": null,
+          "value": [
+            {
+              "type": "Text",
+              "data": "value",
+              "raw": "value",
+              "start": 10,
+              "end": 15
+            }
+          ],
+          "start": 0,
+          "end": 16
+        }
+      ],
+      "index": 16
+    }
+  },
+  {
+    "input": "attr",
+    "index": 0,
+    "result": {
+      "attributes": [
+        {
+          "type": "Attribute",
+          "name": "attr",
+          "name_loc": null,
+          "value": true,
+          "start": 0,
+          "end": 4
+        }
+      ],
+      "index": 4
+    }
+  },
+  {
+    "input": "attr  ",
+    "index": 0,
+    "result": {
+      "attributes": [
+        {
+          "type": "Attribute",
+          "name": "attr",
+          "name_loc": null,
+          "value": true,
+          "start": 0,
+          "end": 4
+        }
+      ],
+      "index": 6
+    }
+  },
+  {
+    "input": "empty=\"\"  ",
+    "index": 0,
+    "result": {
+      "attributes": [
+        {
+          "type": "Attribute",
+          "name": "empty",
+          "name_loc": null,
+          "value": [
+            {
+              "type": "Text",
+              "data": "",
+              "raw": "",
+              "start": 7,
+              "end": 7
+            }
+          ],
+          "start": 0,
+          "end": 8
+        }
+      ],
+      "index": 10
+    }
+  },
+  {
+    "input": "empty=''  ",
+    "index": 0,
+    "result": {
+      "attributes": [
+        {
+          "type": "Attribute",
+          "name": "empty",
+          "name_loc": null,
+          "value": [
+            {
+              "type": "Text",
+              "data": "",
+              "raw": "",
+              "start": 7,
+              "end": 7
+            }
+          ],
+          "start": 0,
+          "end": 8
+        }
+      ],
+      "index": 10
+    }
+  },
+  {
+    "input": "quote=\"'\"  ",
+    "index": 0,
+    "result": {
+      "attributes": [
+        {
+          "type": "Attribute",
+          "name": "quote",
+          "name_loc": null,
+          "value": [
+            {
+              "type": "Text",
+              "data": "'",
+              "raw": "'",
+              "start": 7,
+              "end": 8
+            }
+          ],
+          "start": 0,
+          "end": 9
+        }
+      ],
+      "index": 11
+    }
+  },
+  {
+    "input": "quote='\"'  ",
+    "index": 0,
+    "result": {
+      "attributes": [
+        {
+          "type": "Attribute",
+          "name": "quote",
+          "name_loc": null,
+          "value": [
+            {
+              "type": "Text",
+              "data": "\"",
+              "raw": "\"",
+              "start": 7,
+              "end": 8
+            }
+          ],
+          "start": 0,
+          "end": 9
+        }
+      ],
+      "index": 11
+    }
+  },
+  {
+    "input": "expr={true}  ",
+    "index": 0,
+    "result": {
+      "attributes": [
+        {
+          "type": "Attribute",
+          "name": "expr",
+          "name_loc": null,
+          "value": [
+            {
+              "type": "ExpressionTag",
+              "expression": {
+                "type": "Literal",
+                "start": 6,
+                "end": 10,
+                "value": true,
+                "raw": "true",
+                "leadingComments": []
+              },
+              "start": 5,
+              "end": 11
+            }
+          ],
+          "start": 0,
+          "end": 11
+        }
+      ],
+      "index": 13
+    }
+  },
+  {
+    "input": "expr=\"{true}\"  ",
+    "index": 0,
+    "result": {
+      "attributes": [
+        {
+          "type": "Attribute",
+          "name": "expr",
+          "name_loc": null,
+          "value": [
+            {
+              "type": "ExpressionTag",
+              "expression": {
+                "type": "Literal",
+                "start": 7,
+                "end": 11,
+                "value": true,
+                "raw": "true",
+                "leadingComments": []
+              },
+              "start": 5,
+              "end": 13
+            }
+          ],
+          "start": 0,
+          "end": 13
+        }
+      ],
+      "index": 15
+    }
+  },
+  {
+    "input": "expr='{true}'  ",
+    "index": 0,
+    "result": {
+      "attributes": [
+        {
+          "type": "Attribute",
+          "name": "expr",
+          "name_loc": null,
+          "value": [
+            {
+              "type": "ExpressionTag",
+              "expression": {
+                "type": "Literal",
+                "start": 7,
+                "end": 11,
+                "value": true,
+                "raw": "true",
+                "leadingComments": []
+              },
+              "start": 5,
+              "end": 13
+            }
+          ],
+          "start": 0,
+          "end": 13
+        }
+      ],
+      "index": 15
+    }
+  },
+  {
+    "input": "expr={\"s\"}  ",
+    "index": 0,
+    "result": {
+      "attributes": [
+        {
+          "type": "Attribute",
+          "name": "expr",
+          "name_loc": null,
+          "value": [
+            {
+              "type": "ExpressionTag",
+              "expression": {
+                "type": "Literal",
+                "start": 6,
+                "end": 9,
+                "value": "s",
+                "raw": "\"s\"",
+                "leadingComments": []
+              },
+              "start": 5,
+              "end": 10
+            }
+          ],
+          "start": 0,
+          "end": 10
+        }
+      ],
+      "index": 12
+    }
+  },
+  {
+    "input": "expr={\"}\"}  ",
+    "index": 0,
+    "result": {
+      "attributes": [
+        {
+          "type": "Attribute",
+          "name": "expr",
+          "name_loc": null,
+          "value": [
+            {
+              "type": "ExpressionTag",
+              "expression": {
+                "type": "Literal",
+                "start": 6,
+                "end": 9,
+                "value": "}",
+                "raw": "\"}\"",
+                "leadingComments": []
+              },
+              "start": 5,
+              "end": 10
+            }
+          ],
+          "start": 0,
+          "end": 10
+        }
+      ],
+      "index": 12
+    }
+  },
+  {
+    "input": "expr={/*}*/\"}\"}  ",
+    "index": 0,
+    "result": {
+      "attributes": [
+        {
+          "type": "Attribute",
+          "name": "expr",
+          "name_loc": null,
+          "value": [
+            {
+              "type": "ExpressionTag",
+              "expression": {
+                "type": "Literal",
+                "start": 11,
+                "end": 14,
+                "value": "}",
+                "raw": "\"}\"",
+                "leadingComments": [
+                  {
+                    "type": "Block",
+                    "value": "}",
+                    "start": 6,
+                    "end": 11
+                  }
+                ]
+              },
+              "start": 5,
+              "end": 15
+            }
+          ],
+          "start": 0,
+          "end": 15
+        }
+      ],
+      "index": 17
+    }
+  },
+  {
+    "input": "expr={/*}*///}\n\"}\"}  ",
+    "index": 0,
+    "result": {
+      "attributes": [
+        {
+          "type": "Attribute",
+          "name": "expr",
+          "name_loc": null,
+          "value": [
+            {
+              "type": "ExpressionTag",
+              "expression": {
+                "type": "Literal",
+                "start": 15,
+                "end": 18,
+                "value": "}",
+                "raw": "\"}\"",
+                "leadingComments": [
+                  {
+                    "type": "Block",
+                    "value": "}",
+                    "start": 6,
+                    "end": 11
+                  },
+                  {
+                    "type": "Line",
+                    "value": "}",
+                    "start": 11,
+                    "end": 15
+                  }
+                ]
+              },
+              "start": 5,
+              "end": 19
+            }
+          ],
+          "start": 0,
+          "end": 19
+        }
+      ],
+      "index": 21
+    }
+  }
+]

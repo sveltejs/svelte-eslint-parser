@@ -1,3 +1,4 @@
+import { describe, it } from "node:test";
 import assert from "assert";
 import { parseConfig } from "../../../src/svelte-config/parser.js";
 

@@ -1,3 +1,4 @@
+import { beforeEach, describe, it } from "node:test";
 import assert from "assert";
 import fs from "fs";
 import os from "os";
@@ -17,10 +18,15 @@ import {
 
 // Runes-specific suites are Svelte 5 only; the legacy suites run on every
 // version in the test matrix, with version-aware assertions.
-const describeSvelte5 = svelteVersion.gte(5) ? describe : describe.skip;
+function describeSvelte5(name: string, fn: () => void): void {
+  void describe(name, { skip: !svelteVersion.gte(5) }, fn);
+}
+
 // In Svelte 5 the exported value is the non-constructable `Component` function
 // type, so `new Foo(...)` only applies to the legacy class component.
-const describeLegacyClass = svelteVersion.gte(5) ? describe.skip : describe;
+function describeLegacyClass(name: string, fn: () => void): void {
+  void describe(name, { skip: svelteVersion.gte(5) }, fn);
+}
 
 const TS_SCRIPT = `<script lang="ts">
   let count: number = 0;

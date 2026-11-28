@@ -1,3 +1,4 @@
+import { describe, it } from "node:test";
 import assert from "assert";
 import fs from "fs";
 import { parseForESLint } from "../../../src/index.js";

@@ -1,3 +1,4 @@
+import { describe, it } from "node:test";
 import * as parser from "@typescript-eslint/parser";
 import assert from "assert";
 import * as utils from "../../../src/utils/index.js";
