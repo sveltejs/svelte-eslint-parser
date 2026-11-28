@@ -268,10 +268,6 @@ export interface SvelteDebugTag extends BaseNode {
 /** Node of const tag. e.g. `{@const}` */
 export interface SvelteConstTag extends BaseNode {
   type: "SvelteConstTag";
-  /**
-   * @deprecated Use `declarations` instead.
-   */
-  declaration: ESTree.VariableDeclarator; // TODO Remove in v2 and later.
   declarations: [ESTree.VariableDeclarator];
   parent:
     | SvelteProgram
