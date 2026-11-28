@@ -1,0 +1,30 @@
+{
+  "$schema": "https://unpkg.com/knip@6/schema.json",
+  "entry": [
+    "src/index.ts",
+    "tests/src/**/*.ts",
+    "tests/fixtures/**/*-setup.ts",
+    "tools/*.ts",
+  ],
+  "project": [
+    "src/**/*.ts",
+    "tests/**/*.ts",
+    "tools/**/*.ts",
+    "benchmark/**/*.ts",
+  ],
+  // explorer-v2 has its own package.json and lockfile.
+  "ignore": ["explorer-v2/**"],
+  "ignoreDependencies": [
+    // Loaded at runtime by `@ota-meshi/eslint-plugin`.
+    "eslint-plugin-jsdoc",
+    "eslint-plugin-json-schema-validator",
+    "eslint-plugin-jsonc",
+    "eslint-plugin-n",
+    "eslint-plugin-node-dependencies",
+    "eslint-plugin-yml",
+    // Named as a parser in `tests/fixtures/**/*-config.json`.
+    "typescript-eslint-parser-for-extra-files",
+    // Peer dependency of `typescript-eslint-parser-for-extra-files`.
+    "svelte2tsx",
+  ],
+}
