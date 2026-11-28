@@ -43,12 +43,17 @@ export class ScriptsSourceCode {
   /** Whether line breaks were put between script blocks on the same line. */
   public readonly hasInsertedLineBreaks: boolean;
 
+  /** Indexes of the semicolons put between script blocks. */
+  public readonly insertedSemicolonIndexes: readonly number[];
+
   public constructor(
     script: string,
     attrs: Record<string, string | undefined>,
     hasInsertedLineBreaks = false,
+    insertedSemicolonIndexes: readonly number[] = [],
   ) {
     this.hasInsertedLineBreaks = hasInsertedLineBreaks;
+    this.insertedSemicolonIndexes = insertedSemicolonIndexes;
     this.raw = script;
     this.trimmedRaw = script.trimEnd();
     this.attrs = attrs;
@@ -215,6 +220,7 @@ export class Context {
     let start = 0;
     let lastScriptEnd: number | null = null;
     let hasInsertedLineBreaks = false;
+    const insertedSemicolonIndexes: number[] = [];
     for (const block of extractBlocks(code)) {
       if (block.tag === "template") {
         if (block.selfClosing) {
@@ -267,6 +273,14 @@ export class Context {
             before = `\n${before.slice(1)}`;
             hasInsertedLineBreaks = true;
           }
+          if (lastScriptEnd != null) {
+            // A script that starts with `(`, `[` or a template literal would
+            // continue the last statement of the previous script, so put a
+            // semicolon between them in place of the `>` of the start tag. It
+            // is removed after parsing.
+            before = `${before.slice(0, -1)};`;
+            insertedSemicolonIndexes.push(block.contentRange[0] - 1);
+          }
           scriptCode += before + code.slice(...block.contentRange);
           lastScriptEnd = block.contentRange[1];
           for (const attr of block.attrs) {
@@ -293,6 +307,7 @@ export class Context {
         scriptCode,
         scriptAttrs,
         hasInsertedLineBreaks,
+        insertedSemicolonIndexes,
       ),
     };
     this.scriptLet = new ScriptLetContext(this);

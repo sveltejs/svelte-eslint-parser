@@ -897,6 +897,17 @@ describe("synthetic component default export (legacy, all versions)", () => {
     assertComponentExport(code, `{ value: string }`);
   });
 
+  it("keeps an instance `export let` without a semicolon before the module script", () => {
+    const code = translate(`<script lang="ts">
+  export let value: string
+</script>
+<script lang="ts" context="module">
+  (globalThis as any).loaded = true;
+</script>
+<p>{value}</p>`);
+    assertComponentExport(code, `{ value: string }`);
+  });
+
   // `type` is not a script-context attribute, so `<script type="module">` is an
   // instance script. Only `context="module"` (and Svelte 5's `module`) make one.
   it('treats a lone `<script type="module">` as the instance script', () => {
