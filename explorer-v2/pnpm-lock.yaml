@@ -58,8 +58,8 @@ importers:
         specifier: ^7.0.0
         version: 7.3.1(svelte@5.59.1(@typescript-eslint/types@8.73.0))(vite@8.3.8(@types/node@25.9.3)(terser@5.48.0))
       monaco-editor:
-        specifier: ^0.57.0
-        version: 0.57.0
+        specifier: ^0.58.0
+        version: 0.58.0
       prettier:
         specifier: ^3.4.1
         version: 3.10.1
@@ -499,6 +499,9 @@ packages:
     resolution: {integrity: sha512-k4lsFVpRZICbltkIEEH4hZRkwXkqDF1GHBpClKQOHQY+RkoZAAuyc1ci3I6p+CB6v3U4jaHIUshc4RzzQXZWLg==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
 
+  '@vscode/diff@0.0.2-145':
+    resolution: {integrity: sha512-atPcmNrAU4B8OsbrmqYlHbZREt//m8z52o400YA8uuvq3Be5wnmIhLoLqhMum7Jv7kRC0FE+m3WAUbaZF681wg==}
+
   '@webassemblyjs/ast@1.14.1':
     resolution: {integrity: sha512-nuBEDgQfm1ccRp/8bCQrx1frohyufl4JlbMMZ4P1wpeOfDhF6FQkxZJ1b/e+PLwr6X1Nhw6OLme5usuBWYBvuQ==}
 
@@ -689,8 +692,8 @@ packages:
   devalue@5.9.4:
     resolution: {integrity: sha512-sPAT4pztbu6586/hrhOnMKS17IJrvg12mXiSPSS3W5qDeN2RGgvZ0diZCm31dBbnevfVmujNO3IM2wrS4Y2Rhg==}
 
-  dompurify@3.4.15:
-    resolution: {integrity: sha512-EUBjM+B+lkDE41iE82DDSCfkoPGfXx8IxFxPMjNzm/Uk4xDet77rTN9wqlxlVg71kK7XGuUMv6wUxJUwwv+Xyw==}
+  dompurify@3.4.17:
+    resolution: {integrity: sha512-B/pSlYVHQ58kqISD/yDjuJ1yfzI34m1gF4lAod2bwSRhiN4K5Cl3H8Af7hqB2PmTL911tdEudnnXn5FnhRoz0w==}
 
   dunder-proto@1.0.1:
     resolution: {integrity: sha512-KIN/nDJBQRcXw0MLVhZE9iQHmG68qAVIBg9CqmUYjmQIhgij9U5MFvrqkUL5FbtyyzZuOeOt0zdeRe4UY7ct+A==}
@@ -1079,8 +1082,8 @@ packages:
     resolution: {integrity: sha512-KCFkfyjqerNlSstjlhIGNXIKZGA/6O4V4RlhZ+Dsr621SPPw0mzlypE9D9ZOoPiVefHID+j7/XuMMlqfD/F60Q==}
     engines: {node: 20 || >=22}
 
-  monaco-editor@0.57.0:
-    resolution: {integrity: sha512-5BkI9KGoqrNvBGUe15/QlZq3OooZ8WLg1AxTpaqHRCP3HNpzPPZKE2EDz8M7c+VRmCeUw1Brp4cx/PWm3kI/5A==}
+  monaco-editor@0.58.0:
+    resolution: {integrity: sha512-Lj5hlfT4zdM5GSG9VxTHslWnwibGBvO6d9Mq/+9zmb1CkTZnib4+uAZUKl1zg+tMHRgY2OGax6hHKZNBtldR1g==}
 
   mrmime@2.0.1:
     resolution: {integrity: sha512-Y3wQdFg2Va6etvQ5I82yUhGdsKrcYox6p7FfL1LbK2J4V01F9TGlepTIhnK24t7koZibmg82KGglhA1XK5IsLQ==}
@@ -1792,6 +1795,8 @@ snapshots:
       '@typescript-eslint/types': 8.73.0
       eslint-visitor-keys: 5.0.1
 
+  '@vscode/diff@0.0.2-145': {}
+
   '@webassemblyjs/ast@1.14.1':
     dependencies:
       '@webassemblyjs/helper-numbers': 1.13.2
@@ -2006,7 +2011,7 @@ snapshots:
 
   devalue@5.9.4: {}
 
-  dompurify@3.4.15:
+  dompurify@3.4.17:
     optionalDependencies:
       '@types/trusted-types': 2.0.7
 
@@ -2364,9 +2369,10 @@ snapshots:
       '@isaacs/nonrecursive-glob-match': 1.1.0
       brace-expansion: 5.0.13
 
-  monaco-editor@0.57.0:
+  monaco-editor@0.58.0:
     dependencies:
-      dompurify: 3.4.15
+      '@vscode/diff': 0.0.2-145
+      dompurify: 3.4.17
       marked: 14.0.0
 
   mrmime@2.0.1: {}

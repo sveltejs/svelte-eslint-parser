@@ -21,6 +21,10 @@ import type {
   Root as SelectorRoot,
 } from "postcss-selector-parser";
 import { parseScript, parseScriptInSvelte } from "./script.js";
+import {
+  fixInsertedSemicolonError,
+  removeInsertedSemicolons,
+} from "./script-separators.js";
 import type * as SvAST from "./svelte-ast-types.js";
 import type * as Compiler from "./svelte-ast-types-for-v5.js";
 import { sortNodes } from "./sort.js";
@@ -177,6 +181,7 @@ function parseAsSvelte(
               resultTemplate.svelteAst,
             ),
             instanceGenerics: ctx.instanceGenerics,
+            insertedSemicolonIndexes: scripts.insertedSemicolonIndexes,
           },
         )
       : parseScriptInSvelte(
@@ -185,12 +190,14 @@ function parseAsSvelte(
           parserOptions,
         );
   } catch (e) {
+    fixInsertedSemicolonError(e, scripts.insertedSemicolonIndexes);
     if (scripts.hasInsertedLineBreaks) {
       fixErrorLocation(e, scripts.getCurrentVirtualCode(), ctx);
     }
     throw e;
   }
 
+  removeInsertedSemicolons(resultScript, scripts.insertedSemicolonIndexes);
   ctx.scriptLet.restore(resultScript);
   if (scripts.hasInsertedLineBreaks) {
     fixLocationsFromRanges(

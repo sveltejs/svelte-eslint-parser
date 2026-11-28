@@ -212,6 +212,57 @@ describe("svelteToVirtualTypeScript", () => {
     });
   });
 
+  it("translates when multiple tsconfigRootDir candidates are present", () => {
+    // `typescript-eslint` registers one candidate per `eslint.config.js` that
+    // uses its shared configs, so a monorepo lint run can hold several.
+    const parserPath = createRequire(import.meta.url).resolve(
+      "@typescript-eslint/parser",
+    );
+    const estree: {
+      addCandidateTSConfigRootDir: (candidate: string) => void;
+      clearCandidateTSConfigRootDirs: () => void;
+    } = createRequire(parserPath)("@typescript-eslint/typescript-estree");
+    withTempSvelteFile(TS_SCRIPT, (filePath) => {
+      estree.addCandidateTSConfigRootDir(path.join(os.tmpdir(), "a"));
+      estree.addCandidateTSConfigRootDir(path.join(os.tmpdir(), "b"));
+      try {
+        const code = svelteToVirtualTypeScript(
+          filePath,
+          TS_SCRIPT,
+          makeParserOptions(filePath),
+        );
+        assert.notStrictEqual(code, null, "expected non-null translation");
+        assert.match(code!, /let count: number/u);
+      } finally {
+        estree.clearCandidateTSConfigRootDirs();
+      }
+    });
+  });
+
+  it("translates on Windows when the cwd has no drive letter", () => {
+    // e.g. a UNC path such as `\\wsl.localhost\Ubuntu\app`, which
+    // typescript-eslint rejects as a `tsconfigRootDir`.
+    const platform = Object.getOwnPropertyDescriptor(process, "platform")!;
+    const cwd = Object.getOwnPropertyDescriptor(process, "cwd")!;
+    withTempSvelteFile(TS_SCRIPT, (filePath) => {
+      Object.defineProperty(process, "platform", { value: "win32" });
+      const dir = path.dirname(filePath);
+      Object.defineProperty(process, "cwd", { value: () => dir });
+      try {
+        const code = svelteToVirtualTypeScript(
+          filePath,
+          TS_SCRIPT,
+          makeParserOptions(filePath),
+        );
+        assert.notStrictEqual(code, null, "expected non-null translation");
+        assert.match(code!, /let count: number/u);
+      } finally {
+        Object.defineProperty(process, "platform", platform);
+        Object.defineProperty(process, "cwd", cwd);
+      }
+    });
+  });
+
   it("returns null when the source cannot be parsed", () => {
     const broken = `<script lang="ts">let x: number =</script>`;
     withTempSvelteFile(broken, (filePath) => {
@@ -843,6 +894,17 @@ describe("synthetic component default export (legacy, all versions)", () => {
 </script>
 <p>{value}</p>`);
     // Module-declared `$$Events`/`$$Slots` are not honored; events/slots stay permissive.
+    assertComponentExport(code, `{ value: string }`);
+  });
+
+  it("keeps an instance `export let` without a semicolon before the module script", () => {
+    const code = translate(`<script lang="ts">
+  export let value: string
+</script>
+<script lang="ts" context="module">
+  (globalThis as any).loaded = true;
+</script>
+<p>{value}</p>`);
     assertComponentExport(code, `{ value: string }`);
   });
 
@@ -3591,12 +3653,31 @@ describeSvelte5("function bindings on a component", () => {
   // The getter on the left of a function binding is only evaluated by Svelte.
   const UNUSED_COMMA_LEFT_SIDE = 2695;
   const component = `<script lang="ts">
-  let { value = $bindable() }: { value: string } = $props();
+  let {
+    value = $bindable(),
+    choice = $bindable(),
+    pair = $bindable(),
+  }: { value: string; choice?: "x" | "y"; pair?: [number, number] } = $props();
 </script>`;
   for (const { name, template, errors } of [
     {
-      name: "types the setter parameter from the bound prop",
+      name: "types the setter parameter from the getter",
       template: `<Foo bind:value={() => current, (next) => (current = next.trim())} />`,
+      errors: [],
+    },
+    {
+      name: "types the setter parameter from a getter narrower than the prop",
+      template: `<Foo bind:value={() => mode, (next) => (mode = next)} />`,
+      errors: [],
+    },
+    {
+      name: "keeps a literal type the getter returns when the prop has it",
+      template: `<Foo bind:choice={() => "x", (next) => (choice = next)} />`,
+      errors: [],
+    },
+    {
+      name: "keeps a tuple type the getter returns when the prop has it",
+      template: `<Foo bind:pair={() => [1, 2], (next) => (pair = next)} />`,
       errors: [],
     },
     {
@@ -3605,15 +3686,20 @@ describeSvelte5("function bindings on a component", () => {
       errors: [2322],
     },
     {
-      name: "leaves a prop the component does not declare untyped",
-      template: `<Foo value="" bind:other={() => current, (next) => next.anything()} />`,
+      name: "types the setter parameter from the bound prop for a null getter",
+      template: `<Foo bind:value={null, (next) => (count = next)} />`,
+      errors: [2322],
+    },
+    {
+      name: "leaves a prop the component does not declare untyped for a null getter",
+      template: `<Foo value="" bind:other={null, (next) => next.anything()} />`,
       errors: [],
     },
   ]) {
     it(name, () => {
       const diagnostics = realResolutionDiagnostics(
         component,
-        "let current = ''; let count = 0; void count;",
+        "let current = ''; let count = 0; void count; let mode: 'a' | 'b' = 'a'; void mode; let choice: 'x' | 'y' = 'x'; void choice; let pair: [number, number] = [0, 0]; void pair;",
         { template },
       ).filter((d) => d.code !== UNUSED_COMMA_LEFT_SIDE);
       assert.deepStrictEqual(
@@ -4293,12 +4379,12 @@ export default Foo;
     },
     {
       name: "types a function binding setter from a prop one member declares",
-      template: `<Foo items={users} render={undefined!} bind:selection={() => undefined, (next) => next?.[0].toFixed(0)} />`,
+      template: `<Foo items={users} render={undefined!} bind:selection={null, (next) => next?.[0].toFixed(0)} />`,
       errors: [],
     },
     {
       name: "rejects misuse of a function binding setter parameter",
-      template: `<Foo items={users} render={undefined!} bind:selection={() => undefined, (next) => next?.missing} />`,
+      template: `<Foo items={users} render={undefined!} bind:selection={null, (next) => next?.missing} />`,
       errors: [2339],
     },
     {

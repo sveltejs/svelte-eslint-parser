@@ -25,6 +25,11 @@ export function svelteToVirtualTypeScript(
       project: null,
       projectService: undefined,
       EXPERIMENTAL_useProjectService: undefined,
+      // Without a project the root dir is unused, but typescript-estree still
+      // infers one and throws when several `eslint.config.js` files registered
+      // candidates (e.g. with the fallback options used before the first parse).
+      tsconfigRootDir:
+        parserOptions.tsconfigRootDir ?? getDefaultTsconfigRootDir(),
     };
 
     const firstCtx = new Context(content, inner);
@@ -59,10 +64,24 @@ export function svelteToVirtualTypeScript(
         svelteParseContext,
         instanceScriptRange: getInstanceScriptRange(template.svelteAst),
         instanceGenerics: ctx.instanceGenerics,
+        insertedSemicolonIndexes: scripts.insertedSemicolonIndexes,
       },
     );
     return tsCtx.script;
   } catch {
     return null;
   }
+}
+
+/**
+ * `process.cwd()`, which typescript-estree also uses when no candidate is
+ * registered. On Windows, typescript-eslint rejects a `tsconfigRootDir` without
+ * a drive letter, such as a UNC path, so leave it to the inference there.
+ */
+function getDefaultTsconfigRootDir(): string | undefined {
+  const cwd = process.cwd();
+  if (process.platform === "win32" && !/^[A-Za-z]:/u.test(cwd)) {
+    return undefined;
+  }
+  return cwd;
 }

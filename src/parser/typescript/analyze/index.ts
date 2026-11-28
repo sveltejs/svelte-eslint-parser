@@ -15,6 +15,7 @@ import {
   sortedLastIndex,
 } from "../../../utils/index.js";
 import { parseScriptWithoutAnalyzeScope } from "../../script.js";
+import { removeInsertedSemicolons } from "../../script-separators.js";
 import { VirtualTypeScriptContext } from "../context.js";
 import type { TSESParseForESLintResult } from "../types.js";
 import type ESTree from "estree";
@@ -37,6 +38,8 @@ export type AnalyzeTypeScriptContext = {
   instanceScriptRange?: [number, number] | null;
   /** `generics` attribute of the instance `<script>`. */
   instanceGenerics?: InstanceGenerics | null;
+  /** Indexes of the semicolons put between the scripts in the virtual code. */
+  insertedSemicolonIndexes?: readonly number[];
 };
 
 type TransformInfo = {
@@ -95,11 +98,14 @@ export function analyzeTypeScriptInSvelte(
   );
   ctx.appendOriginal(/^\s*/u.exec(code.script)![0].length);
 
-  const result = parseScriptWithoutAnalyzeScope(
+  const parsed = parseScriptWithoutAnalyzeScope(
     code.script + code.render + code.rootScope,
     attrs,
     withoutProjectParserOptions(parserOptions),
-  ) as unknown as TSESParseForESLintResult;
+  );
+  // So that the statements of each script are found by their ranges.
+  removeInsertedSemicolons(parsed, context.insertedSemicolonIndexes ?? []);
+  const result = parsed as unknown as TSESParseForESLintResult;
 
   ctx._beforeResult = result;
 

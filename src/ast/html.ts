@@ -591,12 +591,15 @@ interface BaseSvelteDirectiveKey<
 }
 export type SvelteDirectiveKeyTextName = BaseSvelteDirectiveKey<SvelteName>;
 export type SvelteDirectiveKeyFunctionName = BaseSvelteDirectiveKey<
-  ESTree.Identifier | ESTree.MemberExpression
+  ESTree.Identifier | ESTree.MemberExpression | ESTree.ChainExpression
 >;
 export type SvelteDirectiveKeyForEventHandler =
   BaseSvelteDirectiveKey<SvelteName>;
 export type SvelteDirectiveKeyForAction = BaseSvelteDirectiveKey<
-  ESTree.Identifier | ESTree.MemberExpression | SvelteName
+  | ESTree.Identifier
+  | ESTree.MemberExpression
+  | ESTree.ChainExpression
+  | SvelteName
 >;
 export type SvelteDirectiveKeyForStyleShorthand =
   BaseSvelteDirectiveKey<ESTree.Identifier>;

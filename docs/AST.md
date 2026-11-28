@@ -350,7 +350,7 @@ This is the directive key node.
 ```ts
 interface SvelteDirectiveKey extends Node {
   type: "SvelteDirectiveKey";
-  name: Identifier | MemberExpression | SvelteName;
+  name: Identifier | MemberExpression | ChainExpression | SvelteName;
   modifiers: string[];
 }
 ```
