@@ -10,6 +10,7 @@ import { getParserForLang, type UserOptionParser } from "./resolve-parser.js";
 export type NormalizedParserOptions = {
   parser?: UserOptionParser;
   project?: string | string[] | null;
+  tsconfigRootDir?: string;
   programs?: Program[] | null;
   disallowAutomaticSingleRunInference?: boolean;
   projectService?: unknown;

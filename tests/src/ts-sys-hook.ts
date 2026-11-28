@@ -212,6 +212,57 @@ describe("svelteToVirtualTypeScript", () => {
     });
   });
 
+  it("translates when multiple tsconfigRootDir candidates are present", () => {
+    // `typescript-eslint` registers one candidate per `eslint.config.js` that
+    // uses its shared configs, so a monorepo lint run can hold several.
+    const parserPath = createRequire(import.meta.url).resolve(
+      "@typescript-eslint/parser",
+    );
+    const estree: {
+      addCandidateTSConfigRootDir: (candidate: string) => void;
+      clearCandidateTSConfigRootDirs: () => void;
+    } = createRequire(parserPath)("@typescript-eslint/typescript-estree");
+    withTempSvelteFile(TS_SCRIPT, (filePath) => {
+      estree.addCandidateTSConfigRootDir(path.join(os.tmpdir(), "a"));
+      estree.addCandidateTSConfigRootDir(path.join(os.tmpdir(), "b"));
+      try {
+        const code = svelteToVirtualTypeScript(
+          filePath,
+          TS_SCRIPT,
+          makeParserOptions(filePath),
+        );
+        assert.notStrictEqual(code, null, "expected non-null translation");
+        assert.match(code!, /let count: number/u);
+      } finally {
+        estree.clearCandidateTSConfigRootDirs();
+      }
+    });
+  });
+
+  it("translates on Windows when the cwd has no drive letter", () => {
+    // e.g. a UNC path such as `\\wsl.localhost\Ubuntu\app`, which
+    // typescript-eslint rejects as a `tsconfigRootDir`.
+    const platform = Object.getOwnPropertyDescriptor(process, "platform")!;
+    const cwd = Object.getOwnPropertyDescriptor(process, "cwd")!;
+    withTempSvelteFile(TS_SCRIPT, (filePath) => {
+      Object.defineProperty(process, "platform", { value: "win32" });
+      const dir = path.dirname(filePath);
+      Object.defineProperty(process, "cwd", { value: () => dir });
+      try {
+        const code = svelteToVirtualTypeScript(
+          filePath,
+          TS_SCRIPT,
+          makeParserOptions(filePath),
+        );
+        assert.notStrictEqual(code, null, "expected non-null translation");
+        assert.match(code!, /let count: number/u);
+      } finally {
+        Object.defineProperty(process, "platform", platform);
+        Object.defineProperty(process, "cwd", cwd);
+      }
+    });
+  });
+
   it("returns null when the source cannot be parsed", () => {
     const broken = `<script lang="ts">let x: number =</script>`;
     withTempSvelteFile(broken, (filePath) => {
