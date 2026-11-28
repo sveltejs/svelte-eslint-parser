@@ -755,7 +755,7 @@ function convertTransitionDirective(
         name,
         directive.key,
         null,
-        buildExpressionTypeChecker(getFunctionNameTypes(), ctx),
+        buildFunctionNameTypeChecker(getFunctionNameTypes(), ctx),
       ),
   });
   return directive;
@@ -786,7 +786,7 @@ function convertAnimationDirective(
         name,
         directive.key,
         null,
-        buildExpressionTypeChecker(getFunctionNameTypes(), ctx),
+        buildFunctionNameTypeChecker(getFunctionNameTypes(), ctx),
       ),
   });
   return directive;
@@ -800,6 +800,33 @@ function getFunctionNameTypes(): ("Identifier" | "MemberExpression")[] {
   return svelteVersion.gte(5)
     ? ["Identifier", "MemberExpression"]
     : ["Identifier"];
+}
+
+/**
+ * A chained name such as `t?.fade` is parsed as a `ChainExpression`, so check the expression inside
+ * the chain as the name.
+ */
+function buildFunctionNameTypeChecker(
+  expected: ("Identifier" | "MemberExpression")[],
+  ctx: Context,
+): ScriptLetCallback<
+  ESTree.Identifier | ESTree.MemberExpression | ESTree.ChainExpression
+> {
+  const allowedNameTypes = new Set<string>(expected);
+  return (node) => {
+    let nameNode: ESTree.Node = node;
+    if (node.type === "ChainExpression" && svelteVersion.gte(5)) {
+      nameNode = node.expression;
+    }
+    if (allowedNameTypes.has(nameNode.type)) {
+      return;
+    }
+    throw new ParseError(
+      `Expected JS ${expected.join(", or ")}, but ${nameNode.type} found.`,
+      nameNode.range![0],
+      ctx,
+    );
+  };
 }
 
 /** Convert for Action Directive */
@@ -820,17 +847,29 @@ function convertActionDirective(
     processExpression: buildProcessExpressionForExpression(
       directive,
       ctx,
-      `Parameters<typeof ${node.name}>[1]`,
+      getActionParameterTyping(node.name),
     ),
     processName: (name) =>
       ctx.scriptLet.addExpression(
         name,
         directive.key,
         null,
-        buildExpressionTypeChecker(["Identifier", "MemberExpression"], ctx),
+        buildFunctionNameTypeChecker(["Identifier", "MemberExpression"], ctx),
       ),
   });
   return directive;
+}
+
+/**
+ * Get the type of the parameter of `use:`.
+ * A type query cannot contain `?.`, so `use:a?.b` uses `typeof a.b`. TypeScript still resolves
+ * the type when `a` may be `undefined`. `?.[` has no such form, so it gets no type.
+ */
+function getActionParameterTyping(name: string): string | null {
+  if (name.includes("?.[")) {
+    return null;
+  }
+  return `Parameters<typeof ${name.replace(/\?\./gu, ".")}>[1]`;
 }
 
 /** Convert for Let Directive */
@@ -1121,21 +1160,5 @@ function buildProcessExpressionForExpression(
       return ctx.scriptLet.addExpression(expression, directive, null);
     }
     return ctx.scriptLet.addExpression(expression, directive, typing);
-  };
-}
-
-/** Build expression type checker to script let callbacks */
-function buildExpressionTypeChecker<T extends ESTree.Expression>(
-  expected: T["type"][],
-  ctx: Context,
-): ScriptLetCallback<T> {
-  return (node) => {
-    if (!expected.includes(node.type)) {
-      throw new ParseError(
-        `Expected JS ${expected.join(", or ")}, but ${node.type} found.`,
-        node.range![0],
-        ctx,
-      );
-    }
   };
 }
